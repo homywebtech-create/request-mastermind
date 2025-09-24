@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Phone, User, Wrench } from "lucide-react";
+import { Calendar, Phone, User, Wrench, Copy, CheckCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface OrdersTableProps {
@@ -33,12 +33,35 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
     }).format(date);
   };
 
-  const handleStatusChange = (orderId: string, newStatus: Order['status']) => {
-    onUpdateStatus(orderId, newStatus);
-    toast({
-      title: "تم تحديث الحالة",
-      description: "تم تحديث حالة الطلب بنجاح",
-    });
+  const generateOrderLink = (order: Order) => {
+    const baseUrl = window.location.origin;
+    const orderDetails = encodeURIComponent(
+      `طلب رقم: ${order.id}\nالعميل: ${order.customer.name}\nالخدمة: ${order.serviceType}\nالملاحظات: ${order.notes || 'لا توجد'}\nالتاريخ: ${formatDate(order.createdAt)}`
+    );
+    return `${baseUrl}/order/${order.id}?details=${orderDetails}`;
+  };
+
+  const handleCopyOrderLink = async (order: Order) => {
+    try {
+      const orderLink = generateOrderLink(order);
+      await navigator.clipboard.writeText(orderLink);
+      
+      // تحديث الحالة إلى "قيد التنفيذ" عند نسخ الرابط
+      if (order.status === 'pending') {
+        onUpdateStatus(order.id, 'in-progress');
+      }
+      
+      toast({
+        title: "تم نسخ الرابط",
+        description: "تم نسخ رابط الطلب ومشاركته مع الفريق",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في النسخ",
+        description: "حدث خطأ أثناء نسخ الرابط",
+        variant: "destructive",
+      });
+    }
   };
 
   const openWhatsApp = (phoneNumber: string) => {
@@ -123,20 +146,7 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
                     </TableCell>
                     
                     <TableCell>
-                      <Select 
-                        value={order.status} 
-                        onValueChange={(value) => handleStatusChange(order.id, value as Order['status'])}
-                      >
-                        <SelectTrigger className="w-32">
-                          <StatusBadge status={order.status} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">قيد الانتظار</SelectItem>
-                          <SelectItem value="in-progress">قيد التنفيذ</SelectItem>
-                          <SelectItem value="completed">مكتمل</SelectItem>
-                          <SelectItem value="cancelled">ملغي</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <StatusBadge status={order.status} />
                     </TableCell>
                     
                     <TableCell>
@@ -147,15 +157,55 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
                     </TableCell>
                     
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openWhatsApp(order.customer.whatsappNumber)}
-                        className="flex items-center gap-1"
-                      >
-                        <Phone className="h-3 w-3" />
-                        واتساب
-                      </Button>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* زر نسخ الرابط للطلبات قيد الانتظار */}
+                        {order.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => handleCopyOrderLink(order)}
+                            className="flex items-center gap-1"
+                          >
+                            <Copy className="h-3 w-3" />
+                            نسخ الرابط
+                          </Button>
+                        )}
+                        
+                        {/* أزرار الإكمال والإلغاء للطلبات قيد التنفيذ */}
+                        {order.status === 'in-progress' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => onUpdateStatus(order.id, 'completed')}
+                              className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                              إكمال
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onUpdateStatus(order.id, 'cancelled')}
+                              className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              <X className="h-3 w-3" />
+                              إلغاء
+                            </Button>
+                          </>
+                        )}
+                        
+                        {/* زر الواتساب متاح دائماً */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openWhatsApp(order.customer.whatsappNumber)}
+                          className="flex items-center gap-1"
+                        >
+                          <Phone className="h-3 w-3" />
+                          واتساب
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
