@@ -1,20 +1,38 @@
 import { useState } from "react";
-import { Order } from "@/types/order";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Phone, User, Wrench, Copy, CheckCircle, X } from "lucide-react";
+import { Calendar, Phone, User, Wrench, Copy, CheckCircle, X, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface Order {
+  id: string;
+  customer_id: string;
+  company_id: string;
+  service_type: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  notes?: string;
+  order_link?: string;
+  created_at: string;
+  customers: {
+    name: string;
+    whatsapp_number: string;
+  };
+  companies: {
+    name: string;
+  };
+}
 
 interface OrdersTableProps {
   orders: Order[];
-  onUpdateStatus: (orderId: string, status: Order['status']) => void;
+  onUpdateStatus: (orderId: string, status: string) => void;
+  onLinkCopied: (orderId: string) => void;
 }
 
-export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
+export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTableProps) {
   const { toast } = useToast();
   const [filter, setFilter] = useState<string>('all');
 
@@ -23,33 +41,22 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
     return order.status === filter;
   });
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('ar-SA', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
-  };
-
-  const generateOrderLink = (order: Order) => {
-    const baseUrl = window.location.origin;
-    const orderDetails = encodeURIComponent(
-      `طلب رقم: ${order.id}\nالعميل: ${order.customer.name}\nالخدمة: ${order.serviceType}\nالملاحظات: ${order.notes || 'لا توجد'}\nالتاريخ: ${formatDate(order.createdAt)}`
-    );
-    return `${baseUrl}/order/${order.id}?details=${orderDetails}`;
+    }).format(new Date(dateString));
   };
 
   const handleCopyOrderLink = async (order: Order) => {
     try {
-      const orderLink = generateOrderLink(order);
+      const orderLink = order.order_link || `${window.location.origin}/order/${order.id}`;
       await navigator.clipboard.writeText(orderLink);
       
-      // تحديث الحالة إلى "قيد التنفيذ" عند نسخ الرابط
-      if (order.status === 'pending') {
-        onUpdateStatus(order.id, 'in-progress');
-      }
+      onLinkCopied(order.id);
       
       toast({
         title: "تم نسخ الرابط",
@@ -105,6 +112,7 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-right">العميل</TableHead>
+                <TableHead className="text-right">الشركة</TableHead>
                 <TableHead className="text-right">الخدمة</TableHead>
                 <TableHead className="text-right">الحالة</TableHead>
                 <TableHead className="text-right">تاريخ الإنشاء</TableHead>
@@ -114,7 +122,7 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     لا توجد طلبات متاحة
                   </TableCell>
                 </TableRow>
@@ -125,18 +133,25 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{order.customer.name}</span>
+                          <span className="font-medium">{order.customers.name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Phone className="h-3 w-3" />
-                          <span dir="ltr">{order.customer.whatsappNumber}</span>
+                          <span dir="ltr">{order.customers.whatsapp_number}</span>
                         </div>
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{order.companies.name}</span>
                       </div>
                     </TableCell>
                     
                     <TableCell>
                       <div className="space-y-1">
-                        <Badge variant="outline">{order.serviceType}</Badge>
+                        <Badge variant="outline">{order.service_type}</Badge>
                         {order.notes && (
                           <p className="text-xs text-muted-foreground line-clamp-2">
                             {order.notes}
@@ -152,13 +167,12 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3" />
-                        {formatDate(order.createdAt)}
+                        {formatDate(order.created_at)}
                       </div>
                     </TableCell>
                     
                     <TableCell>
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* زر نسخ الرابط للطلبات قيد الانتظار */}
                         {order.status === 'pending' && (
                           <Button
                             size="sm"
@@ -171,7 +185,6 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
                           </Button>
                         )}
                         
-                        {/* أزرار الإكمال والإلغاء للطلبات قيد التنفيذ */}
                         {order.status === 'in-progress' && (
                           <>
                             <Button
@@ -195,11 +208,10 @@ export function OrdersTable({ orders, onUpdateStatus }: OrdersTableProps) {
                           </>
                         )}
                         
-                        {/* زر الواتساب متاح دائماً */}
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => openWhatsApp(order.customer.whatsappNumber)}
+                          onClick={() => openWhatsApp(order.customers.whatsapp_number)}
                           className="flex items-center gap-1"
                         >
                           <Phone className="h-3 w-3" />

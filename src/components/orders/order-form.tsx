@@ -1,19 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { serviceTypes } from "@/data/mockData";
+import { serviceTypes } from "@/data/serviceTypes";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OrderFormData {
   customerName: string;
   whatsappNumber: string;
   serviceType: string;
+  companyId: string;
   notes: string;
+}
+
+interface Company {
+  id: string;
+  name: string;
 }
 
 interface OrderFormProps {
@@ -23,17 +30,35 @@ interface OrderFormProps {
 
 export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const { toast } = useToast();
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: '',
     whatsappNumber: '',
     serviceType: '',
+    companyId: '',
     notes: '',
   });
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    const { data } = await supabase
+      .from('companies')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name');
+    
+    if (data) {
+      setCompanies(data);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerName || !formData.whatsappNumber || !formData.serviceType) {
+    if (!formData.customerName || !formData.whatsappNumber || !formData.serviceType || !formData.companyId) {
       toast({
         title: "خطأ في البيانات",
         description: "يرجى ملء جميع الحقول المطلوبة",
@@ -47,12 +72,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       customerName: '',
       whatsappNumber: '',
       serviceType: '',
+      companyId: '',
       notes: '',
-    });
-    
-    toast({
-      title: "تم إنشاء الطلب بنجاح",
-      description: "تم إضافة الطلب الجديد إلى النظام",
     });
   };
 
@@ -104,20 +125,38 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">تفاصيل الخدمة</h3>
             
-            <div className="space-y-2">
-              <Label htmlFor="serviceType">نوع الخدمة *</Label>
-              <Select value={formData.serviceType} onValueChange={(value) => handleInputChange('serviceType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر نوع الخدمة" />
-                </SelectTrigger>
-                <SelectContent>
-                  {serviceTypes.map((service) => (
-                    <SelectItem key={service} value={service}>
-                      {service}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="serviceType">نوع الخدمة *</Label>
+                <Select value={formData.serviceType} onValueChange={(value) => handleInputChange('serviceType', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر نوع الخدمة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map((service) => (
+                      <SelectItem key={service} value={service}>
+                        {service}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="companyId">الشركة المختصة *</Label>
+                <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الشركة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="space-y-2">
