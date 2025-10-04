@@ -181,8 +181,10 @@ export default function CompanyAuth() {
       }
 
       // تسجيل الدخول باستخدام البيانات المُرجعة
-      const companyEmail = `${fullPhone.replace('+', '')}@${data.company.id}.company.local`;
+      const companyEmail = `${fullPhone.replace('+', '')}@company.local`;
       const companyPassword = `${fullPhone}_${data.company.id}`;
+
+      console.log("5. محاولة تسجيل الدخول بـ:", companyEmail);
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: companyEmail,
