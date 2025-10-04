@@ -230,6 +230,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_verification_rate_limit: {
+        Args: { phone_number: string }
+        Returns: boolean
+      }
       cleanup_expired_verification_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
