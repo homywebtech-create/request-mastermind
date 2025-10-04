@@ -210,11 +210,15 @@ export default function CompanyAuth() {
         .eq("phone", fullPhone)
         .maybeSingle();
 
+      // استخدام البريد الإلكتروني بدلاً من رقم الهاتف للمصادقة
+      const companyEmail = `${fullPhone.replace('+', '')}@company.local`;
+      const companyPassword = `${fullPhone}_${company.id}`;
+
       if (!profile) {
         // إنشاء مستخدم جديد للشركة
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
-          phone: fullPhone,
-          password: `${fullPhone}_${Date.now()}`, // كلمة مرور مؤقتة
+          email: companyEmail,
+          password: companyPassword,
           options: {
             data: {
               full_name: company.name,
@@ -235,17 +239,11 @@ export default function CompanyAuth() {
       } else {
         // تسجيل دخول المستخدم الموجود
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          phone: fullPhone,
-          password: `${fullPhone}_${Date.now()}`,
+          email: companyEmail,
+          password: companyPassword,
         });
 
-        // إذا فشل تسجيل الدخول، نستخدم OTP
-        if (signInError) {
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            phone: fullPhone,
-          });
-          if (otpError) throw otpError;
-        }
+        if (signInError) throw signInError;
       }
 
       toast({
