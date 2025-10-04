@@ -150,13 +150,14 @@ serve(async (req) => {
       console.log('10. User created:', authUser.id);
     }
 
-    // Generate session token
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: companyEmail,
+    // إنشاء session مباشرة للمستخدم
+    console.log('10. Creating session for user...');
+    
+    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
+      user_id: authUser.id,
     });
 
-    if (sessionError) {
+    if (sessionError || !sessionData.session) {
       console.error('Session error:', sessionError);
       return new Response(
         JSON.stringify({ error: 'Failed to create session' }),
@@ -177,7 +178,10 @@ serve(async (req) => {
           id: authUser.id,
           email: authUser.email,
         },
-        session: sessionData.properties,
+        session: {
+          access_token: sessionData.session.access_token,
+          refresh_token: sessionData.session.refresh_token,
+        },
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
