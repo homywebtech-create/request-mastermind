@@ -233,15 +233,6 @@ export default function Dashboard() {
             </div>
             
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/orders')}
-                className="flex items-center gap-2"
-              >
-                <Package className="h-4 w-4" />
-                جميع الطلبات
-              </Button>
-
               {isAdmin && (
                 <Button
                   variant="outline"
