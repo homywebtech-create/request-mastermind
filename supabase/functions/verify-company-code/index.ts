@@ -85,23 +85,39 @@ serve(async (req) => {
 
     console.log('6. Company found:', company.name);
 
-    // Check if user exists in profiles
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('user_id')
-      .eq('company_id', company.id)
-      .eq('phone', phone)
-      .maybeSingle();
-
-    console.log('7. Profile found:', profile);
-
     // Generate email and password
     const companyEmail = `${phone.replace('+', '')}@company.local`;
     const companyPassword = `${phone}_${company.id}`;
 
+    console.log('7. Checking if user exists in auth...');
+
+    // First, check if user exists in auth.users by email
+    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    const existingAuthUser = users?.find(u => u.email === companyEmail);
+
     let authUser;
     
-    if (!profile) {
+    if (existingAuthUser) {
+      // User exists in auth, use it
+      console.log('8. User found in auth:', existingAuthUser.id);
+      authUser = existingAuthUser;
+
+      // Check if profile exists
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id, company_id')
+        .eq('user_id', authUser.id)
+        .maybeSingle();
+
+      // Update profile with company_id if needed
+      if (profile && !profile.company_id) {
+        console.log('9. Updating profile with company_id');
+        await supabaseAdmin
+          .from('profiles')
+          .update({ company_id: company.id, phone: phone })
+          .eq('user_id', authUser.id);
+      }
+    } else {
       // Create new user
       console.log('8. Creating new user...');
       const { data: authData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
@@ -125,26 +141,13 @@ serve(async (req) => {
       authUser = authData.user;
 
       // Update profile with company_id
+      console.log('9. Updating profile with company_id');
       await supabaseAdmin
         .from('profiles')
-        .update({ company_id: company.id })
+        .update({ company_id: company.id, phone: phone })
         .eq('user_id', authUser.id);
 
-      console.log('9. User created:', authUser.id);
-    } else {
-      // Get existing user
-      const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(profile.user_id);
-      
-      if (getUserError || !user) {
-        console.error('Get user error:', getUserError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to get user' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      authUser = user;
-      console.log('9. Existing user:', authUser.id);
+      console.log('10. User created:', authUser.id);
     }
 
     // Generate session token
@@ -161,7 +164,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('10. Session created successfully');
+    console.log('11. Session created successfully');
 
     return new Response(
       JSON.stringify({
