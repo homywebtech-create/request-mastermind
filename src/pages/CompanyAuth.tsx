@@ -90,16 +90,35 @@ export default function CompanyAuth() {
       console.log("8. تم العثور على الشركة:", company.name);
 
       // إرسال كود التفعيل
-      const { error } = await supabase.functions.invoke("request-verification-code", {
+      const { data, error } = await supabase.functions.invoke("request-verification-code", {
         body: { phone: company.phone },
       });
 
       if (error) throw error;
 
-      toast({
-        title: "تم إرسال الكود",
-        description: `تم إرسال كود التفعيل لشركة ${company.name}`,
-      });
+      // في وضع التطوير، إذا كان الكود موجود في الاستجابة، نعرضه
+      if (data?.devMode && data?.code) {
+        toast({
+          title: "كود التفعيل (وضع التطوير)",
+          description: (
+            <div className="space-y-2">
+              <p className="text-2xl font-bold text-center">{data.code}</p>
+              <p className="text-xs text-muted-foreground">
+                هذا الكود للاختبار فقط - في الإنتاج سيتم إرساله عبر واتساب
+              </p>
+              <p className="text-xs text-muted-foreground">
+                صالح لمدة 10 دقائق
+              </p>
+            </div>
+          ),
+          duration: 60000, // دقيقة واحدة
+        });
+      } else {
+        toast({
+          title: "تم إرسال الكود",
+          description: `تم إرسال كود التفعيل لشركة ${company.name}`,
+        });
+      }
 
       setStep("code");
     } catch (error: any) {

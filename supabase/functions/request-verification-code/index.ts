@@ -95,21 +95,26 @@ serve(async (req) => {
     }
 
     // TODO: Send verification code via WhatsApp or SMS
-    // For now, we'll just log it (in production, integrate with WhatsApp Business API)
+    // For now, we'll return the code in development mode
     console.log(`Verification code for ${cleanPhone}: ${code}`);
-
+    
     // Clean up old expired codes for this phone number
     await supabaseAdmin
       .from('verification_codes')
       .delete()
       .eq('phone', cleanPhone)
       .lt('expires_at', new Date().toISOString());
+    
+    // في بيئة التطوير، نرجع الكود في الاستجابة
+    // في الإنتاج، يجب إزالة هذا واستخدام WhatsApp Business API
+    const isDevelopment = true; // تغيير إلى false في الإنتاج
 
     return new Response(
       JSON.stringify({ 
         success: true,
         message: 'Verification code sent successfully',
-        expiresIn: 600 // 10 minutes in seconds
+        expiresIn: 600, // 10 minutes in seconds
+        ...(isDevelopment && { code: code, devMode: true }) // إرجاع الكود في وضع التطوير فقط
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
