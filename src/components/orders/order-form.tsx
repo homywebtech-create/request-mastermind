@@ -6,11 +6,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { serviceTypes } from "@/data/serviceTypes";
+import { countries } from "@/data/countries";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OrderFormData {
+  customerName: string;
+  countryCode: string;
+  phoneNumber: string;
+  serviceType: string;
+  companyId: string;
+  notes: string;
+}
+
+interface SubmittedOrderData {
   customerName: string;
   whatsappNumber: string;
   serviceType: string;
@@ -24,7 +34,7 @@ interface Company {
 }
 
 interface OrderFormProps {
-  onSubmit: (data: OrderFormData) => void;
+  onSubmit: (data: SubmittedOrderData) => void;
   onCancel?: () => void;
 }
 
@@ -33,7 +43,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: '',
-    whatsappNumber: '',
+    countryCode: 'QA', // قطر كدولة افتراضية
+    phoneNumber: '',
     serviceType: '',
     companyId: '',
     notes: '',
@@ -58,7 +69,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerName || !formData.whatsappNumber || !formData.serviceType || !formData.companyId) {
+    if (!formData.customerName || !formData.phoneNumber || !formData.serviceType || !formData.companyId) {
       toast({
         title: "خطأ في البيانات",
         description: "يرجى ملء جميع الحقول المطلوبة",
@@ -67,10 +78,24 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       return;
     }
 
-    onSubmit(formData);
+    // دمج كود الدولة مع رقم الهاتف
+    const selectedCountry = countries.find(c => c.code === formData.countryCode);
+    const fullWhatsappNumber = `${selectedCountry?.dialCode}${formData.phoneNumber}`;
+    
+    const submittedData: SubmittedOrderData = {
+      customerName: formData.customerName,
+      whatsappNumber: fullWhatsappNumber,
+      serviceType: formData.serviceType,
+      companyId: formData.companyId,
+      notes: formData.notes
+    };
+    
+    onSubmit(submittedData);
+    
     setFormData({
       customerName: '',
-      whatsappNumber: '',
+      countryCode: 'QA',
+      phoneNumber: '',
       serviceType: '',
       companyId: '',
       notes: '',
@@ -108,15 +133,59 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="whatsappNumber">رقم الواتساب *</Label>
-                <Input
-                  id="whatsappNumber"
-                  value={formData.whatsappNumber}
-                  onChange={(e) => handleInputChange('whatsappNumber', e.target.value)}
-                  placeholder="+966501234567"
-                  dir="ltr"
-                  required
-                />
+                <Label htmlFor="phoneNumber">رقم الواتساب *</Label>
+                <div className="flex gap-2">
+                  <Select 
+                    value={formData.countryCode} 
+                    onValueChange={(value) => handleInputChange('countryCode', value)}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue>
+                        {(() => {
+                          const country = countries.find(c => c.code === formData.countryCode);
+                          return country ? (
+                            <span className="flex items-center gap-2">
+                              <span className="text-xl">{country.flag}</span>
+                              <span className="text-sm">{country.dialCode}</span>
+                            </span>
+                          ) : 'اختر';
+                        })()}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {countries.map((country) => (
+                        <SelectItem 
+                          key={country.code} 
+                          value={country.code}
+                          className="cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="text-xl">{country.flag}</span>
+                            <span className="font-medium">{country.nameAr}</span>
+                            <span className="text-muted-foreground text-sm">{country.dialCode}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Input
+                    id="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={(e) => {
+                      // السماح بالأرقام فقط
+                      const value = e.target.value.replace(/\D/g, '');
+                      handleInputChange('phoneNumber', value);
+                    }}
+                    placeholder="501234567"
+                    dir="ltr"
+                    className="flex-1"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  أدخل الرقم بدون كود الدولة
+                </p>
               </div>
             </div>
           </div>
