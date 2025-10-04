@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send } from "lucide-react";
+import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -417,6 +417,23 @@ export default function Companies() {
     sendLoginLink(company.name, company.phone || "");
   };
 
+  const handleCopyLoginLink = (company: Company) => {
+    const companyLoginUrl = `${window.location.origin}/company-auth`;
+    
+    navigator.clipboard.writeText(companyLoginUrl).then(() => {
+      toast({
+        title: "تم النسخ",
+        description: "تم نسخ رابط صفحة تسجيل الدخول",
+      });
+    }).catch(() => {
+      toast({
+        title: "خطأ",
+        description: "فشل نسخ الرابط",
+        variant: "destructive",
+      });
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -663,25 +680,36 @@ export default function Companies() {
                 )}
                 
                 {/* أزرار الإجراءات */}
-                <div className="pt-3 border-t flex gap-2">
+                <div className="pt-3 border-t flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEditCompany(company)}
+                    >
+                      <Edit className="h-4 w-4 ml-2" />
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleCopyLoginLink(company)}
+                    >
+                      <Copy className="h-4 w-4 ml-2" />
+                      نسخ الرابط
+                    </Button>
+                  </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1"
-                    onClick={() => handleEditCompany(company)}
-                  >
-                    <Edit className="h-4 w-4 ml-2" />
-                    تعديل
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
+                    className="w-full"
                     onClick={() => handleResendLoginLink(company)}
                     disabled={!company.phone}
                   >
                     <Send className="h-4 w-4 ml-2" />
-                    إرسال الرابط
+                    إرسال عبر واتساب
                   </Button>
                 </div>
               </CardContent>
