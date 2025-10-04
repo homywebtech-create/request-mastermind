@@ -47,6 +47,35 @@ export type Database = {
         }
         Relationships: []
       }
+      company_services: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          service_type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          service_type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          service_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           company_id: string | null

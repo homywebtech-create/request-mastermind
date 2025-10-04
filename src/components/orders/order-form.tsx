@@ -54,18 +54,37 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   });
 
   useEffect(() => {
-    fetchCompanies();
-  }, []);
+    // جلب الشركات فقط عند اختيار نوع الخدمة
+    if (formData.serviceType) {
+      fetchCompaniesForService(formData.serviceType);
+    } else {
+      setCompanies([]);
+    }
+  }, [formData.serviceType]);
 
-  const fetchCompanies = async () => {
+  const fetchCompaniesForService = async (serviceType: string) => {
+    // جلب الشركات التي تقدم هذه الخدمة فقط
     const { data } = await supabase
-      .from('companies')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name');
+      .from('company_services')
+      .select(`
+        company_id,
+        companies!inner (
+          id,
+          name,
+          is_active
+        )
+      `)
+      .eq('service_type', serviceType)
+      .eq('companies.is_active', true)
+      .order('companies(name)');
     
     if (data) {
-      setCompanies(data);
+      // تحويل البيانات إلى شكل مناسب
+      const companiesList = data.map((item: any) => ({
+        id: item.companies.id,
+        name: item.companies.name
+      }));
+      setCompanies(companiesList);
     }
   };
 
@@ -118,7 +137,13 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   };
 
   const handleInputChange = (field: keyof OrderFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      // إعادة تعيين الشركة المختارة عند تغيير نوع الخدمة
+      if (field === 'serviceType') {
+        return { ...prev, [field]: value, companyId: '' };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   return (
@@ -214,7 +239,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 <Label htmlFor="serviceType">نوع الخدمة *</Label>
                 <Select value={formData.serviceType} onValueChange={(value) => handleInputChange('serviceType', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر نوع الخدمة" />
+                    <SelectValue placeholder="اختر نوع الخدمة أولاً" />
                   </SelectTrigger>
                   <SelectContent>
                     {serviceTypes.map((service) => (
@@ -224,6 +249,11 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.serviceType && companies.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    لا توجد شركات تقدم هذه الخدمة حالياً
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -238,8 +268,11 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                         setFormData(prev => ({ ...prev, sendToAll: true, companyId: '' }));
                       }}
                       className="w-4 h-4 text-primary"
+                      disabled={!formData.serviceType}
                     />
-                    <span className="text-sm">كل الشركات</span>
+                    <span className={`text-sm ${!formData.serviceType ? 'text-muted-foreground' : ''}`}>
+                      كل الشركات ({companies.length})
+                    </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -250,10 +283,18 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                         setFormData(prev => ({ ...prev, sendToAll: false }));
                       }}
                       className="w-4 h-4 text-primary"
+                      disabled={!formData.serviceType || companies.length === 0}
                     />
-                    <span className="text-sm">شركة محددة</span>
+                    <span className={`text-sm ${!formData.serviceType || companies.length === 0 ? 'text-muted-foreground' : ''}`}>
+                      شركة محددة
+                    </span>
                   </label>
                 </div>
+                {!formData.serviceType && (
+                  <p className="text-xs text-muted-foreground">
+                    اختر نوع الخدمة أولاً
+                  </p>
+                )}
               </div>
             </div>
 
