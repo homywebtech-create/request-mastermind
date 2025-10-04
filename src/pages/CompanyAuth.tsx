@@ -30,21 +30,39 @@ export default function CompanyAuth() {
 
     try {
       const fullPhone = getFullPhoneNumber();
+      
+      // تنظيف الرقم من أي مسافات أو أحرف غير مرغوبة
+      const cleanPhone = fullPhone.replace(/\s+/g, '');
+      
+      console.log("البحث عن الشركة برقم:", cleanPhone);
 
       // التحقق من أن رقم الهاتف ينتمي لشركة مسجلة
       const { data: company, error: companyError } = await supabase
         .from("companies")
-        .select("id, name")
-        .eq("phone", fullPhone)
+        .select("id, name, phone")
+        .eq("phone", cleanPhone)
         .eq("is_active", true)
         .maybeSingle();
 
-      if (companyError) throw companyError;
+      console.log("نتيجة البحث:", company);
+
+      if (companyError) {
+        console.error("خطأ في البحث:", companyError);
+        throw companyError;
+      }
 
       if (!company) {
+        // محاولة البحث بدون كود الدولة في حال كان الرقم مخزن بصيغة مختلفة
+        const { data: allCompanies } = await supabase
+          .from("companies")
+          .select("id, name, phone")
+          .eq("is_active", true);
+        
+        console.log("جميع الشركات النشطة:", allCompanies);
+        
         toast({
           title: "خطأ",
-          description: "رقم الهاتف غير مسجل لأي شركة",
+          description: `رقم الهاتف غير مسجل لأي شركة. الرقم المدخل: ${cleanPhone}`,
           variant: "destructive",
         });
         setIsLoading(false);
@@ -53,7 +71,7 @@ export default function CompanyAuth() {
 
       // إرسال كود التفعيل
       const { error } = await supabase.functions.invoke("request-verification-code", {
-        body: { phone: fullPhone },
+        body: { phone: cleanPhone },
       });
 
       if (error) throw error;
