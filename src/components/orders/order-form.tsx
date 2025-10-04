@@ -5,17 +5,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { serviceTypes } from "@/data/serviceTypes";
 import { countries } from "@/data/countries";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Service {
+  id: string;
+  name: string;
+  sub_services: SubService[];
+}
+
+interface SubService {
+  id: string;
+  name: string;
+}
+
 interface OrderFormData {
   customerName: string;
   countryCode: string;
   phoneNumber: string;
-  serviceType: string;
+  serviceId: string;
+  subServiceId: string;
   sendToAll: boolean;
   companyId: string;
   notes: string;
@@ -42,66 +53,118 @@ interface OrderFormProps {
 
 export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const { toast } = useToast();
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: '',
-    countryCode: 'QA', // قطر كدولة افتراضية
+    countryCode: 'QA',
     phoneNumber: '',
-    serviceType: '',
-    sendToAll: true, // الافتراضي: إرسال لكل الشركات
+    serviceId: '',
+    subServiceId: '',
+    sendToAll: true,
     companyId: '',
     notes: '',
   });
 
   useEffect(() => {
-    // جلب الشركات فقط عند اختيار نوع الخدمة
-    if (formData.serviceType) {
-      fetchCompaniesForService(formData.serviceType);
+    fetchServices();
+  }, []);
+
+  useEffect(() => {
+    if (formData.serviceId) {
+      const service = services.find(s => s.id === formData.serviceId);
+      setSelectedService(service || null);
+      setFormData(prev => ({ ...prev, subServiceId: '' }));
+    }
+  }, [formData.serviceId, services]);
+
+  useEffect(() => {
+    if (formData.serviceId && !formData.sendToAll) {
+      fetchCompaniesForService(formData.serviceId, formData.subServiceId);
     } else {
       setCompanies([]);
     }
-  }, [formData.serviceType]);
+  }, [formData.serviceId, formData.subServiceId, formData.sendToAll]);
 
-  const fetchCompaniesForService = async (serviceType: string) => {
-    // جلب الشركات التي تقدم هذه الخدمة فقط
-    const { data } = await supabase
-      .from('company_services')
-      .select(`
-        company_id,
-        companies!inner (
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("services")
+        .select(`
           id,
           name,
-          is_active
-        ),
-        services!inner (
-          name
-        )
-      `)
-      .eq('services.name', serviceType)
-      .eq('companies.is_active', true);
-    
-    if (data) {
-      // استخراج الشركات الفريدة
-      const uniqueCompanies = new Map();
-      data.forEach((item: any) => {
-        if (!uniqueCompanies.has(item.companies.id)) {
-          uniqueCompanies.set(item.companies.id, {
-            id: item.companies.id,
-            name: item.companies.name
-          });
-        }
-      });
-      setCompanies(Array.from(uniqueCompanies.values()));
+          sub_services (
+            id,
+            name
+          )
+        `)
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    }
+  };
+
+  const fetchCompaniesForService = async (serviceId: string, subServiceId?: string) => {
+    try {
+      let query = supabase
+        .from("company_services")
+        .select(`
+          company_id,
+          companies!inner (
+            id,
+            name,
+            is_active
+          )
+        `)
+        .eq("companies.is_active", true)
+        .eq("service_id", serviceId);
+
+      if (subServiceId) {
+        query = query.eq("sub_service_id", subServiceId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const uniqueCompanies = Array.from(
+        new Map(
+          data?.map((cs: any) => [
+            cs.companies.id,
+            { id: cs.companies.id, name: cs.companies.name }
+          ])
+        ).values()
+      );
+
+      setCompanies(uniqueCompanies);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      setCompanies([]);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerName || !formData.phoneNumber || !formData.serviceType) {
+    if (!formData.customerName || !formData.phoneNumber || !formData.serviceId) {
       toast({
         title: "خطأ في البيانات",
         description: "يرجى ملء جميع الحقول المطلوبة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // التحقق من اختيار خدمة فرعية إذا كانت موجودة
+    if (selectedService && selectedService.sub_services.length > 0 && !formData.subServiceId) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "يرجى اختيار خدمة فرعية",
         variant: "destructive",
       });
       return;
@@ -121,10 +184,15 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     const selectedCountry = countries.find(c => c.code === formData.countryCode);
     const fullWhatsappNumber = `${selectedCountry?.dialCode}${formData.phoneNumber}`;
     
+    // بناء serviceType من الأسماء
+    const service = services.find(s => s.id === formData.serviceId);
+    const subService = service?.sub_services.find(ss => ss.id === formData.subServiceId);
+    const serviceType = subService ? `${service?.name} - ${subService.name}` : service?.name || "";
+    
     const submittedData: SubmittedOrderData = {
       customerName: formData.customerName,
       whatsappNumber: fullWhatsappNumber,
-      serviceType: formData.serviceType,
+      serviceType,
       sendToAll: formData.sendToAll,
       companyId: formData.sendToAll ? undefined : formData.companyId,
       notes: formData.notes
@@ -136,17 +204,21 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       customerName: '',
       countryCode: 'QA',
       phoneNumber: '',
-      serviceType: '',
+      serviceId: '',
+      subServiceId: '',
       sendToAll: true,
       companyId: '',
       notes: '',
     });
+    setSelectedService(null);
   };
 
   const handleInputChange = (field: keyof OrderFormData, value: string) => {
     setFormData(prev => {
-      // إعادة تعيين الشركة المختارة عند تغيير نوع الخدمة
-      if (field === 'serviceType') {
+      if (field === 'serviceId') {
+        return { ...prev, [field]: value, subServiceId: '', companyId: '' };
+      }
+      if (field === 'subServiceId') {
         return { ...prev, [field]: value, companyId: '' };
       }
       return { ...prev, [field]: value };
@@ -243,66 +315,84 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="serviceType">نوع الخدمة *</Label>
-                <Select value={formData.serviceType} onValueChange={(value) => handleInputChange('serviceType', value)}>
+                <Label htmlFor="serviceId">الخدمة الرئيسية *</Label>
+                <Select value={formData.serviceId} onValueChange={(value) => handleInputChange('serviceId', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر نوع الخدمة أولاً" />
+                    <SelectValue placeholder="اختر الخدمة الرئيسية" />
                   </SelectTrigger>
                   <SelectContent>
-                    {serviceTypes.map((service) => (
-                      <SelectItem key={service} value={service}>
-                        {service}
+                    {services.map((service) => (
+                      <SelectItem key={service.id} value={service.id}>
+                        {service.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {formData.serviceType && companies.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    لا توجد شركات تقدم هذه الخدمة حالياً
-                  </p>
-                )}
               </div>
 
-              <div className="space-y-2">
-                <Label>إرسال الطلب إلى</Label>
-                <div className="flex items-center gap-4 h-10">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="sendToAll"
-                      checked={formData.sendToAll}
-                      onChange={() => {
-                        setFormData(prev => ({ ...prev, sendToAll: true, companyId: '' }));
-                      }}
-                      className="w-4 h-4 text-primary"
-                      disabled={!formData.serviceType}
-                    />
-                    <span className={`text-sm ${!formData.serviceType ? 'text-muted-foreground' : ''}`}>
-                      كل الشركات ({companies.length})
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="sendToAll"
-                      checked={!formData.sendToAll}
-                      onChange={() => {
-                        setFormData(prev => ({ ...prev, sendToAll: false }));
-                      }}
-                      className="w-4 h-4 text-primary"
-                      disabled={!formData.serviceType || companies.length === 0}
-                    />
-                    <span className={`text-sm ${!formData.serviceType || companies.length === 0 ? 'text-muted-foreground' : ''}`}>
-                      شركة محددة
-                    </span>
-                  </label>
+              {selectedService && selectedService.sub_services.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="subServiceId">الخدمة الفرعية *</Label>
+                  <Select value={formData.subServiceId} onValueChange={(value) => handleInputChange('subServiceId', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الخدمة الفرعية" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedService.sub_services.map((subService) => (
+                        <SelectItem key={subService.id} value={subService.id}>
+                          {subService.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                {!formData.serviceType && (
-                  <p className="text-xs text-muted-foreground">
-                    اختر نوع الخدمة أولاً
-                  </p>
-                )}
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>إرسال الطلب إلى</Label>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="sendToAll"
+                    checked={formData.sendToAll}
+                    onChange={() => {
+                      setFormData(prev => ({ ...prev, sendToAll: true, companyId: '' }));
+                    }}
+                    className="w-4 h-4 text-primary"
+                    disabled={!formData.serviceId}
+                  />
+                  <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
+                    كل الشركات
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="sendToAll"
+                    checked={!formData.sendToAll}
+                    onChange={() => {
+                      setFormData(prev => ({ ...prev, sendToAll: false }));
+                    }}
+                    className="w-4 h-4 text-primary"
+                    disabled={!formData.serviceId}
+                  />
+                  <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
+                    شركة محددة {companies.length > 0 && `(${companies.length})`}
+                  </span>
+                </label>
               </div>
+              {!formData.serviceId && (
+                <p className="text-xs text-muted-foreground">
+                  اختر الخدمة أولاً
+                </p>
+              )}
+              {formData.serviceId && !formData.sendToAll && companies.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  لا توجد شركات تقدم هذه الخدمة حالياً
+                </p>
+              )}
             </div>
 
             {!formData.sendToAll && (
