@@ -98,11 +98,28 @@ export default function CompanyAuth() {
 
       // في وضع التطوير، إذا كان الكود موجود في الاستجابة، نعرضه
       if (data?.devMode && data?.code) {
+        const copyCode = () => {
+          navigator.clipboard.writeText(data.code);
+          toast({
+            title: "تم النسخ",
+            description: "تم نسخ الكود بنجاح",
+            duration: 2000,
+          });
+        };
+
         toast({
           title: "كود التفعيل (وضع التطوير)",
           description: (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-2xl font-bold text-center">{data.code}</p>
+              <Button 
+                onClick={copyCode}
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+              >
+                نسخ الكود
+              </Button>
               <p className="text-xs text-muted-foreground">
                 هذا الكود للاختبار فقط - في الإنتاج سيتم إرساله عبر واتساب
               </p>
