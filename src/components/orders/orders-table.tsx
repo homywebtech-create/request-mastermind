@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Phone, User, Wrench, Copy, CheckCircle, X, Building2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar, Phone, User, Wrench, Copy, CheckCircle, X, Building2, Eye, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Order {
@@ -69,6 +70,37 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
         variant: "destructive",
       });
     }
+  };
+
+  const sendOrderLinkViaWhatsApp = (order: Order) => {
+    const orderLink = order.order_link || `${window.location.origin}/order/${order.id}`;
+    const cleanNumber = order.customers.whatsapp_number.replace(/\D/g, '');
+    
+    const message = `
+مرحباً ${order.customers.name}،
+
+تم استلام طلبك بنجاح! ✅
+
+📋 *تفاصيل الطلب:*
+• الخدمة: ${order.service_type}
+• الشركة: ${order.companies.name}
+${order.notes ? `• ملاحظات: ${order.notes}` : ''}
+
+🔗 *رابط متابعة الطلب:*
+${orderLink}
+
+يمكنك استخدام هذا الرابط لمتابعة حالة طلبك في أي وقت.
+
+شكراً لتواصلك معنا! 🌟
+    `.trim();
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+    
+    // Mark link as copied after sending
+    onLinkCopied(order.id);
   };
 
   const openWhatsApp = (phoneNumber: string) => {
@@ -173,16 +205,134 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
                     
                     <TableCell>
                       <div className="flex items-center gap-2 flex-wrap">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="flex items-center gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              التفاصيل
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle className="text-xl">تفاصيل الطلب</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-6 py-4">
+                              {/* Customer Info */}
+                              <div className="space-y-3">
+                                <h3 className="font-semibold text-lg flex items-center gap-2">
+                                  <User className="h-5 w-5" />
+                                  معلومات العميل
+                                </h3>
+                                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">الاسم:</span>
+                                    <span className="font-medium">{order.customers.name}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">رقم الواتساب:</span>
+                                    <span className="font-medium" dir="ltr">{order.customers.whatsapp_number}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Order Info */}
+                              <div className="space-y-3">
+                                <h3 className="font-semibold text-lg flex items-center gap-2">
+                                  <Wrench className="h-5 w-5" />
+                                  تفاصيل الطلب
+                                </h3>
+                                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">الشركة:</span>
+                                    <span className="font-medium">{order.companies.name}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">نوع الخدمة:</span>
+                                    <Badge variant="outline">{order.service_type}</Badge>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">الحالة:</span>
+                                    <StatusBadge status={order.status} />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">تاريخ الإنشاء:</span>
+                                    <span className="font-medium">{formatDate(order.created_at)}</span>
+                                  </div>
+                                  {order.notes && (
+                                    <div className="pt-2">
+                                      <span className="text-muted-foreground block mb-1">الملاحظات:</span>
+                                      <p className="text-sm bg-background rounded p-2">{order.notes}</p>
+                                    </div>
+                                  )}
+                                  {order.order_link && (
+                                    <div className="pt-2">
+                                      <span className="text-muted-foreground block mb-1">رابط الطلب:</span>
+                                      <div className="flex items-center gap-2">
+                                        <code className="text-xs bg-background rounded px-2 py-1 flex-1 truncate">
+                                          {order.order_link}
+                                        </code>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => window.open(order.order_link, '_blank')}
+                                        >
+                                          <ExternalLink className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex gap-2 pt-4 border-t">
+                                <Button
+                                  onClick={() => openWhatsApp(order.customers.whatsapp_number)}
+                                  className="flex-1"
+                                  variant="outline"
+                                >
+                                  <Phone className="h-4 w-4 ml-2" />
+                                  التواصل عبر واتساب
+                                </Button>
+                                {order.status === 'pending' && (
+                                  <Button
+                                    onClick={() => sendOrderLinkViaWhatsApp(order)}
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                  >
+                                    <Phone className="h-4 w-4 ml-2" />
+                                    إرسال رابط الطلب
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+
                         {order.status === 'pending' && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => handleCopyOrderLink(order)}
-                            className="flex items-center gap-1"
-                          >
-                            <Copy className="h-3 w-3" />
-                            نسخ الرابط
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => sendOrderLinkViaWhatsApp(order)}
+                              className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                            >
+                              <Phone className="h-3 w-3" />
+                              إرسال الرابط
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCopyOrderLink(order)}
+                              className="flex items-center gap-1"
+                            >
+                              <Copy className="h-3 w-3" />
+                              نسخ
+                            </Button>
+                          </>
                         )}
                         
                         {order.status === 'in-progress' && (
