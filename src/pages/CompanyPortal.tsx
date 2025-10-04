@@ -186,18 +186,22 @@ export default function CompanyPortal() {
                           <div className="grid gap-2">
                             <div className="flex justify-between">
                               <span className="font-semibold">العميل:</span>
-                              <span>{order.customers.name}</span>
+                              <span>{order.customers?.name || "غير متوفر"}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="font-semibold">رقم الواتساب:</span>
-                              <a
-                                href={`https://wa.me/${order.customers.whatsapp_number}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                              >
-                                {order.customers.whatsapp_number}
-                              </a>
+                              {order.customers?.whatsapp_number ? (
+                                <a
+                                  href={`https://wa.me/${order.customers.whatsapp_number}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline"
+                                >
+                                  {order.customers.whatsapp_number}
+                                </a>
+                              ) : (
+                                <span>غير متوفر</span>
+                              )}
                             </div>
                             <div className="flex justify-between">
                               <span className="font-semibold">الخدمة:</span>
