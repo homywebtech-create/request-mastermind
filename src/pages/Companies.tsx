@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { countries } from "@/data/countries";
 
 interface Service {
   id: string;
@@ -51,6 +53,8 @@ export default function Companies() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedServiceIds, setSelectedServiceIds] = useState<{serviceId: string, subServiceIds: string[]}[]>([]);
   const [loading, setLoading] = useState(true);
+  const [countryCode, setCountryCode] = useState("QA");
+  const [editCountryCode, setEditCountryCode] = useState("QA");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -290,9 +294,16 @@ export default function Companies() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // دمج كود الدولة مع رقم الهاتف
+    const selectedCountry = countries.find(c => c.code === countryCode);
+    const fullPhone = formData.phone ? `${selectedCountry?.dialCode}${formData.phone}` : "";
+
     const { data, error } = await supabase
       .from("companies")
-      .insert([formData])
+      .insert([{
+        ...formData,
+        phone: fullPhone
+      }])
       .select()
       .single();
 
@@ -309,19 +320,37 @@ export default function Companies() {
       });
 
       // إرسال رابط تسجيل الدخول
-      sendLoginLink(formData.name, formData.phone);
+      sendLoginLink(formData.name, fullPhone);
 
       setIsFormOpen(false);
       setFormData({ name: "", phone: "", email: "", address: "" });
+      setCountryCode("QA");
       fetchCompanies();
     }
   };
 
   const handleEditCompany = (company: Company) => {
     setSelectedCompany(company);
+    
+    // استخراج كود الدولة من رقم الهاتف
+    let phoneWithoutCode = company.phone || "";
+    let detectedCountryCode = "QA";
+    
+    if (company.phone) {
+      // البحث عن كود الدولة في بداية الرقم
+      for (const country of countries) {
+        if (company.phone.startsWith(country.dialCode)) {
+          detectedCountryCode = country.code;
+          phoneWithoutCode = company.phone.substring(country.dialCode.length);
+          break;
+        }
+      }
+    }
+    
+    setEditCountryCode(detectedCountryCode);
     setEditFormData({
       name: company.name,
-      phone: company.phone || "",
+      phone: phoneWithoutCode,
       email: company.email || "",
       address: company.address || "",
     });
@@ -332,9 +361,16 @@ export default function Companies() {
     e.preventDefault();
     if (!selectedCompany) return;
 
+    // دمج كود الدولة مع رقم الهاتف
+    const selectedCountry = countries.find(c => c.code === editCountryCode);
+    const fullPhone = editFormData.phone ? `${selectedCountry?.dialCode}${editFormData.phone}` : "";
+
     const { error } = await supabase
       .from("companies")
-      .update(editFormData)
+      .update({
+        ...editFormData,
+        phone: fullPhone
+      })
       .eq("id", selectedCompany.id);
 
     if (error) {
@@ -350,6 +386,7 @@ export default function Companies() {
       });
       setIsEditDialogOpen(false);
       setSelectedCompany(null);
+      setEditCountryCode("QA");
       fetchCompanies();
     }
   };
@@ -448,15 +485,54 @@ export default function Companies() {
 
                     <div className="space-y-2">
                       <Label htmlFor="phone">رقم الهاتف</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
-                        }
-                        placeholder="أدخل رقم الهاتف"
-                      />
+                      <div className="flex gap-2">
+                        <Select value={countryCode} onValueChange={setCountryCode}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue>
+                              {(() => {
+                                const country = countries.find(c => c.code === countryCode);
+                                return country ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="text-xl">{country.flag}</span>
+                                    <span className="text-sm">{country.dialCode}</span>
+                                  </span>
+                                ) : 'اختر';
+                              })()}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {countries.map((country) => (
+                              <SelectItem 
+                                key={country.code} 
+                                value={country.code}
+                                className="cursor-pointer"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <span className="text-xl">{country.flag}</span>
+                                  <span className="font-medium">{country.nameAr}</span>
+                                  <span className="text-muted-foreground text-sm">{country.dialCode}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            setFormData({ ...formData, phone: value });
+                          }}
+                          placeholder="501234567"
+                          dir="ltr"
+                          className="flex-1"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        أدخل الرقم بدون كود الدولة
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -728,15 +804,54 @@ export default function Companies() {
 
             <div className="space-y-2">
               <Label htmlFor="edit-phone">رقم الهاتف</Label>
-              <Input
-                id="edit-phone"
-                type="tel"
-                value={editFormData.phone}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, phone: e.target.value })
-                }
-                placeholder="أدخل رقم الهاتف"
-              />
+              <div className="flex gap-2">
+                <Select value={editCountryCode} onValueChange={setEditCountryCode}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue>
+                      {(() => {
+                        const country = countries.find(c => c.code === editCountryCode);
+                        return country ? (
+                          <span className="flex items-center gap-2">
+                            <span className="text-xl">{country.flag}</span>
+                            <span className="text-sm">{country.dialCode}</span>
+                          </span>
+                        ) : 'اختر';
+                      })()}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {countries.map((country) => (
+                      <SelectItem 
+                        key={country.code} 
+                        value={country.code}
+                        className="cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="text-xl">{country.flag}</span>
+                          <span className="font-medium">{country.nameAr}</span>
+                          <span className="text-muted-foreground text-sm">{country.dialCode}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Input
+                  id="edit-phone"
+                  type="tel"
+                  value={editFormData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    setEditFormData({ ...editFormData, phone: value });
+                  }}
+                  placeholder="501234567"
+                  dir="ltr"
+                  className="flex-1"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                أدخل الرقم بدون كود الدولة
+              </p>
             </div>
 
             <div className="space-y-2">
