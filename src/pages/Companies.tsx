@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Building2, ArrowRight, Settings } from "lucide-react";
+import { Plus, Building2, ArrowRight, Settings, Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -178,6 +178,15 @@ export default function Companies() {
             </div>
 
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/services")}
+                className="flex items-center gap-2"
+              >
+                <Wrench className="h-4 w-4" />
+                إدارة الخدمات
+              </Button>
+
               <Button
                 variant="outline"
                 onClick={() => navigate("/")}

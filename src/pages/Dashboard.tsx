@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Order {
@@ -244,6 +244,15 @@ export default function Dashboard() {
               >
                 <Building2 className="h-4 w-4" />
                 الشركات
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => navigate('/services')}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                الخدمات
               </Button>
 
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
