@@ -16,6 +16,7 @@ interface OrderFormData {
   countryCode: string;
   phoneNumber: string;
   serviceType: string;
+  sendToAll: boolean;
   companyId: string;
   notes: string;
 }
@@ -24,7 +25,8 @@ interface SubmittedOrderData {
   customerName: string;
   whatsappNumber: string;
   serviceType: string;
-  companyId: string;
+  sendToAll: boolean;
+  companyId?: string;
   notes: string;
 }
 
@@ -46,6 +48,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     countryCode: 'QA', // قطر كدولة افتراضية
     phoneNumber: '',
     serviceType: '',
+    sendToAll: true, // الافتراضي: إرسال لكل الشركات
     companyId: '',
     notes: '',
   });
@@ -69,10 +72,20 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerName || !formData.phoneNumber || !formData.serviceType || !formData.companyId) {
+    if (!formData.customerName || !formData.phoneNumber || !formData.serviceType) {
       toast({
         title: "خطأ في البيانات",
         description: "يرجى ملء جميع الحقول المطلوبة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // التحقق من اختيار شركة في حال عدم اختيار "كل الشركات"
+    if (!formData.sendToAll && !formData.companyId) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "يرجى اختيار شركة محددة أو تفعيل خيار إرسال لكل الشركات",
         variant: "destructive",
       });
       return;
@@ -86,7 +99,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       customerName: formData.customerName,
       whatsappNumber: fullWhatsappNumber,
       serviceType: formData.serviceType,
-      companyId: formData.companyId,
+      sendToAll: formData.sendToAll,
+      companyId: formData.sendToAll ? undefined : formData.companyId,
       notes: formData.notes
     };
     
@@ -97,6 +111,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       countryCode: 'QA',
       phoneNumber: '',
       serviceType: '',
+      sendToAll: true,
       companyId: '',
       notes: '',
     });
@@ -212,7 +227,39 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="companyId">الشركة المختصة *</Label>
+                <Label>إرسال الطلب إلى</Label>
+                <div className="flex items-center gap-4 h-10">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="sendToAll"
+                      checked={formData.sendToAll}
+                      onChange={() => {
+                        setFormData(prev => ({ ...prev, sendToAll: true, companyId: '' }));
+                      }}
+                      className="w-4 h-4 text-primary"
+                    />
+                    <span className="text-sm">كل الشركات</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="sendToAll"
+                      checked={!formData.sendToAll}
+                      onChange={() => {
+                        setFormData(prev => ({ ...prev, sendToAll: false }));
+                      }}
+                      className="w-4 h-4 text-primary"
+                    />
+                    <span className="text-sm">شركة محددة</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {!formData.sendToAll && (
+              <div className="space-y-2">
+                <Label htmlFor="companyId">اختر الشركة *</Label>
                 <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الشركة" />
@@ -226,7 +273,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="notes">ملاحظات</Label>

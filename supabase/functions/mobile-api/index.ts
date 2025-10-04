@@ -64,7 +64,7 @@ serve(async (req) => {
           customers (name, whatsapp_number),
           companies (name)
         `)
-        .eq('company_id', profile.company_id)
+        .or(`company_id.eq.${profile.company_id},send_to_all_companies.eq.true`)
         .order('created_at', { ascending: false });
 
       if (status) {
@@ -99,14 +99,14 @@ serve(async (req) => {
         );
       }
 
-      // Verify order belongs to specialist's company
+      // Verify order belongs to specialist's company OR is sent to all companies
       const { data: order } = await supabaseClient
         .from('orders')
-        .select('company_id')
+        .select('company_id, send_to_all_companies')
         .eq('id', orderId)
         .single();
 
-      if (!order || order.company_id !== profile.company_id) {
+      if (!order || (!order.send_to_all_companies && order.company_id !== profile.company_id)) {
         return new Response(
           JSON.stringify({ error: 'Order not found or access denied' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -137,7 +137,7 @@ serve(async (req) => {
       const { data: orders, error: ordersError } = await supabaseClient
         .from('orders')
         .select('status')
-        .eq('company_id', profile.company_id);
+        .or(`company_id.eq.${profile.company_id},send_to_all_companies.eq.true`);
 
       if (ordersError) {
         console.error('Error fetching stats:', ordersError);

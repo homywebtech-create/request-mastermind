@@ -14,20 +14,21 @@ import { useNavigate } from "react-router-dom";
 interface Order {
   id: string;
   customer_id: string;
-  company_id: string;
+  company_id: string | null;
   service_type: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
   notes?: string;
   order_link?: string;
   created_at: string;
   updated_at: string;
+  send_to_all_companies?: boolean;
   customers: {
     name: string;
     whatsapp_number: string;
   };
   companies: {
     name: string;
-  };
+  } | null;
 }
 
 interface OrderStats {
@@ -116,7 +117,7 @@ export default function Dashboard() {
         .from('customers')
         .select('id')
         .eq('whatsapp_number', formData.whatsappNumber)
-        .single();
+        .maybeSingle();
 
       let customerId = existingCustomer?.id;
 
@@ -126,6 +127,7 @@ export default function Dashboard() {
           .insert({
             name: formData.customerName,
             whatsapp_number: formData.whatsappNumber,
+            company_id: formData.companyId || null
           })
           .select('id')
           .single();
@@ -142,7 +144,8 @@ export default function Dashboard() {
         .from('orders')
         .insert({
           customer_id: customerId,
-          company_id: formData.companyId,
+          company_id: formData.sendToAll ? null : formData.companyId,
+          send_to_all_companies: formData.sendToAll || false,
           service_type: formData.serviceType,
           notes: formData.notes,
           order_link: orderLink,
@@ -153,7 +156,9 @@ export default function Dashboard() {
 
       toast({
         title: "نجح",
-        description: "تم إنشاء الطلب بنجاح",
+        description: formData.sendToAll 
+          ? "تم إرسال الطلب لجميع الشركات المختصة"
+          : "تم إنشاء الطلب بنجاح",
       });
       
       setIsFormOpen(false);

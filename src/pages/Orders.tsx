@@ -13,26 +13,28 @@ interface OrderFormData {
   customerName: string;
   whatsappNumber: string;
   serviceType: string;
-  companyId: string;
+  sendToAll: boolean;
+  companyId?: string;
   notes: string;
 }
 
 interface Order {
   id: string;
   customer_id: string;
-  company_id: string;
+  company_id: string | null;
   service_type: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
   notes?: string;
   order_link?: string;
   created_at: string;
+  send_to_all_companies?: boolean;
   customers: {
     name: string;
     whatsapp_number: string;
   };
   companies: {
     name: string;
-  };
+  } | null;
 }
 
 export default function Orders() {
@@ -144,7 +146,7 @@ export default function Orders() {
           .insert({
             name: formData.customerName,
             whatsapp_number: formData.whatsappNumber,
-            company_id: formData.companyId
+            company_id: formData.companyId || null
           })
           .select('id')
           .single();
@@ -158,7 +160,8 @@ export default function Orders() {
         .from('orders')
         .insert({
           customer_id: customerId,
-          company_id: formData.companyId,
+          company_id: formData.sendToAll ? null : formData.companyId,
+          send_to_all_companies: formData.sendToAll,
           service_type: formData.serviceType,
           notes: formData.notes,
           status: 'pending',
@@ -169,7 +172,9 @@ export default function Orders() {
 
       toast({
         title: "تم إنشاء الطلب بنجاح",
-        description: "تم إضافة الطلب إلى النظام",
+        description: formData.sendToAll 
+          ? "تم إرسال الطلب لجميع الشركات المختصة"
+          : "تم إضافة الطلب إلى النظام",
       });
 
       setShowForm(false);

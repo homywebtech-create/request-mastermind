@@ -81,7 +81,7 @@ export type Database = {
       }
       orders: {
         Row: {
-          company_id: string
+          company_id: string | null
           created_at: string
           created_by: string | null
           customer_id: string
@@ -89,12 +89,13 @@ export type Database = {
           link_copied_at: string | null
           notes: string | null
           order_link: string | null
+          send_to_all_companies: boolean
           service_type: string
           status: string
           updated_at: string
         }
         Insert: {
-          company_id: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_id: string
@@ -102,12 +103,13 @@ export type Database = {
           link_copied_at?: string | null
           notes?: string | null
           order_link?: string | null
+          send_to_all_companies?: boolean
           service_type: string
           status?: string
           updated_at?: string
         }
         Update: {
-          company_id?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string
@@ -115,6 +117,7 @@ export type Database = {
           link_copied_at?: string | null
           notes?: string | null
           order_link?: string | null
+          send_to_all_companies?: boolean
           service_type?: string
           status?: string
           updated_at?: string

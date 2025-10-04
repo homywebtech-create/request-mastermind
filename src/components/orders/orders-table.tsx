@@ -12,19 +12,20 @@ import { useToast } from "@/hooks/use-toast";
 interface Order {
   id: string;
   customer_id: string;
-  company_id: string;
+  company_id: string | null;
   service_type: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
   notes?: string;
   order_link?: string;
   created_at: string;
+  send_to_all_companies?: boolean;
   customers: {
     name: string;
     whatsapp_number: string;
   };
   companies: {
     name: string;
-  };
+  } | null;
 }
 
 interface OrdersTableProps {
@@ -177,7 +178,13 @@ ${orderLink}
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{order.companies.name}</span>
+                        {order.send_to_all_companies ? (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            كل الشركات
+                          </Badge>
+                        ) : (
+                          <span className="text-sm">{order.companies?.name || '-'}</span>
+                        )}
                       </div>
                     </TableCell>
                     
@@ -248,7 +255,13 @@ ${orderLink}
                                 <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                                   <div className="flex items-center justify-between">
                                     <span className="text-muted-foreground">الشركة:</span>
-                                    <span className="font-medium">{order.companies.name}</span>
+                                    {order.send_to_all_companies ? (
+                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                        كل الشركات
+                                      </Badge>
+                                    ) : (
+                                      <span className="font-medium">{order.companies?.name || '-'}</span>
+                                    )}
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <span className="text-muted-foreground">نوع الخدمة:</span>
