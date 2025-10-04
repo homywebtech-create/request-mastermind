@@ -157,6 +157,11 @@ export default function CompanyAuth() {
     try {
       const fullPhone = getFullPhoneNumber();
 
+      console.log("=== تشخيص التحقق من الكود ===");
+      console.log("1. الرقم المستخدم للتحقق:", fullPhone);
+      console.log("2. الكود المدخل:", verificationCode);
+      console.log("3. الوقت الحالي:", new Date().toISOString());
+
       // التحقق من الكود
       const { data: verification, error: verifyError } = await supabase
         .from("verification_codes")
@@ -166,6 +171,9 @@ export default function CompanyAuth() {
         .eq("verified", false)
         .gt("expires_at", new Date().toISOString())
         .maybeSingle();
+
+      console.log("4. نتيجة البحث:", verification);
+      console.log("5. خطأ في البحث:", verifyError);
 
       if (verifyError) throw verifyError;
 
