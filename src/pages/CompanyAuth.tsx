@@ -214,8 +214,14 @@ export default function CompanyAuth() {
       const companyEmail = `${fullPhone.replace('+', '')}@company.local`;
       const companyPassword = `${fullPhone}_${company.id}`;
 
-      if (!profile) {
-        // إنشاء مستخدم جديد للشركة
+      // محاولة تسجيل الدخول أولاً
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: companyEmail,
+        password: companyPassword,
+      });
+
+      // إذا فشل تسجيل الدخول بسبب عدم وجود المستخدم، ننشئ حساب جديد
+      if (signInError) {
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: companyEmail,
           password: companyPassword,
@@ -236,14 +242,6 @@ export default function CompanyAuth() {
             .update({ company_id: company.id })
             .eq("user_id", authData.user.id);
         }
-      } else {
-        // تسجيل دخول المستخدم الموجود
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: companyEmail,
-          password: companyPassword,
-        });
-
-        if (signInError) throw signInError;
       }
 
       toast({
