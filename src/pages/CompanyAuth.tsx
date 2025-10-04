@@ -157,96 +157,46 @@ export default function CompanyAuth() {
     try {
       const fullPhone = getFullPhoneNumber();
 
-      console.log("=== تشخيص التحقق من الكود ===");
-      console.log("1. الرقم المستخدم للتحقق:", fullPhone);
-      console.log("2. الكود المدخل:", verificationCode);
-      console.log("3. الوقت الحالي:", new Date().toISOString());
+      console.log("=== استدعاء دالة التحقق ===");
+      console.log("1. الرقم:", fullPhone);
+      console.log("2. الكود:", verificationCode);
 
-      // التحقق من الكود
-      const { data: verification, error: verifyError } = await supabase
-        .from("verification_codes")
-        .select("*")
-        .eq("phone", fullPhone)
-        .eq("code", verificationCode)
-        .eq("verified", false)
-        .gt("expires_at", new Date().toISOString())
-        .maybeSingle();
+      // استدعاء edge function للتحقق
+      const { data, error } = await supabase.functions.invoke("verify-company-code", {
+        body: { 
+          phone: fullPhone, 
+          code: verificationCode 
+        },
+      });
 
-      console.log("4. نتيجة البحث:", verification);
-      console.log("5. خطأ في البحث:", verifyError);
+      console.log("3. نتيجة التحقق:", data);
+      console.log("4. خطأ التحقق:", error);
 
-      if (verifyError) throw verifyError;
-
-      if (!verification) {
-        toast({
-          title: "خطأ",
-          description: "كود التفعيل غير صحيح أو منتهي الصلاحية",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
+      if (error) {
+        throw new Error(error.message || "فشل التحقق من الكود");
       }
 
-      // تحديث حالة التفعيل
-      await supabase
-        .from("verification_codes")
-        .update({ verified: true })
-        .eq("id", verification.id);
+      if (!data || !data.success) {
+        throw new Error(data?.error || "كود التفعيل غير صحيح");
+      }
 
-      // الحصول على معلومات الشركة
-      const { data: company } = await supabase
-        .from("companies")
-        .select("id, name")
-        .eq("phone", fullPhone)
-        .single();
+      // تسجيل الدخول باستخدام البيانات المُرجعة
+      const companyEmail = `${fullPhone.replace('+', '')}@${data.company.id}.company.local`;
+      const companyPassword = `${fullPhone}_${data.company.id}`;
 
-      if (!company) throw new Error("الشركة غير موجودة");
-
-      // التحقق من وجود مستخدم مرتبط بهذه الشركة
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("company_id", company.id)
-        .eq("phone", fullPhone)
-        .maybeSingle();
-
-      // استخدام البريد الإلكتروني بدلاً من رقم الهاتف للمصادقة
-      const companyEmail = `${fullPhone.replace('+', '')}@company.local`;
-      const companyPassword = `${fullPhone}_${company.id}`;
-
-      // محاولة تسجيل الدخول أولاً
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: companyEmail,
         password: companyPassword,
       });
 
-      // إذا فشل تسجيل الدخول بسبب عدم وجود المستخدم، ننشئ حساب جديد
       if (signInError) {
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
-          email: companyEmail,
-          password: companyPassword,
-          options: {
-            data: {
-              full_name: company.name,
-              phone: fullPhone,
-            },
-          },
-        });
-
-        if (signUpError) throw signUpError;
-
-        if (authData.user) {
-          // تحديث البروفايل لربطه بالشركة
-          await supabase
-            .from("profiles")
-            .update({ company_id: company.id })
-            .eq("user_id", authData.user.id);
-        }
+        console.error("خطأ في تسجيل الدخول:", signInError);
+        throw new Error("فشل تسجيل الدخول");
       }
 
       toast({
         title: "تم تسجيل الدخول بنجاح",
-        description: `مرحباً بك في صفحة ${company.name}`,
+        description: `مرحباً بك في صفحة ${data.company.name}`,
       });
 
       // توجيه المستخدم إلى صفحة الشركة
