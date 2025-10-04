@@ -50,8 +50,15 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const { isAdmin } = useUserRole(user?.id);
+  const { isAdmin, loading: roleLoading } = useUserRole(user?.id);
   const navigate = useNavigate();
+
+  // Debug: Check admin status
+  useEffect(() => {
+    console.log('User ID:', user?.id);
+    console.log('Is Admin:', isAdmin);
+    console.log('Role Loading:', roleLoading);
+  }, [user?.id, isAdmin, roleLoading]);
 
   useEffect(() => {
     fetchOrders();
@@ -234,6 +241,11 @@ export default function Dashboard() {
               </h1>
               <p className="text-muted-foreground mt-1">
                 إدارة شاملة لطلبات العملاء والخدمات
+                {user && (
+                  <span className="mr-2 text-xs">
+                    • {user.email} {isAdmin && '(مدير)'}
+                  </span>
+                )}
               </p>
             </div>
             

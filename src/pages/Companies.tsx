@@ -39,9 +39,14 @@ export default function Companies() {
   // التحقق من صلاحيات المدير
   useEffect(() => {
     if (isAdmin === false) {
+      toast({
+        title: "غير مصرح",
+        description: "هذه الصفحة متاحة فقط للمديرين",
+        variant: "destructive",
+      });
       navigate("/");
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, navigate, toast]);
 
   // جلب الشركات عند تحميل الصفحة
   useEffect(() => {
