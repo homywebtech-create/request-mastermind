@@ -7,9 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
-import { Plus, Building2, ArrowRight } from "lucide-react";
+import { Plus, Building2, ArrowRight, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { serviceTypes } from "@/data/serviceTypes";
 
 interface Company {
   id: string;
@@ -19,11 +21,15 @@ interface Company {
   address?: string;
   is_active: boolean;
   created_at: string;
+  services?: string[];
 }
 
 export default function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
@@ -42,7 +48,7 @@ export default function Companies() {
 
   const fetchCompanies = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data: companiesData, error } = await supabase
       .from("companies")
       .select("*")
       .order("created_at", { ascending: false });
@@ -53,10 +59,78 @@ export default function Companies() {
         description: "فشل في تحميل الشركات",
         variant: "destructive",
       });
-    } else {
-      setCompanies(data || []);
+      setLoading(false);
+      return;
     }
+
+    // جلب الخدمات لكل شركة
+    const { data: servicesData } = await supabase
+      .from("company_services")
+      .select("company_id, service_type");
+
+    const companiesWithServices = (companiesData || []).map(company => ({
+      ...company,
+      services: (servicesData || [])
+        .filter(s => s.company_id === company.id)
+        .map(s => s.service_type)
+    }));
+
+    setCompanies(companiesWithServices);
     setLoading(false);
+  };
+
+  const handleManageServices = (company: Company) => {
+    setSelectedCompany(company);
+    setSelectedServices(company.services || []);
+    setIsServicesDialogOpen(true);
+  };
+
+  const handleSaveServices = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      // حذف جميع الخدمات الحالية للشركة
+      await supabase
+        .from("company_services")
+        .delete()
+        .eq("company_id", selectedCompany.id);
+
+      // إضافة الخدمات المحددة
+      if (selectedServices.length > 0) {
+        const servicesToInsert = selectedServices.map(service => ({
+          company_id: selectedCompany.id,
+          service_type: service
+        }));
+
+        const { error } = await supabase
+          .from("company_services")
+          .insert(servicesToInsert);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "نجح",
+        description: "تم تحديث الخدمات بنجاح",
+      });
+
+      setIsServicesDialogOpen(false);
+      fetchCompanies();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleService = (service: string) => {
+    setSelectedServices(prev =>
+      prev.includes(service)
+        ? prev.filter(s => s !== service)
+        : [...prev, service]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -211,9 +285,17 @@ export default function Companies() {
                       </CardDescription>
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleManageServices(company)}
+                    title="إدارة الخدمات"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3">
                 {company.phone && (
                   <p className="text-sm text-muted-foreground">
                     <span className="font-medium">الهاتف:</span> {company.phone}
@@ -228,6 +310,25 @@ export default function Companies() {
                   <p className="text-sm text-muted-foreground">
                     <span className="font-medium">العنوان:</span> {company.address}
                   </p>
+                )}
+                
+                {company.services && company.services.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <p className="text-sm font-medium mb-2">الخدمات:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {company.services.map((service) => (
+                        <Badge key={service} variant="secondary" className="text-xs">
+                          {service}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {(!company.services || company.services.length === 0) && (
+                  <div className="pt-2 border-t">
+                    <p className="text-sm text-muted-foreground">لم يتم تحديد خدمات بعد</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -246,6 +347,46 @@ export default function Companies() {
           </div>
         )}
       </main>
+
+      {/* حوار إدارة الخدمات */}
+      <Dialog open={isServicesDialogOpen} onOpenChange={setIsServicesDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-cairo">
+              إدارة خدمات {selectedCompany?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              اختر الخدمات التي تقدمها هذه الشركة:
+            </p>
+            <div className="space-y-3">
+              {serviceTypes.map((service) => (
+                <div key={service} className="flex items-center gap-2">
+                  <Checkbox
+                    id={service}
+                    checked={selectedServices.includes(service)}
+                    onCheckedChange={() => toggleService(service)}
+                  />
+                  <Label htmlFor={service} className="cursor-pointer">
+                    {service}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsServicesDialogOpen(false)}
+              >
+                إلغاء
+              </Button>
+              <Button onClick={handleSaveServices}>حفظ</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
