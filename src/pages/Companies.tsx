@@ -164,6 +164,28 @@ export default function Companies() {
   const handleSaveServices = async () => {
     if (!selectedCompany) return;
 
+    // التحقق من أن كل خدمة محددة لديها خدمات فرعية
+    const servicesWithoutSubs: string[] = [];
+    
+    selectedServiceIds.forEach(selectedService => {
+      const service = services.find(s => s.id === selectedService.serviceId);
+      
+      // إذا كانت الخدمة لديها خدمات فرعية ولكن لم يتم اختيار أي منها
+      if (service?.sub_services && service.sub_services.length > 0 && selectedService.subServiceIds.length === 0) {
+        servicesWithoutSubs.push(service.name);
+      }
+    });
+
+    // إذا كانت هناك خدمات بدون خدمات فرعية محددة
+    if (servicesWithoutSubs.length > 0) {
+      toast({
+        title: "خطأ في التحديد",
+        description: `يجب اختيار خدمات فرعية لـ: ${servicesWithoutSubs.join('، ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // حذف جميع الخدمات الحالية للشركة
       await supabase
@@ -176,7 +198,7 @@ export default function Companies() {
       
       selectedServiceIds.forEach(service => {
         if (service.subServiceIds.length > 0) {
-          // إذا كانت هناك خدمات فرعية محددة
+          // إضافة كل خدمة فرعية محددة
           service.subServiceIds.forEach(subServiceId => {
             servicesToInsert.push({
               company_id: selectedCompany.id,
@@ -185,12 +207,15 @@ export default function Companies() {
             });
           });
         } else {
-          // إذا لم تكن هناك خدمات فرعية (الخدمة الرئيسية فقط)
-          servicesToInsert.push({
-            company_id: selectedCompany.id,
-            service_id: service.serviceId,
-            sub_service_id: null
-          });
+          // إذا لم تكن هناك خدمات فرعية للخدمة أصلاً (الخدمة الرئيسية فقط)
+          const service_obj = services.find(s => s.id === service.serviceId);
+          if (!service_obj?.sub_services || service_obj.sub_services.length === 0) {
+            servicesToInsert.push({
+              company_id: selectedCompany.id,
+              service_id: service.serviceId,
+              sub_service_id: null
+            });
+          }
         }
       });
 
