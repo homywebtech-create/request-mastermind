@@ -36,13 +36,19 @@ export default function Companies() {
   const { isAdmin } = useUserRole(user?.id);
   const navigate = useNavigate();
 
+  // التحقق من صلاحيات المدير
   useEffect(() => {
-    if (!isAdmin && !loading) {
+    if (isAdmin === false) {
       navigate("/");
-      return;
     }
-    fetchCompanies();
-  }, [isAdmin, loading]);
+  }, [isAdmin, navigate]);
+
+  // جلب الشركات عند تحميل الصفحة
+  useEffect(() => {
+    if (isAdmin === true) {
+      fetchCompanies();
+    }
+  }, [isAdmin]);
 
   const fetchCompanies = async () => {
     setLoading(true);
