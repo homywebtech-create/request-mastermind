@@ -49,24 +49,35 @@ export type Database = {
       }
       customers: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           name: string
           whatsapp_number: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           name: string
           whatsapp_number: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           name?: string
           whatsapp_number?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
