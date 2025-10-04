@@ -180,16 +180,16 @@ export default function CompanyAuth() {
         throw new Error(data?.error || "كود التفعيل غير صحيح");
       }
 
-      console.log("5. تم التحقق بنجاح، تسجيل الدخول باستخدام الـ session...");
+      console.log("5. تم التحقق بنجاح، تسجيل الدخول...");
 
-      // استخدام الـ session المُرجع مباشرة من Edge Function
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+      // استخدام بيانات الاعتماد المُرجعة لتسجيل الدخول
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.credentials.email,
+        password: data.credentials.password,
       });
 
-      if (sessionError) {
-        console.error("خطأ في إنشاء الجلسة:", sessionError);
+      if (signInError) {
+        console.error("خطأ في تسجيل الدخول:", signInError);
         throw new Error("فشل تسجيل الدخول");
       }
 

@@ -150,22 +150,23 @@ serve(async (req) => {
       console.log('10. User created:', authUser.id);
     }
 
-    // إنشاء session مباشرة للمستخدم
-    console.log('10. Creating session for user...');
+    // تحديث كلمة المرور للمستخدم
+    console.log('10. Updating user password...');
     
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
-      user_id: authUser.id,
-    });
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      authUser.id,
+      { password: companyPassword }
+    );
 
-    if (sessionError || !sessionData.session) {
-      console.error('Session error:', sessionError);
+    if (updateError) {
+      console.error('Update password error:', updateError);
       return new Response(
-        JSON.stringify({ error: 'Failed to create session' }),
+        JSON.stringify({ error: 'Failed to update password' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('11. Session created successfully');
+    console.log('11. Password updated successfully');
 
     return new Response(
       JSON.stringify({
@@ -178,9 +179,9 @@ serve(async (req) => {
           id: authUser.id,
           email: authUser.email,
         },
-        session: {
-          access_token: sessionData.session.access_token,
-          refresh_token: sessionData.session.refresh_token,
+        credentials: {
+          email: companyEmail,
+          password: companyPassword,
         },
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
