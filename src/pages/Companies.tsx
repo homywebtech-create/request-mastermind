@@ -283,7 +283,11 @@ export default function Companies() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { error } = await supabase.from("companies").insert([formData]);
+    const { data, error } = await supabase
+      .from("companies")
+      .insert([formData])
+      .select()
+      .single();
 
     if (error) {
       toast({
@@ -296,6 +300,15 @@ export default function Companies() {
         title: "نجح",
         description: "تم إضافة الشركة بنجاح",
       });
+
+      // إنشاء رابط صفحة الشركة
+      const companyLoginUrl = `${window.location.origin}/company-auth`;
+      const message = `مرحباً ${formData.name}،\n\nتم تسجيل شركتكم في نظامنا.\nللدخول إلى صفحة الشركة، يرجى الضغط على الرابط التالي:\n${companyLoginUrl}\n\nسيطلب منك إدخال رقم الهاتف: ${formData.phone}\nثم سيتم إرسال كود التفعيل عبر الواتساب.`;
+
+      // فتح واتساب مع الرسالة
+      const whatsappUrl = `https://wa.me/${formData.phone.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+
       setIsFormOpen(false);
       setFormData({ name: "", phone: "", email: "", address: "" });
       fetchCompanies();

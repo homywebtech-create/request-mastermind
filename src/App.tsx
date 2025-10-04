@@ -8,6 +8,8 @@ import Auth from "./pages/Auth";
 import Companies from "./pages/Companies";
 import Services from "./pages/Services";
 import Orders from "./pages/Orders";
+import CompanyAuth from "./pages/CompanyAuth";
+import CompanyPortal from "./pages/CompanyPortal";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
 
@@ -39,6 +41,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/company-auth" element={<CompanyAuth />} />
+          <Route path="/company-portal" element={<CompanyPortal />} />
           <Route
             path="/"
             element={
