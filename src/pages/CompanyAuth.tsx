@@ -32,58 +32,78 @@ export default function CompanyAuth() {
       const fullPhone = getFullPhoneNumber();
       
       // تنظيف الرقم من أي مسافات أو أحرف غير مرغوبة
-      const cleanPhone = fullPhone.replace(/\s+/g, '');
+      const cleanPhone = fullPhone.replace(/\s+/g, '').trim();
       
-      console.log("البحث عن الشركة برقم:", cleanPhone);
+      console.log("=== تشخيص مشكلة تسجيل الدخول ===");
+      console.log("1. كود الدولة المختار:", countryCode);
+      console.log("2. الرقم المدخل:", phoneNumber);
+      console.log("3. الرقم الكامل بعد الدمج:", cleanPhone);
 
-      // التحقق من أن رقم الهاتف ينتمي لشركة مسجلة
-      const { data: company, error: companyError } = await supabase
+      // جلب جميع الشركات النشطة للمقارنة
+      const { data: allCompanies, error: fetchError } = await supabase
         .from("companies")
         .select("id, name, phone")
-        .eq("phone", cleanPhone)
-        .eq("is_active", true)
-        .maybeSingle();
+        .eq("is_active", true);
 
-      console.log("نتيجة البحث:", company);
-
-      if (companyError) {
-        console.error("خطأ في البحث:", companyError);
-        throw companyError;
+      if (fetchError) {
+        console.error("خطأ في جلب الشركات:", fetchError);
+        throw fetchError;
       }
 
+      console.log("4. جميع أرقام الشركات المسجلة:", allCompanies?.map(c => c.phone));
+
+      // البحث عن تطابق دقيق
+      let company = allCompanies?.find(c => c.phone === cleanPhone);
+
+      // إذا لم يجد تطابق دقيق، حاول البحث بدون علامة +
       if (!company) {
-        // محاولة البحث بدون كود الدولة في حال كان الرقم مخزن بصيغة مختلفة
-        const { data: allCompanies } = await supabase
-          .from("companies")
-          .select("id, name, phone")
-          .eq("is_active", true);
-        
-        console.log("جميع الشركات النشطة:", allCompanies);
-        
+        const phoneWithoutPlus = cleanPhone.replace('+', '');
+        company = allCompanies?.find(c => c.phone?.replace('+', '') === phoneWithoutPlus);
+        console.log("5. محاولة البحث بدون علامة +:", phoneWithoutPlus);
+      }
+
+      // إذا لم يجد تطابق، حاول البحث بالرقم فقط (بدون كود الدولة)
+      if (!company) {
+        company = allCompanies?.find(c => c.phone?.endsWith(phoneNumber));
+        console.log("6. محاولة البحث بالرقم فقط:", phoneNumber);
+      }
+
+      console.log("7. الشركة الموجودة:", company);
+
+      if (!company) {
         toast({
-          title: "خطأ",
-          description: `رقم الهاتف غير مسجل لأي شركة. الرقم المدخل: ${cleanPhone}`,
+          title: "خطأ في تسجيل الدخول",
+          description: (
+            <div className="space-y-2">
+              <p>رقم الهاتف غير مسجل لأي شركة</p>
+              <p className="text-xs">الرقم المدخل: {cleanPhone}</p>
+              <p className="text-xs">تأكد من اختيار الدولة الصحيحة وإدخال الرقم كما هو مسجل</p>
+            </div>
+          ),
           variant: "destructive",
+          duration: 8000,
         });
         setIsLoading(false);
         return;
       }
 
+      console.log("8. تم العثور على الشركة:", company.name);
+
       // إرسال كود التفعيل
       const { error } = await supabase.functions.invoke("request-verification-code", {
-        body: { phone: cleanPhone },
+        body: { phone: company.phone },
       });
 
       if (error) throw error;
 
       toast({
         title: "تم إرسال الكود",
-        description: "تم إرسال كود التفعيل إلى رقم الواتساب الخاص بك",
+        description: `تم إرسال كود التفعيل لشركة ${company.name}`,
       });
 
       setStep("code");
     } catch (error: any) {
-      console.error("Error sending code:", error);
+      console.error("خطأ في تسجيل الدخول:", error);
       toast({
         title: "خطأ",
         description: error.message || "حدث خطأ أثناء إرسال كود التفعيل",
