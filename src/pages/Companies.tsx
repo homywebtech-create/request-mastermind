@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Building2, ArrowRight, Settings, Wrench } from "lucide-react";
+import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,11 +46,18 @@ export default function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedServiceIds, setSelectedServiceIds] = useState<{serviceId: string, subServiceIds: string[]}[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+  });
+  const [editFormData, setEditFormData] = useState({
     name: "",
     phone: "",
     email: "",
@@ -301,18 +308,76 @@ export default function Companies() {
         description: "تم إضافة الشركة بنجاح",
       });
 
-      // إنشاء رابط صفحة الشركة
-      const companyLoginUrl = `${window.location.origin}/company-auth`;
-      const message = `مرحباً ${formData.name}،\n\nتم تسجيل شركتكم في نظامنا.\nللدخول إلى صفحة الشركة، يرجى الضغط على الرابط التالي:\n${companyLoginUrl}\n\nسيطلب منك إدخال رقم الهاتف: ${formData.phone}\nثم سيتم إرسال كود التفعيل عبر الواتساب.`;
-
-      // فتح واتساب مع الرسالة
-      const whatsappUrl = `https://wa.me/${formData.phone.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
+      // إرسال رابط تسجيل الدخول
+      sendLoginLink(formData.name, formData.phone);
 
       setIsFormOpen(false);
       setFormData({ name: "", phone: "", email: "", address: "" });
       fetchCompanies();
     }
+  };
+
+  const handleEditCompany = (company: Company) => {
+    setSelectedCompany(company);
+    setEditFormData({
+      name: company.name,
+      phone: company.phone || "",
+      email: company.email || "",
+      address: company.address || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCompany) return;
+
+    const { error } = await supabase
+      .from("companies")
+      .update(editFormData)
+      .eq("id", selectedCompany.id);
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "نجح",
+        description: "تم تحديث معلومات الشركة بنجاح",
+      });
+      setIsEditDialogOpen(false);
+      setSelectedCompany(null);
+      fetchCompanies();
+    }
+  };
+
+  const sendLoginLink = (companyName: string, phone: string) => {
+    if (!phone) {
+      toast({
+        title: "خطأ",
+        description: "رقم الهاتف غير متوفر",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const companyLoginUrl = `${window.location.origin}/company-auth`;
+    const message = `مرحباً ${companyName}،\n\nتم تسجيل شركتكم في نظامنا.\nللدخول إلى صفحة الشركة، يرجى الضغط على الرابط التالي:\n${companyLoginUrl}\n\nسيطلب منك إدخال رقم الهاتف: ${phone}\nثم سيتم إرسال كود التفعيل عبر الواتساب.`;
+
+    const whatsappUrl = `https://wa.me/${phone.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+
+    toast({
+      title: "تم فتح واتساب",
+      description: "يمكنك الآن إرسال رابط تسجيل الدخول",
+    });
+  };
+
+  const handleResendLoginLink = (company: Company) => {
+    sendLoginLink(company.name, company.phone || "");
   };
 
   if (loading) {
@@ -520,6 +585,29 @@ export default function Companies() {
                     <p className="text-sm text-muted-foreground">لم يتم تحديد خدمات بعد</p>
                   </div>
                 )}
+                
+                {/* أزرار الإجراءات */}
+                <div className="pt-3 border-t flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleEditCompany(company)}
+                  >
+                    <Edit className="h-4 w-4 ml-2" />
+                    تعديل
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleResendLoginLink(company)}
+                    disabled={!company.phone}
+                  >
+                    <Send className="h-4 w-4 ml-2" />
+                    إرسال الرابط
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -615,6 +703,78 @@ export default function Companies() {
               <Button onClick={handleSaveServices}>حفظ</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* حوار تعديل الشركة */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-cairo">تعديل معلومات الشركة</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateCompany} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">اسم الشركة *</Label>
+              <Input
+                id="edit-name"
+                value={editFormData.name}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, name: e.target.value })
+                }
+                required
+                placeholder="أدخل اسم الشركة"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-phone">رقم الهاتف</Label>
+              <Input
+                id="edit-phone"
+                type="tel"
+                value={editFormData.phone}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, phone: e.target.value })
+                }
+                placeholder="أدخل رقم الهاتف"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">البريد الإلكتروني</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editFormData.email}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, email: e.target.value })
+                }
+                placeholder="example@email.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-address">العنوان</Label>
+              <Input
+                id="edit-address"
+                value={editFormData.address}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, address: e.target.value })
+                }
+                placeholder="أدخل العنوان"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                إلغاء
+              </Button>
+              <Button type="submit">حفظ التعديلات</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
