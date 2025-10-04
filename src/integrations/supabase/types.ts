@@ -52,19 +52,22 @@ export type Database = {
           company_id: string
           created_at: string
           id: string
-          service_type: string
+          service_id: string
+          sub_service_id: string | null
         }
         Insert: {
           company_id: string
           created_at?: string
           id?: string
-          service_type: string
+          service_id: string
+          sub_service_id?: string | null
         }
         Update: {
           company_id?: string
           created_at?: string
           id?: string
-          service_type?: string
+          service_id?: string
+          sub_service_id?: string | null
         }
         Relationships: [
           {
@@ -72,6 +75,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_services_sub_service_id_fkey"
+            columns: ["sub_service_id"]
+            isOneToOne: false
+            referencedRelation: "sub_services"
             referencedColumns: ["id"]
           },
         ]

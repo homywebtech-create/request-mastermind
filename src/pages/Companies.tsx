@@ -11,7 +11,25 @@ import { Plus, Building2, ArrowRight, Settings, Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { serviceTypes } from "@/data/serviceTypes";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
+interface Service {
+  id: string;
+  name: string;
+  sub_services?: SubService[];
+}
+
+interface SubService {
+  id: string;
+  name: string;
+}
+
+interface CompanyService {
+  service_id: string;
+  sub_service_id?: string;
+  service_name: string;
+  sub_service_name?: string;
+}
 
 interface Company {
   id: string;
@@ -21,15 +39,16 @@ interface Company {
   address?: string;
   is_active: boolean;
   created_at: string;
-  services?: string[];
+  company_services?: CompanyService[];
 }
 
 export default function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<{serviceId: string, subServiceIds: string[]}[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
@@ -41,10 +60,40 @@ export default function Companies() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // جلب الشركات عند تحميل الصفحة
+  // جلب الشركات والخدمات عند تحميل الصفحة
   useEffect(() => {
     fetchCompanies();
+    fetchServices();
   }, []);
+
+  const fetchServices = async () => {
+    const { data: servicesData, error: servicesError } = await supabase
+      .from("services")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
+
+    if (servicesError) {
+      toast({
+        title: "خطأ",
+        description: "فشل في تحميل الخدمات",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data: subServicesData } = await supabase
+      .from("sub_services")
+      .select("*")
+      .eq("is_active", true);
+
+    const servicesWithSubs = (servicesData || []).map(service => ({
+      ...service,
+      sub_services: (subServicesData || []).filter(sub => sub.service_id === service.id)
+    }));
+
+    setServices(servicesWithSubs);
+  };
 
   const fetchCompanies = async () => {
     setLoading(true);
@@ -63,16 +112,27 @@ export default function Companies() {
       return;
     }
 
-    // جلب الخدمات لكل شركة
-    const { data: servicesData } = await supabase
+    // جلب الخدمات لكل شركة مع أسماء الخدمات
+    const { data: companyServicesData } = await supabase
       .from("company_services")
-      .select("company_id, service_type");
+      .select(`
+        company_id,
+        service_id,
+        sub_service_id,
+        services(name),
+        sub_services(name)
+      `);
 
     const companiesWithServices = (companiesData || []).map(company => ({
       ...company,
-      services: (servicesData || [])
-        .filter(s => s.company_id === company.id)
-        .map(s => s.service_type)
+      company_services: (companyServicesData || [])
+        .filter((cs: any) => cs.company_id === company.id)
+        .map((cs: any) => ({
+          service_id: cs.service_id,
+          sub_service_id: cs.sub_service_id,
+          service_name: cs.services?.name,
+          sub_service_name: cs.sub_services?.name
+        }))
     }));
 
     setCompanies(companiesWithServices);
@@ -81,7 +141,23 @@ export default function Companies() {
 
   const handleManageServices = (company: Company) => {
     setSelectedCompany(company);
-    setSelectedServices(company.services || []);
+    
+    // تحويل الخدمات الحالية للشركة إلى الصيغة المطلوبة
+    const currentServices: {serviceId: string, subServiceIds: string[]}[] = [];
+    
+    (company.company_services || []).forEach(cs => {
+      const existingService = currentServices.find(s => s.serviceId === cs.service_id);
+      if (existingService && cs.sub_service_id) {
+        existingService.subServiceIds.push(cs.sub_service_id);
+      } else if (!existingService) {
+        currentServices.push({
+          serviceId: cs.service_id,
+          subServiceIds: cs.sub_service_id ? [cs.sub_service_id] : []
+        });
+      }
+    });
+    
+    setSelectedServiceIds(currentServices);
     setIsServicesDialogOpen(true);
   };
 
@@ -95,13 +171,30 @@ export default function Companies() {
         .delete()
         .eq("company_id", selectedCompany.id);
 
-      // إضافة الخدمات المحددة
-      if (selectedServices.length > 0) {
-        const servicesToInsert = selectedServices.map(service => ({
-          company_id: selectedCompany.id,
-          service_type: service
-        }));
+      // إضافة الخدمات والخدمات الفرعية المحددة
+      const servicesToInsert: any[] = [];
+      
+      selectedServiceIds.forEach(service => {
+        if (service.subServiceIds.length > 0) {
+          // إذا كانت هناك خدمات فرعية محددة
+          service.subServiceIds.forEach(subServiceId => {
+            servicesToInsert.push({
+              company_id: selectedCompany.id,
+              service_id: service.serviceId,
+              sub_service_id: subServiceId
+            });
+          });
+        } else {
+          // إذا لم تكن هناك خدمات فرعية (الخدمة الرئيسية فقط)
+          servicesToInsert.push({
+            company_id: selectedCompany.id,
+            service_id: service.serviceId,
+            sub_service_id: null
+          });
+        }
+      });
 
+      if (servicesToInsert.length > 0) {
         const { error } = await supabase
           .from("company_services")
           .insert(servicesToInsert);
@@ -125,12 +218,41 @@ export default function Companies() {
     }
   };
 
-  const toggleService = (service: string) => {
-    setSelectedServices(prev =>
-      prev.includes(service)
-        ? prev.filter(s => s !== service)
-        : [...prev, service]
-    );
+  const toggleService = (serviceId: string) => {
+    setSelectedServiceIds(prev => {
+      const exists = prev.find(s => s.serviceId === serviceId);
+      if (exists) {
+        return prev.filter(s => s.serviceId !== serviceId);
+      } else {
+        return [...prev, { serviceId, subServiceIds: [] }];
+      }
+    });
+  };
+
+  const toggleSubService = (serviceId: string, subServiceId: string) => {
+    setSelectedServiceIds(prev => {
+      return prev.map(service => {
+        if (service.serviceId === serviceId) {
+          const hasSubService = service.subServiceIds.includes(subServiceId);
+          return {
+            ...service,
+            subServiceIds: hasSubService
+              ? service.subServiceIds.filter(id => id !== subServiceId)
+              : [...service.subServiceIds, subServiceId]
+          };
+        }
+        return service;
+      });
+    });
+  };
+
+  const isServiceSelected = (serviceId: string) => {
+    return selectedServiceIds.some(s => s.serviceId === serviceId);
+  };
+
+  const isSubServiceSelected = (serviceId: string, subServiceId: string) => {
+    const service = selectedServiceIds.find(s => s.serviceId === serviceId);
+    return service?.subServiceIds.includes(subServiceId) || false;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -321,20 +443,41 @@ export default function Companies() {
                   </p>
                 )}
                 
-                {company.services && company.services.length > 0 && (
+                {company.company_services && company.company_services.length > 0 && (
                   <div className="pt-2 border-t">
                     <p className="text-sm font-medium mb-2">الخدمات:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {company.services.map((service) => (
-                        <Badge key={service} variant="secondary" className="text-xs">
-                          {service}
-                        </Badge>
+                    <div className="space-y-1">
+                      {Object.entries(
+                        company.company_services.reduce((acc: any, cs) => {
+                          if (!acc[cs.service_name]) {
+                            acc[cs.service_name] = [];
+                          }
+                          if (cs.sub_service_name) {
+                            acc[cs.service_name].push(cs.sub_service_name);
+                          }
+                          return acc;
+                        }, {})
+                      ).map(([serviceName, subServices]: [string, any]) => (
+                        <div key={serviceName} className="text-xs">
+                          <Badge variant="secondary" className="mb-1">
+                            {serviceName}
+                          </Badge>
+                          {subServices.length > 0 && (
+                            <div className="mr-4 flex flex-wrap gap-1 mt-1">
+                              {subServices.map((sub: string) => (
+                                <Badge key={sub} variant="outline" className="text-xs">
+                                  {sub}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
                 
-                {(!company.services || company.services.length === 0) && (
+                {(!company.company_services || company.company_services.length === 0) && (
                   <div className="pt-2 border-t">
                     <p className="text-sm text-muted-foreground">لم يتم تحديد خدمات بعد</p>
                   </div>
@@ -359,7 +502,7 @@ export default function Companies() {
 
       {/* حوار إدارة الخدمات */}
       <Dialog open={isServicesDialogOpen} onOpenChange={setIsServicesDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-cairo">
               إدارة خدمات {selectedCompany?.name}
@@ -367,22 +510,62 @@ export default function Companies() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              اختر الخدمات التي تقدمها هذه الشركة:
+              اختر الخدمات والخدمات الفرعية التي تقدمها هذه الشركة:
             </p>
-            <div className="space-y-3">
-              {serviceTypes.map((service) => (
-                <div key={service} className="flex items-center gap-2">
-                  <Checkbox
-                    id={service}
-                    checked={selectedServices.includes(service)}
-                    onCheckedChange={() => toggleService(service)}
-                  />
-                  <Label htmlFor={service} className="cursor-pointer">
-                    {service}
-                  </Label>
-                </div>
-              ))}
-            </div>
+            
+            {services.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground mb-2">
+                  لا توجد خدمات متاحة
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsServicesDialogOpen(false);
+                    navigate("/services");
+                  }}
+                >
+                  إضافة خدمات
+                </Button>
+              </div>
+            ) : (
+              <Accordion type="multiple" className="w-full">
+                {services.map((service) => (
+                  <AccordionItem key={service.id} value={service.id}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={isServiceSelected(service.id)}
+                          onCheckedChange={() => toggleService(service.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span>{service.name}</span>
+                      </div>
+                    </AccordionTrigger>
+                    {service.sub_services && service.sub_services.length > 0 && (
+                      <AccordionContent>
+                        <div className="mr-8 space-y-2 pt-2">
+                          {service.sub_services.map((subService) => (
+                            <div key={subService.id} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={isSubServiceSelected(service.id, subService.id)}
+                                onCheckedChange={() => toggleSubService(service.id, subService.id)}
+                                disabled={!isServiceSelected(service.id)}
+                              />
+                              <Label className="text-sm cursor-pointer">
+                                {subService.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    )}
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+            
             <div className="flex gap-2 justify-end pt-4">
               <Button
                 type="button"

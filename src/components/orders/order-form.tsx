@@ -72,19 +72,26 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
           id,
           name,
           is_active
+        ),
+        services!inner (
+          name
         )
       `)
-      .eq('service_type', serviceType)
-      .eq('companies.is_active', true)
-      .order('companies(name)');
+      .eq('services.name', serviceType)
+      .eq('companies.is_active', true);
     
     if (data) {
-      // تحويل البيانات إلى شكل مناسب
-      const companiesList = data.map((item: any) => ({
-        id: item.companies.id,
-        name: item.companies.name
-      }));
-      setCompanies(companiesList);
+      // استخراج الشركات الفريدة
+      const uniqueCompanies = new Map();
+      data.forEach((item: any) => {
+        if (!uniqueCompanies.has(item.companies.id)) {
+          uniqueCompanies.set(item.companies.id, {
+            id: item.companies.id,
+            name: item.companies.name
+          });
+        }
+      });
+      setCompanies(Array.from(uniqueCompanies.values()));
     }
   };
 
