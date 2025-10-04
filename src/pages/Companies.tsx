@@ -33,27 +33,12 @@ export default function Companies() {
   });
   const { toast } = useToast();
   const { user } = useAuth();
-  const { isAdmin } = useUserRole(user?.id);
   const navigate = useNavigate();
-
-  // التحقق من صلاحيات المدير
-  useEffect(() => {
-    if (isAdmin === false) {
-      toast({
-        title: "غير مصرح",
-        description: "هذه الصفحة متاحة فقط للمديرين",
-        variant: "destructive",
-      });
-      navigate("/");
-    }
-  }, [isAdmin, navigate, toast]);
 
   // جلب الشركات عند تحميل الصفحة
   useEffect(() => {
-    if (isAdmin === true) {
-      fetchCompanies();
-    }
-  }, [isAdmin]);
+    fetchCompanies();
+  }, []);
 
   const fetchCompanies = async () => {
     setLoading(true);
