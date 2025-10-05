@@ -446,7 +446,7 @@ Thank you for contacting us! 🌟`;
       </CardHeader>
       
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" dir="ltr">
           <Table>
             <TableHeader>
               <TableRow>
@@ -455,7 +455,7 @@ Thank you for contacting us! 🌟`;
                 <TableHead className="text-left">Customer Budget</TableHead>
                 <TableHead className="text-left">Service</TableHead>
                 <TableHead className="text-left">Recommendations</TableHead>
-                <TableHead className="text-left">Date</TableHead>
+                <TableHead className="text-left">Date & Status</TableHead>
                 <TableHead className="text-left">Actions</TableHead>
               </TableRow>
             </TableHeader>
