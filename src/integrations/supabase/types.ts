@@ -259,6 +259,56 @@ export type Database = {
         }
         Relationships: []
       }
+      specialists: {
+        Row: {
+          company_id: string
+          created_at: string
+          email: string | null
+          experience_years: number | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string
+          specialty: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email?: string | null
+          experience_years?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone: string
+          specialty: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          experience_years?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string
+          specialty?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialists_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_services: {
         Row: {
           created_at: string

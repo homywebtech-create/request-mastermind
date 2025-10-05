@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Package, Clock, CheckCircle, Users } from "lucide-react";
+import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { OrdersTable } from "@/components/orders/orders-table";
 
@@ -235,14 +235,24 @@ export default function CompanyPortal() {
               </div>
             </div>
             
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleLogout}
-              title="تسجيل الخروج"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/specialists")}
+                className="flex items-center gap-2"
+              >
+                <UserCog className="h-4 w-4" />
+                <span className="hidden sm:inline">المحترفين</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleLogout}
+                title="تسجيل الخروج"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
