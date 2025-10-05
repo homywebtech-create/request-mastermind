@@ -23,7 +23,7 @@ import { countries } from "@/data/countries";
 
 export default function SpecialistAuth() {
   const [step, setStep] = useState<'phone' | 'code'>('phone');
-  const [countryCode, setCountryCode] = useState('+966');
+  const [countryCode, setCountryCode] = useState('+974');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -215,8 +215,8 @@ export default function SpecialistAuth() {
                 </SelectTrigger>
                 <SelectContent>
                   {countries.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
-                      {country.flag} {country.nameAr} ({country.code})
+                    <SelectItem key={country.code} value={country.dialCode}>
+                      {country.flag} {country.nameAr} ({country.dialCode})
                     </SelectItem>
                   ))}
                 </SelectContent>
