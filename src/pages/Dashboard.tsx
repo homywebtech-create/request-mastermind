@@ -139,14 +139,14 @@ export default function Dashboard() {
       // Create order link
       const orderLink = `${window.location.origin}/order/${Date.now()}`;
 
-      // Create order
+      // Create order - always create as new request first
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
           customer_id: customerId,
-          company_id: formData.sendToAll ? null : formData.companyId,
-          specialist_id: null, // Keep for backward compatibility but use junction table
-          send_to_all_companies: formData.sendToAll || false,
+          company_id: null, // Always null for new orders
+          specialist_id: null,
+          send_to_all_companies: false, // Always false for new orders
           service_type: formData.serviceType,
           notes: formData.notes,
           order_link: orderLink,
@@ -157,32 +157,9 @@ export default function Dashboard() {
 
       if (orderError) throw orderError;
 
-      // If specific specialists are selected, insert into junction table
-      if (formData.specialistIds && formData.specialistIds.length > 0) {
-        const orderSpecialists = formData.specialistIds.map(specialistId => ({
-          order_id: newOrder.id,
-          specialist_id: specialistId,
-        }));
-
-        const { error: junctionError } = await supabase
-          .from('order_specialists')
-          .insert(orderSpecialists);
-
-        if (junctionError) throw junctionError;
-      }
-
-      let description = "Order created successfully";
-      if (formData.sendToAll) {
-        description = "Order sent to all specialized companies";
-      } else if (formData.specialistIds && formData.specialistIds.length > 0) {
-        description = `Order sent to ${formData.specialistIds.length} specialist(s)`;
-      } else if (formData.companyId) {
-        description = "Order sent to all company specialists";
-      }
-
       toast({
         title: "Success",
-        description,
+        description: "New order created. Use the action buttons to send it to companies.",
       });
       
       setIsFormOpen(false);
