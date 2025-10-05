@@ -41,6 +41,7 @@ interface OrderStats {
 export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [filter, setFilter] = useState<string>('new');
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
@@ -293,35 +294,45 @@ export default function Dashboard() {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
-            title="New Requests"
-            value={stats.total}
-            icon={<Package className="h-4 w-4" />}
-          />
-          <StatsCard
-            title="Pending"
-            value={stats.pending}
-            icon={<Clock className="h-4 w-4" />}
-            variant="pending"
-          />
-          <StatsCard
-            title="In Progress"
-            value={stats.inProgress}
-            icon={<Users className="h-4 w-4" />}
-            variant="warning"
-          />
-          <StatsCard
-            title="Completed"
-            value={stats.completed}
-            icon={<CheckCircle className="h-4 w-4" />}
-            variant="success"
-          />
+          <div onClick={() => setFilter('new')} className="cursor-pointer">
+            <StatsCard
+              title="New Requests"
+              value={stats.total}
+              icon={<Package className="h-4 w-4" />}
+            />
+          </div>
+          <div onClick={() => setFilter('pending')} className="cursor-pointer">
+            <StatsCard
+              title="Pending"
+              value={stats.pending}
+              icon={<Clock className="h-4 w-4" />}
+              variant="pending"
+            />
+          </div>
+          <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
+            <StatsCard
+              title="In Progress"
+              value={stats.inProgress}
+              icon={<Users className="h-4 w-4" />}
+              variant="warning"
+            />
+          </div>
+          <div onClick={() => setFilter('completed')} className="cursor-pointer">
+            <StatsCard
+              title="Completed"
+              value={stats.completed}
+              icon={<CheckCircle className="h-4 w-4" />}
+              variant="success"
+            />
+          </div>
         </div>
 
         <OrdersTable 
           orders={orders}
           onUpdateStatus={handleUpdateStatus}
           onLinkCopied={handleLinkCopied}
+          filter={filter}
+          onFilterChange={setFilter}
         />
       </main>
     </div>

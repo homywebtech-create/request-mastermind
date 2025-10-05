@@ -47,6 +47,7 @@ export default function CompanyPortal() {
   const navigate = useNavigate();
   const [company, setCompany] = useState<Company | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filter, setFilter] = useState<string>('new');
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
@@ -288,6 +289,8 @@ export default function CompanyPortal() {
           orders={orders}
           onUpdateStatus={handleUpdateStatus}
           onLinkCopied={handleLinkCopied}
+          filter={filter}
+          onFilterChange={setFilter}
         />
       </main>
     </div>

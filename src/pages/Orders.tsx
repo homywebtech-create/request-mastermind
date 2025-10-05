@@ -44,6 +44,7 @@ export default function Orders() {
   const navigate = useNavigate();
   
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filter, setFilter] = useState<string>('new');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -278,6 +279,8 @@ export default function Orders() {
           orders={orders}
           onUpdateStatus={handleUpdateStatus}
           onLinkCopied={handleLinkCopied}
+          filter={filter}
+          onFilterChange={setFilter}
         />
       )}
     </div>

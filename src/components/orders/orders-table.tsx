@@ -49,11 +49,12 @@ interface OrdersTableProps {
   orders: Order[];
   onUpdateStatus: (orderId: string, status: string) => void;
   onLinkCopied: (orderId: string) => void;
+  filter: string;
+  onFilterChange: (filter: string) => void;
 }
 
-export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTableProps) {
+export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange }: OrdersTableProps) {
   const { toast } = useToast();
-  const [filter, setFilter] = useState<string>('all');
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -63,6 +64,8 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
+    if (filter === 'new') return order.status === 'pending' && !order.company_id && !order.send_to_all_companies;
+    if (filter === 'pending') return order.status === 'pending' && (order.company_id || order.send_to_all_companies);
     return order.status === filter;
   });
 
@@ -270,12 +273,13 @@ Thank you for contacting us! 🌟`;
           </CardTitle>
           
           <div className="flex items-center gap-2">
-            <Select value={filter} onValueChange={setFilter}>
+            <Select value={filter} onValueChange={onFilterChange}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Orders</SelectItem>
+                <SelectItem value="new">New Requests</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in-progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
@@ -300,14 +304,13 @@ Thank you for contacting us! 🌟`;
                 <TableHead className="text-left">Service</TableHead>
                 <TableHead className="text-left">Recommendations</TableHead>
                 <TableHead className="text-left">Date</TableHead>
-                <TableHead className="text-left">Status</TableHead>
                 <TableHead className="text-left">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No orders available
                   </TableCell>
                 </TableRow>
@@ -358,10 +361,6 @@ Thank you for contacting us! 🌟`;
                           <Calendar className="h-3 w-3" />
                           {formatDate(order.created_at)}
                         </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <StatusBadge status={order.status} />
                       </TableCell>
                       
                       <TableCell>
