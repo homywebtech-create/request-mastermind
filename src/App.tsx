@@ -11,6 +11,8 @@ import Orders from "./pages/Orders";
 import CompanyAuth from "./pages/CompanyAuth";
 import CompanyPortal from "./pages/CompanyPortal";
 import Specialists from "./pages/Specialists";
+import SpecialistAuth from "./pages/SpecialistAuth";
+import SpecialistOrders from "./pages/SpecialistOrders";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
 
@@ -45,6 +47,8 @@ const App = () => (
           <Route path="/company-auth" element={<CompanyAuth />} />
           <Route path="/company-portal" element={<CompanyPortal />} />
           <Route path="/specialists" element={<Specialists />} />
+          <Route path="/specialist-auth" element={<SpecialistAuth />} />
+          <Route path="/specialist-orders" element={<SpecialistOrders />} />
           <Route
             path="/"
             element={

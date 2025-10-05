@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.verify-company-code]
 verify_jwt = false
+
+[functions.verify-specialist-code]
+verify_jwt = false
