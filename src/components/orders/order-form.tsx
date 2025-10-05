@@ -73,7 +73,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     phoneNumber: '',
     serviceId: '',
     subServiceId: '',
-    sendToAll: false,
+    sendToAll: true,
     companyId: '',
     specialistIds: [],
     notes: '',
@@ -90,6 +90,22 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       setFormData(prev => ({ ...prev, subServiceId: '' }));
     }
   }, [formData.serviceId, services]);
+
+  useEffect(() => {
+    if (formData.serviceId && !formData.sendToAll) {
+      fetchCompaniesForService(formData.serviceId, formData.subServiceId);
+    } else {
+      setCompanies([]);
+    }
+  }, [formData.serviceId, formData.subServiceId, formData.sendToAll]);
+
+  useEffect(() => {
+    if (formData.companyId) {
+      fetchSpecialistsForCompany(formData.companyId);
+    } else {
+      setSpecialists([]);
+    }
+  }, [formData.companyId]);
 
   const fetchServices = async () => {
     try {
@@ -191,6 +207,16 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       return;
     }
 
+    // Verify company selection if not sending to all
+    if (!formData.sendToAll && !formData.companyId) {
+      toast({
+        title: "Missing Data",
+        description: "Please select a specific company or enable send to all companies",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // دمج كود الدولة مع رقم الهاتف
     const selectedCountry = countries.find(c => c.code === formData.countryCode);
     const fullWhatsappNumber = `${selectedCountry?.dialCode}${formData.phoneNumber}`;
@@ -204,9 +230,9 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       customerName: formData.customerName,
       whatsappNumber: fullWhatsappNumber,
       serviceType,
-      sendToAll: false, // Always false for new orders
-      companyId: undefined,
-      specialistIds: undefined,
+      sendToAll: formData.sendToAll,
+      companyId: formData.sendToAll ? undefined : formData.companyId,
+      specialistIds: formData.specialistIds.length > 0 ? formData.specialistIds : undefined,
       notes: formData.notes
     };
     
@@ -218,7 +244,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       phoneNumber: '',
       serviceId: '',
       subServiceId: '',
-      sendToAll: false,
+      sendToAll: true,
       companyId: '',
       specialistIds: [],
       notes: '',
@@ -373,6 +399,125 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 </div>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label>Send Order To</Label>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="sendToAll"
+                    checked={formData.sendToAll}
+                    onChange={() => {
+                      setFormData(prev => ({ ...prev, sendToAll: true, companyId: '', specialistIds: [] }));
+                    }}
+                    className="w-4 h-4 text-primary"
+                    disabled={!formData.serviceId}
+                  />
+                  <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
+                    All Companies
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="sendToAll"
+                    checked={!formData.sendToAll}
+                    onChange={() => {
+                      setFormData(prev => ({ ...prev, sendToAll: false }));
+                    }}
+                    className="w-4 h-4 text-primary"
+                    disabled={!formData.serviceId}
+                  />
+                  <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
+                    Specific Company {companies.length > 0 && `(${companies.length})`}
+                  </span>
+                </label>
+              </div>
+              {!formData.serviceId && (
+                <p className="text-xs text-muted-foreground">
+                  Choose service first
+                </p>
+              )}
+              {formData.serviceId && !formData.sendToAll && companies.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No companies offer this service currently
+                </p>
+              )}
+            </div>
+
+            {!formData.sendToAll && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="companyId">Choose Company *</Label>
+                  <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.companyId && specialists.length > 0 && (
+                  <div className="space-y-3">
+                    <Label>Choose Specialists (Optional)</Label>
+                    <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto space-y-3">
+                      {specialists.map((specialist) => (
+                        <label
+                          key={specialist.id}
+                          className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.specialistIds.includes(specialist.id)}
+                            onChange={() => toggleSpecialist(specialist.id)}
+                            className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
+                          />
+                          {specialist.image_url ? (
+                            <img 
+                              src={specialist.image_url} 
+                              alt={specialist.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex flex-col flex-1">
+                            <span className="font-medium">{specialist.name}</span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Phone className="h-3 w-3" />
+                              <span dir="ltr">{specialist.phone}</span>
+                              {specialist.specialty && (
+                                <>
+                                  <span>•</span>
+                                  <span>{specialist.specialty}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    {formData.specialistIds.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {formData.specialistIds.length} specialist(s) selected
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty to send to all specialists in this company
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>

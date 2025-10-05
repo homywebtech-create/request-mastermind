@@ -66,8 +66,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
-    if (filter === 'new') return order.status === 'pending' && !order.company_id && !order.send_to_all_companies;
-    if (filter === 'pending') return order.status === 'pending' && (order.company_id || order.send_to_all_companies);
+    if (filter === 'new' || filter === 'pending') return order.status === 'pending' && (order.company_id || order.send_to_all_companies);
     return order.status === filter;
   });
 
@@ -470,8 +469,8 @@ Thank you for contacting us! 🌟`;
                             </DialogContent>
                           </Dialog>
 
-                          {/* Show actions only for new requests (pending + not sent yet) */}
-                          {order.status === 'pending' && !order.company_id && !order.send_to_all_companies && (
+                          {/* Show actions only for pending requests waiting for response */}
+                          {order.status === 'pending' && (order.company_id || order.send_to_all_companies) && (
                             <>
                               <Button
                                 size="sm"
@@ -480,7 +479,7 @@ Thank you for contacting us! 🌟`;
                                 className="flex items-center gap-1"
                               >
                                 <Send className="h-3 w-3" />
-                                Send to All
+                                Resend to All
                               </Button>
                               <Button
                                 size="sm"
@@ -489,7 +488,7 @@ Thank you for contacting us! 🌟`;
                                 className="flex items-center gap-1"
                               >
                                 <Building2 className="h-3 w-3" />
-                                Send to Company
+                                Change Company
                               </Button>
                             </>
                           )}

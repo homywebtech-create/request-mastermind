@@ -41,7 +41,7 @@ interface OrderStats {
 export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [filter, setFilter] = useState<string>('new');
+  const [filter, setFilter] = useState<string>('pending');
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
@@ -103,8 +103,8 @@ export default function Dashboard() {
 
   const calculateStats = (ordersList: Order[]) => {
     setStats({
-      total: ordersList.filter(o => o.status === 'pending' && !o.company_id && !o.send_to_all_companies).length, // New requests - not sent yet
-      pending: ordersList.filter(o => o.status === 'pending' && (o.company_id || o.send_to_all_companies)).length, // Sent but waiting
+      total: ordersList.filter(o => o.status === 'pending' && (o.company_id || o.send_to_all_companies)).length, // Pending requests sent to companies
+      pending: ordersList.filter(o => o.status === 'pending' && (o.company_id || o.send_to_all_companies)).length, // Same as total
       inProgress: ordersList.filter(o => o.status === 'in-progress').length,
       completed: ordersList.filter(o => o.status === 'completed').length,
     });
@@ -139,14 +139,14 @@ export default function Dashboard() {
       // Create order link
       const orderLink = `${window.location.origin}/order/${Date.now()}`;
 
-      // Create order - always create as new request first
+      // Create order and send to companies
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
           customer_id: customerId,
-          company_id: null, // Always null for new orders
+          company_id: formData.sendToAll ? null : formData.companyId,
           specialist_id: null,
-          send_to_all_companies: false, // Always false for new orders
+          send_to_all_companies: formData.sendToAll || false,
           service_type: formData.serviceType,
           notes: formData.notes,
           order_link: orderLink,
@@ -157,9 +157,32 @@ export default function Dashboard() {
 
       if (orderError) throw orderError;
 
+      // If specific specialists are selected, insert into junction table
+      if (formData.specialistIds && formData.specialistIds.length > 0) {
+        const orderSpecialists = formData.specialistIds.map(specialistId => ({
+          order_id: newOrder.id,
+          specialist_id: specialistId,
+        }));
+
+        const { error: junctionError } = await supabase
+          .from('order_specialists')
+          .insert(orderSpecialists);
+
+        if (junctionError) throw junctionError;
+      }
+
+      let description = "Order sent successfully";
+      if (formData.sendToAll) {
+        description = "Order sent to all specialized companies";
+      } else if (formData.specialistIds && formData.specialistIds.length > 0) {
+        description = `Order sent to ${formData.specialistIds.length} specialist(s)`;
+      } else if (formData.companyId) {
+        description = "Order sent to all company specialists";
+      }
+
       toast({
         title: "Success",
-        description: "New order created. Use the action buttons to send it to companies.",
+        description,
       });
       
       setIsFormOpen(false);
@@ -287,16 +310,17 @@ export default function Dashboard() {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div onClick={() => setFilter('new')} className="cursor-pointer">
+          <div onClick={() => setFilter('pending')} className="cursor-pointer">
             <StatsCard
-              title="New Requests"
+              title="Pending Requests"
               value={stats.total}
               icon={<Package className="h-4 w-4" />}
+              variant="pending"
             />
           </div>
           <div onClick={() => setFilter('pending')} className="cursor-pointer">
             <StatsCard
-              title="Pending"
+              title="Awaiting Response"
               value={stats.pending}
               icon={<Clock className="h-4 w-4" />}
               variant="pending"
