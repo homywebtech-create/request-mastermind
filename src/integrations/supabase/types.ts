@@ -143,6 +143,7 @@ export type Database = {
           order_link: string | null
           send_to_all_companies: boolean
           service_type: string
+          specialist_id: string | null
           status: string
           updated_at: string
         }
@@ -157,6 +158,7 @@ export type Database = {
           order_link?: string | null
           send_to_all_companies?: boolean
           service_type: string
+          specialist_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -171,6 +173,7 @@ export type Database = {
           order_link?: string | null
           send_to_all_companies?: boolean
           service_type?: string
+          specialist_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -187,6 +190,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialists"
             referencedColumns: ["id"]
           },
         ]

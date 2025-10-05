@@ -144,6 +144,7 @@ export default function Dashboard() {
         .insert({
           customer_id: customerId,
           company_id: formData.sendToAll ? null : formData.companyId,
+          specialist_id: formData.specialistId || null,
           send_to_all_companies: formData.sendToAll || false,
           service_type: formData.serviceType,
           notes: formData.notes,
@@ -153,11 +154,18 @@ export default function Dashboard() {
 
       if (orderError) throw orderError;
 
+      let description = "Order created successfully";
+      if (formData.sendToAll) {
+        description = "Order sent to all specialized companies";
+      } else if (formData.specialistId) {
+        description = "Order sent to selected specialist";
+      } else if (formData.companyId) {
+        description = "Order sent to all company specialists";
+      }
+
       toast({
         title: "Success",
-        description: formData.sendToAll 
-          ? "Order sent to all specialized companies"
-          : "Order created successfully",
+        description,
       });
       
       setIsFormOpen(false);
