@@ -89,8 +89,8 @@ export default function Dashboard() {
 
     if (error) {
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل الطلبات",
+        title: "Error",
+        description: "Failed to load orders",
         variant: "destructive",
       });
     } else {
@@ -154,17 +154,17 @@ export default function Dashboard() {
       if (orderError) throw orderError;
 
       toast({
-        title: "نجح",
+        title: "Success",
         description: formData.sendToAll 
-          ? "تم إرسال الطلب لجميع الشركات المختصة"
-          : "تم إنشاء الطلب بنجاح",
+          ? "Order sent to all specialized companies"
+          : "Order created successfully",
       });
       
       setIsFormOpen(false);
       fetchOrders();
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -179,14 +179,14 @@ export default function Dashboard() {
 
     if (error) {
       toast({
-        title: "خطأ",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "نجح",
-        description: "تم تحديث حالة الطلب",
+        title: "Success",
+        description: "Order status updated",
       });
     }
   };
@@ -228,11 +228,11 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground font-cairo">
-                لوحة إدارة الطلبات
+              <h1 className="text-3xl font-bold text-foreground">
+                Orders Management Dashboard
               </h1>
               <p className="text-muted-foreground mt-1">
-                إدارة شاملة لطلبات العملاء والخدمات
+                Comprehensive management of customer orders and services
               </p>
             </div>
             
@@ -243,7 +243,7 @@ export default function Dashboard() {
                 className="flex items-center gap-2"
               >
                 <Building2 className="h-4 w-4" />
-                الشركات
+                Companies
               </Button>
 
               <Button
@@ -252,14 +252,14 @@ export default function Dashboard() {
                 className="flex items-center gap-2"
               >
                 <Settings className="h-4 w-4" />
-                الخدمات
+                Services
               </Button>
 
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
-                    طلب جديد
+                    New Order
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -274,7 +274,7 @@ export default function Dashboard() {
                 variant="outline"
                 size="icon"
                 onClick={handleSignOut}
-                title="تسجيل الخروج"
+                title="Logout"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -286,24 +286,24 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
-            title="إجمالي الطلبات"
+            title="Total Orders"
             value={stats.total}
             icon={<Package className="h-4 w-4" />}
           />
           <StatsCard
-            title="قيد الانتظار"
+            title="Pending"
             value={stats.pending}
             icon={<Clock className="h-4 w-4" />}
             variant="pending"
           />
           <StatsCard
-            title="قيد التنفيذ"
+            title="In Progress"
             value={stats.inProgress}
             icon={<Users className="h-4 w-4" />}
             variant="warning"
           />
           <StatsCard
-            title="مكتملة"
+            title="Completed"
             value={stats.completed}
             icon={<CheckCircle className="h-4 w-4" />}
             variant="success"

@@ -99,8 +99,8 @@ export default function CompanyPortal() {
 
       if (!profile?.company_id) {
         toast({
-          title: "خطأ",
-          description: "لم يتم العثور على شركة مرتبطة بهذا الحساب",
+          title: "Error",
+          description: "No company found associated with this account",
           variant: "destructive",
         });
         navigate("/company-auth");
@@ -122,7 +122,7 @@ export default function CompanyPortal() {
     } catch (error: any) {
       console.error("Error checking auth:", error);
       toast({
-        title: "خطأ",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -149,8 +149,8 @@ export default function CompanyPortal() {
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب الطلبات",
+        title: "Error",
+        description: "Error loading orders",
         variant: "destructive",
       });
     }
@@ -173,14 +173,14 @@ export default function CompanyPortal() {
 
     if (error) {
       toast({
-        title: "خطأ",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "نجح",
-        description: "تم تحديث حالة الطلب",
+        title: "Success",
+        description: "Order status updated",
       });
     }
   };
@@ -196,7 +196,7 @@ export default function CompanyPortal() {
 
     if (error) {
       toast({
-        title: "خطأ",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -242,13 +242,13 @@ export default function CompanyPortal() {
                 className="flex items-center gap-2"
               >
                 <UserCog className="h-4 w-4" />
-                <span className="hidden sm:inline">المحترفين</span>
+                <span className="hidden sm:inline">Specialists</span>
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={handleLogout}
-                title="تسجيل الخروج"
+                title="Logout"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -260,24 +260,24 @@ export default function CompanyPortal() {
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
-            title="إجمالي الطلبات"
+            title="Total Orders"
             value={stats.total}
             icon={<Package className="h-4 w-4" />}
           />
           <StatsCard
-            title="قيد الانتظار"
+            title="Pending"
             value={stats.pending}
             icon={<Clock className="h-4 w-4" />}
             variant="pending"
           />
           <StatsCard
-            title="قيد التنفيذ"
+            title="In Progress"
             value={stats.inProgress}
             icon={<Users className="h-4 w-4" />}
             variant="warning"
           />
           <StatsCard
-            title="مكتملة"
+            title="Completed"
             value={stats.completed}
             icon={<CheckCircle className="h-4 w-4" />}
             variant="success"

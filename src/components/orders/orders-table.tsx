@@ -65,13 +65,13 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
       onLinkCopied(order.id);
       
       toast({
-        title: "تم نسخ الرابط",
-        description: "تم نسخ رابط الطلب ومشاركته مع الفريق",
+        title: "Link Copied",
+        description: "Order link copied and shared with the team",
       });
     } catch (error) {
       toast({
-        title: "خطأ في النسخ",
-        description: "حدث خطأ أثناء نسخ الرابط",
+        title: "Copy Error",
+        description: "Error copying link",
         variant: "destructive",
       });
     }
@@ -80,8 +80,8 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
   const sendOrderLinkViaWhatsApp = (order: Order) => {
     if (!order.customers?.whatsapp_number) {
       toast({
-        title: "خطأ",
-        description: "رقم الواتساب غير متوفر",
+        title: "Error",
+        description: "WhatsApp number not available",
         variant: "destructive",
       });
       return;
@@ -89,24 +89,24 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
     
     const orderLink = order.order_link || `${window.location.origin}/order/${order.id}`;
     const cleanNumber = order.customers.whatsapp_number.replace(/\D/g, '');
-    const companyName = order.companies?.name || 'غير محدد';
-    const customerName = order.customers?.name || 'عزيزي العميل';
+    const companyName = order.companies?.name || 'Not specified';
+    const customerName = order.customers?.name || 'Dear Customer';
     
-    const message = `مرحباً ${customerName}،
+    const message = `Hello ${customerName},
 
-تم استلام طلبك بنجاح! ✅
+Your order has been successfully received! ✅
 
-📋 *تفاصيل الطلب:*
-• الخدمة: ${order.service_type}
-• الشركة: ${companyName}
-${order.notes ? `• ملاحظات: ${order.notes}` : ''}
+📋 *Order Details:*
+• Service: ${order.service_type}
+• Company: ${companyName}
+${order.notes ? `• Notes: ${order.notes}` : ''}
 
-🔗 *رابط متابعة الطلب:*
+🔗 *Order Tracking Link:*
 ${orderLink}
 
-يمكنك استخدام هذا الرابط لمتابعة حالة طلبك في أي وقت.
+You can use this link to track your order status at any time.
 
-شكراً لتواصلك معنا! 🌟`;
+Thank you for contacting us! 🌟`;
     
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
@@ -127,7 +127,7 @@ ${orderLink}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <CardTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            قائمة الطلبات
+            Orders List
           </CardTitle>
           
           <div className="flex items-center gap-2">
@@ -136,15 +136,15 @@ ${orderLink}
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">جميع الطلبات</SelectItem>
-                <SelectItem value="pending">قيد الانتظار</SelectItem>
-                <SelectItem value="in-progress">قيد التنفيذ</SelectItem>
-                <SelectItem value="completed">مكتمل</SelectItem>
-                <SelectItem value="cancelled">ملغي</SelectItem>
+                <SelectItem value="all">All Orders</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-            <Badge variant="secondary" className="font-cairo">
-              {filteredOrders.length} طلب
+            <Badge variant="secondary">
+              {filteredOrders.length} orders
             </Badge>
           </div>
         </div>
@@ -155,21 +155,21 @@ ${orderLink}
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">العميل</TableHead>
-                <TableHead className="text-right">المنطقة</TableHead>
-                <TableHead className="text-right">ميزانية العميل</TableHead>
-                <TableHead className="text-right">الخدمة</TableHead>
-                <TableHead className="text-right">التوصيات</TableHead>
-                <TableHead className="text-right">التاريخ</TableHead>
-                <TableHead className="text-right">الحالة</TableHead>
-                <TableHead className="text-right">الإجراءات</TableHead>
+                <TableHead className="text-left">Customer</TableHead>
+                <TableHead className="text-left">Area</TableHead>
+                <TableHead className="text-left">Customer Budget</TableHead>
+                <TableHead className="text-left">Service</TableHead>
+                <TableHead className="text-left">Recommendations</TableHead>
+                <TableHead className="text-left">Date</TableHead>
+                <TableHead className="text-left">Status</TableHead>
+                <TableHead className="text-left">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    لا توجد طلبات متاحة
+                    No orders available
                   </TableCell>
                 </TableRow>
               ) : (
@@ -235,34 +235,34 @@ ${orderLink}
                                 className="flex items-center gap-1"
                               >
                                 <Eye className="h-3 w-3" />
-                                التفاصيل
+                                Details
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl">
                               <DialogHeader>
-                                <DialogTitle className="text-xl">تفاصيل الطلب</DialogTitle>
+                                <DialogTitle className="text-xl">Order Details</DialogTitle>
                               </DialogHeader>
                               <div className="space-y-6 py-4">
                                 <div className="space-y-3">
                                   <h3 className="font-semibold text-lg flex items-center gap-2">
                                     <User className="h-5 w-5" />
-                                    معلومات العميل
+                                    Customer Information
                                   </h3>
                                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-muted-foreground">الاسم:</span>
+                                      <span className="text-muted-foreground">Name:</span>
                                       <span className="font-medium">{customerName}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                      <span className="text-muted-foreground">رقم الواتساب:</span>
+                                      <span className="text-muted-foreground">WhatsApp Number:</span>
                                       <span className="font-medium" dir="ltr">{customerPhone}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                      <span className="text-muted-foreground">المنطقة:</span>
+                                      <span className="text-muted-foreground">Area:</span>
                                       <span className="font-medium">{customerArea}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                      <span className="text-muted-foreground">الميزانية:</span>
+                                      <span className="text-muted-foreground">Budget:</span>
                                       <span className="font-medium">{customerBudget}</span>
                                     </div>
                                   </div>
@@ -271,30 +271,30 @@ ${orderLink}
                                 <div className="space-y-3">
                                   <h3 className="font-semibold text-lg flex items-center gap-2">
                                     <Wrench className="h-5 w-5" />
-                                    تفاصيل الطلب
+                                    Order Details
                                   </h3>
                                   <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-muted-foreground">نوع الخدمة:</span>
+                                      <span className="text-muted-foreground">Service Type:</span>
                                       <Badge variant="outline">{order.service_type}</Badge>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                      <span className="text-muted-foreground">الحالة:</span>
+                                      <span className="text-muted-foreground">Status:</span>
                                       <StatusBadge status={order.status} />
                                     </div>
                                     <div className="flex items-center justify-between">
-                                      <span className="text-muted-foreground">تاريخ الإنشاء:</span>
+                                      <span className="text-muted-foreground">Created At:</span>
                                       <span className="font-medium">{formatDate(order.created_at)}</span>
                                     </div>
                                     {order.notes && (
                                       <div className="pt-2">
-                                        <span className="text-muted-foreground block mb-1">الملاحظات:</span>
+                                        <span className="text-muted-foreground block mb-1">Notes:</span>
                                         <p className="text-sm bg-background rounded p-2">{order.notes}</p>
                                       </div>
                                     )}
                                     {order.order_link && (
                                       <div className="pt-2">
-                                        <span className="text-muted-foreground block mb-1">رابط الطلب:</span>
+                                        <span className="text-muted-foreground block mb-1">Order Link:</span>
                                         <div className="flex items-center gap-2">
                                           <code className="text-xs bg-background rounded px-2 py-1 flex-1 truncate">
                                             {order.order_link}
@@ -321,7 +321,7 @@ ${orderLink}
                                         variant="outline"
                                       >
                                         <Phone className="h-4 w-4 ml-2" />
-                                        التواصل عبر واتساب
+                                        Contact via WhatsApp
                                       </Button>
                                       {order.status === 'pending' && (
                                         <Button
@@ -329,7 +329,7 @@ ${orderLink}
                                           className="flex-1 bg-green-600 hover:bg-green-700"
                                         >
                                           <Phone className="h-4 w-4 ml-2" />
-                                          إرسال رابط الطلب
+                                          Send Order Link
                                         </Button>
                                       )}
                                     </>
@@ -348,7 +348,7 @@ ${orderLink}
                                 className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
                               >
                                 <Phone className="h-3 w-3" />
-                                إرسال الرابط
+                                Send Link
                               </Button>
                               <Button
                                 size="sm"
@@ -357,7 +357,7 @@ ${orderLink}
                                 className="flex items-center gap-1"
                               >
                                 <Copy className="h-3 w-3" />
-                                نسخ
+                                Copy
                               </Button>
                             </>
                           )}
@@ -371,7 +371,7 @@ ${orderLink}
                                 className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
                               >
                                 <CheckCircle className="h-3 w-3" />
-                                إكمال
+                                Complete
                               </Button>
                               <Button
                                 size="sm"
@@ -380,7 +380,7 @@ ${orderLink}
                                 className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
                               >
                                 <X className="h-3 w-3" />
-                                إلغاء
+                                Cancel
                               </Button>
                             </>
                           )}
@@ -393,7 +393,7 @@ ${orderLink}
                               className="flex items-center gap-1"
                             >
                               <Phone className="h-3 w-3" />
-                              واتساب
+                              WhatsApp
                             </Button>
                           )}
                         </div>

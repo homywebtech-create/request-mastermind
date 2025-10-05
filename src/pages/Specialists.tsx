@@ -82,8 +82,8 @@ export default function Specialists() {
 
       if (!profile?.company_id) {
         toast({
-          title: "خطأ",
-          description: "لم يتم العثور على شركة مرتبطة بهذا الحساب",
+          title: "Error",
+          description: "No company found associated with this account",
           variant: "destructive",
         });
         navigate("/company-auth");
@@ -102,7 +102,7 @@ export default function Specialists() {
     } catch (error: any) {
       console.error("Error checking auth:", error);
       toast({
-        title: "خطأ",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -132,8 +132,8 @@ export default function Specialists() {
     } catch (error: any) {
       console.error("Error fetching specialists:", error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب البيانات",
+        title: "Error",
+        description: "Error loading data",
         variant: "destructive",
       });
     }
@@ -149,12 +149,12 @@ export default function Specialists() {
       if (error) throw error;
 
       toast({
-        title: "تم بنجاح",
-        description: "تم حذف المحترف بنجاح",
+        title: "Success",
+        description: "Specialist deleted successfully",
       });
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -186,14 +186,14 @@ export default function Specialists() {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/company-portal")}
-                title="العودة"
+                title="Back"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <Building2 className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-3xl font-bold text-foreground font-cairo">
-                  إدارة المحترفين
+                <h1 className="text-3xl font-bold text-foreground">
+                  Specialists Management
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   {company.name}
@@ -205,7 +205,7 @@ export default function Specialists() {
               variant="outline"
               size="icon"
               onClick={handleLogout}
-              title="تسجيل الخروج"
+              title="Logout"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -216,9 +216,9 @@ export default function Specialists() {
       <main className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold">المحترفين والخبراء</h2>
+            <h2 className="text-2xl font-bold">Specialists and Experts</h2>
             <p className="text-muted-foreground mt-1">
-              قم بإدارة قائمة المحترفين العاملين في شركتك
+              Manage your company's list of working specialists
             </p>
           </div>
           {company && (

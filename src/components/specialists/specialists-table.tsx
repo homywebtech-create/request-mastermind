@@ -53,7 +53,7 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
-          قائمة المحترفين ({specialists.length})
+          Specialists List ({specialists.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -61,20 +61,20 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">المحترف</TableHead>
-                <TableHead className="text-right">الجنسية</TableHead>
-                <TableHead className="text-right">التخصصات</TableHead>
-                <TableHead className="text-right">الخبرة</TableHead>
-                <TableHead className="text-right">رقم الهاتف</TableHead>
-                <TableHead className="text-right">الحالة</TableHead>
-                <TableHead className="text-right">الإجراءات</TableHead>
+                <TableHead className="text-left">Specialist</TableHead>
+                <TableHead className="text-left">Nationality</TableHead>
+                <TableHead className="text-left">Specialties</TableHead>
+                <TableHead className="text-left">Experience</TableHead>
+                <TableHead className="text-left">Phone Number</TableHead>
+                <TableHead className="text-left">Status</TableHead>
+                <TableHead className="text-left">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {specialists.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    لا يوجد محترفين مسجلين
+                    No specialists registered
                   </TableCell>
                 </TableRow>
               ) : (
@@ -121,7 +121,7 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
                     <TableCell>
                       {specialist.experience_years ? (
                         <span className="text-sm">
-                          {specialist.experience_years} {specialist.experience_years === 1 ? "سنة" : "سنوات"}
+                          {specialist.experience_years} {specialist.experience_years === 1 ? "year" : "years"}
                         </span>
                       ) : (
                         <span className="text-muted-foreground text-sm">-</span>
@@ -134,7 +134,7 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
                     </TableCell>
                     <TableCell>
                       <Badge variant={specialist.is_active ? "default" : "secondary"}>
-                        {specialist.is_active ? "نشط" : "غير نشط"}
+                        {specialist.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -146,7 +146,7 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
                           className="flex items-center gap-1"
                         >
                           <Phone className="h-3 w-3" />
-                          واتساب
+                          WhatsApp
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -156,15 +156,15 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                              <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
                               <AlertDialogDescription>
-                                هل أنت متأكد من حذف {specialist.name}؟ لا يمكن التراجع عن هذا الإجراء.
+                                Are you sure you want to delete {specialist.name}? This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction onClick={() => onDelete(specialist.id)}>
-                                حذف
+                                Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

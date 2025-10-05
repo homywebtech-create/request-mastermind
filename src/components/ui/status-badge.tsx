@@ -7,19 +7,19 @@ interface StatusBadgeProps {
 
 const statusConfig = {
   pending: {
-    label: 'قيد الانتظار',
+    label: 'Pending',
     className: 'bg-pending-light text-pending-foreground border-pending/20',
   },
   'in-progress': {
-    label: 'قيد التنفيذ',
+    label: 'In Progress',
     className: 'bg-warning-light text-warning-foreground border-warning/20',
   },
   completed: {
-    label: 'مكتمل',
+    label: 'Completed',
     className: 'bg-success-light text-success-foreground border-success/20',
   },
   cancelled: {
-    label: 'ملغي',
+    label: 'Cancelled',
     className: 'bg-destructive/10 text-destructive border-destructive/20',
   },
 };

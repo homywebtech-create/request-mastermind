@@ -1,0 +1,156 @@
+export const translations = {
+  // Common
+  common: {
+    save: "Save",
+    cancel: "Cancel",
+    delete: "Delete",
+    edit: "Edit",
+    add: "Add",
+    search: "Search",
+    filter: "Filter",
+    actions: "Actions",
+    status: "Status",
+    active: "Active",
+    inactive: "Inactive",
+    loading: "Loading...",
+    error: "Error",
+    success: "Success",
+    submit: "Submit",
+    back: "Back",
+    next: "Next",
+    logout: "Logout",
+    login: "Login",
+    signup: "Sign Up",
+    phone: "Phone",
+    email: "Email",
+    name: "Name",
+    notes: "Notes",
+    createdAt: "Created At",
+    updatedAt: "Updated At",
+  },
+
+  // Authentication
+  auth: {
+    companyLogin: "Company Login",
+    enterPhoneNumber: "Enter your registered phone number",
+    sendCode: "Send Code",
+    enterVerificationCode: "Enter verification code sent to",
+    verify: "Verify",
+    resendCode: "Resend Code",
+    phoneRequired: "Phone number is required",
+    codeRequired: "Verification code is required",
+    invalidPhone: "Invalid phone number",
+  },
+
+  // Dashboard
+  dashboard: {
+    title: "Orders Management Dashboard",
+    totalOrders: "Total Orders",
+    pending: "Pending",
+    inProgress: "In Progress",
+    completed: "Completed",
+    cancelled: "Cancelled",
+  },
+
+  // Companies
+  companies: {
+    title: "Companies",
+    addCompany: "Add Company",
+    editCompany: "Edit Company Information",
+    companyName: "Company Name",
+    companyPhone: "Company Phone",
+    companyEmail: "Company Email",
+    companyAddress: "Company Address",
+    selectServices: "Select the services and sub-services this company provides",
+    companyAdded: "Company added successfully",
+    companyUpdated: "Company information updated successfully",
+    companyDeleted: "Company deleted successfully",
+    confirmDelete: "Are you sure you want to delete this company?",
+    noCompanies: "No companies registered",
+  },
+
+  // Orders
+  orders: {
+    title: "Orders",
+    createOrder: "Create Order",
+    orderDetails: "Order Details",
+    ordersList: "Orders List",
+    customerInfo: "Customer Information",
+    customerName: "Customer Name",
+    customerPhone: "Customer Phone",
+    customerArea: "Customer Area",
+    customerBudget: "Customer Budget",
+    serviceType: "Service Type",
+    selectService: "Select Service",
+    sendTo: "Send Order To",
+    allCompanies: "All Specialized Companies",
+    specificCompany: "Specific Company",
+    selectCompany: "Select Company",
+    recommendations: "Recommendations",
+    orderLink: "Order Link",
+    copyLink: "Copy Link",
+    sendLink: "Send Link",
+    orderCreated: "Order created successfully",
+    orderUpdated: "Order status updated",
+    linkCopied: "Link copied and shared with the team",
+    noOrders: "No orders available",
+    allOrders: "All Orders",
+  },
+
+  // Specialists
+  specialists: {
+    title: "Specialists Management",
+    specialistsExperts: "Specialists and Experts",
+    addSpecialist: "Add Specialist",
+    editSpecialist: "Edit Specialist",
+    specialistPhoto: "Specialist Photo",
+    nationality: "Nationality",
+    selectNationality: "Select nationality",
+    mainService: "Main Service",
+    selectService: "Select service to filter specialties",
+    specialties: "Specialties",
+    selectMultiple: "You can select multiple",
+    noSpecialties: "No specialties available",
+    selectServiceFirst: "Select the main service first",
+    experienceYears: "Years of Experience",
+    maxSize: "Max size: 5 MB (JPG, PNG, WEBP)",
+    specialistAdded: "Specialist added successfully",
+    specialistDeleted: "Specialist deleted successfully",
+    confirmDelete: "Are you sure you want to delete",
+    noSpecialists: "No specialists registered",
+    specialtiesSelected: "specialties selected",
+    manageSpecialists: "Manage your company's list of working specialists",
+  },
+
+  // Status
+  status: {
+    pending: "Pending",
+    inProgress: "In Progress",
+    completed: "Completed",
+    cancelled: "Cancelled",
+    active: "Active",
+    inactive: "Inactive",
+  },
+
+  // Messages
+  messages: {
+    errorOccurred: "An error occurred",
+    dataLoadError: "Error loading data",
+    actionSuccess: "Action completed successfully",
+    confirmAction: "Are you sure you want to proceed?",
+    cannotUndo: "This action cannot be undone",
+  },
+
+  // WhatsApp Templates
+  whatsapp: {
+    orderReceived: "Your order has been successfully received! ✅",
+    orderDetails: "Order Details:",
+    service: "Service",
+    company: "Company",
+    orderTracking: "Order Tracking Link:",
+    trackAnytime: "You can use this link to track your order status at any time.",
+    thankYou: "Thank you for contacting us! 🌟",
+  },
+};
+
+export type TranslationKey = keyof typeof translations;
