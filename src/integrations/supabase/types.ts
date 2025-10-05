@@ -136,18 +136,27 @@ export type Database = {
           created_at: string | null
           id: string
           order_id: string
+          quote_notes: string | null
+          quoted_at: string | null
+          quoted_price: string | null
           specialist_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           order_id: string
+          quote_notes?: string | null
+          quoted_at?: string | null
+          quoted_price?: string | null
           specialist_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
           order_id?: string
+          quote_notes?: string | null
+          quoted_at?: string | null
+          quoted_price?: string | null
           specialist_id?: string
         }
         Relationships: [
@@ -506,6 +515,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "specialist"
+      order_status:
+        | "pending"
+        | "quoted"
+        | "accepted"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -634,6 +650,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "specialist"],
+      order_status: [
+        "pending",
+        "quoted",
+        "accepted",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
     },
   },
 } as const
