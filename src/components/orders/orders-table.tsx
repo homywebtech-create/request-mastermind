@@ -1,6 +1,6 @@
 // OrdersTable Component - Version: 2025-01-05-08:46
 // All null checks implemented with optional chaining
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, Phone, User, Wrench, Copy, CheckCircle, X, Building2, Eye, ExternalLink } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Calendar, Phone, User, Wrench, Building2, Eye, ExternalLink, Send, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Order {
   id: string;
@@ -32,6 +34,17 @@ interface Order {
   } | null;
 }
 
+interface Company {
+  id: string;
+  name: string;
+}
+
+interface Specialist {
+  id: string;
+  name: string;
+  specialty: string | null;
+}
+
 interface OrdersTableProps {
   orders: Order[];
   onUpdateStatus: (orderId: string, status: string) => void;
@@ -41,6 +54,12 @@ interface OrdersTableProps {
 export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTableProps) {
   const { toast } = useToast();
   const [filter, setFilter] = useState<string>('all');
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [specialists, setSpecialists] = useState<Specialist[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [selectedSpecialistId, setSelectedSpecialistId] = useState<string>('');
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
@@ -119,6 +138,126 @@ Thank you for contacting us! 🌟`;
     const cleanNumber = phoneNumber.replace(/\D/g, '');
     const whatsappUrl = `https://wa.me/${cleanNumber}`;
     window.open(whatsappUrl, '_blank');
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setCompanies(data || []);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load companies",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchSpecialists = async (companyId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("specialists")
+        .select("id, name, specialty")
+        .eq("company_id", companyId)
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setSpecialists(data || []);
+    } catch (error) {
+      console.error("Error fetching specialists:", error);
+      setSpecialists([]);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedCompanyId) {
+      fetchSpecialists(selectedCompanyId);
+    } else {
+      setSpecialists([]);
+      setSelectedSpecialistId('');
+    }
+  }, [selectedCompanyId]);
+
+  const handleSendToAll = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          send_to_all_companies: true,
+          company_id: null,
+          specialist_id: null,
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Order sent to all companies",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendToCompany = async () => {
+    if (!selectedOrder || !selectedCompanyId) return;
+
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          send_to_all_companies: false,
+          company_id: selectedCompanyId,
+          specialist_id: selectedSpecialistId || null,
+        })
+        .eq('id', selectedOrder.id);
+
+      if (error) throw error;
+
+      let description = "Order sent to company";
+      if (selectedSpecialistId) {
+        description = "Order sent to selected specialist";
+      } else {
+        description = "Order sent to all company specialists";
+      }
+
+      toast({
+        title: "Success",
+        description,
+      });
+
+      setSendDialogOpen(false);
+      setSelectedOrder(null);
+      setSelectedCompanyId('');
+      setSelectedSpecialistId('');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openSendDialog = (order: Order) => {
+    setSelectedOrder(order);
+    setSelectedCompanyId('');
+    setSelectedSpecialistId('');
+    fetchCompanies();
+    setSendDialogOpen(true);
   };
 
   return (
@@ -292,95 +431,31 @@ Thank you for contacting us! 🌟`;
                                         <p className="text-sm bg-background rounded p-2">{order.notes}</p>
                                       </div>
                                     )}
-                                    {order.order_link && (
-                                      <div className="pt-2">
-                                        <span className="text-muted-foreground block mb-1">Order Link:</span>
-                                        <div className="flex items-center gap-2">
-                                          <code className="text-xs bg-background rounded px-2 py-1 flex-1 truncate">
-                                            {order.order_link}
-                                          </code>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => window.open(order.order_link, '_blank')}
-                                          >
-                                            <ExternalLink className="h-3 w-3" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
-                                </div>
-
-                                <div className="flex gap-2 pt-4 border-t">
-                                  {order.customers?.whatsapp_number && (
-                                    <>
-                                      <Button
-                                        onClick={() => openWhatsApp(order.customers.whatsapp_number)}
-                                        className="flex-1"
-                                        variant="outline"
-                                      >
-                                        <Phone className="h-4 w-4 ml-2" />
-                                        Contact via WhatsApp
-                                      </Button>
-                                      {order.status === 'pending' && (
-                                        <Button
-                                          onClick={() => sendOrderLinkViaWhatsApp(order)}
-                                          className="flex-1 bg-green-600 hover:bg-green-700"
-                                        >
-                                          <Phone className="h-4 w-4 ml-2" />
-                                          Send Order Link
-                                        </Button>
-                                      )}
-                                    </>
-                                  )}
                                 </div>
                               </div>
                             </DialogContent>
                           </Dialog>
 
-                          {order.status === 'pending' && order.customers?.whatsapp_number && (
+                          {order.status === 'pending' && (
                             <>
                               <Button
                                 size="sm"
                                 variant="default"
-                                onClick={() => sendOrderLinkViaWhatsApp(order)}
-                                className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
-                              >
-                                <Phone className="h-3 w-3" />
-                                Send Link
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCopyOrderLink(order)}
+                                onClick={() => handleSendToAll(order.id)}
                                 className="flex items-center gap-1"
                               >
-                                <Copy className="h-3 w-3" />
-                                Copy
-                              </Button>
-                            </>
-                          )}
-                          
-                          {order.status === 'in-progress' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => onUpdateStatus(order.id, 'completed')}
-                                className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle className="h-3 w-3" />
-                                Complete
+                                <Send className="h-3 w-3" />
+                                Send to All
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => onUpdateStatus(order.id, 'cancelled')}
-                                className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
+                                onClick={() => openSendDialog(order)}
+                                className="flex items-center gap-1"
                               >
-                                <X className="h-3 w-3" />
-                                Cancel
+                                <Building2 className="h-3 w-3" />
+                                Send to Company
                               </Button>
                             </>
                           )}
@@ -406,6 +481,81 @@ Thank you for contacting us! 🌟`;
           </Table>
         </div>
       </CardContent>
+
+      {/* Send to Company Dialog */}
+      <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Order to Company</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="company">Select Company *</Label>
+              <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedCompanyId && specialists.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="specialist">Select Specialist (Optional)</Label>
+                <Select value={selectedSpecialistId} onValueChange={setSelectedSpecialistId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Send to all company specialists" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        All Specialists ({specialists.length})
+                      </div>
+                    </SelectItem>
+                    {specialists.map((specialist) => (
+                      <SelectItem key={specialist.id} value={specialist.id}>
+                        {specialist.name} {specialist.specialty && `- ${specialist.specialty}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to send to all specialists in this company
+                </p>
+              </div>
+            )}
+
+            {selectedCompanyId && specialists.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No specialists available for this company
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={handleSendToCompany}
+                disabled={!selectedCompanyId}
+                className="flex-1"
+              >
+                Send Order
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSendDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
