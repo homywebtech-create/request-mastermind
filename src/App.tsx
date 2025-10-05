@@ -96,12 +96,13 @@ function PathBasedRouter() {
   }
   
   // Company routes
-  if (pathname === '/company-auth' || pathname === '/company-portal') {
+  if (pathname === '/company-auth' || pathname === '/company-portal' || pathname === '/specialists') {
     return (
       <BrowserRouter>
         <Routes>
           <Route path="/company-auth" element={<CompanyAuth />} />
           <Route path="/company-portal" element={<CompanyPortal />} />
+          <Route path="/specialists" element={<Specialists />} />
           <Route path="*" element={<Navigate to="/company-auth" replace />} />
         </Routes>
       </BrowserRouter>
@@ -114,7 +115,6 @@ function PathBasedRouter() {
       <Routes>
         <Route path="/specialist-auth" element={<SpecialistAuth />} />
         <Route path="/specialist-orders" element={<SpecialistOrders />} />
-        <Route path="/specialists" element={<Specialists />} />
         <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
         <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
       </Routes>
