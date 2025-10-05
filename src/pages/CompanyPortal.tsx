@@ -75,8 +75,8 @@ export default function CompanyPortal() {
   useEffect(() => {
     checkAuth();
     
-    // Subscribe to realtime changes
-    const channel = supabase
+    // Subscribe to realtime changes for orders
+    const ordersChannel = supabase
       .channel('company-orders-changes')
       .on(
         'postgres_changes',
@@ -93,8 +93,31 @@ export default function CompanyPortal() {
       )
       .subscribe();
 
+    // Subscribe to realtime changes for order_specialists (quotes)
+    const quotesChannel = supabase
+      .channel('company-order-specialists-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_specialists'
+        },
+        () => {
+          if (company) {
+            fetchOrders(company.id);
+            toast({
+              title: "تحديث",
+              description: "تم استلام عرض سعر جديد من محترف",
+            });
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(quotesChannel);
     };
   }, [company]);
 

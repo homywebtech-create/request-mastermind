@@ -71,8 +71,8 @@ export default function Dashboard() {
   useEffect(() => {
     fetchOrders();
     
-    // Subscribe to realtime changes
-    const channel = supabase
+    // Subscribe to realtime changes for orders
+    const ordersChannel = supabase
       .channel('orders-changes')
       .on(
         'postgres_changes',
@@ -87,8 +87,29 @@ export default function Dashboard() {
       )
       .subscribe();
 
+    // Subscribe to realtime changes for order_specialists (quotes)
+    const quotesChannel = supabase
+      .channel('order-specialists-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_specialists'
+        },
+        () => {
+          fetchOrders();
+          toast({
+            title: "تحديث",
+            description: "تم استلام عرض سعر جديد",
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(quotesChannel);
     };
   }, []);
 

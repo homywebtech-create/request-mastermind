@@ -60,6 +60,53 @@ export default function SpecialistOrders() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    if (!specialistId) return;
+
+    // Set up realtime subscription for new orders
+    const channel = supabase
+      .channel('specialist-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'order_specialists',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('New order detected:', payload);
+          // Refresh orders when a new order is assigned to this specialist
+          fetchOrders(specialistId);
+          
+          // Show notification
+          toast({
+            title: "طلب جديد!",
+            description: "تم إضافة طلب جديد لك",
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'order_specialists',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('Order updated:', payload);
+          // Refresh orders when an order is updated
+          fetchOrders(specialistId);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [specialistId]);
+
   const checkAuth = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
