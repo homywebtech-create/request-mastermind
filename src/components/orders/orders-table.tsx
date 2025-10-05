@@ -77,6 +77,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
   const sendOrderLinkViaWhatsApp = (order: Order) => {
     const orderLink = order.order_link || `${window.location.origin}/order/${order.id}`;
     const cleanNumber = order.customers.whatsapp_number.replace(/\D/g, '');
+    const companyName = order.companies?.name || 'غير محدد';
     
     const message = `
 مرحباً ${order.customers.name}،
@@ -85,7 +86,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
 
 📋 *تفاصيل الطلب:*
 • الخدمة: ${order.service_type}
-${order.companies?.name ? `• الشركة: ${order.companies.name}` : ''}
+• الشركة: ${companyName}
 ${order.notes ? `• ملاحظات: ${order.notes}` : ''}
 
 🔗 *رابط متابعة الطلب:*
