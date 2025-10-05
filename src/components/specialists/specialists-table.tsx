@@ -71,6 +71,11 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     onUpdate();
   };
 
+  const handleEditCancel = () => {
+    setIsEditDialogOpen(false);
+    setEditingSpecialist(null);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -211,7 +216,12 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
       </CardContent>
       
       {editingSpecialist && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) {
+            setEditingSpecialist(null);
+          }
+        }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Specialist</DialogTitle>
@@ -234,6 +244,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                 }))
               }}
               onSuccess={handleEditSuccess}
+              onCancel={handleEditCancel}
             />
           </DialogContent>
         </Dialog>

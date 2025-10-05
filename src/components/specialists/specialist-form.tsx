@@ -30,6 +30,7 @@ type SpecialistFormValues = z.infer<typeof specialistSchema>;
 interface SpecialistFormProps {
   companyId: string;
   onSuccess: () => void;
+  onCancel?: () => void;
   specialist?: {
     id: string;
     name: string;
@@ -58,7 +59,7 @@ interface SubService {
   service_id: string;
 }
 
-export function SpecialistForm({ companyId, onSuccess, specialist }: SpecialistFormProps) {
+export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: SpecialistFormProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,7 +98,11 @@ export function SpecialistForm({ companyId, onSuccess, specialist }: SpecialistF
 
   useEffect(() => {
     fetchServices();
-    if (specialist) {
+  }, []);
+  
+  // Load specialist data only once when component mounts with specialist data
+  useEffect(() => {
+    if (specialist && !open) {
       setImagePreview(specialist.image_url || "");
       // Set the service if editing
       if (specialist.specialist_specialties && specialist.specialist_specialties.length > 0) {
@@ -117,7 +122,7 @@ export function SpecialistForm({ companyId, onSuccess, specialist }: SpecialistF
         notes: specialist.notes || "",
       });
     }
-  }, [specialist]);
+  }, [specialist, open]);
 
   useEffect(() => {
     if (selectedService) {
@@ -506,7 +511,7 @@ export function SpecialistForm({ companyId, onSuccess, specialist }: SpecialistF
             <Button
               type="button"
               variant="outline"
-              onClick={() => onSuccess()}
+              onClick={() => onCancel?.()}
               disabled={isSubmitting}
             >
               Cancel
