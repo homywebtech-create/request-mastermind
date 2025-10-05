@@ -104,6 +104,18 @@ export function SpecialistForm({ companyId, onSuccess, specialist }: SpecialistF
         const firstServiceId = specialist.specialist_specialties[0].sub_services.service_id;
         setSelectedService(firstServiceId);
       }
+      
+      // Reset form with specialist data
+      const phoneData = extractPhoneData(specialist.phone);
+      form.reset({
+        name: specialist.name,
+        countryCode: phoneData.countryCode,
+        phone: phoneData.phone,
+        nationality: specialist.nationality,
+        sub_service_ids: specialist.specialist_specialties?.map(s => s.sub_service_id) || [],
+        experience_years: specialist.experience_years || 0,
+        notes: specialist.notes || "",
+      });
     }
   }, [specialist]);
 
