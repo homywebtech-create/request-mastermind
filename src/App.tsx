@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Companies from "./pages/Companies";
@@ -36,20 +37,26 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <HashRouter>
+// Component to detect pathname and route accordingly
+function PathBasedRouter() {
+  const [renderKey, setRenderKey] = useState(0);
+  
+  useEffect(() => {
+    // Force re-render when pathname changes
+    const handlePopState = () => setRenderKey(k => k + 1);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const pathname = window.location.pathname;
+  
+  // Admin routes
+  if (pathname === '/auth' || pathname === '/admin' || pathname === '/companies' || 
+      pathname === '/services' || pathname === '/orders') {
+    return (
+      <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/company-auth" element={<CompanyAuth />} />
-          <Route path="/company-portal" element={<CompanyPortal />} />
-          <Route path="/specialists" element={<Specialists />} />
-          <Route path="/specialist-auth" element={<SpecialistAuth />} />
-          <Route path="/specialist-orders" element={<SpecialistOrders />} />
-          <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
           <Route
             path="/admin"
             element={
@@ -82,10 +89,45 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/auth" replace />} />
         </Routes>
-      </HashRouter>
+      </BrowserRouter>
+    );
+  }
+  
+  // Company routes
+  if (pathname === '/company-auth' || pathname === '/company-portal') {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/company-auth" element={<CompanyAuth />} />
+          <Route path="/company-portal" element={<CompanyPortal />} />
+          <Route path="*" element={<Navigate to="/company-auth" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  
+  // Specialist routes (default for mobile app and root path)
+  return (
+    <HashRouter key={renderKey}>
+      <Routes>
+        <Route path="/specialist-auth" element={<SpecialistAuth />} />
+        <Route path="/specialist-orders" element={<SpecialistOrders />} />
+        <Route path="/specialists" element={<Specialists />} />
+        <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
+        <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
+      </Routes>
+    </HashRouter>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <PathBasedRouter />
     </TooltipProvider>
   </QueryClientProvider>
 );
