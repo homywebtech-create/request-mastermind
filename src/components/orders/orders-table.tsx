@@ -687,13 +687,12 @@ Thank you for contacting us! 🌟`;
                   </div>
                 </Button>
 
-                {(selectedOrder.company_id !== null || selectedOrder.send_to_all_companies === true) ? (
+                {selectedOrder.company_id && (
                   <>
                     <Button
                       onClick={() => handleResendToSameCompany(selectedOrder)}
                       variant="outline"
                       className="w-full justify-start h-auto py-4"
-                      disabled={!selectedOrder.company_id}
                     >
                       <div className="flex flex-col items-start gap-1 text-left">
                         <div className="flex items-center gap-2 font-medium">
@@ -710,7 +709,6 @@ Thank you for contacting us! 🌟`;
                       onClick={() => handleResendToSameSpecialists(selectedOrder)}
                       variant="outline"
                       className="w-full justify-start h-auto py-4"
-                      disabled={!selectedOrder.company_id}
                     >
                       <div className="flex flex-col items-start gap-1 text-left">
                         <div className="flex items-center gap-2 font-medium">
@@ -723,7 +721,7 @@ Thank you for contacting us! 🌟`;
                       </div>
                     </Button>
                   </>
-                ) : null}
+                )}
               </div>
             )}
           </div>
