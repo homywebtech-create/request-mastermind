@@ -1,3 +1,4 @@
+// Orders table component with safe null handling
 import { useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
