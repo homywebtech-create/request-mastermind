@@ -302,19 +302,236 @@ export function SpecialistForm({ companyId, onSuccess, specialist }: SpecialistF
     }
   };
 
+  // If editing (specialist exists), render form only without Dialog wrapper
+  if (specialist) {
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex flex-col items-center gap-4">
+            <Avatar className="h-24 w-24">
+              <AvatarImage src={imagePreview} />
+              <AvatarFallback>
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col gap-2 w-full">
+              <FormLabel>Specialist Photo</FormLabel>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground">
+                Max size: 5 MB (JPG, PNG, WEBP)
+              </p>
+            </div>
+          </div>
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter specialist name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-[140px_1fr] gap-2">
+              <FormField
+                control={form.control}
+                name="countryCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country Code *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-60">
+                        {countries.map((country) => (
+                          <SelectItem key={country.code} value={country.dialCode}>
+                            {country.flag} {country.dialCode}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="5xxxxxxxx" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="nationality"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nationality *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select nationality" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-60">
+                      {nationalities.map((nationality) => (
+                        <SelectItem key={nationality} value={nationality}>
+                          {nationality}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormItem>
+              <FormLabel>Main Service</FormLabel>
+              <Select onValueChange={setSelectedService} value={selectedService}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select service to filter specialties" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+
+            <FormField
+              control={form.control}
+              name="sub_service_ids"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Specialties * (You can select multiple)</FormLabel>
+                  <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
+                    {(selectedService ? subServices : []).length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        {selectedService ? "No specialties available" : "Select the main service first"}
+                      </p>
+                    ) : (
+                      subServices.map((subService) => (
+                        <div key={subService.id} className="flex items-center space-x-2 space-x-reverse">
+                          <input
+                            type="checkbox"
+                            id={subService.id}
+                            checked={field.value?.includes(subService.id) || false}
+                            onChange={(e) => {
+                              const newValue = e.target.checked
+                                ? [...(field.value || []), subService.id]
+                                : (field.value || []).filter((id) => id !== subService.id);
+                              field.onChange(newValue);
+                            }}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <label
+                            htmlFor={subService.id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {subService.name}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <FormMessage />
+                  {field.value && field.value.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {field.value.length} specialties selected
+                    </p>
+                  )}
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="experience_years"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Years of Experience</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="0" max="50" placeholder="0" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Any additional notes..."
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+          <div className="flex gap-2 justify-end pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onSuccess()}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Updating..." : "Update"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    );
+  }
+
+  // If adding new specialist, render with Dialog wrapper
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {!specialist && (
-        <DialogTrigger asChild>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Specialist
-          </Button>
-        </DialogTrigger>
-      )}
+      <DialogTrigger asChild>
+        <Button className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Specialist
+        </Button>
+      </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{specialist ? "Edit Specialist" : "Add New Specialist"}</DialogTitle>
+          <DialogTitle>Add New Specialist</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -524,7 +741,7 @@ export function SpecialistForm({ companyId, onSuccess, specialist }: SpecialistF
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (specialist ? "Updating..." : "Adding...") : (specialist ? "Update" : "Add")}
+                {isSubmitting ? "Adding..." : "Add"}
               </Button>
             </div>
           </form>

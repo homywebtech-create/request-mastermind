@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Phone, Trash2, Users, User, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SpecialistForm } from "./specialist-form";
 import { useState } from "react";
 import {
@@ -213,6 +213,9 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
       {editingSpecialist && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Specialist</DialogTitle>
+            </DialogHeader>
             <SpecialistForm
               companyId={companyId}
               specialist={{
