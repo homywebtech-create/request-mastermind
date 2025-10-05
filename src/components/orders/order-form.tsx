@@ -230,7 +230,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       serviceType,
       sendToAll: formData.sendToAll,
       companyId: formData.sendToAll ? undefined : formData.companyId,
-      specialistId: formData.specialistId || undefined,
+      specialistId: (formData.specialistId && formData.specialistId !== 'ALL_SPECIALISTS') ? formData.specialistId : undefined,
       notes: formData.notes
     };
     
@@ -461,7 +461,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                         <SelectValue placeholder="Send to all company specialists" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Specialists ({specialists.length})</SelectItem>
+                        <SelectItem value="ALL_SPECIALISTS">All Specialists ({specialists.length})</SelectItem>
                         {specialists.map((specialist) => (
                           <SelectItem key={specialist.id} value={specialist.id}>
                             {specialist.name} {specialist.specialty && `- ${specialist.specialty}`}
