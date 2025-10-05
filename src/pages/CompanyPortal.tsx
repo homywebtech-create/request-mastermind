@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Package, Users } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Building2, LogOut, Package, Clock, CheckCircle, Users } from "lucide-react";
+import { StatsCard } from "@/components/dashboard/stats-card";
+import { OrdersTable } from "@/components/orders/orders-table";
 
 interface Company {
   id: string;
@@ -18,14 +18,28 @@ interface Company {
 interface Order {
   id: string;
   customer_id: string;
+  company_id: string | null;
   service_type: string;
-  notes: string;
-  status: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  notes?: string;
+  order_link?: string;
   created_at: string;
+  updated_at: string;
+  send_to_all_companies?: boolean;
   customers: {
     name: string;
     whatsapp_number: string;
   };
+  companies: {
+    name: string;
+  } | null;
+}
+
+interface OrderStats {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
 }
 
 export default function CompanyPortal() {
@@ -34,10 +48,38 @@ export default function CompanyPortal() {
   const [company, setCompany] = useState<Company | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<OrderStats>({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+  });
 
   useEffect(() => {
     checkAuth();
-  }, []);
+    
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('company-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        () => {
+          if (company) {
+            fetchOrders(company.id);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [company]);
 
   const checkAuth = async () => {
     try {
@@ -95,21 +137,67 @@ export default function CompanyPortal() {
         .from("orders")
         .select(`
           *,
-          customers (
-            name,
-            whatsapp_number
-          )
+          customers (name, whatsapp_number),
+          companies (name)
         `)
         .or(`company_id.eq.${companyId},send_to_all_companies.eq.true`)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders((data as any) || []);
+      calculateStats((data as any) || []);
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء جلب الطلبات",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const calculateStats = (ordersList: Order[]) => {
+    setStats({
+      total: ordersList.length,
+      pending: ordersList.filter(o => o.status === 'pending').length,
+      inProgress: ordersList.filter(o => o.status === 'in-progress').length,
+      completed: ordersList.filter(o => o.status === 'completed').length,
+    });
+  };
+
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus })
+      .eq('id', orderId);
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "نجح",
+        description: "تم تحديث حالة الطلب",
+      });
+    }
+  };
+
+  const handleLinkCopied = async (orderId: string) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ 
+        status: 'in-progress',
+        link_copied_at: new Date().toISOString()
+      })
+      .eq('id', orderId);
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: error.message,
         variant: "destructive",
       });
     }
@@ -123,10 +211,7 @@ export default function CompanyPortal() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -135,123 +220,65 @@ export default function CompanyPortal() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-3">
               <Building2 className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold">{company.name}</h1>
-                <p className="text-sm text-muted-foreground">{company.phone}</p>
+                <h1 className="text-3xl font-bold text-foreground font-cairo">
+                  {company.name}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  {company.phone}
+                </p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 ml-2" />
-              تسجيل الخروج
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleLogout}
+              title="تسجيل الخروج"
+            >
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              الطلبات
-            </TabsTrigger>
-            <TabsTrigger value="workers" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              العاملات
-            </TabsTrigger>
-          </TabsList>
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatsCard
+            title="إجمالي الطلبات"
+            value={stats.total}
+            icon={<Package className="h-4 w-4" />}
+          />
+          <StatsCard
+            title="قيد الانتظار"
+            value={stats.pending}
+            icon={<Clock className="h-4 w-4" />}
+            variant="pending"
+          />
+          <StatsCard
+            title="قيد التنفيذ"
+            value={stats.inProgress}
+            icon={<Users className="h-4 w-4" />}
+            variant="warning"
+          />
+          <StatsCard
+            title="مكتملة"
+            value={stats.completed}
+            icon={<CheckCircle className="h-4 w-4" />}
+            variant="success"
+          />
+        </div>
 
-          <TabsContent value="orders" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>الطلبات الواردة</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {orders.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    لا توجد طلبات حالياً
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {orders.map((order) => (
-                      <Card key={order.id}>
-                        <CardContent className="pt-6">
-                          <div className="grid gap-2">
-                            <div className="flex justify-between">
-                              <span className="font-semibold">العميل:</span>
-                              <span>{order.customers?.name || "غير متوفر"}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-semibold">رقم الواتساب:</span>
-                              {order.customers?.whatsapp_number ? (
-                                <a
-                                  href={`https://wa.me/${order.customers.whatsapp_number}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline"
-                                >
-                                  {order.customers.whatsapp_number}
-                                </a>
-                              ) : (
-                                <span>غير متوفر</span>
-                              )}
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-semibold">الخدمة:</span>
-                              <span>{order.service_type}</span>
-                            </div>
-                            {order.notes && (
-                              <div className="flex justify-between">
-                                <span className="font-semibold">ملاحظات:</span>
-                                <span className="text-right">{order.notes}</span>
-                              </div>
-                            )}
-                            <div className="flex justify-between">
-                              <span className="font-semibold">الحالة:</span>
-                              <span className={`font-medium ${
-                                order.status === 'completed' ? 'text-green-600' :
-                                order.status === 'in-progress' ? 'text-blue-600' :
-                                'text-yellow-600'
-                              }`}>
-                                {order.status === 'completed' ? 'مكتمل' :
-                                 order.status === 'in-progress' ? 'قيد التنفيذ' :
-                                 'قيد الانتظار'}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                              <span>تاريخ الطلب:</span>
-                              <span>{new Date(order.created_at).toLocaleDateString('ar-QA')}</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="workers">
-            <Card>
-              <CardHeader>
-                <CardTitle>إدارة العاملات</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center text-muted-foreground py-8">
-                  قريباً - سيتم إضافة نظام إدارة العاملات
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <OrdersTable 
+          orders={orders}
+          onUpdateStatus={handleUpdateStatus}
+          onLinkCopied={handleLinkCopied}
+        />
       </main>
     </div>
   );
