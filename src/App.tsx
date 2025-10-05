@@ -49,8 +49,9 @@ const App = () => (
           <Route path="/specialists" element={<Specialists />} />
           <Route path="/specialist-auth" element={<SpecialistAuth />} />
           <Route path="/specialist-orders" element={<SpecialistOrders />} />
+          <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
           <Route
-            path="/"
+            path="/admin"
             element={
               <ProtectedRoute>
                 <Dashboard />
