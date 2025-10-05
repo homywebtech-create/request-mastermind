@@ -23,9 +23,13 @@ interface Specialist {
   notes?: string;
   created_at: string;
   specialist_specialties?: Array<{
+    sub_service_id: string;
     sub_services: {
+      id: string;
       name: string;
+      service_id: string;
       services?: {
+        id: string;
         name: string;
       };
     };
@@ -118,9 +122,15 @@ export default function Specialists() {
         .select(`
           *,
           specialist_specialties (
+            sub_service_id,
             sub_services (
+              id,
               name,
-              services (name)
+              service_id,
+              services (
+                id,
+                name
+              )
             )
           )
         `)
@@ -231,7 +241,9 @@ export default function Specialists() {
 
         <SpecialistsTable
           specialists={specialists}
+          companyId={company?.id || ""}
           onDelete={handleDelete}
+          onUpdate={() => company && fetchSpecialists(company.id)}
         />
       </main>
     </div>

@@ -30,6 +30,21 @@ type SpecialistFormValues = z.infer<typeof specialistSchema>;
 interface SpecialistFormProps {
   companyId: string;
   onSuccess: () => void;
+  specialist?: {
+    id: string;
+    name: string;
+    phone: string;
+    nationality: string;
+    experience_years?: number;
+    notes?: string;
+    image_url?: string;
+    specialist_specialties?: Array<{
+      sub_service_id: string;
+      sub_services: {
+        service_id: string;
+      };
+    }>;
+  };
 }
 
 interface Service {
@@ -43,7 +58,7 @@ interface SubService {
   service_id: string;
 }
 
-export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
+export function SpecialistForm({ companyId, onSuccess, specialist }: SpecialistFormProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,22 +68,44 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
   const [subServices, setSubServices] = useState<SubService[]>([]);
   const [selectedService, setSelectedService] = useState<string>("");
 
+  // Extract country code and phone number from specialist if editing
+  const extractPhoneData = (fullPhone: string) => {
+    const country = countries.find(c => fullPhone.startsWith(c.dialCode));
+    if (country) {
+      return {
+        countryCode: country.dialCode,
+        phone: fullPhone.slice(country.dialCode.length)
+      };
+    }
+    return { countryCode: "+966", phone: fullPhone };
+  };
+
+  const phoneData = specialist ? extractPhoneData(specialist.phone) : { countryCode: "+966", phone: "" };
+  
   const form = useForm<SpecialistFormValues>({
     resolver: zodResolver(specialistSchema),
     defaultValues: {
-      name: "",
-      countryCode: "+966",
-      phone: "",
-      nationality: "",
-      sub_service_ids: [],
-      experience_years: 0,
-      notes: "",
+      name: specialist?.name || "",
+      countryCode: phoneData.countryCode,
+      phone: phoneData.phone,
+      nationality: specialist?.nationality || "",
+      sub_service_ids: specialist?.specialist_specialties?.map(s => s.sub_service_id) || [],
+      experience_years: specialist?.experience_years || 0,
+      notes: specialist?.notes || "",
     },
   });
 
   useEffect(() => {
     fetchServices();
-  }, []);
+    if (specialist) {
+      setImagePreview(specialist.image_url || "");
+      // Set the service if editing
+      if (specialist.specialist_specialties && specialist.specialist_specialties.length > 0) {
+        const firstServiceId = specialist.specialist_specialties[0].sub_services.service_id;
+        setSelectedService(firstServiceId);
+      }
+    }
+  }, [specialist]);
 
   useEffect(() => {
     if (selectedService) {
@@ -159,40 +196,82 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
         imageUrl = await uploadImage(imageFile);
       }
 
-      // First, insert the specialist
       const fullPhone = `${data.countryCode}${data.phone}`;
-      const { data: specialistData, error: specialistError } = await supabase
-        .from("specialists")
-        .insert({
-          company_id: companyId,
-          name: data.name,
-          phone: fullPhone,
-          nationality: data.nationality,
-          experience_years: data.experience_years || null,
-          notes: data.notes || null,
-          image_url: imageUrl,
-        })
-        .select()
-        .single();
+      
+      if (specialist) {
+        // Update existing specialist
+        const { error: specialistError } = await supabase
+          .from("specialists")
+          .update({
+            name: data.name,
+            phone: fullPhone,
+            nationality: data.nationality,
+            experience_years: data.experience_years || null,
+            notes: data.notes || null,
+            image_url: imageUrl || specialist.image_url,
+          })
+          .eq("id", specialist.id);
 
-      if (specialistError) throw specialistError;
+        if (specialistError) throw specialistError;
 
-      // Then, insert the specialties
-      const specialtiesData = data.sub_service_ids.map((subServiceId) => ({
-        specialist_id: specialistData.id,
-        sub_service_id: subServiceId,
-      }));
+        // Delete old specialties and insert new ones
+        const { error: deleteError } = await supabase
+          .from("specialist_specialties")
+          .delete()
+          .eq("specialist_id", specialist.id);
 
-      const { error: specialtiesError } = await supabase
-        .from("specialist_specialties")
-        .insert(specialtiesData);
+        if (deleteError) throw deleteError;
 
-      if (specialtiesError) throw specialtiesError;
+        const specialtiesData = data.sub_service_ids.map((subServiceId) => ({
+          specialist_id: specialist.id,
+          sub_service_id: subServiceId,
+        }));
 
-      toast({
-        title: "Success",
-        description: "Specialist added successfully",
-      });
+        const { error: specialtiesError } = await supabase
+          .from("specialist_specialties")
+          .insert(specialtiesData);
+
+        if (specialtiesError) throw specialtiesError;
+
+        toast({
+          title: "Success",
+          description: "Specialist updated successfully",
+        });
+      } else {
+        // Insert new specialist
+        const { data: specialistData, error: specialistError } = await supabase
+          .from("specialists")
+          .insert({
+            company_id: companyId,
+            name: data.name,
+            phone: fullPhone,
+            nationality: data.nationality,
+            experience_years: data.experience_years || null,
+            notes: data.notes || null,
+            image_url: imageUrl,
+          })
+          .select()
+          .single();
+
+        if (specialistError) throw specialistError;
+
+        // Insert the specialties
+        const specialtiesData = data.sub_service_ids.map((subServiceId) => ({
+          specialist_id: specialistData.id,
+          sub_service_id: subServiceId,
+        }));
+
+        const { error: specialtiesError } = await supabase
+          .from("specialist_specialties")
+          .insert(specialtiesData);
+
+        if (specialtiesError) throw specialtiesError;
+
+        toast({
+          title: "Success",
+          description: "Specialist added successfully",
+        });
+      }
 
       form.reset();
       setImageFile(null);
@@ -213,15 +292,17 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Specialist
-        </Button>
-      </DialogTrigger>
+      {!specialist && (
+        <DialogTrigger asChild>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Specialist
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Specialist</DialogTitle>
+          <DialogTitle>{specialist ? "Edit Specialist" : "Add New Specialist"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -431,7 +512,7 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Adding..." : "Add"}
+                {isSubmitting ? (specialist ? "Updating..." : "Adding...") : (specialist ? "Update" : "Add")}
               </Button>
             </div>
           </form>

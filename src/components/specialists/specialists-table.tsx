@@ -3,7 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Trash2, Users, User } from "lucide-react";
+import { Phone, Trash2, Users, User, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { SpecialistForm } from "./specialist-form";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,9 +30,13 @@ interface Specialist {
   notes?: string;
   created_at: string;
   specialist_specialties?: Array<{
+    sub_service_id: string;
     sub_services: {
+      id: string;
       name: string;
+      service_id: string;
       services?: {
+        id: string;
         name: string;
       };
     };
@@ -38,14 +45,30 @@ interface Specialist {
 
 interface SpecialistsTableProps {
   specialists: Specialist[];
+  companyId: string;
   onDelete: (id: string) => void;
+  onUpdate: () => void;
 }
 
-export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProps) {
+export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }: SpecialistsTableProps) {
+  const [editingSpecialist, setEditingSpecialist] = useState<Specialist | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   const openWhatsApp = (phoneNumber: string) => {
     const cleanNumber = phoneNumber.replace(/\D/g, "");
     const whatsappUrl = `https://wa.me/${cleanNumber}`;
     window.open(whatsappUrl, "_blank");
+  };
+
+  const handleEdit = (specialist: Specialist) => {
+    setEditingSpecialist(specialist);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setEditingSpecialist(null);
+    onUpdate();
   };
 
   return (
@@ -148,6 +171,14 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
                           <Phone className="h-3 w-3" />
                           WhatsApp
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(specialist)}
+                          className="flex items-center gap-1"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="sm" variant="destructive" className="flex items-center gap-1">
@@ -178,6 +209,32 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
           </Table>
         </div>
       </CardContent>
+      
+      {editingSpecialist && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <SpecialistForm
+              companyId={companyId}
+              specialist={{
+                id: editingSpecialist.id,
+                name: editingSpecialist.name,
+                phone: editingSpecialist.phone,
+                nationality: editingSpecialist.nationality || "",
+                experience_years: editingSpecialist.experience_years,
+                notes: editingSpecialist.notes,
+                image_url: editingSpecialist.image_url,
+                specialist_specialties: editingSpecialist.specialist_specialties?.map(s => ({
+                  sub_service_id: s.sub_services.id,
+                  sub_services: {
+                    service_id: s.sub_services.service_id
+                  }
+                }))
+              }}
+              onSuccess={handleEditSuccess}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }
