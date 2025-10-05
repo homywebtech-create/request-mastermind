@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar, Phone, User, Wrench, Copy, CheckCircle, X, Building2, Eye, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+console.log("OrdersTable loaded - v2.0");
+
 interface Order {
   id: string;
   customer_id: string;
