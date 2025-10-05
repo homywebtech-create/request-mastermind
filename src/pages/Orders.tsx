@@ -41,6 +41,13 @@ interface Order {
     quoted_price: string | null;
     quoted_at: string | null;
     is_accepted: boolean | null;
+    specialists: {
+      id: string;
+      name: string;
+      phone: string;
+      nationality: string | null;
+      image_url: string | null;
+    };
   }>;
 }
 
@@ -102,7 +109,14 @@ export default function Orders() {
             id,
             quoted_price,
             quoted_at,
-            is_accepted
+            is_accepted,
+            specialists (
+              id,
+              name,
+              phone,
+              nationality,
+              image_url
+            )
           )
         `)
         .order('created_at', { ascending: false });

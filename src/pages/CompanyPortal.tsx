@@ -39,6 +39,13 @@ interface Order {
     quoted_at: string | null;
     is_accepted: boolean | null;
     specialist_id: string;
+    specialists: {
+      id: string;
+      name: string;
+      phone: string;
+      nationality: string | null;
+      image_url: string | null;
+    };
   }>;
 }
 
@@ -154,7 +161,14 @@ export default function CompanyPortal() {
             quoted_price,
             quoted_at,
             is_accepted,
-            specialist_id
+            specialist_id,
+            specialists (
+              id,
+              name,
+              phone,
+              nationality,
+              image_url
+            )
           )
         `)
         .or(`company_id.eq.${companyId},send_to_all_companies.eq.true`)

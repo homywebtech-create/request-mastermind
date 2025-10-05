@@ -38,6 +38,13 @@ interface Order {
     quoted_price: string | null;
     quoted_at: string | null;
     is_accepted: boolean | null;
+    specialists: {
+      id: string;
+      name: string;
+      phone: string;
+      nationality: string | null;
+      image_url: string | null;
+    };
   }>;
 }
 
@@ -643,28 +650,81 @@ Thank you for contacting us! 🌟`;
                                       <Users className="h-5 w-5" />
                                       Specialist Quotes ({order.order_specialists.filter(os => os.quoted_price).length})
                                     </h3>
-                                    <div className="space-y-2">
+                                     <div className="space-y-3">
                                       {order.order_specialists
                                         .filter(os => os.quoted_price)
                                         .map((os) => (
-                                          <div key={os.id} className="bg-muted/50 rounded-lg p-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                              <span className="font-semibold text-primary">Quote: {os.quoted_price}</span>
-                                              {os.is_accepted === true && (
-                                                <Badge className="bg-green-600">Accepted</Badge>
-                                              )}
-                                              {os.is_accepted === false && (
-                                                <Badge variant="destructive">Rejected</Badge>
-                                              )}
-                                              {os.is_accepted === null && (
-                                                <Badge variant="secondary">Pending Review</Badge>
-                                              )}
+                                          <div key={os.id} className="bg-muted/50 rounded-lg p-4 border border-border">
+                                            <div className="flex gap-4">
+                                              {/* Specialist Image */}
+                                              <div className="flex-shrink-0">
+                                                {os.specialists?.image_url ? (
+                                                  <img 
+                                                    src={os.specialists.image_url} 
+                                                    alt={os.specialists.name}
+                                                    className="w-20 h-20 rounded-lg object-cover border-2 border-border"
+                                                  />
+                                                ) : (
+                                                  <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
+                                                    <User className="h-10 w-10 text-muted-foreground" />
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              {/* Specialist Info */}
+                                              <div className="flex-1 space-y-2">
+                                                <div className="flex items-start justify-between">
+                                                  <div>
+                                                    <h4 className="font-semibold text-lg">{os.specialists?.name || 'Unknown'}</h4>
+                                                    {os.specialists?.nationality && (
+                                                      <p className="text-sm text-muted-foreground">
+                                                        {os.specialists.nationality}
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                  {os.is_accepted === true && (
+                                                    <Badge className="bg-green-600">Accepted</Badge>
+                                                  )}
+                                                  {os.is_accepted === false && (
+                                                    <Badge variant="destructive">Rejected</Badge>
+                                                  )}
+                                                  {os.is_accepted === null && (
+                                                    <Badge variant="secondary">Pending Review</Badge>
+                                                  )}
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                                  <div className="flex items-center gap-2">
+                                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="text-sm">{os.specialists?.phone || 'N/A'}</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-semibold text-primary">
+                                                      Quote: {os.quoted_price}
+                                                    </span>
+                                                  </div>
+                                                </div>
+
+                                                {os.quoted_at && (
+                                                  <p className="text-xs text-muted-foreground pt-1">
+                                                    Submitted: {formatDate(os.quoted_at)}
+                                                  </p>
+                                                )}
+
+                                                {/* WhatsApp Button */}
+                                                {os.specialists?.phone && (
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => openWhatsApp(os.specialists.phone)}
+                                                    className="mt-2 flex items-center gap-2"
+                                                  >
+                                                    <Phone className="h-3 w-3" />
+                                                    Contact on WhatsApp
+                                                  </Button>
+                                                )}
+                                              </div>
                                             </div>
-                                            {os.quoted_at && (
-                                              <p className="text-xs text-muted-foreground">
-                                                Submitted: {formatDate(os.quoted_at)}
-                                              </p>
-                                            )}
                                           </div>
                                         ))}
                                       {order.order_specialists.every(os => !os.quoted_price) && (
