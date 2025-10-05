@@ -313,7 +313,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div onClick={() => setFilter('pending')} className="cursor-pointer">
             <StatsCard
-              title="الطلبات الجديدة"
+              title="New Requests"
               value={stats.total}
               icon={<Package className="h-4 w-4" />}
               variant="pending"
@@ -321,7 +321,7 @@ export default function Dashboard() {
           </div>
           <div onClick={() => setFilter('pending')} className="cursor-pointer">
             <StatsCard
-              title="بانتظار الرد"
+              title="Awaiting Response"
               value={stats.pending}
               icon={<Clock className="h-4 w-4" />}
               variant="pending"
