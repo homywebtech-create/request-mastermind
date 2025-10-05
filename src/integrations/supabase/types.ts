@@ -266,11 +266,14 @@ export type Database = {
           email: string | null
           experience_years: number | null
           id: string
+          image_url: string | null
           is_active: boolean
           name: string
+          nationality: string | null
           notes: string | null
           phone: string
-          specialty: string
+          specialty: string | null
+          sub_service_id: string | null
           updated_at: string
         }
         Insert: {
@@ -279,11 +282,14 @@ export type Database = {
           email?: string | null
           experience_years?: number | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           name: string
+          nationality?: string | null
           notes?: string | null
           phone: string
-          specialty: string
+          specialty?: string | null
+          sub_service_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -292,11 +298,14 @@ export type Database = {
           email?: string | null
           experience_years?: number | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           name?: string
+          nationality?: string | null
           notes?: string | null
           phone?: string
-          specialty?: string
+          specialty?: string | null
+          sub_service_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -305,6 +314,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialists_sub_service_id_fkey"
+            columns: ["sub_service_id"]
+            isOneToOne: false
+            referencedRelation: "sub_services"
             referencedColumns: ["id"]
           },
         ]

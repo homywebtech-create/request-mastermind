@@ -2,7 +2,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, Mail, Trash2, Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Phone, Mail, Trash2, Users, User } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,11 +21,18 @@ interface Specialist {
   name: string;
   phone: string;
   email?: string;
-  specialty: string;
+  nationality?: string;
+  image_url?: string;
   experience_years?: number;
   is_active: boolean;
   notes?: string;
   created_at: string;
+  sub_services?: {
+    name: string;
+    services?: {
+      name: string;
+    };
+  };
 }
 
 interface SpecialistsTableProps {
@@ -52,7 +60,8 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">الاسم</TableHead>
+                <TableHead className="text-right">المحترف</TableHead>
+                <TableHead className="text-right">الجنسية</TableHead>
                 <TableHead className="text-right">التخصص</TableHead>
                 <TableHead className="text-right">الخبرة</TableHead>
                 <TableHead className="text-right">رقم الهاتف</TableHead>
@@ -64,23 +73,51 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
             <TableBody>
               {specialists.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     لا يوجد محترفين مسجلين
                   </TableCell>
                 </TableRow>
               ) : (
                 specialists.map((specialist) => (
                   <TableRow key={specialist.id}>
-                    <TableCell className="font-medium">
-                      {specialist.name}
-                      {specialist.notes && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                          {specialist.notes}
-                        </p>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={specialist.image_url} />
+                          <AvatarFallback>
+                            <User className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{specialist.name}</p>
+                          {specialist.notes && (
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {specialist.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {specialist.nationality ? (
+                        <span className="text-sm">{specialist.nationality}</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{specialist.specialty}</Badge>
+                      {specialist.sub_services ? (
+                        <div className="space-y-1">
+                          <Badge variant="outline">{specialist.sub_services.name}</Badge>
+                          {specialist.sub_services.services && (
+                            <p className="text-xs text-muted-foreground">
+                              {specialist.sub_services.services.name}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {specialist.experience_years ? (

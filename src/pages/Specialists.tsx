@@ -17,11 +17,18 @@ interface Specialist {
   name: string;
   phone: string;
   email?: string;
-  specialty: string;
+  nationality?: string;
+  image_url?: string;
   experience_years?: number;
   is_active: boolean;
   notes?: string;
   created_at: string;
+  sub_services?: {
+    name: string;
+    services?: {
+      name: string;
+    };
+  };
 }
 
 export default function Specialists() {
@@ -107,7 +114,13 @@ export default function Specialists() {
     try {
       const { data, error } = await supabase
         .from("specialists")
-        .select("*")
+        .select(`
+          *,
+          sub_services (
+            name,
+            services (name)
+          )
+        `)
         .eq("company_id", companyId)
         .order("created_at", { ascending: false });
 
