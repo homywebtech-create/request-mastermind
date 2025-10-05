@@ -15,6 +15,7 @@ interface OrderFormData {
   serviceType: string;
   sendToAll: boolean;
   companyId?: string;
+  specialistIds?: string[];
   notes: string;
 }
 
@@ -157,7 +158,7 @@ export default function Orders() {
       }
 
       // Create order
-      const { error: orderError } = await supabase
+      const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
           customer_id: customerId,
@@ -167,15 +168,75 @@ export default function Orders() {
           notes: formData.notes,
           status: 'pending',
           created_by: user?.id
-        });
+        })
+        .select('id')
+        .single();
 
       if (orderError) throw orderError;
+
+      // Link specialists to the order
+      if (formData.specialistIds && formData.specialistIds.length > 0) {
+        // If specific specialists selected
+        const orderSpecialists = formData.specialistIds.map(specialistId => ({
+          order_id: newOrder.id,
+          specialist_id: specialistId
+        }));
+
+        const { error: linkError } = await supabase
+          .from('order_specialists')
+          .insert(orderSpecialists);
+
+        if (linkError) throw linkError;
+      } else if (formData.sendToAll) {
+        // If send to all companies, get all active specialists
+        const { data: allSpecialists, error: specialistsError } = await supabase
+          .from('specialists')
+          .select('id')
+          .eq('is_active', true);
+
+        if (specialistsError) throw specialistsError;
+
+        if (allSpecialists && allSpecialists.length > 0) {
+          const orderSpecialists = allSpecialists.map(specialist => ({
+            order_id: newOrder.id,
+            specialist_id: specialist.id
+          }));
+
+          const { error: linkError } = await supabase
+            .from('order_specialists')
+            .insert(orderSpecialists);
+
+          if (linkError) throw linkError;
+        }
+      } else if (formData.companyId) {
+        // If specific company selected, get all specialists from that company
+        const { data: companySpecialists, error: specialistsError } = await supabase
+          .from('specialists')
+          .select('id')
+          .eq('company_id', formData.companyId)
+          .eq('is_active', true);
+
+        if (specialistsError) throw specialistsError;
+
+        if (companySpecialists && companySpecialists.length > 0) {
+          const orderSpecialists = companySpecialists.map(specialist => ({
+            order_id: newOrder.id,
+            specialist_id: specialist.id
+          }));
+
+          const { error: linkError } = await supabase
+            .from('order_specialists')
+            .insert(orderSpecialists);
+
+          if (linkError) throw linkError;
+        }
+      }
 
       toast({
         title: "تم إنشاء الطلب بنجاح",
         description: formData.sendToAll 
-          ? "تم إرسال الطلب لجميع الشركات المختصة"
-          : "تم إضافة الطلب إلى النظام",
+          ? "تم إرسال الطلب لجميع المحترفين"
+          : "تم إرسال الطلب للمحترفين المختارين",
       });
 
       setShowForm(false);
