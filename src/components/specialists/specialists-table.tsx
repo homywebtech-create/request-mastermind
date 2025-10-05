@@ -216,17 +216,22 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
       </CardContent>
       
       {editingSpecialist && (
-        <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
-          setIsEditDialogOpen(open);
-          if (!open) {
-            setEditingSpecialist(null);
-          }
-        }}>
+        <Dialog 
+          key={editingSpecialist.id} 
+          open={isEditDialogOpen} 
+          onOpenChange={(open) => {
+            setIsEditDialogOpen(open);
+            if (!open) {
+              setTimeout(() => setEditingSpecialist(null), 100);
+            }
+          }}
+        >
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Specialist</DialogTitle>
             </DialogHeader>
             <SpecialistForm
+              key={`edit-${editingSpecialist.id}`}
               companyId={companyId}
               specialist={{
                 id: editingSpecialist.id,

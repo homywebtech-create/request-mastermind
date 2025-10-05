@@ -100,29 +100,17 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
     fetchServices();
   }, []);
   
-  // Load specialist data only once when component mounts with specialist data
+  // Load specialist data only once when component mounts
   useEffect(() => {
-    if (specialist && !open) {
+    if (specialist) {
       setImagePreview(specialist.image_url || "");
       // Set the service if editing
       if (specialist.specialist_specialties && specialist.specialist_specialties.length > 0) {
         const firstServiceId = specialist.specialist_specialties[0].sub_services.service_id;
         setSelectedService(firstServiceId);
       }
-      
-      // Reset form with specialist data
-      const phoneData = extractPhoneData(specialist.phone);
-      form.reset({
-        name: specialist.name,
-        countryCode: phoneData.countryCode,
-        phone: phoneData.phone,
-        nationality: specialist.nationality,
-        sub_service_ids: specialist.specialist_specialties?.map(s => s.sub_service_id) || [],
-        experience_years: specialist.experience_years || 0,
-        notes: specialist.notes || "",
-      });
     }
-  }, [specialist, open]);
+  }, []);
 
   useEffect(() => {
     if (selectedService) {
