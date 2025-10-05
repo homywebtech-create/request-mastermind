@@ -135,28 +135,37 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_accepted: boolean | null
           order_id: string
           quote_notes: string | null
           quoted_at: string | null
           quoted_price: string | null
+          rejected_at: string | null
+          rejection_reason: string | null
           specialist_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_accepted?: boolean | null
           order_id: string
           quote_notes?: string | null
           quoted_at?: string | null
           quoted_price?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
           specialist_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_accepted?: boolean | null
           order_id?: string
           quote_notes?: string | null
           quoted_at?: string | null
           quoted_price?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
           specialist_id?: string
         }
         Relationships: [

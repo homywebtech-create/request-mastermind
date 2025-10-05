@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag } from "lucide-react";
+import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -24,6 +24,9 @@ interface OrderSpecialist {
   quoted_price: string | null;
   quoted_at: string | null;
   quote_notes: string | null;
+  is_accepted: boolean | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
 }
 
 interface Order {
@@ -100,7 +103,7 @@ export default function SpecialistOrders() {
       // Get order_specialists records for this specialist
       const { data: orderSpecialists } = await supabase
         .from('order_specialists')
-        .select('order_id, id, quoted_price, quoted_at, quote_notes')
+        .select('order_id, id, quoted_price, quoted_at, quote_notes, is_accepted, rejected_at, rejection_reason')
         .eq('specialist_id', specId);
 
       if (!orderSpecialists || orderSpecialists.length === 0) {
@@ -141,7 +144,10 @@ export default function SpecialistOrders() {
             id: orderSpec.id,
             quoted_price: orderSpec.quoted_price,
             quoted_at: orderSpec.quoted_at,
-            quote_notes: orderSpec.quote_notes
+            quote_notes: orderSpec.quote_notes,
+            is_accepted: orderSpec.is_accepted,
+            rejected_at: orderSpec.rejected_at,
+            rejection_reason: orderSpec.rejection_reason
           } : undefined
         };
       });
@@ -250,11 +256,16 @@ export default function SpecialistOrders() {
   }
 
   const newOrders = orders.filter(o => !o.order_specialist?.quoted_price);
-  const quotedOrders = orders.filter(o => o.order_specialist?.quoted_price && o.status === 'pending');
-  const acceptedOrders = orders.filter(o => ['in_progress', 'completed'].includes(o.status));
+  const quotedOrders = orders.filter(o => 
+    o.order_specialist?.quoted_price && 
+    o.order_specialist?.is_accepted === null
+  );
+  const acceptedOrders = orders.filter(o => o.order_specialist?.is_accepted === true);
+  const rejectedOrders = orders.filter(o => o.order_specialist?.is_accepted === false);
 
   const renderOrderCard = (order: Order, showQuoteButton: boolean = false) => {
     const hasQuote = !!order.order_specialist?.quoted_price;
+    const isRejected = order.order_specialist?.is_accepted === false;
     
     return (
       <Card 
@@ -326,7 +337,7 @@ export default function SpecialistOrders() {
         </div>
 
         {/* Show quote info if exists */}
-        {hasQuote && (
+        {hasQuote && !isRejected && (
           <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
             <Tag className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
@@ -338,6 +349,28 @@ export default function SpecialistOrders() {
                 )}
                 <p className="text-xs text-muted-foreground">
                   تم التقديم: {order.order_specialist?.quoted_at && new Date(order.order_specialist.quoted_at).toLocaleDateString('ar-SA')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Show rejection info if rejected */}
+        {isRejected && (
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
+            <XCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs text-red-600 mb-2 font-semibold">تم رفض العرض</p>
+              <div className="space-y-1">
+                <p className="text-sm"><span className="text-muted-foreground">عرضك:</span> <span className="font-bold">{order.order_specialist?.quoted_price}</span></p>
+                {order.order_specialist?.rejection_reason && (
+                  <div className="mt-2 p-3 bg-red-100 rounded-md">
+                    <p className="text-xs text-red-700 mb-1 font-semibold">سبب الرفض:</p>
+                    <p className="text-sm text-red-900">{order.order_specialist.rejection_reason}</p>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  تاريخ الرفض: {order.order_specialist?.rejected_at && new Date(order.order_specialist.rejected_at).toLocaleDateString('ar-SA')}
                 </p>
               </div>
             </div>
@@ -462,7 +495,7 @@ export default function SpecialistOrders() {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
             <div className="flex items-center justify-between">
               <div>
@@ -478,7 +511,7 @@ export default function SpecialistOrders() {
           <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">عروض مقدمة</p>
+                <p className="text-sm text-muted-foreground mb-1">قيد المراجعة</p>
                 <p className="text-3xl font-bold text-orange-600">{quotedOrders.length}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-orange-500/20 flex items-center justify-center">
@@ -490,7 +523,7 @@ export default function SpecialistOrders() {
           <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">عروض مقبولة</p>
+                <p className="text-sm text-muted-foreground mb-1">مقبولة</p>
                 <p className="text-3xl font-bold text-green-600">{acceptedOrders.length}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -498,22 +531,38 @@ export default function SpecialistOrders() {
               </div>
             </div>
           </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">مرفوضة</p>
+                <p className="text-3xl font-bold text-red-600">{rejectedOrders.length}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                <XCircle className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Orders Tabs */}
         <Tabs defaultValue="new" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
             <TabsTrigger value="new" className="gap-2">
               <AlertCircle className="h-4 w-4" />
               جديدة ({newOrders.length})
             </TabsTrigger>
             <TabsTrigger value="quoted" className="gap-2">
               <Tag className="h-4 w-4" />
-              مقدمة ({quotedOrders.length})
+              قيد المراجعة ({quotedOrders.length})
             </TabsTrigger>
             <TabsTrigger value="accepted" className="gap-2">
               <CheckCircle className="h-4 w-4" />
               مقبولة ({acceptedOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="gap-2">
+              <XCircle className="h-4 w-4" />
+              مرفوضة ({rejectedOrders.length})
             </TabsTrigger>
           </TabsList>
 
@@ -548,6 +597,18 @@ export default function SpecialistOrders() {
               </Card>
             ) : (
               acceptedOrders.map((order) => renderOrderCard(order))
+            )}
+          </TabsContent>
+
+          <TabsContent value="rejected" className="space-y-4">
+            {rejectedOrders.length === 0 ? (
+              <Card className="p-12 text-center">
+                <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-lg text-muted-foreground">لا توجد عروض مرفوضة</p>
+                <p className="text-sm text-muted-foreground mt-2">هذا شيء جيد! استمر في تقديم عروض تنافسية</p>
+              </Card>
+            ) : (
+              rejectedOrders.map((order) => renderOrderCard(order))
             )}
           </TabsContent>
         </Tabs>
