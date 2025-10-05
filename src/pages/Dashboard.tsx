@@ -151,6 +151,7 @@ export default function Dashboard() {
           notes: formData.notes,
           order_link: orderLink,
           created_by: user?.id,
+          last_sent_at: new Date().toISOString(),
         })
         .select('id')
         .single();

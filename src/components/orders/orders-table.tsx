@@ -22,6 +22,7 @@ interface Order {
   notes?: string;
   order_link?: string;
   created_at: string;
+  last_sent_at?: string;
   send_to_all_companies?: boolean;
   customers: {
     name: string;
@@ -81,15 +82,19 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     }).format(new Date(dateString));
   };
 
-  const getTimeSinceCreated = (createdAt: string) => {
+  const getTimeSinceSent = (order: Order) => {
     const now = new Date();
-    const created = new Date(createdAt);
-    const diffInMinutes = Math.floor((now.getTime() - created.getTime()) / (1000 * 60));
+    const sentTime = order.last_sent_at ? new Date(order.last_sent_at) : new Date(order.created_at);
+    const diffInMinutes = Math.floor((now.getTime() - sentTime.getTime()) / (1000 * 60));
     return diffInMinutes;
   };
 
-  const isOverThreeMinutes = (createdAt: string) => {
-    return getTimeSinceCreated(createdAt) > 3;
+  const isOverThreeMinutes = (order: Order) => {
+    return getTimeSinceSent(order) > 3;
+  };
+
+  const isWithinThreeMinutes = (order: Order) => {
+    return getTimeSinceSent(order) <= 3;
   };
 
   const handleCopyOrderLink = async (order: Order) => {
@@ -216,20 +221,21 @@ Thank you for contacting us! 🌟`;
           send_to_all_companies: true,
           company_id: null,
           specialist_id: null,
+          last_sent_at: new Date().toISOString(),
         })
         .eq('id', orderId);
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Order sent to all companies",
+        title: "تم الإرسال بنجاح",
+        description: "تم إرسال الطلب لجميع الشركات",
       });
       
       setResendDialogOpen(false);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "خطأ",
         description: error.message,
         variant: "destructive",
       });
@@ -240,8 +246,8 @@ Thank you for contacting us! 🌟`;
     try {
       if (!order.company_id) {
         toast({
-          title: "Error",
-          description: "No company assigned to this order",
+          title: "خطأ",
+          description: "لا توجد شركة محددة لهذا الطلب",
           variant: "destructive",
         });
         return;
@@ -259,20 +265,21 @@ Thank you for contacting us! 🌟`;
           send_to_all_companies: false,
           company_id: order.company_id,
           specialist_id: null,
+          last_sent_at: new Date().toISOString(),
         })
         .eq('id', order.id);
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Order resent to the same company",
+        title: "تم الإرسال بنجاح",
+        description: "تم إعادة إرسال الطلب لنفس الشركة",
       });
       
       setResendDialogOpen(false);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "خطأ",
         description: error.message,
         variant: "destructive",
       });
@@ -291,8 +298,8 @@ Thank you for contacting us! 🌟`;
 
       if (!currentSpecialists || currentSpecialists.length === 0) {
         toast({
-          title: "Error",
-          description: "No specialists assigned to this order",
+          title: "خطأ",
+          description: "لا توجد عاملات محددة لهذا الطلب",
           variant: "destructive",
         });
         return;
@@ -302,21 +309,21 @@ Thank you for contacting us! 🌟`;
       const { error } = await supabase
         .from('orders')
         .update({
-          updated_at: new Date().toISOString(),
+          last_sent_at: new Date().toISOString(),
         })
         .eq('id', order.id);
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: `Order resent to ${currentSpecialists.length} specialist(s)`,
+        title: "تم الإرسال بنجاح",
+        description: `تم إعادة إرسال الطلب لـ ${currentSpecialists.length} عاملة/عاملات`,
       });
       
       setResendDialogOpen(false);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "خطأ",
         description: error.message,
         variant: "destructive",
       });
@@ -466,13 +473,14 @@ Thank you for contacting us! 🌟`;
                   const customerArea = order.customers?.area || '-';
                   const customerBudget = order.customers?.budget || '-';
                   const isPending = order.status === 'pending' && (order.company_id || order.send_to_all_companies);
-                  const minutesSinceCreated = getTimeSinceCreated(order.created_at);
-                  const isDelayed = isOverThreeMinutes(order.created_at) && isPending;
+                  const minutesSinceSent = getTimeSinceSent(order);
+                  const isDelayed = isOverThreeMinutes(order) && isPending;
+                  const isRecentlySent = isWithinThreeMinutes(order) && isPending;
                   
                   return (
                     <TableRow 
                       key={order.id}
-                      className={isDelayed ? "bg-destructive/10 border-destructive/20" : ""}
+                      className={isDelayed ? "bg-destructive/10 border-destructive/20" : isRecentlySent ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" : ""}
                     >
                       <TableCell>
                         <div className="space-y-1">
@@ -514,10 +522,12 @@ Thank you for contacting us! 🌟`;
                             {formatDate(order.created_at)}
                           </div>
                           {isPending && (
-                            <div className={`text-xs ${isDelayed ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                            <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : isRecentlySent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                               {isDelayed 
-                                ? `⚠️ No response for ${minutesSinceCreated} minutes`
-                                : `✓ Sent, waiting for response (${minutesSinceCreated} min)`
+                                ? `⚠️ لا يوجد رد منذ ${minutesSinceSent} دقيقة`
+                                : isRecentlySent 
+                                  ? `✓ تم الإرسال، بانتظار الرد (${minutesSinceSent} دقيقة)`
+                                  : `✓ تم الإرسال، بانتظار الرد (${minutesSinceSent} دقيقة)`
                               }
                             </div>
                           )}

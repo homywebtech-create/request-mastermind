@@ -174,6 +174,7 @@ export type Database = {
           created_by: string | null
           customer_id: string
           id: string
+          last_sent_at: string | null
           link_copied_at: string | null
           notes: string | null
           order_link: string | null
@@ -189,6 +190,7 @@ export type Database = {
           created_by?: string | null
           customer_id: string
           id?: string
+          last_sent_at?: string | null
           link_copied_at?: string | null
           notes?: string | null
           order_link?: string | null
@@ -204,6 +206,7 @@ export type Database = {
           created_by?: string | null
           customer_id?: string
           id?: string
+          last_sent_at?: string | null
           link_copied_at?: string | null
           notes?: string | null
           order_link?: string | null
