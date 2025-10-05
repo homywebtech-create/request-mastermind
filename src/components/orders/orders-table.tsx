@@ -219,19 +219,21 @@ Thank you for contacting us! 🌟`;
     if (!selectedOrder || !selectedCompanyId) return;
 
     try {
+      const specialistId = selectedSpecialistId === 'ALL_SPECIALISTS' ? null : (selectedSpecialistId || null);
+      
       const { error } = await supabase
         .from('orders')
         .update({
           send_to_all_companies: false,
           company_id: selectedCompanyId,
-          specialist_id: selectedSpecialistId || null,
+          specialist_id: specialistId,
         })
         .eq('id', selectedOrder.id);
 
       if (error) throw error;
 
       let description = "Order sent to company";
-      if (selectedSpecialistId) {
+      if (specialistId) {
         description = "Order sent to selected specialist";
       } else {
         description = "Order sent to all company specialists";
@@ -501,7 +503,7 @@ Thank you for contacting us! 🌟`;
                     <SelectValue placeholder="Send to all company specialists" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">
+                    <SelectItem value="ALL_SPECIALISTS">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         All Specialists ({specialists.length})
