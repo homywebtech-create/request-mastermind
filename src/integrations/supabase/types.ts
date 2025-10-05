@@ -131,6 +131,42 @@ export type Database = {
           },
         ]
       }
+      order_specialists: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          specialist_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          specialist_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          specialist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_specialists_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_specialists_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           company_id: string | null

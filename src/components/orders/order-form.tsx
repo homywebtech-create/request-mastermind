@@ -29,7 +29,7 @@ interface OrderFormData {
   subServiceId: string;
   sendToAll: boolean;
   companyId: string;
-  specialistId: string;
+  specialistIds: string[];
   notes: string;
 }
 
@@ -39,7 +39,7 @@ interface SubmittedOrderData {
   serviceType: string;
   sendToAll: boolean;
   companyId?: string;
-  specialistId?: string;
+  specialistIds?: string[];
   notes: string;
 }
 
@@ -75,7 +75,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     subServiceId: '',
     sendToAll: true,
     companyId: '',
-    specialistId: '',
+    specialistIds: [],
     notes: '',
   });
 
@@ -232,7 +232,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       serviceType,
       sendToAll: formData.sendToAll,
       companyId: formData.sendToAll ? undefined : formData.companyId,
-      specialistId: (formData.specialistId && formData.specialistId !== 'ALL_SPECIALISTS') ? formData.specialistId : undefined,
+      specialistIds: formData.specialistIds.length > 0 ? formData.specialistIds : undefined,
       notes: formData.notes
     };
     
@@ -246,7 +246,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       subServiceId: '',
       sendToAll: true,
       companyId: '',
-      specialistId: '',
+      specialistIds: [],
       notes: '',
     });
     setSelectedService(null);
@@ -255,16 +255,25 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const handleInputChange = (field: keyof OrderFormData, value: string) => {
     setFormData(prev => {
       if (field === 'serviceId') {
-        return { ...prev, [field]: value, subServiceId: '', companyId: '', specialistId: '' };
+        return { ...prev, serviceId: value, subServiceId: '', companyId: '', specialistIds: [] };
       }
       if (field === 'subServiceId') {
-        return { ...prev, [field]: value, companyId: '', specialistId: '' };
+        return { ...prev, subServiceId: value, companyId: '', specialistIds: [] };
       }
       if (field === 'companyId') {
-        return { ...prev, [field]: value, specialistId: '' };
+        return { ...prev, companyId: value, specialistIds: [] };
       }
       return { ...prev, [field]: value };
     });
+  };
+
+  const toggleSpecialist = (specialistId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specialistIds: prev.specialistIds.includes(specialistId)
+        ? prev.specialistIds.filter(id => id !== specialistId)
+        : [...prev.specialistIds, specialistId]
+    }));
   };
 
   return (
@@ -456,51 +465,52 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 </div>
 
                 {formData.companyId && specialists.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="specialistId">Choose Specialist (Optional)</Label>
-                    <Select value={formData.specialistId} onValueChange={(value) => handleInputChange('specialistId', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Send to all company specialists" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[400px]">
-                        <SelectItem value="ALL_SPECIALISTS">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            <span>All Specialists ({specialists.length})</span>
-                          </div>
-                        </SelectItem>
-                        {specialists.map((specialist) => (
-                          <SelectItem key={specialist.id} value={specialist.id}>
-                            <div className="flex items-center gap-3 py-1">
-                              {specialist.image_url ? (
-                                <img 
-                                  src={specialist.image_url} 
-                                  alt={specialist.name}
-                                  className="w-10 h-10 rounded-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                                  <User className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                              )}
-                              <div className="flex flex-col">
-                                <span className="font-medium">{specialist.name}</span>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Phone className="h-3 w-3" />
-                                  <span dir="ltr">{specialist.phone}</span>
-                                  {specialist.specialty && (
-                                    <>
-                                      <span>•</span>
-                                      <span>{specialist.specialty}</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                  <div className="space-y-3">
+                    <Label>Choose Specialists (Optional)</Label>
+                    <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto space-y-3">
+                      {specialists.map((specialist) => (
+                        <label
+                          key={specialist.id}
+                          className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.specialistIds.includes(specialist.id)}
+                            onChange={() => toggleSpecialist(specialist.id)}
+                            className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
+                          />
+                          {specialist.image_url ? (
+                            <img 
+                              src={specialist.image_url} 
+                              alt={specialist.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-6 w-6 text-muted-foreground" />
                             </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          )}
+                          <div className="flex flex-col flex-1">
+                            <span className="font-medium">{specialist.name}</span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Phone className="h-3 w-3" />
+                              <span dir="ltr">{specialist.phone}</span>
+                              {specialist.specialty && (
+                                <>
+                                  <span>•</span>
+                                  <span>{specialist.specialty}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    {formData.specialistIds.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {formData.specialistIds.length} specialist(s) selected
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       Leave empty to send to all specialists in this company
                     </p>

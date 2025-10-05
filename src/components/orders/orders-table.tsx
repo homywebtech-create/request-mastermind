@@ -62,7 +62,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const [companies, setCompanies] = useState<Company[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
-  const [selectedSpecialistId, setSelectedSpecialistId] = useState<string>('');
+  const [selectedSpecialistIds, setSelectedSpecialistIds] = useState<string[]>([]);
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
@@ -187,7 +187,7 @@ Thank you for contacting us! 🌟`;
       fetchSpecialists(selectedCompanyId);
     } else {
       setSpecialists([]);
-      setSelectedSpecialistId('');
+      setSelectedSpecialistIds([]);
     }
   }, [selectedCompanyId]);
 
@@ -221,22 +221,44 @@ Thank you for contacting us! 🌟`;
     if (!selectedOrder || !selectedCompanyId) return;
 
     try {
-      const specialistId = selectedSpecialistId === 'ALL_SPECIALISTS' ? null : (selectedSpecialistId || null);
-      
-      const { error } = await supabase
+      // Create order with company assignment
+      const { data: updatedOrder, error: orderError } = await supabase
         .from('orders')
         .update({
           send_to_all_companies: false,
           company_id: selectedCompanyId,
-          specialist_id: specialistId,
+          specialist_id: null,
         })
-        .eq('id', selectedOrder.id);
+        .eq('id', selectedOrder.id)
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (orderError) throw orderError;
+
+      // If specific specialists are selected, insert into junction table
+      if (selectedSpecialistIds.length > 0) {
+        // First, delete existing specialists for this order
+        await supabase
+          .from('order_specialists')
+          .delete()
+          .eq('order_id', selectedOrder.id);
+
+        // Insert new specialists
+        const orderSpecialists = selectedSpecialistIds.map(specialistId => ({
+          order_id: updatedOrder.id,
+          specialist_id: specialistId,
+        }));
+
+        const { error: junctionError } = await supabase
+          .from('order_specialists')
+          .insert(orderSpecialists);
+
+        if (junctionError) throw junctionError;
+      }
 
       let description = "Order sent to company";
-      if (specialistId) {
-        description = "Order sent to selected specialist";
+      if (selectedSpecialistIds.length > 0) {
+        description = `Order sent to ${selectedSpecialistIds.length} specialist(s)`;
       } else {
         description = "Order sent to all company specialists";
       }
@@ -249,7 +271,7 @@ Thank you for contacting us! 🌟`;
       setSendDialogOpen(false);
       setSelectedOrder(null);
       setSelectedCompanyId('');
-      setSelectedSpecialistId('');
+      setSelectedSpecialistIds([]);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -262,9 +284,17 @@ Thank you for contacting us! 🌟`;
   const openSendDialog = (order: Order) => {
     setSelectedOrder(order);
     setSelectedCompanyId('');
-    setSelectedSpecialistId('');
+    setSelectedSpecialistIds([]);
     fetchCompanies();
     setSendDialogOpen(true);
+  };
+
+  const toggleSpecialist = (specialistId: string) => {
+    setSelectedSpecialistIds(prev =>
+      prev.includes(specialistId)
+        ? prev.filter(id => id !== specialistId)
+        : [...prev, specialistId]
+    );
   };
 
   return (
@@ -498,51 +528,52 @@ Thank you for contacting us! 🌟`;
             </div>
 
             {selectedCompanyId && specialists.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="specialist">Select Specialist (Optional)</Label>
-                <Select value={selectedSpecialistId} onValueChange={setSelectedSpecialistId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Send to all company specialists" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[400px]">
-                    <SelectItem value="ALL_SPECIALISTS">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>All Specialists ({specialists.length})</span>
-                      </div>
-                    </SelectItem>
-                    {specialists.map((specialist) => (
-                      <SelectItem key={specialist.id} value={specialist.id}>
-                        <div className="flex items-center gap-3 py-1">
-                          {specialist.image_url ? (
-                            <img 
-                              src={specialist.image_url} 
-                              alt={specialist.name}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                              <User className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="flex flex-col">
-                            <span className="font-medium">{specialist.name}</span>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Phone className="h-3 w-3" />
-                              <span dir="ltr">{specialist.phone}</span>
-                              {specialist.specialty && (
-                                <>
-                                  <span>•</span>
-                                  <span>{specialist.specialty}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
+              <div className="space-y-3">
+                <Label>Select Specialists (Optional)</Label>
+                <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto space-y-3">
+                  {specialists.map((specialist) => (
+                    <label
+                      key={specialist.id}
+                      className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedSpecialistIds.includes(specialist.id)}
+                        onChange={() => toggleSpecialist(specialist.id)}
+                        className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
+                      />
+                      {specialist.image_url ? (
+                        <img 
+                          src={specialist.image_url} 
+                          alt={specialist.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                          <User className="h-6 w-6 text-muted-foreground" />
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      )}
+                      <div className="flex flex-col flex-1">
+                        <span className="font-medium">{specialist.name}</span>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Phone className="h-3 w-3" />
+                          <span dir="ltr">{specialist.phone}</span>
+                          {specialist.specialty && (
+                            <>
+                              <span>•</span>
+                              <span>{specialist.specialty}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {selectedSpecialistIds.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {selectedSpecialistIds.length} specialist(s) selected
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Leave empty to send to all specialists in this company
                 </p>
