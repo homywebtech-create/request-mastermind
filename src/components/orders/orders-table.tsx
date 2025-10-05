@@ -459,18 +459,6 @@ Thank you for contacting us! 🌟`;
                               </Button>
                             </>
                           )}
-                          
-                          {order.customers?.whatsapp_number && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openWhatsApp(order.customers.whatsapp_number)}
-                              className="flex items-center gap-1"
-                            >
-                              <Phone className="h-3 w-3" />
-                              WhatsApp
-                            </Button>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
