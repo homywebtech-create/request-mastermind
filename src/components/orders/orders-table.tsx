@@ -80,6 +80,17 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     }).format(new Date(dateString));
   };
 
+  const getTimeSinceCreated = (createdAt: string) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInMinutes = Math.floor((now.getTime() - created.getTime()) / (1000 * 60));
+    return diffInMinutes;
+  };
+
+  const isOverThreeMinutes = (createdAt: string) => {
+    return getTimeSinceCreated(createdAt) > 3;
+  };
+
   const handleCopyOrderLink = async (order: Order) => {
     try {
       const orderLink = order.order_link || `${window.location.origin}/order/${order.id}`;
@@ -353,9 +364,15 @@ Thank you for contacting us! 🌟`;
                   const customerPhone = order.customers?.whatsapp_number || 'غير متوفر';
                   const customerArea = order.customers?.area || '-';
                   const customerBudget = order.customers?.budget || '-';
+                  const isPending = order.status === 'pending' && (order.company_id || order.send_to_all_companies);
+                  const minutesSinceCreated = getTimeSinceCreated(order.created_at);
+                  const isDelayed = isOverThreeMinutes(order.created_at) && isPending;
                   
                   return (
-                    <TableRow key={order.id}>
+                    <TableRow 
+                      key={order.id}
+                      className={isDelayed ? "bg-destructive/10 border-destructive/20" : ""}
+                    >
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -390,9 +407,19 @@ Thank you for contacting us! 🌟`;
                       </TableCell>
                       
                       <TableCell>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(order.created_at)}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(order.created_at)}
+                          </div>
+                          {isPending && (
+                            <div className={`text-xs ${isDelayed ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                              {isDelayed 
+                                ? `⚠️ No response for ${minutesSinceCreated} minutes`
+                                : `✓ Sent, waiting for response (${minutesSinceCreated} min)`
+                              }
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       
@@ -469,27 +496,53 @@ Thank you for contacting us! 🌟`;
                             </DialogContent>
                           </Dialog>
 
-                          {/* Show actions only for pending requests waiting for response */}
-                          {order.status === 'pending' && (order.company_id || order.send_to_all_companies) && (
+                          {isPending && (
                             <>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleSendToAll(order.id)}
-                                className="flex items-center gap-1"
-                              >
-                                <Send className="h-3 w-3" />
-                                Resend to All
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openSendDialog(order)}
-                                className="flex items-center gap-1"
-                              >
-                                <Building2 className="h-3 w-3" />
-                                Change Company
-                              </Button>
+                              {isDelayed ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleSendToAll(order.id)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Users className="h-3 w-3" />
+                                    Resend to All
+                                  </Button>
+
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => openSendDialog(order)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Send className="h-3 w-3" />
+                                    Change Company
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleSendToAll(order.id)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Users className="h-3 w-3" />
+                                    Resend to All
+                                  </Button>
+
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openSendDialog(order)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Send className="h-3 w-3" />
+                                    Change Company
+                                  </Button>
+                                </>
+                              )}
                             </>
                           )}
                         </div>
