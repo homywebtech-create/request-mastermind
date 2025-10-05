@@ -332,6 +332,22 @@ Thank you for contacting us! 🌟`;
 
   const openResendDialog = async (order: Order) => {
     setSelectedOrder(order);
+    
+    // Fetch latest order data to ensure we have company info
+    const { data: latestOrder, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        customers (name, whatsapp_number, area, budget),
+        companies (name)
+      `)
+      .eq('id', order.id)
+      .single();
+    
+    if (!error && latestOrder) {
+      setSelectedOrder(latestOrder as any);
+    }
+    
     setResendDialogOpen(true);
   };
 
@@ -613,10 +629,11 @@ Thank you for contacting us! 🌟`;
                                 size="sm"
                                 variant={isDelayed ? "destructive" : "outline"}
                                 onClick={() => openResendDialog(order)}
+                                disabled={!!isRecentlySent}
                                 className="flex items-center gap-1"
                               >
                                 <Send className="h-3 w-3" />
-                                Resend
+                                {isRecentlySent ? `Resend (${3 - minutesSinceSent}m)` : 'Resend'}
                               </Button>
 
                               <Button
@@ -670,41 +687,43 @@ Thank you for contacting us! 🌟`;
                   </div>
                 </Button>
 
-                {selectedOrder.company_id && (
-                  <Button
-                    onClick={() => handleResendToSameCompany(selectedOrder)}
-                    variant="outline"
-                    className="w-full justify-start h-auto py-4"
-                  >
-                    <div className="flex flex-col items-start gap-1 text-left">
-                      <div className="flex items-center gap-2 font-medium">
-                        <Building2 className="h-4 w-4" />
-                        Resend to Same Company
+                {(selectedOrder.company_id !== null || selectedOrder.send_to_all_companies === true) ? (
+                  <>
+                    <Button
+                      onClick={() => handleResendToSameCompany(selectedOrder)}
+                      variant="outline"
+                      className="w-full justify-start h-auto py-4"
+                      disabled={!selectedOrder.company_id}
+                    >
+                      <div className="flex flex-col items-start gap-1 text-left">
+                        <div className="flex items-center gap-2 font-medium">
+                          <Building2 className="h-4 w-4" />
+                          Resend to Same Company
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {selectedOrder.companies?.name ? `Send again to ${selectedOrder.companies.name}` : 'Send again to the same company'}
+                        </span>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        Send again to {selectedOrder.companies?.name || 'the same company'}
-                      </span>
-                    </div>
-                  </Button>
-                )}
+                    </Button>
 
-                {selectedOrder.company_id && (
-                  <Button
-                    onClick={() => handleResendToSameSpecialists(selectedOrder)}
-                    variant="outline"
-                    className="w-full justify-start h-auto py-4"
-                  >
-                    <div className="flex flex-col items-start gap-1 text-left">
-                      <div className="flex items-center gap-2 font-medium">
-                        <User className="h-4 w-4" />
-                        Resend to Same Specialists
+                    <Button
+                      onClick={() => handleResendToSameSpecialists(selectedOrder)}
+                      variant="outline"
+                      className="w-full justify-start h-auto py-4"
+                      disabled={!selectedOrder.company_id}
+                    >
+                      <div className="flex flex-col items-start gap-1 text-left">
+                        <div className="flex items-center gap-2 font-medium">
+                          <User className="h-4 w-4" />
+                          Resend to Same Specialists
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          Send again to the same specialists in the company
+                        </span>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        Send again to the same specialists in the company
-                      </span>
-                    </div>
-                  </Button>
-                )}
+                    </Button>
+                  </>
+                ) : null}
               </div>
             )}
           </div>
