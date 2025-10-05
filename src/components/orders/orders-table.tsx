@@ -43,6 +43,8 @@ interface Specialist {
   id: string;
   name: string;
   specialty: string | null;
+  phone: string;
+  image_url: string | null;
 }
 
 interface OrdersTableProps {
@@ -167,7 +169,7 @@ Thank you for contacting us! 🌟`;
     try {
       const { data, error } = await supabase
         .from("specialists")
-        .select("id, name, specialty")
+        .select("id, name, specialty, phone, image_url")
         .eq("company_id", companyId)
         .eq("is_active", true)
         .order("name");
@@ -502,16 +504,41 @@ Thank you for contacting us! 🌟`;
                   <SelectTrigger>
                     <SelectValue placeholder="Send to all company specialists" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[400px]">
                     <SelectItem value="ALL_SPECIALISTS">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        All Specialists ({specialists.length})
+                        <span>All Specialists ({specialists.length})</span>
                       </div>
                     </SelectItem>
                     {specialists.map((specialist) => (
                       <SelectItem key={specialist.id} value={specialist.id}>
-                        {specialist.name} {specialist.specialty && `- ${specialist.specialty}`}
+                        <div className="flex items-center gap-3 py-1">
+                          {specialist.image_url ? (
+                            <img 
+                              src={specialist.image_url} 
+                              alt={specialist.name}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="font-medium">{specialist.name}</span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Phone className="h-3 w-3" />
+                              <span dir="ltr">{specialist.phone}</span>
+                              {specialist.specialty && (
+                                <>
+                                  <span>•</span>
+                                  <span>{specialist.specialty}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
