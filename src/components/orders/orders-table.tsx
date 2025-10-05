@@ -58,6 +58,7 @@ interface OrdersTableProps {
 export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange }: OrdersTableProps) {
   const { toast } = useToast();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [resendDialogOpen, setResendDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
@@ -203,6 +204,12 @@ Thank you for contacting us! 🌟`;
 
   const handleSendToAll = async (orderId: string) => {
     try {
+      // Delete existing specialists assignments
+      await supabase
+        .from('order_specialists')
+        .delete()
+        .eq('order_id', orderId);
+
       const { error } = await supabase
         .from('orders')
         .update({
@@ -218,6 +225,8 @@ Thank you for contacting us! 🌟`;
         title: "Success",
         description: "Order sent to all companies",
       });
+      
+      setResendDialogOpen(false);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -225,6 +234,98 @@ Thank you for contacting us! 🌟`;
         variant: "destructive",
       });
     }
+  };
+
+  const handleResendToSameCompany = async (order: Order) => {
+    try {
+      if (!order.company_id) {
+        toast({
+          title: "Error",
+          description: "No company assigned to this order",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Delete existing specialists assignments
+      await supabase
+        .from('order_specialists')
+        .delete()
+        .eq('order_id', order.id);
+
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          send_to_all_companies: false,
+          company_id: order.company_id,
+          specialist_id: null,
+        })
+        .eq('id', order.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Order resent to the same company",
+      });
+      
+      setResendDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResendToSameSpecialists = async (order: Order) => {
+    try {
+      // Get current specialists for this order
+      const { data: currentSpecialists, error: fetchError } = await supabase
+        .from('order_specialists')
+        .select('specialist_id')
+        .eq('order_id', order.id);
+
+      if (fetchError) throw fetchError;
+
+      if (!currentSpecialists || currentSpecialists.length === 0) {
+        toast({
+          title: "Error",
+          description: "No specialists assigned to this order",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update order timestamp to trigger notification (keeping same specialists)
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', order.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Order resent to ${currentSpecialists.length} specialist(s)`,
+      });
+      
+      setResendDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openResendDialog = async (order: Order) => {
+    setSelectedOrder(order);
+    setResendDialogOpen(true);
   };
 
   const handleSendToCompany = async () => {
@@ -498,51 +599,25 @@ Thank you for contacting us! 🌟`;
 
                           {isPending && (
                             <>
-                              {isDelayed ? (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleSendToAll(order.id)}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Users className="h-3 w-3" />
-                                    Resend to All
-                                  </Button>
+                              <Button
+                                size="sm"
+                                variant={isDelayed ? "destructive" : "outline"}
+                                onClick={() => openResendDialog(order)}
+                                className="flex items-center gap-1"
+                              >
+                                <Send className="h-3 w-3" />
+                                Resend
+                              </Button>
 
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => openSendDialog(order)}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Send className="h-3 w-3" />
-                                    Change Company
-                                  </Button>
-                                </>
-                              ) : (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleSendToAll(order.id)}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Users className="h-3 w-3" />
-                                    Resend to All
-                                  </Button>
-
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => openSendDialog(order)}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Send className="h-3 w-3" />
-                                    Change Company
-                                  </Button>
-                                </>
-                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openSendDialog(order)}
+                                className="flex items-center gap-1"
+                              >
+                                <Building2 className="h-3 w-3" />
+                                Change
+                              </Button>
                             </>
                           )}
                         </div>
@@ -555,6 +630,76 @@ Thank you for contacting us! 🌟`;
           </Table>
         </div>
       </CardContent>
+
+      {/* Resend Options Dialog */}
+      <Dialog open={resendDialogOpen} onOpenChange={setResendDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resend Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Choose how you want to resend this order:
+            </p>
+
+            {selectedOrder && (
+              <div className="space-y-3">
+                <Button
+                  onClick={() => handleSendToAll(selectedOrder.id)}
+                  variant="outline"
+                  className="w-full justify-start h-auto py-4"
+                >
+                  <div className="flex flex-col items-start gap-1 text-left">
+                    <div className="flex items-center gap-2 font-medium">
+                      <Users className="h-4 w-4" />
+                      Send to All Companies
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Broadcast this order to all available companies
+                    </span>
+                  </div>
+                </Button>
+
+                {selectedOrder.company_id && (
+                  <Button
+                    onClick={() => handleResendToSameCompany(selectedOrder)}
+                    variant="outline"
+                    className="w-full justify-start h-auto py-4"
+                  >
+                    <div className="flex flex-col items-start gap-1 text-left">
+                      <div className="flex items-center gap-2 font-medium">
+                        <Building2 className="h-4 w-4" />
+                        Resend to Same Company
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        Send again to {selectedOrder.companies?.name || 'the same company'}
+                      </span>
+                    </div>
+                  </Button>
+                )}
+
+                {selectedOrder.company_id && (
+                  <Button
+                    onClick={() => handleResendToSameSpecialists(selectedOrder)}
+                    variant="outline"
+                    className="w-full justify-start h-auto py-4"
+                  >
+                    <div className="flex flex-col items-start gap-1 text-left">
+                      <div className="flex items-center gap-2 font-medium">
+                        <User className="h-4 w-4" />
+                        Resend to Same Specialists
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        Send again to the same specialists in the company
+                      </span>
+                    </div>
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Send to Company Dialog */}
       <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
