@@ -157,7 +157,7 @@ ${orderLink}
               <TableRow>
                 <TableHead className="text-right">العميل</TableHead>
                 <TableHead className="text-right">المنطقة</TableHead>
-                <TableHead className="text-right">الميزانية</TableHead>
+                <TableHead className="text-right">ميزانية العميل</TableHead>
                 <TableHead className="text-right">الخدمة</TableHead>
                 <TableHead className="text-right">التوصيات</TableHead>
                 <TableHead className="text-right">التاريخ</TableHead>
