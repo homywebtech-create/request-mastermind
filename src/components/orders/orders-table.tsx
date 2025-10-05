@@ -1,4 +1,3 @@
-// Orders table component with safe null handling
 import { useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
@@ -79,8 +78,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
     const cleanNumber = order.customers.whatsapp_number.replace(/\D/g, '');
     const companyName = order.companies?.name || 'غير محدد';
     
-    const message = `
-مرحباً ${order.customers.name}،
+    const message = `مرحباً ${order.customers.name}،
 
 تم استلام طلبك بنجاح! ✅
 
@@ -94,8 +92,7 @@ ${orderLink}
 
 يمكنك استخدام هذا الرابط لمتابعة حالة طلبك في أي وقت.
 
-شكراً لتواصلك معنا! 🌟
-    `.trim();
+شكراً لتواصلك معنا! 🌟`;
     
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
