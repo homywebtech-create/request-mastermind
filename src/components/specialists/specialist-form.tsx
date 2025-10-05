@@ -17,9 +17,8 @@ import { nationalities } from "@/data/nationalities";
 const specialistSchema = z.object({
   name: z.string().min(2, "يجب أن يكون الاسم حرفين على الأقل").max(100),
   phone: z.string().min(10, "رقم الهاتف غير صحيح").max(20),
-  email: z.string().email("البريد الإلكتروني غير صحيح").optional().or(z.literal("")),
   nationality: z.string().min(1, "يجب اختيار الجنسية"),
-  sub_service_id: z.string().min(1, "يجب اختيار التخصص"),
+  sub_service_ids: z.array(z.string()).min(1, "يجب اختيار تخصص واحد على الأقل"),
   experience_years: z.coerce.number().min(0).max(50).optional(),
   notes: z.string().max(500).optional(),
 });
@@ -57,9 +56,8 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
     defaultValues: {
       name: "",
       phone: "",
-      email: "",
       nationality: "",
-      sub_service_id: "",
+      sub_service_ids: [],
       experience_years: 0,
       notes: "",
     },
@@ -158,19 +156,34 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
         imageUrl = await uploadImage(imageFile);
       }
 
-      const { error } = await supabase.from("specialists").insert({
-        company_id: companyId,
-        name: data.name,
-        phone: data.phone,
-        email: data.email || null,
-        nationality: data.nationality,
-        sub_service_id: data.sub_service_id,
-        experience_years: data.experience_years || null,
-        notes: data.notes || null,
-        image_url: imageUrl,
-      });
+      // First, insert the specialist
+      const { data: specialistData, error: specialistError } = await supabase
+        .from("specialists")
+        .insert({
+          company_id: companyId,
+          name: data.name,
+          phone: data.phone,
+          nationality: data.nationality,
+          experience_years: data.experience_years || null,
+          notes: data.notes || null,
+          image_url: imageUrl,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (specialistError) throw specialistError;
+
+      // Then, insert the specialties
+      const specialtiesData = data.sub_service_ids.map((subServiceId) => ({
+        specialist_id: specialistData.id,
+        sub_service_id: subServiceId,
+      }));
+
+      const { error: specialtiesError } = await supabase
+        .from("specialist_specialties")
+        .insert(specialtiesData);
+
+      if (specialtiesError) throw specialtiesError;
 
       toast({
         title: "تم بنجاح",
@@ -244,35 +257,19 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>رقم الهاتف *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="05xxxxxxxx" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>البريد الإلكتروني</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="example@email.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>رقم الهاتف *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="05xxxxxxxx" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -299,52 +296,67 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormItem>
-                <FormLabel>الخدمة الرئيسية *</FormLabel>
-                <Select onValueChange={setSelectedService} value={selectedService}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الخدمة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
-                        {service.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
+            <FormItem>
+              <FormLabel>الخدمة الرئيسية</FormLabel>
+              <Select onValueChange={setSelectedService} value={selectedService}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الخدمة لتصفية التخصصات" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
 
-              <FormField
-                control={form.control}
-                name="sub_service_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>التخصص (الخدمة الفرعية) *</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                      disabled={!selectedService}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر التخصص" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {subServices.map((subService) => (
-                          <SelectItem key={subService.id} value={subService.id}>
+            <FormField
+              control={form.control}
+              name="sub_service_ids"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>التخصصات * (يمكن اختيار أكثر من تخصص)</FormLabel>
+                  <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
+                    {(selectedService ? subServices : []).length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        {selectedService ? "لا توجد تخصصات متاحة" : "اختر الخدمة الرئيسية أولاً"}
+                      </p>
+                    ) : (
+                      subServices.map((subService) => (
+                        <div key={subService.id} className="flex items-center space-x-2 space-x-reverse">
+                          <input
+                            type="checkbox"
+                            id={subService.id}
+                            checked={field.value?.includes(subService.id) || false}
+                            onChange={(e) => {
+                              const newValue = e.target.checked
+                                ? [...(field.value || []), subService.id]
+                                : (field.value || []).filter((id) => id !== subService.id);
+                              field.onChange(newValue);
+                            }}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <label
+                            htmlFor={subService.id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
                             {subService.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <FormMessage />
+                  {field.value && field.value.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      تم اختيار {field.value.length} تخصص
+                    </p>
+                  )}
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

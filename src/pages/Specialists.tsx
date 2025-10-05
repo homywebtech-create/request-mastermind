@@ -16,19 +16,20 @@ interface Specialist {
   id: string;
   name: string;
   phone: string;
-  email?: string;
   nationality?: string;
   image_url?: string;
   experience_years?: number;
   is_active: boolean;
   notes?: string;
   created_at: string;
-  sub_services?: {
-    name: string;
-    services?: {
+  specialist_specialties?: Array<{
+    sub_services: {
       name: string;
+      services?: {
+        name: string;
+      };
     };
-  };
+  }>;
 }
 
 export default function Specialists() {
@@ -116,9 +117,11 @@ export default function Specialists() {
         .from("specialists")
         .select(`
           *,
-          sub_services (
-            name,
-            services (name)
+          specialist_specialties (
+            sub_services (
+              name,
+              services (name)
+            )
           )
         `)
         .eq("company_id", companyId)

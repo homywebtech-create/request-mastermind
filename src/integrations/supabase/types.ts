@@ -259,11 +259,46 @@ export type Database = {
         }
         Relationships: []
       }
+      specialist_specialties: {
+        Row: {
+          created_at: string
+          id: string
+          specialist_id: string
+          sub_service_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          specialist_id: string
+          sub_service_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          specialist_id?: string
+          sub_service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_specialties_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_specialties_sub_service_id_fkey"
+            columns: ["sub_service_id"]
+            isOneToOne: false
+            referencedRelation: "sub_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialists: {
         Row: {
           company_id: string
           created_at: string
-          email: string | null
           experience_years: number | null
           id: string
           image_url: string | null
@@ -273,13 +308,11 @@ export type Database = {
           notes: string | null
           phone: string
           specialty: string | null
-          sub_service_id: string | null
           updated_at: string
         }
         Insert: {
           company_id: string
           created_at?: string
-          email?: string | null
           experience_years?: number | null
           id?: string
           image_url?: string | null
@@ -289,13 +322,11 @@ export type Database = {
           notes?: string | null
           phone: string
           specialty?: string | null
-          sub_service_id?: string | null
           updated_at?: string
         }
         Update: {
           company_id?: string
           created_at?: string
-          email?: string | null
           experience_years?: number | null
           id?: string
           image_url?: string | null
@@ -305,7 +336,6 @@ export type Database = {
           notes?: string | null
           phone?: string
           specialty?: string | null
-          sub_service_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -314,13 +344,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "specialists_sub_service_id_fkey"
-            columns: ["sub_service_id"]
-            isOneToOne: false
-            referencedRelation: "sub_services"
             referencedColumns: ["id"]
           },
         ]

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Mail, Trash2, Users, User } from "lucide-react";
+import { Phone, Trash2, Users, User } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,19 +20,20 @@ interface Specialist {
   id: string;
   name: string;
   phone: string;
-  email?: string;
   nationality?: string;
   image_url?: string;
   experience_years?: number;
   is_active: boolean;
   notes?: string;
   created_at: string;
-  sub_services?: {
-    name: string;
-    services?: {
+  specialist_specialties?: Array<{
+    sub_services: {
       name: string;
+      services?: {
+        name: string;
+      };
     };
-  };
+  }>;
 }
 
 interface SpecialistsTableProps {
@@ -62,10 +63,9 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
               <TableRow>
                 <TableHead className="text-right">المحترف</TableHead>
                 <TableHead className="text-right">الجنسية</TableHead>
-                <TableHead className="text-right">التخصص</TableHead>
+                <TableHead className="text-right">التخصصات</TableHead>
                 <TableHead className="text-right">الخبرة</TableHead>
                 <TableHead className="text-right">رقم الهاتف</TableHead>
-                <TableHead className="text-right">البريد الإلكتروني</TableHead>
                 <TableHead className="text-right">الحالة</TableHead>
                 <TableHead className="text-right">الإجراءات</TableHead>
               </TableRow>
@@ -73,7 +73,7 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
             <TableBody>
               {specialists.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     لا يوجد محترفين مسجلين
                   </TableCell>
                 </TableRow>
@@ -106,14 +106,13 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
                       )}
                     </TableCell>
                     <TableCell>
-                      {specialist.sub_services ? (
-                        <div className="space-y-1">
-                          <Badge variant="outline">{specialist.sub_services.name}</Badge>
-                          {specialist.sub_services.services && (
-                            <p className="text-xs text-muted-foreground">
-                              {specialist.sub_services.services.name}
-                            </p>
-                          )}
+                      {specialist.specialist_specialties && specialist.specialist_specialties.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {specialist.specialist_specialties.map((specialty, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {specialty.sub_services.name}
+                            </Badge>
+                          ))}
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">-</span>
@@ -134,13 +133,6 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
                       </div>
                     </TableCell>
                     <TableCell>
-                      {specialist.email ? (
-                        <span className="text-sm">{specialist.email}</span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
                       <Badge variant={specialist.is_active ? "default" : "secondary"}>
                         {specialist.is_active ? "نشط" : "غير نشط"}
                       </Badge>
@@ -156,16 +148,6 @@ export function SpecialistsTable({ specialists, onDelete }: SpecialistsTableProp
                           <Phone className="h-3 w-3" />
                           واتساب
                         </Button>
-                        {specialist.email && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => window.open(`mailto:${specialist.email}`, "_blank")}
-                            className="flex items-center gap-1"
-                          >
-                            <Mail className="h-3 w-3" />
-                          </Button>
-                        )}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="sm" variant="destructive" className="flex items-center gap-1">
