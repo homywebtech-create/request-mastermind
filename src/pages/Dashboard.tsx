@@ -102,8 +102,8 @@ export default function Dashboard() {
 
   const calculateStats = (ordersList: Order[]) => {
     setStats({
-      total: ordersList.filter(o => o.status === 'pending').length, // New requests only
-      pending: ordersList.filter(o => o.status === 'pending').length,
+      total: ordersList.filter(o => o.status === 'pending' && !o.company_id && !o.send_to_all_companies).length, // New requests - not sent yet
+      pending: ordersList.filter(o => o.status === 'pending' && (o.company_id || o.send_to_all_companies)).length, // Sent but waiting
       inProgress: ordersList.filter(o => o.status === 'in-progress').length,
       completed: ordersList.filter(o => o.status === 'completed').length,
     });

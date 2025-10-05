@@ -437,7 +437,8 @@ Thank you for contacting us! 🌟`;
                             </DialogContent>
                           </Dialog>
 
-                          {order.status === 'pending' && (
+                          {/* Show actions only for new requests (pending + not sent yet) */}
+                          {order.status === 'pending' && !order.company_id && !order.send_to_all_companies && (
                             <>
                               <Button
                                 size="sm"
