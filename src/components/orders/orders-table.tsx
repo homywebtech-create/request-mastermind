@@ -84,7 +84,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
 
 📋 *تفاصيل الطلب:*
 • الخدمة: ${order.service_type}
-• الشركة: ${order.companies.name}
+${order.companies?.name ? `• الشركة: ${order.companies.name}` : ''}
 ${order.notes ? `• ملاحظات: ${order.notes}` : ''}
 
 🔗 *رابط متابعة الطلب:*
