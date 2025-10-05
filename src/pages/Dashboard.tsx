@@ -29,11 +29,18 @@ interface Order {
   companies: {
     name: string;
   } | null;
+  order_specialists?: Array<{
+    id: string;
+    quoted_price: string | null;
+    quoted_at: string | null;
+    is_accepted: boolean | null;
+  }>;
 }
 
 interface OrderStats {
   total: number;
   pending: number;
+  awaitingResponse: number;
   inProgress: number;
   completed: number;
 }
@@ -45,6 +52,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
+    awaitingResponse: 0,
     inProgress: 0,
     completed: 0,
   });
@@ -84,7 +92,13 @@ export default function Dashboard() {
       .select(`
         *,
         customers (name, whatsapp_number),
-        companies (name)
+        companies (name),
+        order_specialists (
+          id,
+          quoted_price,
+          quoted_at,
+          is_accepted
+        )
       `)
       .order('created_at', { ascending: false });
 
@@ -102,9 +116,23 @@ export default function Dashboard() {
   };
 
   const calculateStats = (ordersList: Order[]) => {
+    // Pending: Orders with no quotes yet
+    const pendingOrders = ordersList.filter(o => 
+      o.status === 'pending' && 
+      (o.company_id || o.send_to_all_companies) &&
+      (!o.order_specialists || o.order_specialists.every(os => !os.quoted_price))
+    );
+    
+    // Awaiting Response: Orders with at least one quote, not accepted yet
+    const awaitingOrders = ordersList.filter(o => 
+      o.order_specialists && 
+      o.order_specialists.some(os => os.quoted_price && os.is_accepted === null)
+    );
+    
     setStats({
-      total: ordersList.filter(o => o.status === 'pending' && (o.company_id || o.send_to_all_companies)).length, // Pending requests sent to companies
-      pending: ordersList.filter(o => o.status === 'pending' && (o.company_id || o.send_to_all_companies)).length, // Same as total
+      total: ordersList.filter(o => o.company_id || o.send_to_all_companies).length,
+      pending: pendingOrders.length,
+      awaitingResponse: awaitingOrders.length,
       inProgress: ordersList.filter(o => o.status === 'in-progress').length,
       completed: ordersList.filter(o => o.status === 'completed').length,
     });
@@ -314,15 +342,15 @@ export default function Dashboard() {
           <div onClick={() => setFilter('pending')} className="cursor-pointer">
             <StatsCard
               title="New Requests"
-              value={stats.total}
+              value={stats.pending}
               icon={<Package className="h-4 w-4" />}
               variant="pending"
             />
           </div>
-          <div onClick={() => setFilter('pending')} className="cursor-pointer">
+          <div onClick={() => setFilter('awaiting-response')} className="cursor-pointer">
             <StatsCard
               title="Awaiting Response"
-              value={stats.pending}
+              value={stats.awaitingResponse}
               icon={<Clock className="h-4 w-4" />}
               variant="pending"
             />

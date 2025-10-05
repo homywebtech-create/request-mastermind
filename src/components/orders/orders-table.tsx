@@ -33,6 +33,12 @@ interface Order {
   companies: {
     name: string;
   } | null;
+  order_specialists?: Array<{
+    id: string;
+    quoted_price: string | null;
+    quoted_at: string | null;
+    is_accepted: boolean | null;
+  }>;
 }
 
 interface Company {
@@ -68,7 +74,17 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
-    if (filter === 'new' || filter === 'pending') return order.status === 'pending' && (order.company_id || order.send_to_all_companies);
+    if (filter === 'new' || filter === 'pending') {
+      // New orders: pending status with no quotes
+      return order.status === 'pending' && 
+             (order.company_id || order.send_to_all_companies) &&
+             (!order.order_specialists || order.order_specialists.every(os => !os.quoted_price));
+    }
+    if (filter === 'awaiting-response') {
+      // Awaiting response: has at least one quote, not accepted yet
+      return order.order_specialists && 
+             order.order_specialists.some(os => os.quoted_price && os.is_accepted === null);
+    }
     return order.status === filter;
   });
 
@@ -448,7 +464,7 @@ Thank you for contacting us! 🌟`;
               <SelectContent>
                 <SelectItem value="all">All Orders</SelectItem>
                 <SelectItem value="new">New Requests</SelectItem>
-                <SelectItem value="pending">New Requests</SelectItem>
+                <SelectItem value="awaiting-response">Awaiting Response</SelectItem>
                 <SelectItem value="in-progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -619,6 +635,46 @@ Thank you for contacting us! 🌟`;
                                     )}
                                   </div>
                                 </div>
+
+                                {/* Specialist Quotes Section */}
+                                {order.order_specialists && order.order_specialists.length > 0 && (
+                                  <div className="space-y-3">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                      <Users className="h-5 w-5" />
+                                      Specialist Quotes ({order.order_specialists.filter(os => os.quoted_price).length})
+                                    </h3>
+                                    <div className="space-y-2">
+                                      {order.order_specialists
+                                        .filter(os => os.quoted_price)
+                                        .map((os) => (
+                                          <div key={os.id} className="bg-muted/50 rounded-lg p-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                              <span className="font-semibold text-primary">Quote: {os.quoted_price}</span>
+                                              {os.is_accepted === true && (
+                                                <Badge className="bg-green-600">Accepted</Badge>
+                                              )}
+                                              {os.is_accepted === false && (
+                                                <Badge variant="destructive">Rejected</Badge>
+                                              )}
+                                              {os.is_accepted === null && (
+                                                <Badge variant="secondary">Pending Review</Badge>
+                                              )}
+                                            </div>
+                                            {os.quoted_at && (
+                                              <p className="text-xs text-muted-foreground">
+                                                Submitted: {formatDate(os.quoted_at)}
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      {order.order_specialists.every(os => !os.quoted_price) && (
+                                        <div className="bg-muted/30 rounded-lg p-4 text-center">
+                                          <p className="text-sm text-muted-foreground">No quotes submitted yet</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </DialogContent>
                           </Dialog>

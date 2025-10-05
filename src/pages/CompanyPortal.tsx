@@ -33,11 +33,19 @@ interface Order {
   companies: {
     name: string;
   } | null;
+  order_specialists?: Array<{
+    id: string;
+    quoted_price: string | null;
+    quoted_at: string | null;
+    is_accepted: boolean | null;
+    specialist_id: string;
+  }>;
 }
 
 interface OrderStats {
   total: number;
   pending: number;
+  awaitingResponse: number;
   inProgress: number;
   completed: number;
 }
@@ -52,6 +60,7 @@ export default function CompanyPortal() {
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
+    awaitingResponse: 0,
     inProgress: 0,
     completed: 0,
   });
@@ -139,7 +148,14 @@ export default function CompanyPortal() {
         .select(`
           *,
           customers (name, whatsapp_number, area, budget),
-          companies (name)
+          companies (name),
+          order_specialists (
+            id,
+            quoted_price,
+            quoted_at,
+            is_accepted,
+            specialist_id
+          )
         `)
         .or(`company_id.eq.${companyId},send_to_all_companies.eq.true`)
         .order("created_at", { ascending: false });
@@ -158,9 +174,22 @@ export default function CompanyPortal() {
   };
 
   const calculateStats = (ordersList: Order[]) => {
+    // Pending: Orders with no quotes yet
+    const pendingOrders = ordersList.filter(o => 
+      o.status === 'pending' && 
+      (!o.order_specialists || o.order_specialists.every(os => !os.quoted_price))
+    );
+    
+    // Awaiting Response: Orders with at least one quote from company specialists, not accepted yet
+    const awaitingOrders = ordersList.filter(o => 
+      o.order_specialists && 
+      o.order_specialists.some(os => os.quoted_price && os.is_accepted === null)
+    );
+    
     setStats({
       total: ordersList.length,
-      pending: ordersList.filter(o => o.status === 'pending').length,
+      pending: pendingOrders.length,
+      awaitingResponse: awaitingOrders.length,
       inProgress: ordersList.filter(o => o.status === 'in-progress').length,
       completed: ordersList.filter(o => o.status === 'completed').length,
     });
@@ -260,29 +289,38 @@ export default function CompanyPortal() {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
-            title="Total Orders"
-            value={stats.total}
-            icon={<Package className="h-4 w-4" />}
-          />
-          <StatsCard
-            title="Pending"
-            value={stats.pending}
-            icon={<Clock className="h-4 w-4" />}
-            variant="pending"
-          />
-          <StatsCard
-            title="In Progress"
-            value={stats.inProgress}
-            icon={<Users className="h-4 w-4" />}
-            variant="warning"
-          />
-          <StatsCard
-            title="Completed"
-            value={stats.completed}
-            icon={<CheckCircle className="h-4 w-4" />}
-            variant="success"
-          />
+          <div onClick={() => setFilter('new')} className="cursor-pointer">
+            <StatsCard
+              title="New Orders"
+              value={stats.pending}
+              icon={<Package className="h-4 w-4" />}
+              variant="pending"
+            />
+          </div>
+          <div onClick={() => setFilter('awaiting-response')} className="cursor-pointer">
+            <StatsCard
+              title="Awaiting Response"
+              value={stats.awaitingResponse}
+              icon={<Clock className="h-4 w-4" />}
+              variant="warning"
+            />
+          </div>
+          <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
+            <StatsCard
+              title="In Progress"
+              value={stats.inProgress}
+              icon={<Users className="h-4 w-4" />}
+              variant="default"
+            />
+          </div>
+          <div onClick={() => setFilter('completed')} className="cursor-pointer">
+            <StatsCard
+              title="Completed"
+              value={stats.completed}
+              icon={<CheckCircle className="h-4 w-4" />}
+              variant="success"
+            />
+          </div>
         </div>
 
         <OrdersTable 

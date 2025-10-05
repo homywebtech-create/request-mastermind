@@ -36,6 +36,12 @@ interface Order {
   companies: {
     name: string;
   } | null;
+  order_specialists?: Array<{
+    id: string;
+    quoted_price: string | null;
+    quoted_at: string | null;
+    is_accepted: boolean | null;
+  }>;
 }
 
 export default function Orders() {
@@ -91,6 +97,12 @@ export default function Orders() {
           ),
           companies (
             name
+          ),
+          order_specialists (
+            id,
+            quoted_price,
+            quoted_at,
+            is_accepted
           )
         `)
         .order('created_at', { ascending: false });
