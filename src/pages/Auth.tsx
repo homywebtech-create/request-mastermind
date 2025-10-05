@@ -35,7 +35,7 @@ export default function Auth() {
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحباً بك في لوحة الإدارة",
         });
-        navigate("/");
+        navigate("/admin");
       } else {
         const { error } = await supabase.auth.signUp({
           email,
