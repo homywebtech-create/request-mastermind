@@ -24,7 +24,7 @@ interface Order {
   customers: {
     name: string;
     whatsapp_number: string;
-  };
+  } | null;
   companies: {
     name: string;
   } | null;
@@ -76,11 +76,14 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
   };
 
   const sendOrderLinkViaWhatsApp = (order: Order) => {
+    if (!order.customers?.whatsapp_number) return;
+    
     const orderLink = order.order_link || `${window.location.origin}/order/${order.id}`;
     const cleanNumber = order.customers.whatsapp_number.replace(/\D/g, '');
     const companyName = order.companies?.name || 'غير محدد';
+    const customerName = order.customers?.name || 'عزيزي العميل';
     
-    const message = `مرحباً ${order.customers.name}،
+    const message = `مرحباً ${customerName}،
 
 تم استلام طلبك بنجاح! ✅
 
@@ -167,11 +170,11 @@ ${orderLink}
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{order.customers.name}</span>
+                          <span className="font-medium">{order.customers?.name || 'غير متوفر'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Phone className="h-3 w-3" />
-                          <span dir="ltr">{order.customers.whatsapp_number}</span>
+                          <span dir="ltr">{order.customers?.whatsapp_number || 'غير متوفر'}</span>
                         </div>
                       </div>
                     </TableCell>
@@ -238,11 +241,11 @@ ${orderLink}
                                 <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                                   <div className="flex items-center justify-between">
                                     <span className="text-muted-foreground">الاسم:</span>
-                                    <span className="font-medium">{order.customers.name}</span>
+                                    <span className="font-medium">{order.customers?.name || 'غير متوفر'}</span>
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <span className="text-muted-foreground">رقم الواتساب:</span>
-                                    <span className="font-medium" dir="ltr">{order.customers.whatsapp_number}</span>
+                                    <span className="font-medium" dir="ltr">{order.customers?.whatsapp_number || 'غير متوفر'}</span>
                                   </div>
                                 </div>
                               </div>
@@ -304,29 +307,33 @@ ${orderLink}
 
                               {/* Actions */}
                               <div className="flex gap-2 pt-4 border-t">
-                                <Button
-                                  onClick={() => openWhatsApp(order.customers.whatsapp_number)}
-                                  className="flex-1"
-                                  variant="outline"
-                                >
-                                  <Phone className="h-4 w-4 ml-2" />
-                                  التواصل عبر واتساب
-                                </Button>
-                                {order.status === 'pending' && (
-                                  <Button
-                                    onClick={() => sendOrderLinkViaWhatsApp(order)}
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
-                                  >
-                                    <Phone className="h-4 w-4 ml-2" />
-                                    إرسال رابط الطلب
-                                  </Button>
+                                {order.customers?.whatsapp_number && (
+                                  <>
+                                    <Button
+                                      onClick={() => openWhatsApp(order.customers.whatsapp_number)}
+                                      className="flex-1"
+                                      variant="outline"
+                                    >
+                                      <Phone className="h-4 w-4 ml-2" />
+                                      التواصل عبر واتساب
+                                    </Button>
+                                    {order.status === 'pending' && (
+                                      <Button
+                                        onClick={() => sendOrderLinkViaWhatsApp(order)}
+                                        className="flex-1 bg-green-600 hover:bg-green-700"
+                                      >
+                                        <Phone className="h-4 w-4 ml-2" />
+                                        إرسال رابط الطلب
+                                      </Button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
                           </DialogContent>
                         </Dialog>
 
-                        {order.status === 'pending' && (
+                        {order.status === 'pending' && order.customers?.whatsapp_number && (
                           <>
                             <Button
                               size="sm"
@@ -372,15 +379,17 @@ ${orderLink}
                           </>
                         )}
                         
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openWhatsApp(order.customers.whatsapp_number)}
-                          className="flex items-center gap-1"
-                        >
-                          <Phone className="h-3 w-3" />
-                          واتساب
-                        </Button>
+                        {order.customers?.whatsapp_number && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openWhatsApp(order.customers.whatsapp_number)}
+                            className="flex items-center gap-1"
+                          >
+                            <Phone className="h-3 w-3" />
+                            واتساب
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
