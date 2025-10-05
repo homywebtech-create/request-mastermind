@@ -186,8 +186,8 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
       if (specialtiesError) throw specialtiesError;
 
       toast({
-        title: "تم بنجاح",
-        description: "تم إضافة المحترف بنجاح",
+        title: "Success",
+        description: "Specialist added successfully",
       });
 
       form.reset();
@@ -198,7 +198,7 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
       onSuccess();
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -212,12 +212,12 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          إضافة محترف
+          Add Specialist
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>إضافة محترف جديد</DialogTitle>
+          <DialogTitle>Add New Specialist</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -230,7 +230,7 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col gap-2 w-full">
-                <FormLabel>صورة المحترف</FormLabel>
+                <FormLabel>Specialist Photo</FormLabel>
                 <Input
                   type="file"
                   accept="image/*"
@@ -238,7 +238,7 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
                   className="cursor-pointer"
                 />
                 <p className="text-xs text-muted-foreground">
-                  الحد الأقصى: 5 ميجابايت (JPG, PNG, WEBP)
+                  Max size: 5 MB (JPG, PNG, WEBP)
                 </p>
               </div>
             </div>
@@ -248,9 +248,9 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>الاسم *</FormLabel>
+                  <FormLabel>Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="أدخل اسم المحترف" {...field} />
+                    <Input placeholder="Enter specialist name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -262,7 +262,7 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>رقم الهاتف *</FormLabel>
+                  <FormLabel>Phone Number *</FormLabel>
                   <FormControl>
                     <Input placeholder="05xxxxxxxx" {...field} />
                   </FormControl>
@@ -276,11 +276,11 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               name="nationality"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>الجنسية *</FormLabel>
+                  <FormLabel>Nationality *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="اختر الجنسية" />
+                        <SelectValue placeholder="Select nationality" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-60">
@@ -297,10 +297,10 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
             />
 
             <FormItem>
-              <FormLabel>الخدمة الرئيسية</FormLabel>
+              <FormLabel>Main Service</FormLabel>
               <Select onValueChange={setSelectedService} value={selectedService}>
                 <SelectTrigger>
-                  <SelectValue placeholder="اختر الخدمة لتصفية التخصصات" />
+                  <SelectValue placeholder="Select service to filter specialties" />
                 </SelectTrigger>
                 <SelectContent>
                   {services.map((service) => (
@@ -317,11 +317,11 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               name="sub_service_ids"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>التخصصات * (يمكن اختيار أكثر من تخصص)</FormLabel>
+                  <FormLabel>Specialties * (You can select multiple)</FormLabel>
                   <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
                     {(selectedService ? subServices : []).length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        {selectedService ? "لا توجد تخصصات متاحة" : "اختر الخدمة الرئيسية أولاً"}
+                        {selectedService ? "No specialties available" : "Select the main service first"}
                       </p>
                     ) : (
                       subServices.map((subService) => (
@@ -351,7 +351,7 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
                   <FormMessage />
                   {field.value && field.value.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      تم اختيار {field.value.length} تخصص
+                      {field.value.length} specialties selected
                     </p>
                   )}
                 </FormItem>
@@ -363,7 +363,7 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               name="experience_years"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>سنوات الخبرة</FormLabel>
+                  <FormLabel>Years of Experience</FormLabel>
                   <FormControl>
                     <Input type="number" min="0" max="50" placeholder="0" {...field} />
                   </FormControl>
@@ -377,10 +377,10 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>ملاحظات</FormLabel>
+                  <FormLabel>Notes</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="أي ملاحظات إضافية..."
+                      placeholder="Any additional notes..."
                       className="resize-none"
                       rows={3}
                       {...field}
@@ -398,10 +398,10 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
                 onClick={() => setOpen(false)}
                 disabled={isSubmitting}
               >
-                إلغاء
+                Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "جاري الإضافة..." : "إضافة"}
+                {isSubmitting ? "Adding..." : "Add"}
               </Button>
             </div>
           </form>
