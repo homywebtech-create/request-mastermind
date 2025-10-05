@@ -430,12 +430,12 @@ Thank you for contacting us! 🌟`;
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Orders</SelectItem>
-                <SelectItem value="new">New Requests</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="all">جميع الطلبات</SelectItem>
+                <SelectItem value="new">الطلبات الجديدة</SelectItem>
+                <SelectItem value="pending">الطلبات الجديدة</SelectItem>
+                <SelectItem value="in-progress">قيد التنفيذ</SelectItem>
+                <SelectItem value="completed">مكتمل</SelectItem>
+                <SelectItem value="cancelled">ملغي</SelectItem>
               </SelectContent>
             </Select>
             <Badge variant="secondary">
