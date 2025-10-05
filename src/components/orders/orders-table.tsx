@@ -24,6 +24,8 @@ interface Order {
   customers: {
     name: string;
     whatsapp_number: string;
+    area?: string;
+    budget?: string;
   } | null;
   companies: {
     name: string;
@@ -46,10 +48,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
   });
 
   const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat('ar-SA', {
+    return new Intl.DateTimeFormat('en-GB', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
     }).format(new Date(dateString));
@@ -154,17 +156,19 @@ ${orderLink}
             <TableHeader>
               <TableRow>
                 <TableHead className="text-right">العميل</TableHead>
-                <TableHead className="text-right">الشركة</TableHead>
+                <TableHead className="text-right">المنطقة</TableHead>
+                <TableHead className="text-right">الميزانية</TableHead>
                 <TableHead className="text-right">الخدمة</TableHead>
+                <TableHead className="text-right">التوصيات</TableHead>
+                <TableHead className="text-right">التاريخ</TableHead>
                 <TableHead className="text-right">الحالة</TableHead>
-                <TableHead className="text-right">تاريخ الإنشاء</TableHead>
                 <TableHead className="text-right">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     لا توجد طلبات متاحة
                   </TableCell>
                 </TableRow>
@@ -172,7 +176,8 @@ ${orderLink}
                 filteredOrders.map((order) => {
                   const customerName = order.customers?.name || 'غير متوفر';
                   const customerPhone = order.customers?.whatsapp_number || 'غير متوفر';
-                  const companyName = order.companies?.name || '-';
+                  const customerArea = order.customers?.area || '-';
+                  const customerBudget = order.customers?.budget || '-';
                   
                   return (
                     <TableRow key={order.id}>
@@ -190,38 +195,34 @@ ${orderLink}
                       </TableCell>
 
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          {order.send_to_all_companies ? (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                              كل الشركات
-                            </Badge>
-                          ) : (
-                            <span className="text-sm">{companyName}</span>
-                          )}
-                        </div>
+                        <span className="text-sm">{customerArea}</span>
+                      </TableCell>
+
+                      <TableCell>
+                        <span className="text-sm">{customerBudget}</span>
                       </TableCell>
                       
                       <TableCell>
-                        <div className="space-y-1">
-                          <Badge variant="outline">{order.service_type}</Badge>
-                          {order.notes && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {order.notes}
-                            </p>
-                          )}
-                        </div>
+                        <Badge variant="outline">{order.service_type}</Badge>
+                      </TableCell>
+
+                      <TableCell>
+                        {order.notes ? (
+                          <p className="text-sm max-w-xs line-clamp-2">{order.notes}</p>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       
                       <TableCell>
-                        <StatusBadge status={order.status} />
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
                           <Calendar className="h-3 w-3" />
                           {formatDate(order.created_at)}
                         </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <StatusBadge status={order.status} />
                       </TableCell>
                       
                       <TableCell>
@@ -247,7 +248,7 @@ ${orderLink}
                                     <User className="h-5 w-5" />
                                     معلومات العميل
                                   </h3>
-                                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                   <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                                     <div className="flex items-center justify-between">
                                       <span className="text-muted-foreground">الاسم:</span>
                                       <span className="font-medium">{customerName}</span>
@@ -255,6 +256,14 @@ ${orderLink}
                                     <div className="flex items-center justify-between">
                                       <span className="text-muted-foreground">رقم الواتساب:</span>
                                       <span className="font-medium" dir="ltr">{customerPhone}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-muted-foreground">المنطقة:</span>
+                                      <span className="font-medium">{customerArea}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-muted-foreground">الميزانية:</span>
+                                      <span className="font-medium">{customerBudget}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -265,16 +274,6 @@ ${orderLink}
                                     تفاصيل الطلب
                                   </h3>
                                   <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-muted-foreground">الشركة:</span>
-                                      {order.send_to_all_companies ? (
-                                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                          كل الشركات
-                                        </Badge>
-                                      ) : (
-                                        <span className="font-medium">{companyName}</span>
-                                      )}
-                                    </div>
                                     <div className="flex items-center justify-between">
                                       <span className="text-muted-foreground">نوع الخدمة:</span>
                                       <Badge variant="outline">{order.service_type}</Badge>

@@ -137,7 +137,7 @@ export default function CompanyPortal() {
         .from("orders")
         .select(`
           *,
-          customers (name, whatsapp_number),
+          customers (name, whatsapp_number, area, budget),
           companies (name)
         `)
         .or(`company_id.eq.${companyId},send_to_all_companies.eq.true`)

@@ -95,6 +95,8 @@ export type Database = {
       }
       customers: {
         Row: {
+          area: string | null
+          budget: string | null
           company_id: string | null
           created_at: string
           id: string
@@ -102,6 +104,8 @@ export type Database = {
           whatsapp_number: string
         }
         Insert: {
+          area?: string | null
+          budget?: string | null
           company_id?: string | null
           created_at?: string
           id?: string
@@ -109,6 +113,8 @@ export type Database = {
           whatsapp_number: string
         }
         Update: {
+          area?: string | null
+          budget?: string | null
           company_id?: string | null
           created_at?: string
           id?: string
