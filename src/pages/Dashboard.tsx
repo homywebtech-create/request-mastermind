@@ -143,6 +143,9 @@ export default function Dashboard() {
       o.order_specialists.some(os => os.quoted_price && os.is_accepted === null)
     );
     
+    console.log('Orders with quotes:', ordersList.filter(o => o.order_specialists && o.order_specialists.length > 0));
+    console.log('Awaiting orders:', awaitingOrders);
+    
     setStats({
       total: ordersList.filter(o => o.company_id || o.send_to_all_companies).length,
       pending: pendingOrders.length,

@@ -184,6 +184,70 @@ Thank you for contacting us! 🌟`;
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleAcceptQuote = async (orderSpecialistId: string, orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('order_specialists')
+        .update({ 
+          is_accepted: true,
+          rejected_at: null,
+          rejection_reason: null
+        })
+        .eq('id', orderSpecialistId);
+
+      if (error) throw error;
+
+      // Update order status to in-progress
+      await supabase
+        .from('orders')
+        .update({ status: 'in-progress' })
+        .eq('id', orderId);
+
+      toast({
+        title: "عرض مقبول",
+        description: "تم قبول عرض السعر بنجاح",
+      });
+
+      // Refresh orders
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectQuote = async (orderSpecialistId: string, reason?: string) => {
+    try {
+      const { error } = await supabase
+        .from('order_specialists')
+        .update({ 
+          is_accepted: false,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: reason || 'تم رفض العرض من قبل الإدارة'
+        })
+        .eq('id', orderSpecialistId);
+
+      if (error) throw error;
+
+      toast({
+        title: "عرض مرفوض",
+        description: "تم رفض عرض السعر",
+      });
+
+      // Refresh orders
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchCompanies = async () => {
     try {
       const { data, error } = await supabase
@@ -711,18 +775,40 @@ Thank you for contacting us! 🌟`;
                                                   </p>
                                                 )}
 
-                                                {/* WhatsApp Button */}
-                                                {os.specialists?.phone && (
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => openWhatsApp(os.specialists.phone)}
-                                                    className="mt-2 flex items-center gap-2"
-                                                  >
-                                                    <Phone className="h-3 w-3" />
-                                                    Contact on WhatsApp
-                                                  </Button>
-                                                )}
+                                                {/* Action Buttons */}
+                                                <div className="flex gap-2 mt-3">
+                                                  {os.specialists?.phone && (
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => openWhatsApp(os.specialists.phone)}
+                                                      className="flex items-center gap-2"
+                                                    >
+                                                      <Phone className="h-3 w-3" />
+                                                      Contact on WhatsApp
+                                                    </Button>
+                                                  )}
+                                                  
+                                                  {/* Accept/Reject buttons only for pending quotes */}
+                                                  {os.is_accepted === null && (
+                                                    <>
+                                                      <Button
+                                                        size="sm"
+                                                        className="bg-green-600 hover:bg-green-700"
+                                                        onClick={() => handleAcceptQuote(os.id, order.id)}
+                                                      >
+                                                        قبول
+                                                      </Button>
+                                                      <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        onClick={() => handleRejectQuote(os.id)}
+                                                      >
+                                                        رفض
+                                                      </Button>
+                                                    </>
+                                                  )}
+                                                </div>
                                               </div>
                                             </div>
                                           </div>
