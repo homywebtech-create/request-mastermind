@@ -1,3 +1,5 @@
+// OrdersTable Component - Version: 2025-01-05-08:46
+// All null checks implemented with optional chaining
 import { useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
@@ -8,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar, Phone, User, Wrench, Copy, CheckCircle, X, Building2, Eye, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-console.log("OrdersTable loaded - v2.0");
 
 interface Order {
   id: string;
@@ -76,7 +76,14 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied }: OrdersTabl
   };
 
   const sendOrderLinkViaWhatsApp = (order: Order) => {
-    if (!order.customers?.whatsapp_number) return;
+    if (!order.customers?.whatsapp_number) {
+      toast({
+        title: "خطأ",
+        description: "رقم الواتساب غير متوفر",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const orderLink = order.order_link || `${window.location.origin}/order/${order.id}`;
     const cleanNumber = order.customers.whatsapp_number.replace(/\D/g, '');
@@ -103,8 +110,6 @@ ${orderLink}
     const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
-    
-    // Mark link as copied after sending
     onLinkCopied(order.id);
   };
 
@@ -164,236 +169,239 @@ ${orderLink}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{order.customers?.name || 'غير متوفر'}</span>
+                filteredOrders.map((order) => {
+                  const customerName = order.customers?.name || 'غير متوفر';
+                  const customerPhone = order.customers?.whatsapp_number || 'غير متوفر';
+                  const companyName = order.companies?.name || '-';
+                  
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{customerName}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="h-3 w-3" />
+                            <span dir="ltr">{customerPhone}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="h-3 w-3" />
-                          <span dir="ltr">{order.customers?.whatsapp_number || 'غير متوفر'}</span>
-                        </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        {order.send_to_all_companies ? (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                            كل الشركات
-                          </Badge>
-                        ) : (
-                          <span className="text-sm">{order.companies?.name || '-'}</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Badge variant="outline">{order.service_type}</Badge>
-                        {order.notes && (
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {order.notes}
-                          </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <StatusBadge status={order.status} />
-                    </TableCell>
-                    
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(order.created_at)}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="flex items-center gap-1"
-                            >
-                              <Eye className="h-3 w-3" />
-                              التفاصيل
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle className="text-xl">تفاصيل الطلب</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-6 py-4">
-                              {/* Customer Info */}
-                              <div className="space-y-3">
-                                <h3 className="font-semibold text-lg flex items-center gap-2">
-                                  <User className="h-5 w-5" />
-                                  معلومات العميل
-                                </h3>
-                                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">الاسم:</span>
-                                    <span className="font-medium">{order.customers?.name || 'غير متوفر'}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">رقم الواتساب:</span>
-                                    <span className="font-medium" dir="ltr">{order.customers?.whatsapp_number || 'غير متوفر'}</span>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          {order.send_to_all_companies ? (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              كل الشركات
+                            </Badge>
+                          ) : (
+                            <span className="text-sm">{companyName}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="space-y-1">
+                          <Badge variant="outline">{order.service_type}</Badge>
+                          {order.notes && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {order.notes}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <StatusBadge status={order.status} />
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(order.created_at)}
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="flex items-center gap-1"
+                              >
+                                <Eye className="h-3 w-3" />
+                                التفاصيل
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle className="text-xl">تفاصيل الطلب</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-6 py-4">
+                                <div className="space-y-3">
+                                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                                    <User className="h-5 w-5" />
+                                    معلومات العميل
+                                  </h3>
+                                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-muted-foreground">الاسم:</span>
+                                      <span className="font-medium">{customerName}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-muted-foreground">رقم الواتساب:</span>
+                                      <span className="font-medium" dir="ltr">{customerPhone}</span>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Order Info */}
-                              <div className="space-y-3">
-                                <h3 className="font-semibold text-lg flex items-center gap-2">
-                                  <Wrench className="h-5 w-5" />
-                                  تفاصيل الطلب
-                                </h3>
-                                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">الشركة:</span>
-                                    {order.send_to_all_companies ? (
-                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                        كل الشركات
-                                      </Badge>
-                                    ) : (
-                                      <span className="font-medium">{order.companies?.name || '-'}</span>
+                                <div className="space-y-3">
+                                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                                    <Wrench className="h-5 w-5" />
+                                    تفاصيل الطلب
+                                  </h3>
+                                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-muted-foreground">الشركة:</span>
+                                      {order.send_to_all_companies ? (
+                                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                          كل الشركات
+                                        </Badge>
+                                      ) : (
+                                        <span className="font-medium">{companyName}</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-muted-foreground">نوع الخدمة:</span>
+                                      <Badge variant="outline">{order.service_type}</Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-muted-foreground">الحالة:</span>
+                                      <StatusBadge status={order.status} />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-muted-foreground">تاريخ الإنشاء:</span>
+                                      <span className="font-medium">{formatDate(order.created_at)}</span>
+                                    </div>
+                                    {order.notes && (
+                                      <div className="pt-2">
+                                        <span className="text-muted-foreground block mb-1">الملاحظات:</span>
+                                        <p className="text-sm bg-background rounded p-2">{order.notes}</p>
+                                      </div>
+                                    )}
+                                    {order.order_link && (
+                                      <div className="pt-2">
+                                        <span className="text-muted-foreground block mb-1">رابط الطلب:</span>
+                                        <div className="flex items-center gap-2">
+                                          <code className="text-xs bg-background rounded px-2 py-1 flex-1 truncate">
+                                            {order.order_link}
+                                          </code>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => window.open(order.order_link, '_blank')}
+                                          >
+                                            <ExternalLink className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
                                     )}
                                   </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">نوع الخدمة:</span>
-                                    <Badge variant="outline">{order.service_type}</Badge>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">الحالة:</span>
-                                    <StatusBadge status={order.status} />
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">تاريخ الإنشاء:</span>
-                                    <span className="font-medium">{formatDate(order.created_at)}</span>
-                                  </div>
-                                  {order.notes && (
-                                    <div className="pt-2">
-                                      <span className="text-muted-foreground block mb-1">الملاحظات:</span>
-                                      <p className="text-sm bg-background rounded p-2">{order.notes}</p>
-                                    </div>
-                                  )}
-                                  {order.order_link && (
-                                    <div className="pt-2">
-                                      <span className="text-muted-foreground block mb-1">رابط الطلب:</span>
-                                      <div className="flex items-center gap-2">
-                                        <code className="text-xs bg-background rounded px-2 py-1 flex-1 truncate">
-                                          {order.order_link}
-                                        </code>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => window.open(order.order_link, '_blank')}
-                                        >
-                                          <ExternalLink className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
-                              </div>
 
-                              {/* Actions */}
-                              <div className="flex gap-2 pt-4 border-t">
-                                {order.customers?.whatsapp_number && (
-                                  <>
-                                    <Button
-                                      onClick={() => openWhatsApp(order.customers.whatsapp_number)}
-                                      className="flex-1"
-                                      variant="outline"
-                                    >
-                                      <Phone className="h-4 w-4 ml-2" />
-                                      التواصل عبر واتساب
-                                    </Button>
-                                    {order.status === 'pending' && (
+                                <div className="flex gap-2 pt-4 border-t">
+                                  {order.customers?.whatsapp_number && (
+                                    <>
                                       <Button
-                                        onClick={() => sendOrderLinkViaWhatsApp(order)}
-                                        className="flex-1 bg-green-600 hover:bg-green-700"
+                                        onClick={() => openWhatsApp(order.customers.whatsapp_number)}
+                                        className="flex-1"
+                                        variant="outline"
                                       >
                                         <Phone className="h-4 w-4 ml-2" />
-                                        إرسال رابط الطلب
+                                        التواصل عبر واتساب
                                       </Button>
-                                    )}
-                                  </>
-                                )}
+                                      {order.status === 'pending' && (
+                                        <Button
+                                          onClick={() => sendOrderLinkViaWhatsApp(order)}
+                                          className="flex-1 bg-green-600 hover:bg-green-700"
+                                        >
+                                          <Phone className="h-4 w-4 ml-2" />
+                                          إرسال رابط الطلب
+                                        </Button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                            </DialogContent>
+                          </Dialog>
 
-                        {order.status === 'pending' && order.customers?.whatsapp_number && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => sendOrderLinkViaWhatsApp(order)}
-                              className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
-                            >
-                              <Phone className="h-3 w-3" />
-                              إرسال الرابط
-                            </Button>
+                          {order.status === 'pending' && order.customers?.whatsapp_number && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => sendOrderLinkViaWhatsApp(order)}
+                                className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                              >
+                                <Phone className="h-3 w-3" />
+                                إرسال الرابط
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCopyOrderLink(order)}
+                                className="flex items-center gap-1"
+                              >
+                                <Copy className="h-3 w-3" />
+                                نسخ
+                              </Button>
+                            </>
+                          )}
+                          
+                          {order.status === 'in-progress' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => onUpdateStatus(order.id, 'completed')}
+                                className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                                إكمال
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => onUpdateStatus(order.id, 'cancelled')}
+                                className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
+                              >
+                                <X className="h-3 w-3" />
+                                إلغاء
+                              </Button>
+                            </>
+                          )}
+                          
+                          {order.customers?.whatsapp_number && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleCopyOrderLink(order)}
+                              onClick={() => openWhatsApp(order.customers.whatsapp_number)}
                               className="flex items-center gap-1"
                             >
-                              <Copy className="h-3 w-3" />
-                              نسخ
+                              <Phone className="h-3 w-3" />
+                              واتساب
                             </Button>
-                          </>
-                        )}
-                        
-                        {order.status === 'in-progress' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => onUpdateStatus(order.id, 'completed')}
-                              className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
-                            >
-                              <CheckCircle className="h-3 w-3" />
-                              إكمال
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => onUpdateStatus(order.id, 'cancelled')}
-                              className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
-                            >
-                              <X className="h-3 w-3" />
-                              إلغاء
-                            </Button>
-                          </>
-                        )}
-                        
-                        {order.customers?.whatsapp_number && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openWhatsApp(order.customers.whatsapp_number)}
-                            className="flex items-center gap-1"
-                          >
-                            <Phone className="h-3 w-3" />
-                            واتساب
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
