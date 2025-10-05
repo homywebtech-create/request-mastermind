@@ -13,10 +13,12 @@ import { Plus, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { nationalities } from "@/data/nationalities";
+import { countries } from "@/data/countries";
 
 const specialistSchema = z.object({
   name: z.string().min(2, "يجب أن يكون الاسم حرفين على الأقل").max(100),
-  phone: z.string().min(10, "رقم الهاتف غير صحيح").max(20),
+  countryCode: z.string().min(1, "يجب اختيار كود الدولة"),
+  phone: z.string().min(7, "رقم الهاتف غير صحيح").max(15),
   nationality: z.string().min(1, "يجب اختيار الجنسية"),
   sub_service_ids: z.array(z.string()).min(1, "يجب اختيار تخصص واحد على الأقل"),
   experience_years: z.coerce.number().min(0).max(50).optional(),
@@ -55,6 +57,7 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
     resolver: zodResolver(specialistSchema),
     defaultValues: {
       name: "",
+      countryCode: "+966",
       phone: "",
       nationality: "",
       sub_service_ids: [],
@@ -157,12 +160,13 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
       }
 
       // First, insert the specialist
+      const fullPhone = `${data.countryCode}${data.phone}`;
       const { data: specialistData, error: specialistError } = await supabase
         .from("specialists")
         .insert({
           company_id: companyId,
           name: data.name,
-          phone: data.phone,
+          phone: fullPhone,
           nationality: data.nationality,
           experience_years: data.experience_years || null,
           notes: data.notes || null,
@@ -257,19 +261,45 @@ export function SpecialistForm({ companyId, onSuccess }: SpecialistFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="05xxxxxxxx" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-[140px_1fr] gap-2">
+              <FormField
+                control={form.control}
+                name="countryCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country Code *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-60">
+                        {countries.map((country) => (
+                          <SelectItem key={country.code} value={country.dialCode}>
+                            {country.flag} {country.dialCode}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="5xxxxxxxx" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
