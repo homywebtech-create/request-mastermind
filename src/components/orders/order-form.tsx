@@ -29,6 +29,7 @@ interface OrderFormData {
   subServiceId: string;
   sendToAll: boolean;
   companyId: string;
+  specialistId: string;
   notes: string;
 }
 
@@ -38,12 +39,19 @@ interface SubmittedOrderData {
   serviceType: string;
   sendToAll: boolean;
   companyId?: string;
+  specialistId?: string;
   notes: string;
 }
 
 interface Company {
   id: string;
   name: string;
+}
+
+interface Specialist {
+  id: string;
+  name: string;
+  specialty: string | null;
 }
 
 interface OrderFormProps {
@@ -56,6 +64,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: '',
     countryCode: 'QA',
@@ -64,6 +73,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     subServiceId: '',
     sendToAll: true,
     companyId: '',
+    specialistId: '',
     notes: '',
   });
 
@@ -86,6 +96,14 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       setCompanies([]);
     }
   }, [formData.serviceId, formData.subServiceId, formData.sendToAll]);
+
+  useEffect(() => {
+    if (formData.companyId) {
+      fetchSpecialistsForCompany(formData.companyId);
+    } else {
+      setSpecialists([]);
+    }
+  }, [formData.companyId]);
 
   const fetchServices = async () => {
     try {
@@ -148,33 +166,50 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     }
   };
 
+  const fetchSpecialistsForCompany = async (companyId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("specialists")
+        .select("id, name, specialty")
+        .eq("company_id", companyId)
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setSpecialists(data || []);
+    } catch (error) {
+      console.error("Error fetching specialists:", error);
+      setSpecialists([]);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.customerName || !formData.phoneNumber || !formData.serviceId) {
       toast({
-        title: "خطأ في البيانات",
-        description: "يرجى ملء جميع الحقول المطلوبة",
+        title: "Missing Data",
+        description: "Please fill all required fields",
         variant: "destructive",
       });
       return;
     }
 
-    // التحقق من اختيار خدمة فرعية إذا كانت موجودة
+    // Verify sub-service selection if available
     if (selectedService && selectedService.sub_services.length > 0 && !formData.subServiceId) {
       toast({
-        title: "خطأ في البيانات",
-        description: "يرجى اختيار خدمة فرعية",
+        title: "Missing Data",
+        description: "Please select a sub-service",
         variant: "destructive",
       });
       return;
     }
 
-    // التحقق من اختيار شركة في حال عدم اختيار "كل الشركات"
+    // Verify company selection if not sending to all
     if (!formData.sendToAll && !formData.companyId) {
       toast({
-        title: "خطأ في البيانات",
-        description: "يرجى اختيار شركة محددة أو تفعيل خيار إرسال لكل الشركات",
+        title: "Missing Data",
+        description: "Please select a specific company or enable send to all companies",
         variant: "destructive",
       });
       return;
@@ -195,6 +230,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       serviceType,
       sendToAll: formData.sendToAll,
       companyId: formData.sendToAll ? undefined : formData.companyId,
+      specialistId: formData.specialistId || undefined,
       notes: formData.notes
     };
     
@@ -208,6 +244,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       subServiceId: '',
       sendToAll: true,
       companyId: '',
+      specialistId: '',
       notes: '',
     });
     setSelectedService(null);
@@ -216,10 +253,13 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const handleInputChange = (field: keyof OrderFormData, value: string) => {
     setFormData(prev => {
       if (field === 'serviceId') {
-        return { ...prev, [field]: value, subServiceId: '', companyId: '' };
+        return { ...prev, [field]: value, subServiceId: '', companyId: '', specialistId: '' };
       }
       if (field === 'subServiceId') {
-        return { ...prev, [field]: value, companyId: '' };
+        return { ...prev, [field]: value, companyId: '', specialistId: '' };
+      }
+      if (field === 'companyId') {
+        return { ...prev, [field]: value, specialistId: '' };
       }
       return { ...prev, [field]: value };
     });
@@ -230,29 +270,29 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Plus className="h-5 w-5" />
-          إنشاء طلب جديد
+          Create New Order
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Customer Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">معلومات العميل</h3>
+            <h3 className="text-lg font-semibold text-foreground">Customer Information</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="customerName">اسم العميل *</Label>
+                <Label htmlFor="customerName">Customer Name *</Label>
                 <Input
                   id="customerName"
                   value={formData.customerName}
                   onChange={(e) => handleInputChange('customerName', e.target.value)}
-                  placeholder="أدخل اسم العميل"
+                  placeholder="Enter customer name"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">رقم الواتساب *</Label>
+                <Label htmlFor="phoneNumber">WhatsApp Number *</Label>
                 <div className="flex gap-2">
                   <Select 
                     value={formData.countryCode} 
@@ -267,7 +307,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                               <span className="text-xl">{country.flag}</span>
                               <span className="text-sm">{country.dialCode}</span>
                             </span>
-                          ) : 'اختر';
+                          ) : 'Select';
                         })()}
                       </SelectValue>
                     </SelectTrigger>
@@ -292,7 +332,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                     id="phoneNumber"
                     value={formData.phoneNumber}
                     onChange={(e) => {
-                      // السماح بالأرقام فقط
+                      // Allow numbers only
                       const value = e.target.value.replace(/\D/g, '');
                       handleInputChange('phoneNumber', value);
                     }}
@@ -303,7 +343,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  أدخل الرقم بدون كود الدولة
+                  Enter number without country code
                 </p>
               </div>
             </div>
@@ -311,14 +351,14 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
 
           {/* Service Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">تفاصيل الخدمة</h3>
+            <h3 className="text-lg font-semibold text-foreground">Service Details</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="serviceId">الخدمة الرئيسية *</Label>
+                <Label htmlFor="serviceId">Main Service *</Label>
                 <Select value={formData.serviceId} onValueChange={(value) => handleInputChange('serviceId', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر الخدمة الرئيسية" />
+                    <SelectValue placeholder="Choose main service" />
                   </SelectTrigger>
                   <SelectContent>
                     {services.map((service) => (
@@ -332,10 +372,10 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
 
               {selectedService && selectedService.sub_services.length > 0 && (
                 <div className="space-y-2">
-                  <Label htmlFor="subServiceId">الخدمة الفرعية *</Label>
+                  <Label htmlFor="subServiceId">Sub-Service *</Label>
                   <Select value={formData.subServiceId} onValueChange={(value) => handleInputChange('subServiceId', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="اختر الخدمة الفرعية" />
+                      <SelectValue placeholder="Choose sub-service" />
                     </SelectTrigger>
                     <SelectContent>
                       {selectedService.sub_services.map((subService) => (
@@ -350,7 +390,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>إرسال الطلب إلى</Label>
+              <Label>Send Order To</Label>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -358,13 +398,13 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                     name="sendToAll"
                     checked={formData.sendToAll}
                     onChange={() => {
-                      setFormData(prev => ({ ...prev, sendToAll: true, companyId: '' }));
+                      setFormData(prev => ({ ...prev, sendToAll: true, companyId: '', specialistId: '' }));
                     }}
                     className="w-4 h-4 text-primary"
                     disabled={!formData.serviceId}
                   />
                   <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
-                    كل الشركات
+                    All Companies
                   </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -379,47 +419,71 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                     disabled={!formData.serviceId}
                   />
                   <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
-                    شركة محددة {companies.length > 0 && `(${companies.length})`}
+                    Specific Company {companies.length > 0 && `(${companies.length})`}
                   </span>
                 </label>
               </div>
               {!formData.serviceId && (
                 <p className="text-xs text-muted-foreground">
-                  اختر الخدمة أولاً
+                  Choose service first
                 </p>
               )}
               {formData.serviceId && !formData.sendToAll && companies.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  لا توجد شركات تقدم هذه الخدمة حالياً
+                  No companies offer this service currently
                 </p>
               )}
             </div>
 
             {!formData.sendToAll && (
-              <div className="space-y-2">
-                <Label htmlFor="companyId">اختر الشركة *</Label>
-                <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الشركة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="companyId">Choose Company *</Label>
+                  <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.companyId && specialists.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="specialistId">Choose Specialist (Optional)</Label>
+                    <Select value={formData.specialistId} onValueChange={(value) => handleInputChange('specialistId', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Send to all company specialists" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Specialists ({specialists.length})</SelectItem>
+                        {specialists.map((specialist) => (
+                          <SelectItem key={specialist.id} value={specialist.id}>
+                            {specialist.name} {specialist.specialty && `- ${specialist.specialty}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty to send to all specialists in this company
+                    </p>
+                  </div>
+                )}
+              </>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="notes">ملاحظات</Label>
+              <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="أدخل أي ملاحظات إضافية..."
+                placeholder="Enter any additional notes..."
                 rows={3}
               />
             </div>
@@ -428,11 +492,11 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
           {/* Actions */}
           <div className="flex gap-3 pt-4">
             <Button type="submit" className="flex-1">
-              إنشاء الطلب
+              Create Order
             </Button>
             {onCancel && (
               <Button type="button" variant="outline" onClick={onCancel}>
-                إلغاء
+                Cancel
               </Button>
             )}
           </div>

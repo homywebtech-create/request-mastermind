@@ -102,7 +102,7 @@ export default function Dashboard() {
 
   const calculateStats = (ordersList: Order[]) => {
     setStats({
-      total: ordersList.length,
+      total: ordersList.filter(o => o.status === 'pending').length, // New requests only
       pending: ordersList.filter(o => o.status === 'pending').length,
       inProgress: ordersList.filter(o => o.status === 'in-progress').length,
       completed: ordersList.filter(o => o.status === 'completed').length,
@@ -286,7 +286,7 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
-            title="Total Orders"
+            title="New Requests"
             value={stats.total}
             icon={<Package className="h-4 w-4" />}
           />
