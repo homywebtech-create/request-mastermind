@@ -187,10 +187,12 @@ export type Database = {
       }
       orders: {
         Row: {
+          booking_type: string | null
           company_id: string | null
           created_at: string
           created_by: string | null
           customer_id: string
+          hours_count: string | null
           id: string
           last_sent_at: string | null
           link_copied_at: string | null
@@ -203,10 +205,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          booking_type?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_id: string
+          hours_count?: string | null
           id?: string
           last_sent_at?: string | null
           link_copied_at?: string | null
@@ -219,10 +223,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          booking_type?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          hours_count?: string | null
           id?: string
           last_sent_at?: string | null
           link_copied_at?: string | null

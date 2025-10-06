@@ -197,6 +197,8 @@ export default function Orders() {
           company_id: formData.sendToAll ? null : formData.companyId,
           send_to_all_companies: formData.sendToAll,
           service_type: formData.serviceType,
+          booking_type: formData.bookingType || null,
+          hours_count: formData.hoursCount || null,
           notes: formData.notes,
           status: 'pending',
           created_by: user?.id
