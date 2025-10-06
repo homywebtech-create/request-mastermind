@@ -15,9 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 interface OrderSpecialist {
   id: string;
@@ -53,8 +50,6 @@ export default function SpecialistOrders() {
   const [specialistName, setSpecialistName] = useState('');
   const [specialistId, setSpecialistId] = useState('');
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
-  const [quotePrice, setQuotePrice] = useState('');
-  const [quoteNotes, setQuoteNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -218,11 +213,11 @@ export default function SpecialistOrders() {
     }
   };
 
-  const handleSubmitQuote = async () => {
-    if (!quoteDialog.orderId || !quotePrice) {
+  const handleSubmitQuote = async (price: string) => {
+    if (!quoteDialog.orderId) {
       toast({
         title: "خطأ",
-        description: "الرجاء إدخال السعر المقترح",
+        description: "معرف الطلب غير موجود",
         variant: "destructive",
       });
       return;
@@ -240,9 +235,9 @@ export default function SpecialistOrders() {
       const { error } = await supabase
         .from('order_specialists')
         .update({
-          quoted_price: quotePrice,
+          quoted_price: price,
           quoted_at: new Date().toISOString(),
-          quote_notes: quoteNotes || null
+          quote_notes: null
         })
         .eq('id', order.order_specialist.id);
 
@@ -256,15 +251,59 @@ export default function SpecialistOrders() {
       // Refresh orders
       await fetchOrders(specialistId);
       
-      // Close dialog and reset form
+      // Close dialog
       setQuoteDialog({ open: false, orderId: null });
-      setQuotePrice('');
-      setQuoteNotes('');
     } catch (error: any) {
       console.error('Error submitting quote:', error);
       toast({
         title: "خطأ",
         description: "فشل تقديم العرض",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSkipOrder = async () => {
+    if (!quoteDialog.orderId) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const order = orders.find(o => o.id === quoteDialog.orderId);
+      if (!order?.order_specialist) {
+        throw new Error('Order specialist not found');
+      }
+
+      // Mark as rejected/skipped
+      const { error } = await supabase
+        .from('order_specialists')
+        .update({
+          is_accepted: false,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: 'تم التخطي من قبل المحترف'
+        })
+        .eq('id', order.order_specialist.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم التخطي",
+        description: "تم تخطي هذا الطلب",
+      });
+
+      // Refresh orders
+      await fetchOrders(specialistId);
+      
+      // Close dialog
+      setQuoteDialog({ open: false, orderId: null });
+    } catch (error: any) {
+      console.error('Error skipping order:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل تخطي الطلب",
         variant: "destructive",
       });
     } finally {
@@ -319,6 +358,15 @@ export default function SpecialistOrders() {
   const renderOrderCard = (order: Order, showQuoteButton: boolean = false) => {
     const hasQuote = !!order.order_specialist?.quoted_price;
     const isRejected = order.order_specialist?.is_accepted === false;
+    
+    // Calculate price options based on customer budget
+    const baseBudget = order.customer?.budget ? parseFloat(order.customer.budget.replace(/[^0-9.]/g, '')) : 0;
+    const priceOptions = baseBudget > 0 ? [
+      { label: `${baseBudget} ريال`, value: `${baseBudget} ريال`, multiplier: 1 },
+      { label: `${Math.round(baseBudget * 1.5)} ريال`, value: `${Math.round(baseBudget * 1.5)} ريال`, multiplier: 1.5 },
+      { label: `${Math.round(baseBudget * 2)} ريال`, value: `${Math.round(baseBudget * 2)} ريال`, multiplier: 2 },
+      { label: `${Math.round(baseBudget * 2.5)} ريال`, value: `${Math.round(baseBudget * 2.5)} ريال`, multiplier: 2.5 },
+    ] : [];
     
     return (
       <Card 
@@ -467,8 +515,6 @@ export default function SpecialistOrders() {
             <Dialog open={quoteDialog.open && quoteDialog.orderId === order.id} onOpenChange={(open) => {
               if (!open) {
                 setQuoteDialog({ open: false, orderId: null });
-                setQuotePrice('');
-                setQuoteNotes('');
               }
             }}>
               <DialogTrigger asChild>
@@ -481,56 +527,57 @@ export default function SpecialistOrders() {
                   قدم عرض السعر
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>تقديم عرض السعر</DialogTitle>
+                  <DialogTitle>اختر السعر المناسب</DialogTitle>
                   <DialogDescription>
-                    أدخل السعر المناسب لك مع أي ملاحظات إضافية
+                    {baseBudget > 0 
+                      ? `ميزانية العميل: ${baseBudget} ريال - اختر السعر الذي يناسبك`
+                      : "اختر السعر المناسب لك"}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">السعر المقترح *</Label>
-                    <Input
-                      id="price"
-                      type="text"
-                      placeholder="مثال: 500 ريال"
-                      value={quotePrice}
-                      onChange={(e) => setQuotePrice(e.target.value)}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">ملاحظات (اختياري)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="أضف أي ملاحظات أو تفاصيل إضافية"
-                      value={quoteNotes}
-                      onChange={(e) => setQuoteNotes(e.target.value)}
-                      rows={3}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleSubmitQuote}
-                    disabled={isSubmitting || !quotePrice}
-                    className="flex-1"
-                  >
-                    {isSubmitting ? "جاري الإرسال..." : "تقديم العرض"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setQuoteDialog({ open: false, orderId: null });
-                      setQuotePrice('');
-                      setQuoteNotes('');
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    إلغاء
-                  </Button>
+                <div className="space-y-3 py-4">
+                  {priceOptions.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        {priceOptions.map((option, index) => (
+                          <Button
+                            key={index}
+                            onClick={() => handleSubmitQuote(option.value)}
+                            disabled={isSubmitting}
+                            variant={index === 0 ? "default" : "outline"}
+                            className="h-auto py-4 flex flex-col gap-1"
+                          >
+                            <span className="text-lg font-bold">{option.label}</span>
+                            {index === 0 && <span className="text-xs opacity-80">سعر العميل</span>}
+                            {index > 0 && <span className="text-xs opacity-80">×{option.multiplier}</span>}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="pt-2 border-t">
+                        <Button
+                          onClick={handleSkipOrder}
+                          disabled={isSubmitting}
+                          variant="ghost"
+                          className="w-full"
+                        >
+                          تخطي هذا الطلب
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">لم يتم تحديد ميزانية للعميل</p>
+                      <Button
+                        onClick={handleSkipOrder}
+                        disabled={isSubmitting}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        تخطي هذا الطلب
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
