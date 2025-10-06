@@ -500,12 +500,12 @@ export default function SpecialistOrders() {
           <div className="flex items-start gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
             <XCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-xs text-red-600 mb-2 font-semibold">Quote Rejected</p>
+              <p className="text-xs text-red-600 mb-2 font-semibold">Quote Rejected by Customer</p>
               <div className="space-y-1">
                 <p className="text-sm"><span className="text-muted-foreground">Your quote:</span> <span className="font-bold">{order.order_specialist?.quoted_price}</span></p>
                 {order.order_specialist?.rejection_reason && (
                   <div className="mt-2 p-3 bg-red-100 rounded-md">
-                    <p className="text-xs text-red-700 mb-1 font-semibold">Rejection Reason:</p>
+                    <p className="text-xs text-red-700 mb-1 font-semibold">Customer's Reason:</p>
                     <p className="text-sm text-red-900">{order.order_specialist.rejection_reason}</p>
                   </div>
                 )}
@@ -686,7 +686,7 @@ export default function SpecialistOrders() {
           <Card className="p-6 bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Rejected</p>
+                <p className="text-sm text-muted-foreground mb-1">Rejected by Customer</p>
                 <p className="text-3xl font-bold text-red-600">{rejectedOrders.length}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -717,7 +717,7 @@ export default function SpecialistOrders() {
             </TabsTrigger>
             <TabsTrigger value="rejected" className="gap-2">
               <AlertCircle className="h-4 w-4" />
-              Rejected ({rejectedOrders.length})
+              Rejected by Customer ({rejectedOrders.length})
             </TabsTrigger>
           </TabsList>
 
@@ -770,8 +770,8 @@ export default function SpecialistOrders() {
             {rejectedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">No rejected orders</p>
-                <p className="text-sm text-muted-foreground mt-2">That's great! Keep submitting competitive quotes</p>
+                <p className="text-lg text-muted-foreground">No orders rejected by customers</p>
+                <p className="text-sm text-muted-foreground mt-2">That's great! Your quotes are competitive</p>
               </Card>
             ) : (
               rejectedOrders.map((order) => renderOrderCard(order))
