@@ -193,6 +193,8 @@ export default function Dashboard() {
           .insert({
             name: formData.customerName,
             whatsapp_number: formData.whatsappNumber,
+            area: formData.area || null,
+            budget: formData.budget || null,
             company_id: formData.companyId || null
           })
           .select('id')

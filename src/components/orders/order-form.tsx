@@ -25,6 +25,8 @@ interface OrderFormData {
   customerName: string;
   countryCode: string;
   phoneNumber: string;
+  area: string;
+  budget: string;
   serviceId: string;
   subServiceId: string;
   sendToAll: boolean;
@@ -36,6 +38,8 @@ interface OrderFormData {
 interface SubmittedOrderData {
   customerName: string;
   whatsappNumber: string;
+  area: string;
+  budget: string;
   serviceType: string;
   sendToAll: boolean;
   companyId?: string;
@@ -71,6 +75,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     customerName: '',
     countryCode: 'QA',
     phoneNumber: '',
+    area: '',
+    budget: '',
     serviceId: '',
     subServiceId: '',
     sendToAll: true,
@@ -229,6 +235,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     const submittedData: SubmittedOrderData = {
       customerName: formData.customerName,
       whatsappNumber: fullWhatsappNumber,
+      area: formData.area,
+      budget: formData.budget,
       serviceType,
       sendToAll: formData.sendToAll,
       companyId: formData.sendToAll ? undefined : formData.companyId,
@@ -242,6 +250,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       customerName: '',
       countryCode: 'QA',
       phoneNumber: '',
+      area: '',
+      budget: '',
       serviceId: '',
       subServiceId: '',
       sendToAll: true,
@@ -356,6 +366,28 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 <p className="text-xs text-muted-foreground">
                   Enter number without country code
                 </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="area">المنطقة / Area</Label>
+                <Input
+                  id="area"
+                  value={formData.area}
+                  onChange={(e) => handleInputChange('area', e.target.value)}
+                  placeholder="مثال: الدوحة، الريان، الوكرة"
+                  dir="rtl"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="budget">الميزانية / Budget</Label>
+                <Input
+                  id="budget"
+                  value={formData.budget}
+                  onChange={(e) => handleInputChange('budget', e.target.value)}
+                  placeholder="مثال: 5000 ريال"
+                  dir="rtl"
+                />
               </div>
             </div>
           </div>
