@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Calendar, Phone, User, Wrench, Building2, Eye, ExternalLink, Send, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -305,6 +305,29 @@ Thank you for contacting us! 🌟`;
         .delete()
         .eq('order_id', orderId);
 
+      // Get all active specialists from all companies
+      const { data: specialists, error: specialistsError } = await supabase
+        .from('specialists')
+        .select('id')
+        .eq('is_active', true);
+
+      if (specialistsError) throw specialistsError;
+
+      // Add all specialists to the order
+      if (specialists && specialists.length > 0) {
+        const orderSpecialists = specialists.map(specialist => ({
+          order_id: orderId,
+          specialist_id: specialist.id,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('order_specialists')
+          .insert(orderSpecialists);
+
+        if (insertError) throw insertError;
+      }
+
+      // Update order
       const { error } = await supabase
         .from('orders')
         .update({
@@ -319,10 +342,11 @@ Thank you for contacting us! 🌟`;
 
       toast({
         title: "تم الإرسال بنجاح",
-        description: "تم إرسال الطلب لجميع الشركات",
+        description: `تم إرسال الطلب لـ ${specialists?.length || 0} عاملة/عاملات في جميع الشركات`,
       });
       
       setResendDialogOpen(false);
+      window.location.reload();
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -349,6 +373,30 @@ Thank you for contacting us! 🌟`;
         .delete()
         .eq('order_id', order.id);
 
+      // Get all active specialists from the company
+      const { data: specialists, error: specialistsError } = await supabase
+        .from('specialists')
+        .select('id')
+        .eq('company_id', order.company_id)
+        .eq('is_active', true);
+
+      if (specialistsError) throw specialistsError;
+
+      // Re-add specialists to the order
+      if (specialists && specialists.length > 0) {
+        const orderSpecialists = specialists.map(specialist => ({
+          order_id: order.id,
+          specialist_id: specialist.id,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('order_specialists')
+          .insert(orderSpecialists);
+
+        if (insertError) throw insertError;
+      }
+
+      // Update order timestamp
       const { error } = await supabase
         .from('orders')
         .update({
@@ -363,10 +411,11 @@ Thank you for contacting us! 🌟`;
 
       toast({
         title: "تم الإرسال بنجاح",
-        description: "تم إعادة إرسال الطلب لنفس الشركة",
+        description: `تم إعادة إرسال الطلب لـ ${specialists?.length || 0} عاملة/عاملات`,
       });
       
       setResendDialogOpen(false);
+      window.location.reload();
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -656,6 +705,9 @@ Thank you for contacting us! 🌟`;
                             <DialogContent className="max-w-2xl">
                               <DialogHeader>
                                 <DialogTitle className="text-xl">Order Details</DialogTitle>
+                                <DialogDescription>
+                                  View complete order information and submitted quotes
+                                </DialogDescription>
                               </DialogHeader>
                               <div className="space-y-6 py-4">
                                 <div className="space-y-3">
@@ -882,6 +934,9 @@ Thank you for contacting us! 🌟`;
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Resend Order</DialogTitle>
+            <DialogDescription>
+              Choose how you want to resend this order to specialists
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
@@ -952,6 +1007,9 @@ Thank you for contacting us! 🌟`;
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Send Order to Company</DialogTitle>
+            <DialogDescription>
+              Select a company and optionally choose specific specialists
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
