@@ -169,8 +169,22 @@ export default function Dashboard() {
       o.order_specialists.some(os => os.quoted_price && os.is_accepted === null)
     );
     
-    console.log('Orders with quotes:', ordersList.filter(o => o.order_specialists && o.order_specialists.length > 0));
-    console.log('Awaiting orders:', awaitingOrders);
+    console.log('All orders:', ordersList.length);
+    console.log('Orders with order_specialists:', ordersList.filter(o => o.order_specialists && o.order_specialists.length > 0).length);
+    console.log('Orders with quotes:', ordersList.filter(o => o.order_specialists && o.order_specialists.length > 0).map(o => ({
+      id: o.id,
+      service: o.service_type,
+      specialists: o.order_specialists?.map(os => ({
+        quoted_price: os.quoted_price,
+        is_accepted: os.is_accepted
+      }))
+    })));
+    console.log('Awaiting orders count:', awaitingOrders.length);
+    console.log('Awaiting orders details:', awaitingOrders.map(o => ({
+      id: o.id,
+      service: o.service_type,
+      quotes: o.order_specialists?.filter(os => os.quoted_price).length
+    })));
     
     setStats({
       total: ordersList.filter(o => o.company_id || o.send_to_all_companies).length,
