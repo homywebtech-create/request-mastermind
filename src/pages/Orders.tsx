@@ -244,7 +244,12 @@ export default function Orders() {
           .select('id')
           .eq('is_active', true);
 
-        if (specialistsError) throw specialistsError;
+        if (specialistsError) {
+          console.error('Error fetching specialists:', specialistsError);
+          throw specialistsError;
+        }
+
+        console.log('Found specialists:', allSpecialists?.length || 0);
 
         if (allSpecialists && allSpecialists.length > 0) {
           const orderSpecialists = allSpecialists.map(specialist => ({
@@ -252,11 +257,20 @@ export default function Orders() {
             specialist_id: specialist.id
           }));
 
+          console.log('Inserting order_specialists:', orderSpecialists);
+
           const { error: linkError } = await supabase
             .from('order_specialists')
             .insert(orderSpecialists);
 
-          if (linkError) throw linkError;
+          if (linkError) {
+            console.error('Error linking specialists to order:', linkError);
+            throw linkError;
+          }
+          
+          console.log('Successfully linked specialists to order');
+        } else {
+          console.warn('No active specialists found!');
         }
       } else if (formData.companyId) {
         // If specific company selected, get all specialists from that company
@@ -266,7 +280,12 @@ export default function Orders() {
           .eq('company_id', formData.companyId)
           .eq('is_active', true);
 
-        if (specialistsError) throw specialistsError;
+        if (specialistsError) {
+          console.error('Error fetching company specialists:', specialistsError);
+          throw specialistsError;
+        }
+
+        console.log('Found company specialists:', companySpecialists?.length || 0);
 
         if (companySpecialists && companySpecialists.length > 0) {
           const orderSpecialists = companySpecialists.map(specialist => ({
@@ -278,7 +297,14 @@ export default function Orders() {
             .from('order_specialists')
             .insert(orderSpecialists);
 
-          if (linkError) throw linkError;
+          if (linkError) {
+            console.error('Error linking company specialists:', linkError);
+            throw linkError;
+          }
+          
+          console.log('Successfully linked company specialists to order');
+        } else {
+          console.warn('No active specialists found for company!');
         }
       }
 
