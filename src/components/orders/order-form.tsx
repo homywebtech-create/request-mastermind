@@ -33,6 +33,7 @@ interface OrderFormData {
   phoneNumber: string;
   area: string;
   budget: string;
+  budgetType: string;
   serviceId: string;
   subServiceId: string;
   bookingType: string;
@@ -48,6 +49,7 @@ interface SubmittedOrderData {
   whatsappNumber: string;
   area: string;
   budget: string;
+  budgetType: string;
   serviceType: string;
   bookingType: string;
   hoursCount: string;
@@ -88,6 +90,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     phoneNumber: '',
     area: '',
     budget: '',
+    budgetType: '',
     serviceId: '',
     subServiceId: '',
     bookingType: '',
@@ -252,6 +255,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       whatsappNumber: fullWhatsappNumber,
       area: formData.area,
       budget: formData.budget,
+      budgetType: formData.budgetType,
       serviceType,
       bookingType: formData.bookingType,
       hoursCount: formData.hoursCount,
@@ -269,6 +273,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       phoneNumber: '',
       area: '',
       budget: '',
+      budgetType: '',
       serviceId: '',
       subServiceId: '',
       bookingType: '',
@@ -435,13 +440,54 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
               
               <div className="space-y-2">
                 <Label htmlFor="budget">الميزانية / Budget</Label>
-                <Input
-                  id="budget"
-                  value={formData.budget}
-                  onChange={(e) => handleInputChange('budget', e.target.value)}
-                  placeholder="مثال: 5000 ريال"
-                  dir="rtl"
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={formData.budgetType} onValueChange={(value) => handleInputChange('budgetType', value)}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="نوع السعر / Price Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="hourly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">بالساعة</span>
+                          <span className="text-xs text-muted-foreground">Hourly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="task">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">بالمهمة</span>
+                          <span className="text-xs text-muted-foreground">Per Task</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="weekly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">أسبوعي</span>
+                          <span className="text-xs text-muted-foreground">Weekly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="monthly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">شهري</span>
+                          <span className="text-xs text-muted-foreground">Monthly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="service">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">للخدمة</span>
+                          <span className="text-xs text-muted-foreground">Per Service</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="budget"
+                    type="number"
+                    min="0"
+                    value={formData.budget}
+                    onChange={(e) => handleInputChange('budget', e.target.value)}
+                    placeholder="المبلغ / Amount"
+                    dir="ltr"
+                  />
+                </div>
               </div>
             </div>
           </div>
