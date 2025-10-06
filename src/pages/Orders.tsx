@@ -164,6 +164,15 @@ export default function Orders() {
 
   const handleCreateOrder = async (formData: OrderFormData) => {
     try {
+      console.log('=== Creating Order ===');
+      console.log('Form Data:', {
+        customerName: formData.customerName,
+        whatsappNumber: formData.whatsappNumber,
+        budget: formData.budget,
+        budgetType: formData.budgetType,
+        area: formData.area
+      });
+
       // Create or get customer
       const { data: existingCustomer } = await supabase
         .from('customers')
@@ -175,34 +184,50 @@ export default function Orders() {
 
       if (!customerId) {
         // Create new customer
+        const customerData = {
+          name: formData.customerName,
+          whatsapp_number: formData.whatsappNumber,
+          area: formData.area || null,
+          budget: formData.budget || null,
+          budget_type: formData.budgetType || null,
+          company_id: formData.companyId || null
+        };
+        
+        console.log('Creating new customer:', customerData);
+        
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
-          .insert({
-            name: formData.customerName,
-            whatsapp_number: formData.whatsappNumber,
-            area: formData.area || null,
-            budget: formData.budget || null,
-            budget_type: formData.budgetType || null,
-            company_id: formData.companyId || null
-          })
+          .insert(customerData)
           .select('id')
           .single();
 
-        if (customerError) throw customerError;
+        if (customerError) {
+          console.error('Customer creation error:', customerError);
+          throw customerError;
+        }
         customerId = newCustomer.id;
+        console.log('New customer created:', customerId);
       } else {
         // Update existing customer with new budget info
+        const updateData = {
+          name: formData.customerName,
+          area: formData.area || null,
+          budget: formData.budget || null,
+          budget_type: formData.budgetType || null,
+        };
+        
+        console.log('Updating existing customer:', customerId, updateData);
+        
         const { error: updateError } = await supabase
           .from('customers')
-          .update({
-            name: formData.customerName,
-            area: formData.area || null,
-            budget: formData.budget || null,
-            budget_type: formData.budgetType || null,
-          })
+          .update(updateData)
           .eq('id', customerId);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Customer update error:', updateError);
+          throw updateError;
+        }
+        console.log('Customer updated successfully');
       }
 
       // Create order
