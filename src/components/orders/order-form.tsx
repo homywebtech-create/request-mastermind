@@ -5,21 +5,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { countries } from "@/data/countries";
 import { qatarAreas } from "@/data/areas";
-import { Plus, Phone, User, Users } from "lucide-react";
+import { Plus, Phone, User, Users, Check, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface Service {
   id: string;
   name: string;
+  name_en: string | null;
   sub_services: SubService[];
 }
 
 interface SubService {
   id: string;
   name: string;
+  name_en: string | null;
 }
 
 interface OrderFormData {
@@ -72,6 +77,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
+  const [areaOpen, setAreaOpen] = useState(false);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: '',
     countryCode: 'QA',
@@ -121,9 +127,11 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
         .select(`
           id,
           name,
+          name_en,
           sub_services (
             id,
-            name
+            name,
+            name_en
           )
         `)
         .eq("is_active", true)
@@ -371,21 +379,48 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
               
               <div className="space-y-2">
                 <Label htmlFor="area">المنطقة / Area</Label>
-                <Select value={formData.area} onValueChange={(value) => handleInputChange('area', value)}>
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="اختر المنطقة / Select Area" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] bg-background z-50">
-                    {qatarAreas.map((area) => (
-                      <SelectItem key={area.id} value={area.name}>
-                        <span className="flex items-center gap-2">
-                          <span className="font-medium">{area.name}</span>
-                          <span className="text-muted-foreground text-sm">({area.nameEn})</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={areaOpen} onOpenChange={setAreaOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={areaOpen}
+                      className="w-full justify-between bg-background"
+                    >
+                      {formData.area || "اختر المنطقة / Select Area"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-background z-50">
+                    <Command className="bg-background">
+                      <CommandInput placeholder="ابحث عن المنطقة..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                        <CommandGroup>
+                          {qatarAreas.map((area) => (
+                            <CommandItem
+                              key={area.id}
+                              value={`${area.name} ${area.nameEn}`}
+                              onSelect={() => {
+                                handleInputChange('area', area.name);
+                                setAreaOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.area === area.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="font-medium">{area.name}</span>
+                              <span className="text-muted-foreground text-sm ml-2">({area.nameEn})</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               
               <div className="space-y-2">
@@ -409,13 +444,18 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
               <div className="space-y-2">
                 <Label htmlFor="serviceId">Main Service *</Label>
                 <Select value={formData.serviceId} onValueChange={(value) => handleInputChange('serviceId', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Choose main service" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background z-50">
                     {services.map((service) => (
                       <SelectItem key={service.id} value={service.id}>
-                        {service.name}
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">{service.name}</span>
+                          {service.name_en && (
+                            <span className="text-xs text-muted-foreground">{service.name_en}</span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -426,13 +466,18 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 <div className="space-y-2">
                   <Label htmlFor="subServiceId">Sub-Service *</Label>
                   <Select value={formData.subServiceId} onValueChange={(value) => handleInputChange('subServiceId', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background">
                       <SelectValue placeholder="Choose sub-service" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background z-50">
                       {selectedService.sub_services.map((subService) => (
                         <SelectItem key={subService.id} value={subService.id}>
-                          {subService.name}
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">{subService.name}</span>
+                            {subService.name_en && (
+                              <span className="text-xs text-muted-foreground">{subService.name_en}</span>
+                            )}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
