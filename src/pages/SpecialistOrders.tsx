@@ -377,7 +377,17 @@ export default function SpecialistOrders() {
     const isRejected = order.order_specialist?.is_accepted === false;
     
     // Calculate price options based on customer budget
-    const baseBudget = order.customer?.budget ? parseFloat(order.customer.budget.replace(/[^0-9.]/g, '')) : 0;
+    // Extract numeric value from budget string
+    const budgetStr = order.customer?.budget || '';
+    const numericBudget = parseFloat(budgetStr.replace(/[^0-9.]/g, ''));
+    const baseBudget = !isNaN(numericBudget) && numericBudget > 0 ? numericBudget : 0;
+    
+    console.log('Budget calculation:', { 
+      rawBudget: order.customer?.budget, 
+      numericBudget, 
+      baseBudget 
+    });
+    
     const priceOptions = baseBudget > 0 ? [
       { label: `${baseBudget} QAR`, value: `${baseBudget} QAR`, multiplier: 1 },
       { label: `${Math.round(baseBudget * 1.5)} QAR`, value: `${Math.round(baseBudget * 1.5)} QAR`, multiplier: 1.5 },
