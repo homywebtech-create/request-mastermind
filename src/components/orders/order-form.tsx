@@ -35,6 +35,8 @@ interface OrderFormData {
   budget: string;
   serviceId: string;
   subServiceId: string;
+  bookingType: string;
+  hoursCount: string;
   sendToAll: boolean;
   companyId: string;
   specialistIds: string[];
@@ -47,6 +49,8 @@ interface SubmittedOrderData {
   area: string;
   budget: string;
   serviceType: string;
+  bookingType: string;
+  hoursCount: string;
   sendToAll: boolean;
   companyId?: string;
   specialistIds?: string[];
@@ -86,6 +90,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     budget: '',
     serviceId: '',
     subServiceId: '',
+    bookingType: '',
+    hoursCount: '',
     sendToAll: true,
     companyId: '',
     specialistIds: [],
@@ -247,6 +253,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       area: formData.area,
       budget: formData.budget,
       serviceType,
+      bookingType: formData.bookingType,
+      hoursCount: formData.hoursCount,
       sendToAll: formData.sendToAll,
       companyId: formData.sendToAll ? undefined : formData.companyId,
       specialistIds: formData.specialistIds.length > 0 ? formData.specialistIds : undefined,
@@ -263,6 +271,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       budget: '',
       serviceId: '',
       subServiceId: '',
+      bookingType: '',
+      hoursCount: '',
       sendToAll: true,
       companyId: '',
       specialistIds: [],
@@ -485,6 +495,51 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 </div>
               )}
             </div>
+
+            {formData.serviceId && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bookingType">نوع الحجز / Booking Type</Label>
+                  <Select value={formData.bookingType} onValueChange={(value) => handleInputChange('bookingType', value)}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="اختر نوع الحجز / Select booking type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="weekly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">أسبوعي</span>
+                          <span className="text-xs text-muted-foreground">Weekly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="bi-weekly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">نصف شهري</span>
+                          <span className="text-xs text-muted-foreground">Bi-Weekly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="monthly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">شهري</span>
+                          <span className="text-xs text-muted-foreground">Monthly</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="hoursCount">عدد الساعات / Hours</Label>
+                  <Input
+                    id="hoursCount"
+                    type="number"
+                    min="1"
+                    value={formData.hoursCount}
+                    onChange={(e) => handleInputChange('hoursCount', e.target.value)}
+                    placeholder="مثال: 8"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Send Order To</Label>

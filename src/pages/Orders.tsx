@@ -15,6 +15,8 @@ interface OrderFormData {
   area: string;
   budget: string;
   serviceType: string;
+  bookingType: string;
+  hoursCount: string;
   sendToAll: boolean;
   companyId?: string;
   specialistIds?: string[];
