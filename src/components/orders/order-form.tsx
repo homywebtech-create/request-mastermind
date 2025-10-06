@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { countries } from "@/data/countries";
+import { qatarAreas } from "@/data/areas";
 import { Plus, Phone, User, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -370,13 +371,21 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
               
               <div className="space-y-2">
                 <Label htmlFor="area">المنطقة / Area</Label>
-                <Input
-                  id="area"
-                  value={formData.area}
-                  onChange={(e) => handleInputChange('area', e.target.value)}
-                  placeholder="مثال: الدوحة، الريان، الوكرة"
-                  dir="rtl"
-                />
+                <Select value={formData.area} onValueChange={(value) => handleInputChange('area', value)}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="اختر المنطقة / Select Area" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] bg-background z-50">
+                    {qatarAreas.map((area) => (
+                      <SelectItem key={area.id} value={area.name}>
+                        <span className="flex items-center gap-2">
+                          <span className="font-medium">{area.name}</span>
+                          <span className="text-muted-foreground text-sm">({area.nameEn})</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
