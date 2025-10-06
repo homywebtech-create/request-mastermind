@@ -35,11 +35,14 @@ interface Order {
   service_type: string;
   status: string;
   notes: string | null;
+  booking_type: string | null;
+  hours_count: string | null;
   customer: {
     name: string;
     whatsapp_number: string;
     area: string | null;
     budget: string | null;
+    budget_type: string | null;
   } | null;
   order_specialist?: OrderSpecialist;
 }
@@ -170,11 +173,14 @@ export default function SpecialistOrders() {
           service_type,
           status,
           notes,
+          booking_type,
+          hours_count,
           customer:customers (
             name,
             whatsapp_number,
             area,
-            budget
+            budget,
+            budget_type
           )
         `)
         .in('id', orderIds)
@@ -369,7 +375,29 @@ export default function SpecialistOrders() {
               <DollarSign className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground mb-1">ميزانية العميل</p>
-                <p className="font-semibold text-sm break-words">{order.customer.budget}</p>
+                <p className="font-semibold text-sm break-words">
+                  {order.customer.budget} {order.customer.budget_type ? `(${order.customer.budget_type})` : ''}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {order.booking_type && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground mb-1">نوع الحجز</p>
+                <p className="font-semibold text-sm break-words">{order.booking_type}</p>
+              </div>
+            </div>
+          )}
+
+          {order.hours_count && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <Clock className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground mb-1">عدد الساعات</p>
+                <p className="font-semibold text-sm break-words">{order.hours_count} ساعة</p>
               </div>
             </div>
           )}

@@ -26,9 +26,14 @@ interface Order {
   created_at: string;
   updated_at: string;
   send_to_all_companies?: boolean;
+  booking_type?: string | null;
+  hours_count?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
+    area?: string;
+    budget?: string;
+    budget_type?: string;
   };
   companies: {
     name: string;
@@ -177,7 +182,7 @@ export default function CompanyPortal() {
         .from("orders")
         .select(`
           *,
-          customers (name, whatsapp_number, area, budget),
+          customers (name, whatsapp_number, area, budget, budget_type),
           companies (name),
           order_specialists (
             id,

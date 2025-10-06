@@ -24,11 +24,14 @@ interface Order {
   created_at: string;
   last_sent_at?: string;
   send_to_all_companies?: boolean;
+  booking_type?: string | null;
+  hours_count?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
     area?: string;
     budget?: string;
+    budget_type?: string;
   } | null;
   companies: {
     name: string;
@@ -425,7 +428,7 @@ Thank you for contacting us! 🌟`;
       .from('orders')
       .select(`
         *,
-        customers (name, whatsapp_number, area, budget),
+        customers (name, whatsapp_number, area, budget, budget_type),
         companies (name)
       `)
       .eq('id', order.id)
@@ -675,7 +678,9 @@ Thank you for contacting us! 🌟`;
                                     </div>
                                     <div className="flex items-center justify-between">
                                       <span className="text-muted-foreground">Budget:</span>
-                                      <span className="font-medium">{customerBudget}</span>
+                                      <span className="font-medium">
+                                        {customerBudget} {order.customers?.budget_type ? `(${order.customers.budget_type})` : ''}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
@@ -685,7 +690,7 @@ Thank you for contacting us! 🌟`;
                                     <Wrench className="h-5 w-5" />
                                     Order Details
                                   </h3>
-                                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                   <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                                     <div className="flex items-center justify-between">
                                       <span className="text-muted-foreground">Service Type:</span>
                                       <Badge variant="outline">{order.service_type}</Badge>
@@ -694,6 +699,18 @@ Thank you for contacting us! 🌟`;
                                       <span className="text-muted-foreground">Status:</span>
                                       <StatusBadge status={order.status} />
                                     </div>
+                                    {order.booking_type && (
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-muted-foreground">Booking Type:</span>
+                                        <Badge variant="secondary">{order.booking_type}</Badge>
+                                      </div>
+                                    )}
+                                    {order.hours_count && (
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-muted-foreground">Hours:</span>
+                                        <span className="font-medium">{order.hours_count} hours</span>
+                                      </div>
+                                    )}
                                     <div className="flex items-center justify-between">
                                       <span className="text-muted-foreground">Created At:</span>
                                       <span className="font-medium">{formatDate(order.created_at)}</span>
