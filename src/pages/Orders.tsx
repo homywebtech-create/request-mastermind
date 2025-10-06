@@ -14,6 +14,7 @@ interface OrderFormData {
   whatsappNumber: string;
   area: string;
   budget: string;
+  budgetType: string;
   serviceType: string;
   bookingType: string;
   hoursCount: string;
@@ -180,6 +181,7 @@ export default function Orders() {
             whatsapp_number: formData.whatsappNumber,
             area: formData.area || null,
             budget: formData.budget || null,
+            budget_type: formData.budgetType || null,
             company_id: formData.companyId || null
           })
           .select('id')

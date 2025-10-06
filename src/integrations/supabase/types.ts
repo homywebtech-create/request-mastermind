@@ -97,6 +97,7 @@ export type Database = {
         Row: {
           area: string | null
           budget: string | null
+          budget_type: string | null
           company_id: string | null
           created_at: string
           id: string
@@ -106,6 +107,7 @@ export type Database = {
         Insert: {
           area?: string | null
           budget?: string | null
+          budget_type?: string | null
           company_id?: string | null
           created_at?: string
           id?: string
@@ -115,6 +117,7 @@ export type Database = {
         Update: {
           area?: string | null
           budget?: string | null
+          budget_type?: string | null
           company_id?: string | null
           created_at?: string
           id?: string

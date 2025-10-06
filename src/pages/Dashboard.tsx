@@ -195,6 +195,7 @@ export default function Dashboard() {
             whatsapp_number: formData.whatsappNumber,
             area: formData.area || null,
             budget: formData.budget || null,
+            budget_type: formData.budgetType || null,
             company_id: formData.companyId || null
           })
           .select('id')
