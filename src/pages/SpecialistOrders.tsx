@@ -79,8 +79,8 @@ export default function SpecialistOrders() {
           
           // Show notification
           toast({
-            title: "طلب جديد!",
-            description: "تم إضافة طلب جديد لك",
+            title: "New Order!",
+            description: "A new order has been added for you",
           });
         }
       )
@@ -204,8 +204,8 @@ export default function SpecialistOrders() {
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تحميل الطلبات",
+        title: "Error",
+        description: "Failed to load orders",
         variant: "destructive",
       });
     } finally {
@@ -216,8 +216,8 @@ export default function SpecialistOrders() {
   const handleSubmitQuote = async (price: string) => {
     if (!quoteDialog.orderId) {
       toast({
-        title: "خطأ",
-        description: "معرف الطلب غير موجود",
+        title: "Error",
+        description: "Order ID not found",
         variant: "destructive",
       });
       return;
@@ -244,8 +244,8 @@ export default function SpecialistOrders() {
       if (error) throw error;
 
       toast({
-        title: "تم تقديم العرض",
-        description: "تم إرسال عرض السعر للإدارة بنجاح",
+        title: "Quote Submitted",
+        description: "Your quote has been successfully sent to management",
       });
 
       // Refresh orders
@@ -256,8 +256,8 @@ export default function SpecialistOrders() {
     } catch (error: any) {
       console.error('Error submitting quote:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تقديم العرض",
+        title: "Error",
+        description: "Failed to submit quote",
         variant: "destructive",
       });
     } finally {
@@ -283,15 +283,15 @@ export default function SpecialistOrders() {
         .update({
           is_accepted: false,
           rejected_at: new Date().toISOString(),
-          rejection_reason: 'تم التخطي من قبل المحترف'
+          rejection_reason: 'Skipped by specialist'
         })
         .eq('id', order.order_specialist.id);
 
       if (error) throw error;
 
       toast({
-        title: "تم التخطي",
-        description: "تم تخطي هذا الطلب",
+        title: "Order Skipped",
+        description: "This order has been skipped",
       });
 
       // Refresh orders
@@ -302,8 +302,8 @@ export default function SpecialistOrders() {
     } catch (error: any) {
       console.error('Error skipping order:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تخطي الطلب",
+        title: "Error",
+        description: "Failed to skip order",
         variant: "destructive",
       });
     } finally {
@@ -318,14 +318,14 @@ export default function SpecialistOrders() {
 
   const getStatusBadge = (status: string, hasQuote: boolean) => {
     if (hasQuote) {
-      return <Badge variant="default" className="bg-green-600">تم تقديم عرض</Badge>;
+      return <Badge variant="default" className="bg-green-600">Quote Submitted</Badge>;
     }
 
     const statusConfig = {
-      pending: { label: 'عرض جديد', variant: 'secondary' as const },
-      in_progress: { label: 'جاري العمل', variant: 'default' as const },
-      completed: { label: 'مكتمل', variant: 'default' as const },
-      cancelled: { label: 'ملغي', variant: 'destructive' as const },
+      pending: { label: 'New Order', variant: 'secondary' as const },
+      in_progress: { label: 'In Progress', variant: 'default' as const },
+      completed: { label: 'Completed', variant: 'default' as const },
+      cancelled: { label: 'Cancelled', variant: 'destructive' as const },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -341,7 +341,7 @@ export default function SpecialistOrders() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -356,7 +356,7 @@ export default function SpecialistOrders() {
   // Skipped orders: rejected by specialist (skipped)
   const skippedOrders = orders.filter(o => 
     o.order_specialist?.is_accepted === false && 
-    o.order_specialist?.rejection_reason === 'تم التخطي من قبل المحترف'
+    o.order_specialist?.rejection_reason === 'Skipped by specialist'
   );
   
   const quotedOrders = orders.filter(o => 
@@ -369,7 +369,7 @@ export default function SpecialistOrders() {
   const rejectedOrders = orders.filter(o => 
     o.order_specialist?.is_accepted === false && 
     o.order_specialist?.quoted_price &&
-    o.order_specialist?.rejection_reason !== 'تم التخطي من قبل المحترف'
+    o.order_specialist?.rejection_reason !== 'Skipped by specialist'
   );
 
   const renderOrderCard = (order: Order, showQuoteButton: boolean = false) => {
@@ -379,10 +379,10 @@ export default function SpecialistOrders() {
     // Calculate price options based on customer budget
     const baseBudget = order.customer?.budget ? parseFloat(order.customer.budget.replace(/[^0-9.]/g, '')) : 0;
     const priceOptions = baseBudget > 0 ? [
-      { label: `${baseBudget} ريال`, value: `${baseBudget} ريال`, multiplier: 1 },
-      { label: `${Math.round(baseBudget * 1.5)} ريال`, value: `${Math.round(baseBudget * 1.5)} ريال`, multiplier: 1.5 },
-      { label: `${Math.round(baseBudget * 2)} ريال`, value: `${Math.round(baseBudget * 2)} ريال`, multiplier: 2 },
-      { label: `${Math.round(baseBudget * 2.5)} ريال`, value: `${Math.round(baseBudget * 2.5)} ريال`, multiplier: 2.5 },
+      { label: `${baseBudget} QAR`, value: `${baseBudget} QAR`, multiplier: 1 },
+      { label: `${Math.round(baseBudget * 1.5)} QAR`, value: `${Math.round(baseBudget * 1.5)} QAR`, multiplier: 1.5 },
+      { label: `${Math.round(baseBudget * 2)} QAR`, value: `${Math.round(baseBudget * 2)} QAR`, multiplier: 2 },
+      { label: `${Math.round(baseBudget * 2.5)} QAR`, value: `${Math.round(baseBudget * 2.5)} QAR`, multiplier: 2.5 },
     ] : [];
     
     return (
@@ -393,7 +393,7 @@ export default function SpecialistOrders() {
         {!hasQuote && showQuoteButton && (
           <div className="flex items-center gap-2 text-primary mb-2">
             <Sparkles className="h-4 w-4 animate-pulse" />
-            <span className="text-sm font-semibold">عرض جديد - قدم سعرك</span>
+            <span className="text-sm font-semibold">New Order - Submit Your Quote</span>
           </div>
         )}
         
@@ -405,7 +405,7 @@ export default function SpecialistOrders() {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4" />
-              {new Date(order.created_at).toLocaleDateString('ar-SA', {
+              {new Date(order.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
@@ -420,7 +420,7 @@ export default function SpecialistOrders() {
           <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
             <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground mb-1">نوع الخدمة</p>
+              <p className="text-xs text-muted-foreground mb-1">Service Type</p>
               <p className="font-semibold text-sm break-words">{order.service_type}</p>
             </div>
           </div>
@@ -429,7 +429,7 @@ export default function SpecialistOrders() {
             <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
               <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">المنطقة</p>
+                <p className="text-xs text-muted-foreground mb-1">Area</p>
                 <p className="font-semibold text-sm break-words">{order.customer.area}</p>
               </div>
             </div>
@@ -439,7 +439,7 @@ export default function SpecialistOrders() {
             <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
               <DollarSign className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">ميزانية العميل</p>
+                <p className="text-xs text-muted-foreground mb-1">Customer Budget</p>
                 <p className="font-semibold text-sm break-words">
                   {order.customer.budget} {order.customer.budget_type ? `(${order.customer.budget_type})` : ''}
                 </p>
@@ -451,7 +451,7 @@ export default function SpecialistOrders() {
             <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
               <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">نوع الحجز</p>
+                <p className="text-xs text-muted-foreground mb-1">Booking Type</p>
                 <p className="font-semibold text-sm break-words">{order.booking_type}</p>
               </div>
             </div>
@@ -461,8 +461,8 @@ export default function SpecialistOrders() {
             <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
               <Clock className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">عدد الساعات</p>
-                <p className="font-semibold text-sm break-words">{order.hours_count} ساعة</p>
+                <p className="text-xs text-muted-foreground mb-1">Hours Count</p>
+                <p className="font-semibold text-sm break-words">{order.hours_count} hours</p>
               </div>
             </div>
           )}
@@ -470,7 +470,7 @@ export default function SpecialistOrders() {
           <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
             <Phone className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground mb-1">رقم الواتساب</p>
+              <p className="text-xs text-muted-foreground mb-1">WhatsApp Number</p>
               <p className="font-semibold text-sm break-words" dir="ltr">{order.customer?.whatsapp_number}</p>
             </div>
           </div>
@@ -481,14 +481,14 @@ export default function SpecialistOrders() {
           <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
             <Tag className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-xs text-green-600 mb-2 font-semibold">عرضك المقدم</p>
+              <p className="text-xs text-green-600 mb-2 font-semibold">Your Submitted Quote</p>
               <div className="space-y-1">
-                <p className="text-sm"><span className="text-muted-foreground">السعر:</span> <span className="font-bold">{order.order_specialist?.quoted_price}</span></p>
+                <p className="text-sm"><span className="text-muted-foreground">Price:</span> <span className="font-bold">{order.order_specialist?.quoted_price}</span></p>
                 {order.order_specialist?.quote_notes && (
-                  <p className="text-sm"><span className="text-muted-foreground">ملاحظات:</span> {order.order_specialist.quote_notes}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">Notes:</span> {order.order_specialist.quote_notes}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  تم التقديم: {order.order_specialist?.quoted_at && new Date(order.order_specialist.quoted_at).toLocaleDateString('ar-SA')}
+                  Submitted: {order.order_specialist?.quoted_at && new Date(order.order_specialist.quoted_at).toLocaleDateString('en-US')}
                 </p>
               </div>
             </div>
@@ -500,17 +500,17 @@ export default function SpecialistOrders() {
           <div className="flex items-start gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
             <XCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-xs text-red-600 mb-2 font-semibold">تم رفض العرض</p>
+              <p className="text-xs text-red-600 mb-2 font-semibold">Quote Rejected</p>
               <div className="space-y-1">
-                <p className="text-sm"><span className="text-muted-foreground">عرضك:</span> <span className="font-bold">{order.order_specialist?.quoted_price}</span></p>
+                <p className="text-sm"><span className="text-muted-foreground">Your quote:</span> <span className="font-bold">{order.order_specialist?.quoted_price}</span></p>
                 {order.order_specialist?.rejection_reason && (
                   <div className="mt-2 p-3 bg-red-100 rounded-md">
-                    <p className="text-xs text-red-700 mb-1 font-semibold">سبب الرفض:</p>
+                    <p className="text-xs text-red-700 mb-1 font-semibold">Rejection Reason:</p>
                     <p className="text-sm text-red-900">{order.order_specialist.rejection_reason}</p>
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground mt-2">
-                  تاريخ الرفض: {order.order_specialist?.rejected_at && new Date(order.order_specialist.rejected_at).toLocaleDateString('ar-SA')}
+                  Rejection Date: {order.order_specialist?.rejected_at && new Date(order.order_specialist.rejected_at).toLocaleDateString('en-US')}
                 </p>
               </div>
             </div>
@@ -521,7 +521,7 @@ export default function SpecialistOrders() {
           <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30 border border-muted">
             <FileText className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-xs text-muted-foreground mb-2">ملاحظات الإدارة</p>
+              <p className="text-xs text-muted-foreground mb-2">Admin Notes</p>
               <p className="text-sm leading-relaxed">{order.notes}</p>
             </div>
           </div>
@@ -541,16 +541,16 @@ export default function SpecialistOrders() {
                   size="lg"
                 >
                   <Tag className="h-4 w-4" />
-                  قدم عرض السعر
+                  Submit Quote
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>اختر السعر المناسب</DialogTitle>
+                  <DialogTitle>Choose Your Price</DialogTitle>
                   <DialogDescription>
                     {baseBudget > 0 
-                      ? `ميزانية العميل: ${baseBudget} ريال - اختر السعر الذي يناسبك`
-                      : "اختر السعر المناسب لك"}
+                      ? `Customer Budget: ${baseBudget} QAR - Choose the price that suits you`
+                      : "Choose a price that suits you"}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 py-4">
@@ -566,7 +566,7 @@ export default function SpecialistOrders() {
                             className="h-auto py-4 flex flex-col gap-1"
                           >
                             <span className="text-lg font-bold">{option.label}</span>
-                            {index === 0 && <span className="text-xs opacity-80">سعر العميل</span>}
+                            {index === 0 && <span className="text-xs opacity-80">Customer Price</span>}
                             {index > 0 && <span className="text-xs opacity-80">×{option.multiplier}</span>}
                           </Button>
                         ))}
@@ -578,20 +578,20 @@ export default function SpecialistOrders() {
                           variant="ghost"
                           className="w-full"
                         >
-                          تخطي هذا الطلب
+                          Skip This Order
                         </Button>
                       </div>
                     </>
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">لم يتم تحديد ميزانية للعميل</p>
+                      <p className="text-muted-foreground mb-4">No budget specified by customer</p>
                       <Button
                         onClick={handleSkipOrder}
                         disabled={isSubmitting}
                         variant="outline"
                         className="w-full"
                       >
-                        تخطي هذا الطلب
+                        Skip This Order
                       </Button>
                     </div>
                   )}
@@ -607,7 +607,7 @@ export default function SpecialistOrders() {
             size="lg"
           >
             <Phone className="h-4 w-4" />
-            تواصل عبر واتساب
+            Contact via WhatsApp
           </Button>
         </div>
       </Card>
@@ -622,13 +622,13 @@ export default function SpecialistOrders() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="space-y-1">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                عروضي
+                My Orders
               </h1>
-              <p className="text-muted-foreground">مرحباً {specialistName}</p>
+              <p className="text-muted-foreground">Welcome {specialistName}</p>
             </div>
             <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut className="ml-2 h-4 w-4" />
-              تسجيل الخروج
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
             </Button>
           </div>
         </Card>
@@ -638,7 +638,7 @@ export default function SpecialistOrders() {
           <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">عروض جديدة</p>
+                <p className="text-sm text-muted-foreground mb-1">New Orders</p>
                 <p className="text-3xl font-bold text-blue-600">{newOrders.length}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -650,7 +650,7 @@ export default function SpecialistOrders() {
           <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">قيد المراجعة</p>
+                <p className="text-sm text-muted-foreground mb-1">Under Review</p>
                 <p className="text-3xl font-bold text-orange-600">{quotedOrders.length}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-orange-500/20 flex items-center justify-center">
@@ -662,7 +662,7 @@ export default function SpecialistOrders() {
           <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">مقبولة</p>
+                <p className="text-sm text-muted-foreground mb-1">Accepted</p>
                 <p className="text-3xl font-bold text-green-600">{acceptedOrders.length}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -674,7 +674,7 @@ export default function SpecialistOrders() {
           <Card className="p-6 bg-gradient-to-br from-gray-500/10 to-gray-500/5 border-gray-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">متخطاة</p>
+                <p className="text-sm text-muted-foreground mb-1">Skipped</p>
                 <p className="text-3xl font-bold text-gray-600">{skippedOrders.length}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-gray-500/20 flex items-center justify-center">
@@ -686,7 +686,7 @@ export default function SpecialistOrders() {
           <Card className="p-6 bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">مرفوضة</p>
+                <p className="text-sm text-muted-foreground mb-1">Rejected</p>
                 <p className="text-3xl font-bold text-red-600">{rejectedOrders.length}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -701,23 +701,23 @@ export default function SpecialistOrders() {
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
             <TabsTrigger value="new" className="gap-2">
               <AlertCircle className="h-4 w-4" />
-              جديدة ({newOrders.length})
+              New ({newOrders.length})
             </TabsTrigger>
             <TabsTrigger value="quoted" className="gap-2">
               <Tag className="h-4 w-4" />
-              قيد المراجعة ({quotedOrders.length})
+              Under Review ({quotedOrders.length})
             </TabsTrigger>
             <TabsTrigger value="accepted" className="gap-2">
               <CheckCircle className="h-4 w-4" />
-              مقبولة ({acceptedOrders.length})
+              Accepted ({acceptedOrders.length})
             </TabsTrigger>
             <TabsTrigger value="skipped" className="gap-2">
               <XCircle className="h-4 w-4" />
-              متخطاة ({skippedOrders.length})
+              Skipped ({skippedOrders.length})
             </TabsTrigger>
             <TabsTrigger value="rejected" className="gap-2">
               <AlertCircle className="h-4 w-4" />
-              مرفوضة ({rejectedOrders.length})
+              Rejected ({rejectedOrders.length})
             </TabsTrigger>
           </TabsList>
 
@@ -725,7 +725,7 @@ export default function SpecialistOrders() {
             {newOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">لا توجد عروض جديدة</p>
+                <p className="text-lg text-muted-foreground">No new orders</p>
               </Card>
             ) : (
               newOrders.map((order) => renderOrderCard(order, true))
@@ -736,8 +736,8 @@ export default function SpecialistOrders() {
             {quotedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <Tag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">لا توجد عروض مقدمة</p>
-                <p className="text-sm text-muted-foreground mt-2">انتظر قبول الإدارة لعروضك</p>
+                <p className="text-lg text-muted-foreground">No submitted quotes</p>
+                <p className="text-sm text-muted-foreground mt-2">Wait for management to review your quotes</p>
               </Card>
             ) : (
               quotedOrders.map((order) => renderOrderCard(order))
@@ -748,7 +748,7 @@ export default function SpecialistOrders() {
             {acceptedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <CheckCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">لا توجد عروض مقبولة</p>
+                <p className="text-lg text-muted-foreground">No accepted orders</p>
               </Card>
             ) : (
               acceptedOrders.map((order) => renderOrderCard(order))
@@ -759,7 +759,7 @@ export default function SpecialistOrders() {
             {skippedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">لا توجد طلبات متخطاة</p>
+                <p className="text-lg text-muted-foreground">No skipped orders</p>
               </Card>
             ) : (
               skippedOrders.map((order) => renderOrderCard(order))
@@ -770,8 +770,8 @@ export default function SpecialistOrders() {
             {rejectedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">لا توجد عروض مرفوضة</p>
-                <p className="text-sm text-muted-foreground mt-2">هذا شيء جيد! استمر في تقديم عروض تنافسية</p>
+                <p className="text-lg text-muted-foreground">No rejected orders</p>
+                <p className="text-sm text-muted-foreground mt-2">That's great! Keep submitting competitive quotes</p>
               </Card>
             ) : (
               rejectedOrders.map((order) => renderOrderCard(order))
