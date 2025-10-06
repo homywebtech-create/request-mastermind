@@ -347,13 +347,30 @@ export default function SpecialistOrders() {
     );
   }
 
-  const newOrders = orders.filter(o => !o.order_specialist?.quoted_price);
+  // New orders: no quote AND not skipped
+  const newOrders = orders.filter(o => 
+    !o.order_specialist?.quoted_price && 
+    !o.order_specialist?.rejected_at
+  );
+  
+  // Skipped orders: rejected by specialist (skipped)
+  const skippedOrders = orders.filter(o => 
+    o.order_specialist?.is_accepted === false && 
+    o.order_specialist?.rejection_reason === 'تم التخطي من قبل المحترف'
+  );
+  
   const quotedOrders = orders.filter(o => 
     o.order_specialist?.quoted_price && 
     o.order_specialist?.is_accepted === null
   );
   const acceptedOrders = orders.filter(o => o.order_specialist?.is_accepted === true);
-  const rejectedOrders = orders.filter(o => o.order_specialist?.is_accepted === false);
+  
+  // Rejected orders: rejected by admin (has quote and is_accepted = false)
+  const rejectedOrders = orders.filter(o => 
+    o.order_specialist?.is_accepted === false && 
+    o.order_specialist?.quoted_price &&
+    o.order_specialist?.rejection_reason !== 'تم التخطي من قبل المحترف'
+  );
 
   const renderOrderCard = (order: Order, showQuoteButton: boolean = false) => {
     const hasQuote = !!order.order_specialist?.quoted_price;
@@ -617,7 +634,7 @@ export default function SpecialistOrders() {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
             <div className="flex items-center justify-between">
               <div>
@@ -654,6 +671,18 @@ export default function SpecialistOrders() {
             </div>
           </Card>
 
+          <Card className="p-6 bg-gradient-to-br from-gray-500/10 to-gray-500/5 border-gray-500/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">متخطاة</p>
+                <p className="text-3xl font-bold text-gray-600">{skippedOrders.length}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-gray-500/20 flex items-center justify-center">
+                <XCircle className="h-6 w-6 text-gray-600" />
+              </div>
+            </div>
+          </Card>
+
           <Card className="p-6 bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
             <div className="flex items-center justify-between">
               <div>
@@ -669,7 +698,7 @@ export default function SpecialistOrders() {
 
         {/* Orders Tabs */}
         <Tabs defaultValue="new" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
             <TabsTrigger value="new" className="gap-2">
               <AlertCircle className="h-4 w-4" />
               جديدة ({newOrders.length})
@@ -682,8 +711,12 @@ export default function SpecialistOrders() {
               <CheckCircle className="h-4 w-4" />
               مقبولة ({acceptedOrders.length})
             </TabsTrigger>
-            <TabsTrigger value="rejected" className="gap-2">
+            <TabsTrigger value="skipped" className="gap-2">
               <XCircle className="h-4 w-4" />
+              متخطاة ({skippedOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="gap-2">
+              <AlertCircle className="h-4 w-4" />
               مرفوضة ({rejectedOrders.length})
             </TabsTrigger>
           </TabsList>
@@ -719,6 +752,17 @@ export default function SpecialistOrders() {
               </Card>
             ) : (
               acceptedOrders.map((order) => renderOrderCard(order))
+            )}
+          </TabsContent>
+
+          <TabsContent value="skipped" className="space-y-4">
+            {skippedOrders.length === 0 ? (
+              <Card className="p-12 text-center">
+                <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-lg text-muted-foreground">لا توجد طلبات متخطاة</p>
+              </Card>
+            ) : (
+              skippedOrders.map((order) => renderOrderCard(order))
             )}
           </TabsContent>
 
