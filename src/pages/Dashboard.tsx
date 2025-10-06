@@ -207,6 +207,7 @@ export default function Dashboard() {
       let customerId = existingCustomer?.id;
 
       if (!customerId) {
+        // Create new customer
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
           .insert({
@@ -222,6 +223,19 @@ export default function Dashboard() {
 
         if (customerError) throw customerError;
         customerId = newCustomer.id;
+      } else {
+        // Update existing customer with new budget info
+        const { error: updateError } = await supabase
+          .from('customers')
+          .update({
+            name: formData.customerName,
+            area: formData.area || null,
+            budget: formData.budget || null,
+            budget_type: formData.budgetType || null,
+          })
+          .eq('id', customerId);
+
+        if (updateError) throw updateError;
       }
 
       // Create order link
