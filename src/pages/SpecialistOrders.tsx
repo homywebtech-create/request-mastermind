@@ -389,10 +389,10 @@ export default function SpecialistOrders() {
     });
     
     const priceOptions = baseBudget > 0 ? [
-      { label: `${baseBudget} QAR`, value: `${baseBudget} QAR`, multiplier: 1 },
-      { label: `${Math.round(baseBudget * 1.5)} QAR`, value: `${Math.round(baseBudget * 1.5)} QAR`, multiplier: 1.5 },
-      { label: `${Math.round(baseBudget * 2)} QAR`, value: `${Math.round(baseBudget * 2)} QAR`, multiplier: 2 },
-      { label: `${Math.round(baseBudget * 2.5)} QAR`, value: `${Math.round(baseBudget * 2.5)} QAR`, multiplier: 2.5 },
+      { label: `${baseBudget} QAR`, value: `${baseBudget} QAR` },
+      { label: `${baseBudget + 3} QAR`, value: `${baseBudget + 3} QAR` },
+      { label: `${baseBudget + 6} QAR`, value: `${baseBudget + 6} QAR` },
+      { label: `${baseBudget + 9} QAR`, value: `${baseBudget + 9} QAR` },
     ] : [];
     
     return (
@@ -578,7 +578,7 @@ export default function SpecialistOrders() {
                         >
                           <span className="text-lg font-bold">{option.label}</span>
                           {index === 0 && <span className="text-xs opacity-80">Customer Price</span>}
-                          {index > 0 && <span className="text-xs opacity-80">×{option.multiplier}</span>}
+                          {index > 0 && <span className="text-xs opacity-80">+{index * 3} QAR</span>}
                         </Button>
                       ))}
                     </div>
