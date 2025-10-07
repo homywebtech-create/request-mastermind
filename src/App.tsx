@@ -16,6 +16,7 @@ import SpecialistAuth from "./pages/SpecialistAuth";
 import SpecialistOrders from "./pages/SpecialistOrders";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
+import DeletionRequests from "./pages/DeletionRequests";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +53,7 @@ function PathBasedRouter() {
   
   // Admin routes
   if (pathname === '/auth' || pathname === '/admin' || pathname === '/companies' || 
-      pathname === '/services' || pathname === '/orders') {
+      pathname === '/services' || pathname === '/orders' || pathname === '/deletion-requests') {
     return (
       <BrowserRouter>
         <Routes>
@@ -86,6 +87,14 @@ function PathBasedRouter() {
             element={
               <ProtectedRoute>
                 <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/deletion-requests"
+            element={
+              <ProtectedRoute>
+                <DeletionRequests />
               </ProtectedRoute>
             }
           />

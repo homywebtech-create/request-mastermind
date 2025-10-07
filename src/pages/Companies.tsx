@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy, Upload, Image as ImageIcon, Phone, Mail, MapPin, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -57,6 +59,9 @@ export default function Companies() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletionReason, setDeletionReason] = useState("");
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedServiceIds, setSelectedServiceIds] = useState<{serviceId: string, subServiceIds: string[]}[]>([]);
   const [loading, setLoading] = useState(true);
@@ -535,6 +540,66 @@ export default function Companies() {
     });
   };
 
+  const handleDeleteRequest = (company: Company) => {
+    setCompanyToDelete(company);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const submitDeletionRequest = async () => {
+    if (!deletionReason.trim()) {
+      toast({
+        title: tCommon.error,
+        description: t.reasonRequired,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!companyToDelete || !user) return;
+
+    try {
+      // Store company data as JSON for potential restoration
+      const companyData = {
+        id: companyToDelete.id,
+        name: companyToDelete.name,
+        name_en: companyToDelete.name_en,
+        phone: companyToDelete.phone,
+        email: companyToDelete.email,
+        address: companyToDelete.address,
+        logo_url: companyToDelete.logo_url,
+        is_active: companyToDelete.is_active,
+      };
+
+      const { error } = await supabase
+        .from("deletion_requests")
+        .insert({
+          company_id: companyToDelete.id,
+          requested_by: user.id,
+          reason: deletionReason,
+          company_data: companyData,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: tCommon.success,
+        description: t.deletionRequestSent,
+      });
+
+      setIsDeleteDialogOpen(false);
+      setDeletionReason("");
+      setCompanyToDelete(null);
+    } catch (error: any) {
+      console.error('Error creating deletion request:', error);
+      toast({
+        title: tCommon.error,
+        description: t.deletionRequestFailed,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -883,6 +948,15 @@ export default function Companies() {
                             >
                               <Send className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteRequest(company)}
+                              title={t.deleteCompany}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -1146,6 +1220,41 @@ export default function Companies() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-cairo">{t.deleteCompany}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.confirmDeletion}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="deletionReason">{t.deletionReason} *</Label>
+              <Textarea
+                id="deletionReason"
+                value={deletionReason}
+                onChange={(e) => setDeletionReason(e.target.value)}
+                placeholder={t.enterDeletionReason}
+                rows={4}
+                required
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeletionReason("");
+              setCompanyToDelete(null);
+            }}>
+              {tCommon.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={submitDeletionRequest}>
+              {t.requestDeletion}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

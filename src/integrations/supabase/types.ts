@@ -140,6 +140,50 @@ export type Database = {
           },
         ]
       }
+      deletion_requests: {
+        Row: {
+          company_data: Json
+          company_id: string
+          created_at: string
+          id: string
+          reason: string
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          company_data: Json
+          company_id: string
+          created_at?: string
+          id?: string
+          reason: string
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          company_data?: Json
+          company_id?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deletion_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_specialists: {
         Row: {
           created_at: string | null

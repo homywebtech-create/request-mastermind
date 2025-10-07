@@ -450,6 +450,15 @@ export default function Dashboard() {
                 Services
               </Button>
 
+              <Button
+                variant="outline"
+                onClick={() => navigate('/deletion-requests')}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Deletion Requests
+              </Button>
+
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2">
