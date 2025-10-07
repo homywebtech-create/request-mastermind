@@ -76,7 +76,8 @@ export default function CompanyBooking() {
             name,
             phone,
             image_url,
-            nationality
+            nationality,
+            company_id
           )
         `)
         .eq('order_id', orderId)
@@ -91,7 +92,7 @@ export default function CompanyBooking() {
           quoted_price: os.quoted_price,
           quoted_at: os.quoted_at,
         }))
-        .filter((s: any) => s.companies?.id === companyId);
+        .filter((s: any) => s.company_id === companyId);
 
       setSpecialists(formattedSpecialists);
     } catch (error: any) {
