@@ -121,6 +121,7 @@ export default function CompanyBooking() {
   const [bookingType, setBookingType] = useState('');
   const [bookingDateType, setBookingDateType] = useState('');
   const [customDate, setCustomDate] = useState('');
+  const [selectedSpecialistId, setSelectedSpecialistId] = useState<string | null>(null);
 
   const totalSteps = 4;
   const t = translations[language];
@@ -247,13 +248,23 @@ export default function CompanyBooking() {
 
   const handleSubmit = async () => {
     try {
+      if (!selectedSpecialistId) {
+        toast({
+          title: t.missingData,
+          description: 'الرجاء اختيار محترفة',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const bookingDate = bookingDateType === 'today' 
         ? new Date().toISOString().split('T')[0]
         : bookingDateType === 'tomorrow'
         ? new Date(Date.now() + 86400000).toISOString().split('T')[0]
         : customDate;
 
-      const { error } = await supabase
+      // Update order details
+      const { error: orderError } = await supabase
         .from('orders')
         .update({
           gps_latitude: location?.lat,
@@ -262,14 +273,26 @@ export default function CompanyBooking() {
           selected_booking_type: bookingType,
           booking_date: bookingDate,
           booking_date_type: bookingDateType,
+          status: 'accepted',
         })
         .eq('id', orderId);
 
-      if (error) throw error;
+      if (orderError) throw orderError;
+
+      // Accept the selected specialist
+      const { error: acceptError } = await supabase
+        .from('order_specialists')
+        .update({ 
+          is_accepted: true,
+        })
+        .eq('order_id', orderId)
+        .eq('specialist_id', selectedSpecialistId);
+
+      if (acceptError) throw acceptError;
 
       toast({
         title: t.saved,
-        description: t.bookingSaved,
+        description: 'تم تأكيد الحجز بنجاح',
       });
 
       // Navigate back or to confirmation page
@@ -511,79 +534,88 @@ export default function CompanyBooking() {
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  {t.specialistsAndPrices}
+                  اختر المحترفة المناسبة
                 </h3>
 
-                <div className="space-y-4">
-                  {specialists
-                    .sort((a, b) => {
-                      const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                      const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                      return priceA - priceB;
-                    })
-                    .map((specialist) => {
-                      const price = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                      const isLowest = price === lowestPrice;
+                <RadioGroup value={selectedSpecialistId || ''} onValueChange={setSelectedSpecialistId}>
+                  <div className="space-y-4">
+                    {specialists
+                      .sort((a, b) => {
+                        const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                        const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                        return priceA - priceB;
+                      })
+                      .map((specialist) => {
+                        const price = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                        const isLowest = price === lowestPrice;
+                        const isSelected = selectedSpecialistId === specialist.id;
 
-                      return (
-                        <div
-                          key={specialist.id}
-                          className={cn(
-                            'border-2 rounded-lg p-4 transition-all',
-                            isLowest 
-                              ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
-                              : 'border-border'
-                          )}
-                        >
-                          <div className="flex gap-4">
-                            {specialist.image_url ? (
-                              <img 
-                                src={specialist.image_url} 
-                                alt={specialist.name}
-                                className="w-24 h-24 rounded-lg object-cover border-2 border-border"
-                              />
-                            ) : (
-                              <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
-                                <Users className="h-12 w-12 text-muted-foreground" />
-                              </div>
+                        return (
+                          <label
+                            key={specialist.id}
+                            className={cn(
+                              'border-2 rounded-lg p-4 transition-all cursor-pointer',
+                              isSelected
+                                ? 'border-primary bg-primary/5'
+                                : isLowest 
+                                ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
+                                : 'border-border hover:border-primary/50'
                             )}
-
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-2">
-                                <div>
-                                  <h4 className="font-semibold text-lg">{specialist.name}</h4>
-                                  {specialist.nationality && (
-                                    <p className="text-sm text-muted-foreground">
-                                      {specialist.nationality}
-                                    </p>
-                                  )}
+                          >
+                            <RadioGroupItem value={specialist.id} id={specialist.id} className="sr-only" />
+                            <div className="flex gap-4">
+                              {specialist.image_url ? (
+                                <img 
+                                  src={specialist.image_url} 
+                                  alt={specialist.name}
+                                  className="w-24 h-24 rounded-lg object-cover border-2 border-border"
+                                />
+                              ) : (
+                                <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
+                                  <Users className="h-12 w-12 text-muted-foreground" />
                                 </div>
-                                <div className="text-left">
-                                  <Badge 
-                                    className={cn(
-                                      'text-lg px-3 py-1',
-                                      isLowest && 'bg-green-600 hover:bg-green-700'
+                              )}
+
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <h4 className="font-semibold text-lg flex items-center gap-2">
+                                      {specialist.name}
+                                      {isSelected && <Check className="h-5 w-5 text-primary" />}
+                                    </h4>
+                                    {specialist.nationality && (
+                                      <p className="text-sm text-muted-foreground">
+                                        {specialist.nationality}
+                                      </p>
                                     )}
-                                  >
-                                    {specialist.quoted_price}
-                                  </Badge>
-                                  {isLowest && (
-                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                                      {t.lowestPrice} ⭐
-                                    </p>
-                                  )}
+                                  </div>
+                                  <div className="text-left">
+                                    <Badge 
+                                      className={cn(
+                                        'text-lg px-3 py-1',
+                                        isLowest && 'bg-green-600 hover:bg-green-700'
+                                      )}
+                                    >
+                                      {specialist.quoted_price}
+                                    </Badge>
+                                    {isLowest && (
+                                      <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                                        {t.lowestPrice} ⭐
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
 
-                              <p className="text-sm text-muted-foreground" dir="ltr">
-                                📞 {specialist.phone}
-                              </p>
+                                <p className="text-sm text-muted-foreground" dir="ltr">
+                                  📞 {specialist.phone}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                          </label>
+                        );
+                      })}
+                  </div>
+                </RadioGroup>
 
                 {specialists.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
