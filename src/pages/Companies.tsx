@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy } from "lucide-react";
+import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy, Upload, Image as ImageIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,6 +42,7 @@ interface Company {
   address?: string;
   is_active: boolean;
   created_at: string;
+  logo_url?: string;
   company_services?: CompanyService[];
 }
 
@@ -60,6 +61,14 @@ export default function Companies() {
   const [loading, setLoading] = useState(true);
   const [countryCode, setCountryCode] = useState("QA");
   const [editCountryCode, setEditCountryCode] = useState("QA");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+  const [editLogoPreview, setEditLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -80,6 +89,69 @@ export default function Companies() {
     fetchCompanies();
     fetchServices();
   }, []);
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: tCommon.error,
+        description: t.maxLogoSize,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isEdit) {
+      setEditLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadLogo = async (file: File, companyId: string): Promise<string | null> => {
+    try {
+      setUploadingLogo(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${companyId}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, file, {
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Error uploading logo:', error);
+      toast({
+        title: tCommon.error,
+        description: t.imageUploadFailed,
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   const fetchServices = async () => {
     const { data: servicesData, error: servicesError } = await supabase
@@ -235,7 +307,7 @@ export default function Companies() {
 
       toast({
         title: tCommon.success,
-        description: t.servicesUpdated,
+        description: t.companyUpdated,
       });
 
       setIsServicesDialogOpen(false);
@@ -307,19 +379,32 @@ export default function Companies() {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: tCommon.success,
-        description: t.companyAdded,
-      });
-
-      sendLoginLink(formData.name, fullPhone);
-
-      setIsFormOpen(false);
-      setFormData({ name: "", phone: "", email: "", address: "" });
-      setCountryCode("QA");
-      fetchCompanies();
+      return;
     }
+
+    if (logoFile && data) {
+      const logoUrl = await uploadLogo(logoFile, data.id);
+      if (logoUrl) {
+        await supabase
+          .from("companies")
+          .update({ logo_url: logoUrl })
+          .eq("id", data.id);
+      }
+    }
+
+    toast({
+      title: tCommon.success,
+      description: t.companyAdded,
+    });
+
+    sendLoginLink(formData.name, fullPhone);
+
+    setIsFormOpen(false);
+    setFormData({ name: "", phone: "", email: "", address: "" });
+    setLogoFile(null);
+    setLogoPreview(null);
+    setCountryCode("QA");
+    fetchCompanies();
   };
 
   const handleEditCompany = (company: Company) => {
@@ -345,6 +430,8 @@ export default function Companies() {
       email: company.email || "",
       address: company.address || "",
     });
+    setEditLogoPreview(company.logo_url || null);
+    setEditLogoFile(null);
     setIsEditDialogOpen(true);
   };
 
@@ -355,11 +442,21 @@ export default function Companies() {
     const selectedCountry = countries.find(c => c.code === editCountryCode);
     const fullPhone = editFormData.phone ? `${selectedCountry?.dialCode}${editFormData.phone}` : "";
 
+    let logoUrl = selectedCompany.logo_url;
+    
+    if (editLogoFile) {
+      const newLogoUrl = await uploadLogo(editLogoFile, selectedCompany.id);
+      if (newLogoUrl) {
+        logoUrl = newLogoUrl;
+      }
+    }
+
     const { error } = await supabase
       .from("companies")
       .update({
         ...editFormData,
-        phone: fullPhone
+        phone: fullPhone,
+        logo_url: logoUrl
       })
       .eq("id", selectedCompany.id);
 
@@ -377,6 +474,8 @@ export default function Companies() {
       setIsEditDialogOpen(false);
       setSelectedCompany(null);
       setEditCountryCode("QA");
+      setEditLogoFile(null);
+      setEditLogoPreview(null);
       fetchCompanies();
     }
   };
@@ -472,11 +571,50 @@ export default function Companies() {
                     {t.newCompany}
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="font-cairo">{t.addCompany}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>{t.uploadLogo}</Label>
+                      <div className="flex items-center gap-4">
+                        {logoPreview ? (
+                          <img 
+                            src={logoPreview} 
+                            alt="Logo preview" 
+                            className="h-20 w-20 rounded-lg object-cover border border-border"
+                          />
+                        ) : (
+                          <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center border border-dashed border-border">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleLogoSelect(e, false)}
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingLogo}
+                            className="w-full"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            {logoPreview ? t.changeLogo : t.uploadLogo}
+                          </Button>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t.maxLogoSize}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="name">{t.companyName} *</Label>
                       <Input
@@ -575,7 +713,9 @@ export default function Companies() {
                       >
                         {tCommon.cancel}
                       </Button>
-                      <Button type="submit">{tCommon.save}</Button>
+                      <Button type="submit" disabled={uploadingLogo}>
+                        {uploadingLogo ? t.uploadingImage : tCommon.save}
+                      </Button>
                     </div>
                   </form>
                 </DialogContent>
@@ -586,127 +726,138 @@ export default function Companies() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {companies.map((company) => (
-            <Card key={company.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Building2 className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="font-cairo">{company.name}</CardTitle>
-                      <CardDescription>
-                        {company.is_active ? tStatus.active : tStatus.inactive}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleManageServices(company)}
-                    title={t.manageServices}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {company.phone && (
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">{t.phone}:</span> {company.phone}
-                  </p>
-                )}
-                {company.email && (
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">{tCommon.email}:</span> {company.email}
-                  </p>
-                )}
-                {company.address && (
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">{t.address}:</span> {company.address}
-                  </p>
-                )}
-                
-                {company.company_services && company.company_services.length > 0 && (
-                  <div className="pt-2 border-t">
-                    <p className="text-sm font-medium mb-2">{t.services}:</p>
-                    <div className="space-y-1">
-                      {Object.entries(
-                        company.company_services.reduce((acc: any, cs) => {
-                          if (!acc[cs.service_name]) {
-                            acc[cs.service_name] = [];
-                          }
-                          if (cs.sub_service_name) {
-                            acc[cs.service_name].push(cs.sub_service_name);
-                          }
-                          return acc;
-                        }, {})
-                      ).map(([serviceName, subServices]: [string, any]) => (
-                        <div key={serviceName} className="text-xs">
-                          <Badge variant="secondary" className="mb-1">
-                            {serviceName}
-                          </Badge>
-                          {subServices.length > 0 && (
-                            <div className="mr-4 flex flex-wrap gap-1 mt-1">
-                              {subServices.map((sub: string) => (
-                                <Badge key={sub} variant="outline" className="text-xs">
-                                  {sub}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
+        {companies.length > 0 ? (
+          <div className="relative">
+            <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+              {companies.map((company) => (
+                <Card key={company.id} className="min-w-[320px] max-w-[320px] snap-center flex-shrink-0">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        {company.logo_url ? (
+                          <img 
+                            src={company.logo_url} 
+                            alt={company.name}
+                            className="h-16 w-16 rounded-lg object-cover border border-border"
+                          />
+                        ) : (
+                          <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <Building2 className="h-8 w-8 text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="font-cairo truncate">{company.name}</CardTitle>
+                          <CardDescription>
+                            {company.is_active ? tStatus.active : tStatus.inactive}
+                          </CardDescription>
                         </div>
-                      ))}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleManageServices(company)}
+                        title={t.manageServices}
+                        className="flex-shrink-0"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </div>
-                )}
-                
-                {(!company.company_services || company.company_services.length === 0) && (
-                  <div className="pt-2 border-t">
-                    <p className="text-sm text-muted-foreground">{t.noServicesYet}</p>
-                  </div>
-                )}
-                
-                <div className="pt-3 border-t flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleEditCompany(company)}
-                    >
-                      <Edit className="h-4 w-4 ml-2" />
-                      {t.edit}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleCopyLoginLink(company)}
-                    >
-                      <Copy className="h-4 w-4 ml-2" />
-                      {t.copyLink}
-                    </Button>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleResendLoginLink(company)}
-                    disabled={!company.phone}
-                  >
-                    <Send className="h-4 w-4 ml-2" />
-                    {t.sendViaWhatsApp}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {companies.length === 0 && (
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {company.phone && (
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">{t.phone}:</span> {company.phone}
+                      </p>
+                    )}
+                    {company.email && (
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">{tCommon.email}:</span> {company.email}
+                      </p>
+                    )}
+                    {company.address && (
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">{t.address}:</span> {company.address}
+                      </p>
+                    )}
+                    
+                    {company.company_services && company.company_services.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm font-medium mb-2">{t.services}:</p>
+                        <div className="space-y-1">
+                          {Object.entries(
+                            company.company_services.reduce((acc: any, cs) => {
+                              if (!acc[cs.service_name]) {
+                                acc[cs.service_name] = [];
+                              }
+                              if (cs.sub_service_name) {
+                                acc[cs.service_name].push(cs.sub_service_name);
+                              }
+                              return acc;
+                            }, {})
+                          ).map(([serviceName, subServices]: [string, any]) => (
+                            <div key={serviceName} className="text-xs">
+                              <Badge variant="secondary" className="mb-1">
+                                {serviceName}
+                              </Badge>
+                              {subServices.length > 0 && (
+                                <div className="mr-4 flex flex-wrap gap-1 mt-1">
+                                  {subServices.map((sub: string) => (
+                                    <Badge key={sub} variant="outline" className="text-xs">
+                                      {sub}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(!company.company_services || company.company_services.length === 0) && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-muted-foreground">{t.noServicesYet}</p>
+                      </div>
+                    )}
+                    
+                    <div className="pt-3 border-t flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleEditCompany(company)}
+                        >
+                          <Edit className="h-4 w-4 ml-2" />
+                          {t.edit}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleCopyLoginLink(company)}
+                        >
+                          <Copy className="h-4 w-4 ml-2" />
+                          {t.copyLink}
+                        </Button>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleResendLoginLink(company)}
+                        disabled={!company.phone}
+                      >
+                        <Send className="h-4 w-4 ml-2" />
+                        {t.sendViaWhatsApp}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
@@ -719,7 +870,6 @@ export default function Companies() {
         )}
       </main>
 
-      {/* Services Management Dialog */}
       <Dialog open={isServicesDialogOpen} onOpenChange={setIsServicesDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -799,13 +949,51 @@ export default function Companies() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Company Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-cairo">{t.editCompany}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleUpdateCompany} className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t.uploadLogo}</Label>
+              <div className="flex items-center gap-4">
+                {editLogoPreview ? (
+                  <img 
+                    src={editLogoPreview} 
+                    alt="Logo preview" 
+                    className="h-20 w-20 rounded-lg object-cover border border-border"
+                  />
+                ) : (
+                  <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center border border-dashed border-border">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleLogoSelect(e, true)}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => editFileInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {editLogoPreview ? t.changeLogo : t.uploadLogo}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t.maxLogoSize}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="edit-name">{t.companyName} *</Label>
               <Input
@@ -904,7 +1092,9 @@ export default function Companies() {
               >
                 {tCommon.cancel}
               </Button>
-              <Button type="submit">{tCommon.save}</Button>
+              <Button type="submit" disabled={uploadingLogo}>
+                {uploadingLogo ? t.uploadingImage : tCommon.save}
+              </Button>
             </div>
           </form>
         </DialogContent>
