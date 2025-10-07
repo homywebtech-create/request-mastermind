@@ -757,18 +757,18 @@ export default function Companies() {
         {companies.length > 0 ? (
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" dir="ltr">
                 <table className="w-full">
                   <thead className="bg-muted/50 border-b">
                     <tr>
-                      <th className="text-left p-4 font-medium">{t.uploadLogo}</th>
-                      <th className="text-left p-4 font-medium">{t.companyName}</th>
-                      <th className="text-left p-4 font-medium">{t.phone}</th>
-                      <th className="text-left p-4 font-medium">{tCommon.email}</th>
-                      <th className="text-left p-4 font-medium">{t.address}</th>
-                      <th className="text-left p-4 font-medium">{t.services}</th>
-                      <th className="text-left p-4 font-medium">{tCommon.status}</th>
-                      <th className="text-left p-4 font-medium">{tCommon.actions}</th>
+                      <th className="text-left p-4 font-medium">Logo</th>
+                      <th className="text-left p-4 font-medium">Company Name</th>
+                      <th className="text-left p-4 font-medium">Phone</th>
+                      <th className="text-left p-4 font-medium">Email</th>
+                      <th className="text-left p-4 font-medium">Address</th>
+                      <th className="text-left p-4 font-medium">Services</th>
+                      <th className="text-left p-4 font-medium">Status</th>
+                      <th className="text-left p-4 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -778,7 +778,7 @@ export default function Companies() {
                           {company.logo_url ? (
                             <img 
                               src={company.logo_url} 
-                              alt={company.name}
+                              alt={company.name_en || company.name}
                               className="h-12 w-12 rounded-lg object-cover border border-border"
                             />
                           ) : (
@@ -788,7 +788,7 @@ export default function Companies() {
                           )}
                         </td>
                         <td className="p-4">
-                          <div className="font-medium">{company.name}</div>
+                          <div className="font-medium">{company.name_en || company.name}</div>
                         </td>
                         <td className="p-4">
                           <div className="text-sm text-muted-foreground" dir="ltr">
