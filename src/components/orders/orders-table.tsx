@@ -1,6 +1,7 @@
 // OrdersTable Component - Version: 2025-01-05-08:46
 // All null checks implemented with optional chaining
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,6 +101,7 @@ interface OrdersTableProps {
 
 export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange }: OrdersTableProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [resendDialogOpen, setResendDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -808,7 +810,8 @@ Thank you for contacting us! 🌟`;
                                         variant="default"
                                         className="w-full"
                                         onClick={() => {
-                                          window.open(`/company-booking/${order.id}/${company.companyId}`, '_blank');
+                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                                          window.open(url, '_blank');
                                         }}
                                       >
                                         <Building2 className="h-3 w-3 mr-2" />
