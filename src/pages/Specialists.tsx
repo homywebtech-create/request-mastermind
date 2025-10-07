@@ -27,10 +27,12 @@ interface Specialist {
     sub_services: {
       id: string;
       name: string;
+      name_en?: string;
       service_id: string;
       services?: {
         id: string;
         name: string;
+        name_en?: string;
       };
     };
   }>;
@@ -126,10 +128,12 @@ export default function Specialists() {
             sub_services (
               id,
               name,
+              name_en,
               service_id,
               services (
                 id,
-                name
+                name,
+                name_en
               )
             )
           )

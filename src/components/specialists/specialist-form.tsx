@@ -51,11 +51,13 @@ interface SpecialistFormProps {
 interface Service {
   id: string;
   name: string;
+  name_en?: string;
 }
 
 interface SubService {
   id: string;
   name: string;
+  name_en?: string;
   service_id: string;
 }
 
@@ -124,7 +126,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
     try {
       const { data, error } = await supabase
         .from("services")
-        .select("id, name")
+        .select("id, name, name_en")
         .eq("is_active", true)
         .order("name");
 
@@ -139,7 +141,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
     try {
       const { data, error } = await supabase
         .from("sub_services")
-        .select("id, name, service_id")
+        .select("id, name, name_en, service_id")
         .eq("service_id", serviceId)
         .eq("is_active", true)
         .order("name");
@@ -409,7 +411,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
                 <SelectContent>
                   {services.map((service) => (
                     <SelectItem key={service.id} value={service.id}>
-                      {service.name}
+                      {service.name_en || service.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -446,7 +448,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
                             htmlFor={subService.id}
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                           >
-                            {subService.name}
+                            {subService.name_en || subService.name}
                           </label>
                         </div>
                       ))
@@ -638,7 +640,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
                 <SelectContent>
                   {services.map((service) => (
                     <SelectItem key={service.id} value={service.id}>
-                      {service.name}
+                      {service.name_en || service.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -675,7 +677,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
                             htmlFor={subService.id}
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                           >
-                            {subService.name}
+                            {subService.name_en || subService.name}
                           </label>
                         </div>
                       ))

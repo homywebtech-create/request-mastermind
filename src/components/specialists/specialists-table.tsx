@@ -34,10 +34,12 @@ interface Specialist {
     sub_services: {
       id: string;
       name: string;
+      name_en?: string;
       service_id: string;
       services?: {
         id: string;
         name: string;
+        name_en?: string;
       };
     };
   }>;
@@ -138,7 +140,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                         <div className="flex flex-wrap gap-1">
                           {specialist.specialist_specialties.map((specialty, idx) => (
                             <Badge key={idx} variant="outline" className="text-xs">
-                              {specialty.sub_services.name}
+                              {specialty.sub_services.name_en || specialty.sub_services.name}
                             </Badge>
                           ))}
                         </div>
