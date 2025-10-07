@@ -7,6 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn } from "lucide-react";
+import { translations } from "@/i18n/translations";
+
+const t = translations.auth;
+const tCommon = translations.common;
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -32,8 +36,8 @@ export default function Auth() {
         if (error) throw error;
 
         toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: "مرحباً بك في لوحة الإدارة",
+          title: t.loginSuccess,
+          description: t.welcomeAdmin,
         });
         navigate("/admin");
       } else {
@@ -52,14 +56,14 @@ export default function Auth() {
         if (error) throw error;
 
         toast({
-          title: "تم إنشاء الحساب بنجاح",
-          description: "يمكنك الآن تسجيل الدخول",
+          title: t.accountCreated,
+          description: t.canLoginNow,
         });
         setIsLogin(true);
       }
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: t.error,
         description: error.message,
         variant: "destructive",
       });
@@ -76,12 +80,10 @@ export default function Auth() {
             <LogIn className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl font-cairo">
-            {isLogin ? "تسجيل الدخول" : "إنشاء حساب"}
+            {isLogin ? t.loginTitle : t.signupTitle}
           </CardTitle>
           <CardDescription>
-            {isLogin
-              ? "أدخل بياناتك للوصول إلى لوحة الإدارة"
-              : "املأ البيانات لإنشاء حساب جديد"}
+            {isLogin ? t.enterCredentials : t.fillDetails}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -89,31 +91,31 @@ export default function Auth() {
             {!isLogin && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">الاسم الكامل</Label>
+                  <Label htmlFor="fullName">{t.fullName}</Label>
                   <Input
                     id="fullName"
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
-                    placeholder="أدخل اسمك الكامل"
+                    placeholder={t.enterFullName}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">رقم الهاتف</Label>
+                  <Label htmlFor="phone">{t.phoneNumber}</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="أدخل رقم هاتفك"
+                    placeholder={t.enterPhoneNumber}
                   />
                 </div>
               </>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="email">{t.email}</Label>
               <Input
                 id="email"
                 type="email"
@@ -125,7 +127,7 @@ export default function Auth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور</Label>
+              <Label htmlFor="password">{t.password}</Label>
               <Input
                 id="password"
                 type="password"
@@ -138,7 +140,7 @@ export default function Auth() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "جاري التحميل..." : isLogin ? "تسجيل الدخول" : "إنشاء حساب"}
+              {loading ? t.loading : isLogin ? t.loginButton : t.signupButton}
             </Button>
 
             <div className="text-center">
@@ -147,7 +149,7 @@ export default function Auth() {
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-sm text-muted-foreground hover:text-primary"
               >
-                {isLogin ? "ليس لديك حساب؟ سجل الآن" : "لديك حساب؟ سجل الدخول"}
+                {isLogin ? t.noAccount : t.haveAccount}
               </button>
             </div>
           </form>

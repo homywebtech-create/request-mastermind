@@ -9,6 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { countries } from "@/data/countries";
 import { useNavigate } from "react-router-dom";
 import { Building2, Phone, Shield } from "lucide-react";
+import { translations } from "@/i18n/translations";
+
+const t = translations.auth;
+const tCommon = translations.common;
 
 export default function CompanyAuth() {
   const { toast } = useToast();
@@ -30,54 +34,48 @@ export default function CompanyAuth() {
 
     try {
       const fullPhone = getFullPhoneNumber();
-      
-      // تنظيف الرقم من أي مسافات أو أحرف غير مرغوبة
       const cleanPhone = fullPhone.replace(/\s+/g, '').trim();
       
-      console.log("=== تشخيص مشكلة تسجيل الدخول ===");
-      console.log("1. كود الدولة المختار:", countryCode);
-      console.log("2. الرقم المدخل:", phoneNumber);
-      console.log("3. الرقم الكامل بعد الدمج:", cleanPhone);
+      console.log("=== Login Diagnosis ===");
+      console.log("1. Selected country code:", countryCode);
+      console.log("2. Entered number:", phoneNumber);
+      console.log("3. Full number after merge:", cleanPhone);
 
-      // جلب جميع الشركات النشطة للمقارنة
       const { data: allCompanies, error: fetchError } = await supabase
         .from("companies")
         .select("id, name, phone")
         .eq("is_active", true);
 
       if (fetchError) {
-        console.error("خطأ في جلب الشركات:", fetchError);
+        console.error("Error fetching companies:", fetchError);
         throw fetchError;
       }
 
-      console.log("4. جميع أرقام الشركات المسجلة:", allCompanies?.map(c => c.phone));
+      console.log("4. All registered company numbers:", allCompanies?.map(c => c.phone));
 
-      // البحث عن تطابق دقيق
       let company = allCompanies?.find(c => c.phone === cleanPhone);
 
-      // إذا لم يجد تطابق دقيق، حاول البحث بدون علامة +
       if (!company) {
         const phoneWithoutPlus = cleanPhone.replace('+', '');
         company = allCompanies?.find(c => c.phone?.replace('+', '') === phoneWithoutPlus);
-        console.log("5. محاولة البحث بدون علامة +:", phoneWithoutPlus);
+        console.log("5. Trying search without + sign:", phoneWithoutPlus);
       }
 
-      // إذا لم يجد تطابق، حاول البحث بالرقم فقط (بدون كود الدولة)
       if (!company) {
         company = allCompanies?.find(c => c.phone?.endsWith(phoneNumber));
-        console.log("6. محاولة البحث بالرقم فقط:", phoneNumber);
+        console.log("6. Trying search with number only:", phoneNumber);
       }
 
-      console.log("7. الشركة الموجودة:", company);
+      console.log("7. Company found:", company);
 
       if (!company) {
         toast({
-          title: "خطأ في تسجيل الدخول",
+          title: t.loginError,
           description: (
             <div className="space-y-2">
-              <p>رقم الهاتف غير مسجل لأي شركة</p>
-              <p className="text-xs">الرقم المدخل: {cleanPhone}</p>
-              <p className="text-xs">تأكد من اختيار الدولة الصحيحة وإدخال الرقم كما هو مسجل</p>
+              <p>{t.phoneNotRegistered}</p>
+              <p className="text-xs">{t.enteredNumber} {cleanPhone}</p>
+              <p className="text-xs">{t.checkCountryAndNumber}</p>
             </div>
           ),
           variant: "destructive",
@@ -87,28 +85,26 @@ export default function CompanyAuth() {
         return;
       }
 
-      console.log("8. تم العثور على الشركة:", company.name);
+      console.log("8. Company found:", company.name);
 
-      // إرسال كود التفعيل
       const { data, error } = await supabase.functions.invoke("request-verification-code", {
         body: { phone: company.phone },
       });
 
       if (error) throw error;
 
-      // في وضع التطوير، إذا كان الكود موجود في الاستجابة، نعرضه
       if (data?.devMode && data?.code) {
         const copyCode = () => {
           navigator.clipboard.writeText(data.code);
           toast({
-            title: "تم النسخ",
-            description: "تم نسخ الكود بنجاح",
+            title: t.codeCopied,
+            description: t.codeCopiedSuccess,
             duration: 2000,
           });
         };
 
         toast({
-          title: "كود التفعيل (وضع التطوير)",
+          title: t.devModeCode,
           description: (
             <div className="space-y-3">
               <p className="text-2xl font-bold text-center">{data.code}</p>
@@ -118,31 +114,31 @@ export default function CompanyAuth() {
                 size="sm" 
                 className="w-full"
               >
-                نسخ الكود
+                {t.copyCode}
               </Button>
               <p className="text-xs text-muted-foreground">
-                هذا الكود للاختبار فقط - في الإنتاج سيتم إرساله عبر واتساب
+                {t.testingOnly}
               </p>
               <p className="text-xs text-muted-foreground">
-                صالح لمدة 10 دقائق
+                {t.validFor10Min}
               </p>
             </div>
           ),
-          duration: 60000, // دقيقة واحدة
+          duration: 60000,
         });
       } else {
         toast({
-          title: "تم إرسال الكود",
-          description: `تم إرسال كود التفعيل لشركة ${company.name}`,
+          title: t.codeSentTitle,
+          description: `${t.codeSentTo} ${company.name}`,
         });
       }
 
       setStep("code");
     } catch (error: any) {
-      console.error("خطأ في تسجيل الدخول:", error);
+      console.error("Login error:", error);
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ أثناء إرسال كود التفعيل",
+        title: t.error,
+        description: error.message || "Error sending verification code",
         variant: "destructive",
       });
     } finally {
@@ -157,11 +153,10 @@ export default function CompanyAuth() {
     try {
       const fullPhone = getFullPhoneNumber();
 
-      console.log("=== استدعاء دالة التحقق ===");
-      console.log("1. الرقم:", fullPhone);
-      console.log("2. الكود:", verificationCode);
+      console.log("=== Calling verification function ===");
+      console.log("1. Number:", fullPhone);
+      console.log("2. Code:", verificationCode);
 
-      // استدعاء edge function للتحقق
       const { data, error } = await supabase.functions.invoke("verify-company-code", {
         body: { 
           phone: fullPhone, 
@@ -169,42 +164,40 @@ export default function CompanyAuth() {
         },
       });
 
-      console.log("3. نتيجة التحقق:", data);
-      console.log("4. خطأ التحقق:", error);
+      console.log("3. Verification result:", data);
+      console.log("4. Verification error:", error);
 
       if (error) {
-        throw new Error(error.message || "فشل التحقق من الكود");
+        throw new Error(error.message || t.verificationFailed);
       }
 
       if (!data || !data.success) {
-        throw new Error(data?.error || "كود التفعيل غير صحيح");
+        throw new Error(data?.error || t.invalidCode);
       }
 
-      console.log("5. تم التحقق بنجاح، تسجيل الدخول...");
+      console.log("5. Verification successful, logging in...");
 
-      // استخدام بيانات الاعتماد المُرجعة لتسجيل الدخول
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.credentials.email,
         password: data.credentials.password,
       });
 
       if (signInError) {
-        console.error("خطأ في تسجيل الدخول:", signInError);
-        throw new Error("فشل تسجيل الدخول");
+        console.error("Login error:", signInError);
+        throw new Error(t.loginFailed);
       }
 
       toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: `مرحباً بك في صفحة ${data.company.name}`,
+        title: t.verificationSuccess,
+        description: `${t.welcomeToCompany} ${data.company.name}`,
       });
 
-      // توجيه المستخدم إلى صفحة الشركة
       navigate("/company-portal");
     } catch (error: any) {
       console.error("Error verifying code:", error);
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ أثناء التحقق من الكود",
+        title: t.error,
+        description: error.message || "Error verifying code",
         variant: "destructive",
       });
     } finally {
@@ -219,18 +212,18 @@ export default function CompanyAuth() {
           <div className="flex justify-center mb-4">
             <Building2 className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">تسجيل دخول الشركة</CardTitle>
+          <CardTitle className="text-2xl">{t.companyLoginTitle}</CardTitle>
           <CardDescription>
             {step === "phone"
-              ? "أدخل رقم هاتف الشركة المسجل"
-              : "أدخل كود التفعيل المرسل إلى واتساب"}
+              ? t.enterRegisteredPhone
+              : t.enterCodeSent}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {step === "phone" ? (
             <form onSubmit={handleSendCode} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="countryCode">الدولة</Label>
+                <Label htmlFor="countryCode">{t.country}</Label>
                 <Select value={countryCode} onValueChange={setCountryCode}>
                   <SelectTrigger>
                     <SelectValue>
@@ -241,7 +234,7 @@ export default function CompanyAuth() {
                             <span className="text-xl">{country.flag}</span>
                             <span className="text-sm">{country.dialCode}</span>
                           </span>
-                        ) : 'اختر';
+                        ) : t.selectCountry;
                       })()}
                     </SelectValue>
                   </SelectTrigger>
@@ -250,7 +243,7 @@ export default function CompanyAuth() {
                       <SelectItem key={country.code} value={country.code}>
                         <span className="flex items-center gap-2">
                           <span className="text-xl">{country.flag}</span>
-                          <span className="font-medium">{country.nameAr}</span>
+                          <span className="font-medium">{country.name}</span>
                           <span className="text-muted-foreground text-sm">{country.dialCode}</span>
                         </span>
                       </SelectItem>
@@ -260,7 +253,7 @@ export default function CompanyAuth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">رقم الهاتف</Label>
+                <Label htmlFor="phoneNumber">{t.phoneLabel}</Label>
                 <div className="flex items-center gap-2">
                   <Phone className="h-5 w-5 text-muted-foreground" />
                   <Input
@@ -276,13 +269,13 @@ export default function CompanyAuth() {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "جاري الإرسال..." : "إرسال كود التفعيل"}
+                {isLoading ? t.sendingCode : t.sendVerificationCode}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleVerifyCode} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="verificationCode">كود التفعيل</Label>
+                <Label htmlFor="verificationCode">{t.verificationCode}</Label>
                 <div className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-muted-foreground" />
                   <Input
@@ -300,7 +293,7 @@ export default function CompanyAuth() {
 
               <div className="space-y-2">
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "جاري التحقق..." : "تحقق وتسجيل الدخول"}
+                  {isLoading ? t.verifying : t.verifyAndLogin}
                 </Button>
                 <Button
                   type="button"
@@ -308,7 +301,7 @@ export default function CompanyAuth() {
                   className="w-full"
                   onClick={() => setStep("phone")}
                 >
-                  رجوع
+                  {t.back}
                 </Button>
               </div>
             </form>
