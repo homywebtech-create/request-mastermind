@@ -477,13 +477,15 @@ export default function SpecialistOrders() {
             </div>
           )}
 
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-            <Phone className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground mb-1">WhatsApp Number</p>
-              <p className="font-semibold text-sm break-words" dir="ltr">{order.customer?.whatsapp_number}</p>
+          {order.order_specialist?.is_accepted === true && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <Phone className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground mb-1">WhatsApp Number</p>
+                <p className="font-semibold text-sm break-words" dir="ltr">{order.customer?.whatsapp_number}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Show quote info if exists */}
@@ -607,6 +609,18 @@ export default function SpecialistOrders() {
               </div>
             </DialogContent>
           </Dialog>
+        )}
+        
+        {order.order_specialist?.is_accepted === true && (
+          <Button
+            onClick={() => order.customer && openWhatsApp(order.customer.whatsapp_number)}
+            className="w-full gap-2"
+            variant="default"
+            size="lg"
+          >
+            <Phone className="h-4 w-4" />
+            Contact via WhatsApp
+          </Button>
         )}
       </Card>
     );
