@@ -455,29 +455,32 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
             <h3 className="text-lg font-semibold text-foreground">Customer Information</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="customerName">
-                  Customer Name *
-                  {isCheckingCustomer && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      (جاري البحث... / Checking...)
-                    </span>
+              {formData.phoneNumber && formData.phoneNumber.length >= 7 && (
+                <div className="space-y-2">
+                  <Label htmlFor="customerName">
+                    اسم العميل / Customer Name *
+                    {isCheckingCustomer && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        (جاري البحث... / Checking...)
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    id="customerName"
+                    value={formData.customerName}
+                    onChange={(e) => handleInputChange('customerName', e.target.value)}
+                    placeholder={isCheckingCustomer ? "جاري البحث عن العميل..." : "أدخل اسم العميل / Enter customer name"}
+                    required
+                    disabled={isCheckingCustomer}
+                    dir="auto"
+                  />
+                  {formData.customerName && !isCheckingCustomer && (
+                    <p className="text-xs text-muted-foreground">
+                      تم العثور على العميل / Customer found
+                    </p>
                   )}
-                </Label>
-                <Input
-                  id="customerName"
-                  value={formData.customerName}
-                  onChange={(e) => handleInputChange('customerName', e.target.value)}
-                  placeholder={isCheckingCustomer ? "جاري البحث عن العميل..." : "Enter customer name"}
-                  required
-                  disabled={isCheckingCustomer}
-                />
-                {formData.customerName && (
-                  <p className="text-xs text-muted-foreground">
-                    {formData.phoneNumber && formData.phoneNumber.length >= 7 ? "تم العثور على العميل / Customer found" : ""}
-                  </p>
-                )}
-              </div>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber">WhatsApp Number *</Label>
