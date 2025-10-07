@@ -162,7 +162,7 @@ export default function CompanyBooking() {
         `)
         .eq('order_id', orderId)
         .not('quoted_price', 'is', null)
-        .eq('is_accepted', null);
+        .is('is_accepted', null);
 
       if (specialistsError) {
         console.error('❌ Error fetching specialists:', specialistsError);
