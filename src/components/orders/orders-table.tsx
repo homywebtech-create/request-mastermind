@@ -460,6 +460,7 @@ Thank you for contacting us! 🌟`;
       });
       
       setResendDialogOpen(false);
+      window.location.reload();
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -494,13 +495,14 @@ Thank you for contacting us! 🌟`;
     if (!selectedOrder || !selectedCompanyId) return;
 
     try {
-      // Create order with company assignment
+      // Update order with company assignment and timestamp
       const { data: updatedOrder, error: orderError } = await supabase
         .from('orders')
         .update({
           send_to_all_companies: false,
           company_id: selectedCompanyId,
           specialist_id: null,
+          last_sent_at: new Date().toISOString(),
         })
         .eq('id', selectedOrder.id)
         .select('id')
@@ -508,15 +510,14 @@ Thank you for contacting us! 🌟`;
 
       if (orderError) throw orderError;
 
-      // If specific specialists are selected, insert into junction table
-      if (selectedSpecialistIds.length > 0) {
-        // First, delete existing specialists for this order
-        await supabase
-          .from('order_specialists')
-          .delete()
-          .eq('order_id', selectedOrder.id);
+      // First, delete existing specialists for this order
+      await supabase
+        .from('order_specialists')
+        .delete()
+        .eq('order_id', selectedOrder.id);
 
-        // Insert new specialists
+      // If specific specialists are selected, add only them
+      if (selectedSpecialistIds.length > 0) {
         const orderSpecialists = selectedSpecialistIds.map(specialistId => ({
           order_id: updatedOrder.id,
           specialist_id: specialistId,
@@ -527,6 +528,28 @@ Thank you for contacting us! 🌟`;
           .insert(orderSpecialists);
 
         if (junctionError) throw junctionError;
+      } else {
+        // If no specific specialists selected, add all active specialists from company
+        const { data: companySpecialists, error: specialistsError } = await supabase
+          .from('specialists')
+          .select('id')
+          .eq('company_id', selectedCompanyId)
+          .eq('is_active', true);
+
+        if (specialistsError) throw specialistsError;
+
+        if (companySpecialists && companySpecialists.length > 0) {
+          const orderSpecialists = companySpecialists.map(specialist => ({
+            order_id: updatedOrder.id,
+            specialist_id: specialist.id,
+          }));
+
+          const { error: insertError } = await supabase
+            .from('order_specialists')
+            .insert(orderSpecialists);
+
+          if (insertError) throw insertError;
+        }
       }
 
       let description = "Order sent to company";
@@ -545,6 +568,7 @@ Thank you for contacting us! 🌟`;
       setSelectedOrder(null);
       setSelectedCompanyId('');
       setSelectedSpecialistIds([]);
+      window.location.reload();
     } catch (error: any) {
       toast({
         title: "Error",
