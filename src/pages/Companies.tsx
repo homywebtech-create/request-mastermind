@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { countries } from "@/data/countries";
+import { translations } from "@/i18n/translations";
 
 interface Service {
   id: string;
@@ -44,6 +45,10 @@ interface Company {
   company_services?: CompanyService[];
 }
 
+const t = translations.companies;
+const tCommon = translations.common;
+const tStatus = translations.status;
+
 export default function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -71,7 +76,6 @@ export default function Companies() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // جلب الشركات والخدمات عند تحميل الصفحة
   useEffect(() => {
     fetchCompanies();
     fetchServices();
@@ -86,8 +90,8 @@ export default function Companies() {
 
     if (servicesError) {
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل الخدمات",
+        title: tCommon.error,
+        description: t.loadServicesError,
         variant: "destructive",
       });
       return;
@@ -115,15 +119,14 @@ export default function Companies() {
 
     if (error) {
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل الشركات",
+        title: tCommon.error,
+        description: t.loadCompaniesError,
         variant: "destructive",
       });
       setLoading(false);
       return;
     }
 
-    // جلب الخدمات لكل شركة مع أسماء الخدمات
     const { data: companyServicesData } = await supabase
       .from("company_services")
       .select(`
@@ -153,7 +156,6 @@ export default function Companies() {
   const handleManageServices = (company: Company) => {
     setSelectedCompany(company);
     
-    // تحويل الخدمات الحالية للشركة إلى الصيغة المطلوبة
     const currentServices: {serviceId: string, subServiceIds: string[]}[] = [];
     
     (company.company_services || []).forEach(cs => {
@@ -175,41 +177,35 @@ export default function Companies() {
   const handleSaveServices = async () => {
     if (!selectedCompany) return;
 
-    // التحقق من أن كل خدمة محددة لديها خدمات فرعية
     const servicesWithoutSubs: string[] = [];
     
     selectedServiceIds.forEach(selectedService => {
       const service = services.find(s => s.id === selectedService.serviceId);
       
-      // إذا كانت الخدمة لديها خدمات فرعية ولكن لم يتم اختيار أي منها
       if (service?.sub_services && service.sub_services.length > 0 && selectedService.subServiceIds.length === 0) {
         servicesWithoutSubs.push(service.name);
       }
     });
 
-    // إذا كانت هناك خدمات بدون خدمات فرعية محددة
     if (servicesWithoutSubs.length > 0) {
       toast({
-        title: "خطأ في التحديد",
-        description: `يجب اختيار خدمات فرعية لـ: ${servicesWithoutSubs.join('، ')}`,
+        title: t.selectionError,
+        description: `${t.mustSelectSubServices} ${servicesWithoutSubs.join(', ')}`,
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // حذف جميع الخدمات الحالية للشركة
       await supabase
         .from("company_services")
         .delete()
         .eq("company_id", selectedCompany.id);
 
-      // إضافة الخدمات والخدمات الفرعية المحددة
       const servicesToInsert: any[] = [];
       
       selectedServiceIds.forEach(service => {
         if (service.subServiceIds.length > 0) {
-          // إضافة كل خدمة فرعية محددة
           service.subServiceIds.forEach(subServiceId => {
             servicesToInsert.push({
               company_id: selectedCompany.id,
@@ -218,7 +214,6 @@ export default function Companies() {
             });
           });
         } else {
-          // إذا لم تكن هناك خدمات فرعية للخدمة أصلاً (الخدمة الرئيسية فقط)
           const service_obj = services.find(s => s.id === service.serviceId);
           if (!service_obj?.sub_services || service_obj.sub_services.length === 0) {
             servicesToInsert.push({
@@ -239,15 +234,15 @@ export default function Companies() {
       }
 
       toast({
-        title: "نجح",
-        description: "تم تحديث الخدمات بنجاح",
+        title: tCommon.success,
+        description: t.servicesUpdated,
       });
 
       setIsServicesDialogOpen(false);
       fetchCompanies();
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: tCommon.error,
         description: error.message,
         variant: "destructive",
       });
@@ -294,7 +289,6 @@ export default function Companies() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // دمج كود الدولة مع رقم الهاتف
     const selectedCountry = countries.find(c => c.code === countryCode);
     const fullPhone = formData.phone ? `${selectedCountry?.dialCode}${formData.phone}` : "";
 
@@ -309,17 +303,16 @@ export default function Companies() {
 
     if (error) {
       toast({
-        title: "خطأ",
+        title: tCommon.error,
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "نجح",
-        description: "تم إضافة الشركة بنجاح",
+        title: tCommon.success,
+        description: t.companyAdded,
       });
 
-      // إرسال رابط تسجيل الدخول
       sendLoginLink(formData.name, fullPhone);
 
       setIsFormOpen(false);
@@ -332,12 +325,10 @@ export default function Companies() {
   const handleEditCompany = (company: Company) => {
     setSelectedCompany(company);
     
-    // استخراج كود الدولة من رقم الهاتف
     let phoneWithoutCode = company.phone || "";
     let detectedCountryCode = "QA";
     
     if (company.phone) {
-      // البحث عن كود الدولة في بداية الرقم
       for (const country of countries) {
         if (company.phone.startsWith(country.dialCode)) {
           detectedCountryCode = country.code;
@@ -361,7 +352,6 @@ export default function Companies() {
     e.preventDefault();
     if (!selectedCompany) return;
 
-    // دمج كود الدولة مع رقم الهاتف
     const selectedCountry = countries.find(c => c.code === editCountryCode);
     const fullPhone = editFormData.phone ? `${selectedCountry?.dialCode}${editFormData.phone}` : "";
 
@@ -375,14 +365,14 @@ export default function Companies() {
 
     if (error) {
       toast({
-        title: "خطأ",
+        title: tCommon.error,
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "نجح",
-        description: "تم تحديث معلومات الشركة بنجاح",
+        title: tCommon.success,
+        description: t.companyUpdated,
       });
       setIsEditDialogOpen(false);
       setSelectedCompany(null);
@@ -394,22 +384,22 @@ export default function Companies() {
   const sendLoginLink = (companyName: string, phone: string) => {
     if (!phone) {
       toast({
-        title: "خطأ",
-        description: "رقم الهاتف غير متوفر",
+        title: tCommon.error,
+        description: t.phoneNotAvailable,
         variant: "destructive",
       });
       return;
     }
 
     const companyLoginUrl = `${window.location.origin}/company-auth`;
-    const message = `مرحباً ${companyName}،\n\nتم تسجيل شركتكم في نظامنا.\nللدخول إلى صفحة الشركة، يرجى الضغط على الرابط التالي:\n${companyLoginUrl}\n\nسيطلب منك إدخال رقم الهاتف: ${phone}\nثم سيتم إرسال كود التفعيل عبر الواتساب.`;
+    const message = `Hello ${companyName},\n\nYour company has been registered in our system.\nTo access the company page, please click on the following link:\n${companyLoginUrl}\n\nYou will be asked to enter your phone number: ${phone}\nThen an activation code will be sent via WhatsApp.`;
 
     const whatsappUrl = `https://wa.me/${phone.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 
     toast({
-      title: "تم فتح واتساب",
-      description: "يمكنك الآن إرسال رابط تسجيل الدخول",
+      title: t.whatsappOpened,
+      description: t.canSendLoginLink,
     });
   };
 
@@ -422,13 +412,13 @@ export default function Companies() {
     
     navigator.clipboard.writeText(companyLoginUrl).then(() => {
       toast({
-        title: "تم النسخ",
-        description: "تم نسخ رابط صفحة تسجيل الدخول",
+        title: tCommon.success,
+        description: t.linkCopied,
       });
     }).catch(() => {
       toast({
-        title: "خطأ",
-        description: "فشل نسخ الرابط",
+        title: tCommon.error,
+        description: t.linkCopyFailed,
         variant: "destructive",
       });
     });
@@ -449,10 +439,10 @@ export default function Companies() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground font-cairo">
-                إدارة الشركات
+                {t.title}
               </h1>
               <p className="text-muted-foreground mt-1">
-                إدارة الشركات والمختصين
+                {t.manageCompaniesSpecialists}
               </p>
             </div>
 
@@ -463,7 +453,7 @@ export default function Companies() {
                 className="flex items-center gap-2"
               >
                 <Wrench className="h-4 w-4" />
-                إدارة الخدمات
+                {t.manageServices}
               </Button>
 
               <Button
@@ -472,23 +462,23 @@ export default function Companies() {
                 className="flex items-center gap-2"
               >
                 <ArrowRight className="h-4 w-4" />
-                العودة للرئيسية
+                {t.backToHome}
               </Button>
 
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
-                    شركة جديدة
+                    {t.newCompany}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle className="font-cairo">إضافة شركة جديدة</DialogTitle>
+                    <DialogTitle className="font-cairo">{t.addCompany}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">اسم الشركة *</Label>
+                      <Label htmlFor="name">{t.companyName} *</Label>
                       <Input
                         id="name"
                         value={formData.name}
@@ -496,12 +486,12 @@ export default function Companies() {
                           setFormData({ ...formData, name: e.target.value })
                         }
                         required
-                        placeholder="أدخل اسم الشركة"
+                        placeholder={t.enterCompanyName}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">رقم الهاتف</Label>
+                      <Label htmlFor="phone">{t.phone}</Label>
                       <div className="flex gap-2">
                         <Select value={countryCode} onValueChange={setCountryCode}>
                           <SelectTrigger className="w-[140px]">
@@ -513,7 +503,7 @@ export default function Companies() {
                                     <span className="text-xl">{country.flag}</span>
                                     <span className="text-sm">{country.dialCode}</span>
                                   </span>
-                                ) : 'اختر';
+                                ) : t.selectCountry;
                               })()}
                             </SelectValue>
                           </SelectTrigger>
@@ -526,7 +516,7 @@ export default function Companies() {
                               >
                                 <span className="flex items-center gap-2">
                                   <span className="text-xl">{country.flag}</span>
-                                  <span className="font-medium">{country.nameAr}</span>
+                                  <span className="font-medium">{country.name}</span>
                                   <span className="text-muted-foreground text-sm">{country.dialCode}</span>
                                 </span>
                               </SelectItem>
@@ -548,12 +538,12 @@ export default function Companies() {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        أدخل الرقم بدون كود الدولة
+                        {t.enterWithoutCountryCode}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">البريد الإلكتروني</Label>
+                      <Label htmlFor="email">{tCommon.email}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -566,14 +556,14 @@ export default function Companies() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="address">العنوان</Label>
+                      <Label htmlFor="address">{t.address}</Label>
                       <Input
                         id="address"
                         value={formData.address}
                         onChange={(e) =>
                           setFormData({ ...formData, address: e.target.value })
                         }
-                        placeholder="أدخل العنوان"
+                        placeholder={t.address}
                       />
                     </div>
 
@@ -583,9 +573,9 @@ export default function Companies() {
                         variant="outline"
                         onClick={() => setIsFormOpen(false)}
                       >
-                        إلغاء
+                        {tCommon.cancel}
                       </Button>
-                      <Button type="submit">حفظ</Button>
+                      <Button type="submit">{tCommon.save}</Button>
                     </div>
                   </form>
                 </DialogContent>
@@ -608,7 +598,7 @@ export default function Companies() {
                     <div>
                       <CardTitle className="font-cairo">{company.name}</CardTitle>
                       <CardDescription>
-                        {company.is_active ? "نشط" : "غير نشط"}
+                        {company.is_active ? tStatus.active : tStatus.inactive}
                       </CardDescription>
                     </div>
                   </div>
@@ -616,7 +606,7 @@ export default function Companies() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleManageServices(company)}
-                    title="إدارة الخدمات"
+                    title={t.manageServices}
                   >
                     <Settings className="h-4 w-4" />
                   </Button>
@@ -625,23 +615,23 @@ export default function Companies() {
               <CardContent className="space-y-3">
                 {company.phone && (
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">الهاتف:</span> {company.phone}
+                    <span className="font-medium">{t.phone}:</span> {company.phone}
                   </p>
                 )}
                 {company.email && (
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">البريد:</span> {company.email}
+                    <span className="font-medium">{tCommon.email}:</span> {company.email}
                   </p>
                 )}
                 {company.address && (
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">العنوان:</span> {company.address}
+                    <span className="font-medium">{t.address}:</span> {company.address}
                   </p>
                 )}
                 
                 {company.company_services && company.company_services.length > 0 && (
                   <div className="pt-2 border-t">
-                    <p className="text-sm font-medium mb-2">الخدمات:</p>
+                    <p className="text-sm font-medium mb-2">{t.services}:</p>
                     <div className="space-y-1">
                       {Object.entries(
                         company.company_services.reduce((acc: any, cs) => {
@@ -675,11 +665,10 @@ export default function Companies() {
                 
                 {(!company.company_services || company.company_services.length === 0) && (
                   <div className="pt-2 border-t">
-                    <p className="text-sm text-muted-foreground">لم يتم تحديد خدمات بعد</p>
+                    <p className="text-sm text-muted-foreground">{t.noServicesYet}</p>
                   </div>
                 )}
                 
-                {/* أزرار الإجراءات */}
                 <div className="pt-3 border-t flex flex-col gap-2">
                   <div className="flex gap-2">
                     <Button
@@ -689,7 +678,7 @@ export default function Companies() {
                       onClick={() => handleEditCompany(company)}
                     >
                       <Edit className="h-4 w-4 ml-2" />
-                      تعديل
+                      {t.edit}
                     </Button>
                     <Button
                       variant="outline"
@@ -698,7 +687,7 @@ export default function Companies() {
                       onClick={() => handleCopyLoginLink(company)}
                     >
                       <Copy className="h-4 w-4 ml-2" />
-                      نسخ الرابط
+                      {t.copyLink}
                     </Button>
                   </div>
                   <Button
@@ -709,7 +698,7 @@ export default function Companies() {
                     disabled={!company.phone}
                   >
                     <Send className="h-4 w-4 ml-2" />
-                    إرسال عبر واتساب
+                    {t.sendViaWhatsApp}
                   </Button>
                 </div>
               </CardContent>
@@ -721,32 +710,32 @@ export default function Companies() {
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
-              لا توجد شركات بعد
+              {t.noCompaniesYet}
             </h3>
             <p className="text-muted-foreground mb-4">
-              ابدأ بإضافة أول شركة لك
+              {t.startAddingCompany}
             </p>
           </div>
         )}
       </main>
 
-      {/* حوار إدارة الخدمات */}
+      {/* Services Management Dialog */}
       <Dialog open={isServicesDialogOpen} onOpenChange={setIsServicesDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-cairo">
-              إدارة خدمات {selectedCompany?.name}
+              {t.manageCompanyServices} {selectedCompany?.name}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              اختر الخدمات والخدمات الفرعية التي تقدمها هذه الشركة:
+              {t.selectServices}
             </p>
             
             {services.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-sm text-muted-foreground mb-2">
-                  لا توجد خدمات متاحة
+                  {t.noServicesAvailable}
                 </p>
                 <Button
                   variant="outline"
@@ -756,7 +745,7 @@ export default function Companies() {
                     navigate("/services");
                   }}
                 >
-                  إضافة خدمات
+                  {t.addServices}
                 </Button>
               </div>
             ) : (
@@ -802,23 +791,23 @@ export default function Companies() {
                 variant="outline"
                 onClick={() => setIsServicesDialogOpen(false)}
               >
-                إلغاء
+                {tCommon.cancel}
               </Button>
-              <Button onClick={handleSaveServices}>حفظ</Button>
+              <Button onClick={handleSaveServices}>{tCommon.save}</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* حوار تعديل الشركة */}
+      {/* Edit Company Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-cairo">تعديل معلومات الشركة</DialogTitle>
+            <DialogTitle className="font-cairo">{t.editCompany}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleUpdateCompany} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">اسم الشركة *</Label>
+              <Label htmlFor="edit-name">{t.companyName} *</Label>
               <Input
                 id="edit-name"
                 value={editFormData.name}
@@ -826,12 +815,12 @@ export default function Companies() {
                   setEditFormData({ ...editFormData, name: e.target.value })
                 }
                 required
-                placeholder="أدخل اسم الشركة"
+                placeholder={t.enterCompanyName}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-phone">رقم الهاتف</Label>
+              <Label htmlFor="edit-phone">{t.phone}</Label>
               <div className="flex gap-2">
                 <Select value={editCountryCode} onValueChange={setEditCountryCode}>
                   <SelectTrigger className="w-[140px]">
@@ -843,7 +832,7 @@ export default function Companies() {
                             <span className="text-xl">{country.flag}</span>
                             <span className="text-sm">{country.dialCode}</span>
                           </span>
-                        ) : 'اختر';
+                        ) : t.selectCountry;
                       })()}
                     </SelectValue>
                   </SelectTrigger>
@@ -856,7 +845,7 @@ export default function Companies() {
                       >
                         <span className="flex items-center gap-2">
                           <span className="text-xl">{country.flag}</span>
-                          <span className="font-medium">{country.nameAr}</span>
+                          <span className="font-medium">{country.name}</span>
                           <span className="text-muted-foreground text-sm">{country.dialCode}</span>
                         </span>
                       </SelectItem>
@@ -878,12 +867,12 @@ export default function Companies() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                أدخل الرقم بدون كود الدولة
+                {t.enterWithoutCountryCode}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-email">البريد الإلكتروني</Label>
+              <Label htmlFor="edit-email">{tCommon.email}</Label>
               <Input
                 id="edit-email"
                 type="email"
@@ -896,14 +885,14 @@ export default function Companies() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-address">العنوان</Label>
+              <Label htmlFor="edit-address">{t.address}</Label>
               <Input
                 id="edit-address"
                 value={editFormData.address}
                 onChange={(e) =>
                   setEditFormData({ ...editFormData, address: e.target.value })
                 }
-                placeholder="أدخل العنوان"
+                placeholder={t.address}
               />
             </div>
 
@@ -913,9 +902,9 @@ export default function Companies() {
                 variant="outline"
                 onClick={() => setIsEditDialogOpen(false)}
               >
-                إلغاء
+                {tCommon.cancel}
               </Button>
-              <Button type="submit">حفظ التعديلات</Button>
+              <Button type="submit">{tCommon.save}</Button>
             </div>
           </form>
         </DialogContent>
