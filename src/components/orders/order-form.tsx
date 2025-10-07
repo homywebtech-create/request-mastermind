@@ -84,6 +84,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [areaOpen, setAreaOpen] = useState(false);
+  const [isCheckingCustomer, setIsCheckingCustomer] = useState(false);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: '',
     countryCode: 'QA',
@@ -286,6 +287,51 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     setSelectedService(null);
   };
 
+  // Check for existing customer when phone number is entered
+  const checkExistingCustomer = async (phoneNumber: string, countryCode: string) => {
+    if (!phoneNumber || phoneNumber.length < 7) return;
+    
+    setIsCheckingCustomer(true);
+    try {
+      const selectedCountry = countries.find(c => c.code === countryCode);
+      const fullWhatsappNumber = `${selectedCountry?.dialCode}${phoneNumber}`;
+      
+      const { data, error } = await supabase
+        .from('customers')
+        .select('name, area, budget, budget_type')
+        .eq('whatsapp_number', fullWhatsappNumber)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        // Customer found - auto-fill the name and other data
+        setFormData(prev => ({
+          ...prev,
+          customerName: data.name,
+          area: data.area || prev.area,
+          budget: data.budget || prev.budget,
+          budgetType: data.budget_type || prev.budgetType,
+        }));
+        
+        toast({
+          title: "عميل موجود / Existing Customer",
+          description: `تم تعبئة بيانات العميل: ${data.name}`,
+        });
+      } else {
+        // New customer - clear the name field for admin to enter
+        setFormData(prev => ({
+          ...prev,
+          customerName: '',
+        }));
+      }
+    } catch (error) {
+      console.error('Error checking customer:', error);
+    } finally {
+      setIsCheckingCustomer(false);
+    }
+  };
+
   const handleInputChange = (field: keyof OrderFormData, value: string) => {
     setFormData(prev => {
       if (field === 'serviceId') {
@@ -296,6 +342,14 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       }
       if (field === 'companyId') {
         return { ...prev, companyId: value, specialistIds: [] };
+      }
+      // When phone number changes, check for existing customer
+      if (field === 'phoneNumber' && value.length >= 7) {
+        checkExistingCustomer(value, prev.countryCode);
+      }
+      // When country code changes and phone is already entered, recheck
+      if (field === 'countryCode' && prev.phoneNumber.length >= 7) {
+        setTimeout(() => checkExistingCustomer(prev.phoneNumber, value), 100);
       }
       return { ...prev, [field]: value };
     });
@@ -326,14 +380,27 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="customerName">Customer Name *</Label>
+                <Label htmlFor="customerName">
+                  Customer Name *
+                  {isCheckingCustomer && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (جاري البحث... / Checking...)
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="customerName"
                   value={formData.customerName}
                   onChange={(e) => handleInputChange('customerName', e.target.value)}
-                  placeholder="Enter customer name"
+                  placeholder={isCheckingCustomer ? "جاري البحث عن العميل..." : "Enter customer name"}
                   required
+                  disabled={isCheckingCustomer}
                 />
+                {formData.customerName && (
+                  <p className="text-xs text-muted-foreground">
+                    {formData.phoneNumber && formData.phoneNumber.length >= 7 ? "تم العثور على العميل / Customer found" : ""}
+                  </p>
+                )}
               </div>
               
               <div className="space-y-2">
