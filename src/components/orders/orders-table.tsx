@@ -47,6 +47,32 @@ interface Order {
       phone: string;
       nationality: string | null;
       image_url: string | null;
+      company_id?: string;
+      companies?: {
+        id: string;
+        name: string;
+      };
+    };
+  }>;
+}
+
+interface CompanyQuoteGroup {
+  companyId: string;
+  companyName: string;
+  lowestPrice: number;
+  lowestPriceFormatted: string;
+  quotesCount: number;
+  specialists: Array<{
+    id: string;
+    quoted_price: string | null;
+    quoted_at: string | null;
+    is_accepted: boolean | null;
+    specialists: {
+      id: string;
+      name: string;
+      phone: string;
+      nationality: string | null;
+      image_url: string | null;
     };
   }>;
 }
@@ -97,6 +123,48 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     }
     return order.status === filter;
   });
+
+  // Group orders by companies for awaiting-response filter
+  const getCompanyQuotes = (order: Order): CompanyQuoteGroup[] => {
+    if (!order.order_specialists) return [];
+    
+    const companyMap = new Map<string, CompanyQuoteGroup>();
+
+    order.order_specialists
+      .filter(os => os.quoted_price && os.is_accepted === null)
+      .forEach(os => {
+        const companyId = os.specialists?.companies?.id;
+        const companyName = os.specialists?.companies?.name || 'Unknown Company';
+        
+        // Extract numeric value from price string (e.g., "24 QAR" -> 24)
+        const priceMatch = os.quoted_price?.match(/(\d+(\.\d+)?)/);
+        const price = priceMatch ? parseFloat(priceMatch[1]) : Infinity;
+        
+        if (!companyId) return;
+
+        if (!companyMap.has(companyId)) {
+          companyMap.set(companyId, {
+            companyId,
+            companyName,
+            lowestPrice: price,
+            lowestPriceFormatted: os.quoted_price || '',
+            quotesCount: 1,
+            specialists: [os]
+          });
+        } else {
+          const existing = companyMap.get(companyId)!;
+          existing.specialists.push(os);
+          existing.quotesCount++;
+          if (price < existing.lowestPrice) {
+            existing.lowestPrice = price;
+            existing.lowestPriceFormatted = os.quoted_price || '';
+          }
+        }
+      });
+
+    return Array.from(companyMap.values())
+      .sort((a, b) => a.lowestPrice - b.lowestPrice);
+  };
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-GB', {
@@ -651,7 +719,9 @@ Thank you for contacting us! 🌟`;
                 <TableHead className="text-left">Area</TableHead>
                 <TableHead className="text-left">Customer Budget</TableHead>
                 <TableHead className="text-left">Service</TableHead>
-                <TableHead className="text-left">Recommendations</TableHead>
+                <TableHead className="text-left">
+                  {filter === 'awaiting-response' ? 'Company Quotes' : 'Notes'}
+                </TableHead>
                 <TableHead className="text-left">Date & Status</TableHead>
                 <TableHead className="text-left">Actions</TableHead>
               </TableRow>
@@ -705,10 +775,47 @@ Thank you for contacting us! 🌟`;
                       </TableCell>
 
                       <TableCell>
-                        {order.notes ? (
-                          <p className="text-sm max-w-xs line-clamp-2">{order.notes}</p>
+                        {filter === 'awaiting-response' ? (
+                          // Show companies with lowest quotes for awaiting response filter
+                          (() => {
+                            const companyQuotes = getCompanyQuotes(order);
+                            return companyQuotes.length > 0 ? (
+                              <div className="space-y-2">
+                                {companyQuotes.map((company) => (
+                                  <div 
+                                    key={company.companyId} 
+                                    className="bg-muted/50 rounded-md p-2 border border-border"
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                        <span className="text-sm font-medium truncate">
+                                          {company.companyName}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        <Badge variant="secondary" className="whitespace-nowrap">
+                                          {company.quotesCount} عروض
+                                        </Badge>
+                                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 whitespace-nowrap">
+                                          أقل سعر: {company.lowestPriceFormatted}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">لا توجد عروض</span>
+                            );
+                          })()
                         ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
+                          // Show notes for other filters
+                          order.notes ? (
+                            <p className="text-sm max-w-xs line-clamp-2">{order.notes}</p>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )
                         )}
                       </TableCell>
                       

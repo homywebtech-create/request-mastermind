@@ -120,7 +120,12 @@ export default function Orders() {
               name,
               phone,
               nationality,
-              image_url
+              image_url,
+              company_id,
+              companies (
+                id,
+                name
+              )
             )
           )
         `)
