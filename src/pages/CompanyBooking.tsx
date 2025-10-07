@@ -273,7 +273,7 @@ export default function CompanyBooking() {
           selected_booking_type: bookingType,
           booking_date: bookingDate,
           booking_date_type: bookingDateType,
-          status: 'accepted',
+          status: 'in-progress',
         })
         .eq('id', orderId);
 
