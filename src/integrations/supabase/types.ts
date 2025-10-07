@@ -23,6 +23,7 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
+          name_en: string | null
           phone: string | null
           updated_at: string
         }
@@ -34,6 +35,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
+          name_en?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -45,6 +47,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
+          name_en?: string | null
           phone?: string | null
           updated_at?: string
         }

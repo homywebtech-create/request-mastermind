@@ -37,6 +37,7 @@ interface CompanyService {
 interface Company {
   id: string;
   name: string;
+  name_en?: string;
   phone?: string;
   email?: string;
   address?: string;
@@ -71,12 +72,14 @@ export default function Companies() {
   
   const [formData, setFormData] = useState({
     name: "",
+    name_en: "",
     phone: "",
     email: "",
     address: "",
   });
   const [editFormData, setEditFormData] = useState({
     name: "",
+    name_en: "",
     phone: "",
     email: "",
     address: "",
@@ -400,7 +403,7 @@ export default function Companies() {
     sendLoginLink(formData.name, fullPhone);
 
     setIsFormOpen(false);
-    setFormData({ name: "", phone: "", email: "", address: "" });
+    setFormData({ name: "", name_en: "", phone: "", email: "", address: "" });
     setLogoFile(null);
     setLogoPreview(null);
     setCountryCode("QA");
@@ -426,6 +429,7 @@ export default function Companies() {
     setEditCountryCode(detectedCountryCode);
     setEditFormData({
       name: company.name,
+      name_en: company.name_en || "",
       phone: phoneWithoutCode,
       email: company.email || "",
       address: company.address || "",
@@ -625,6 +629,18 @@ export default function Companies() {
                         }
                         required
                         placeholder={t.enterCompanyName}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="name_en">{t.companyNameEn}</Label>
+                      <Input
+                        id="name_en"
+                        value={formData.name_en}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name_en: e.target.value })
+                        }
+                        placeholder={t.enterCompanyNameEn}
                       />
                     </div>
 
@@ -1011,6 +1027,18 @@ export default function Companies() {
                 }
                 required
                 placeholder={t.enterCompanyName}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-name-en">{t.companyNameEn}</Label>
+              <Input
+                id="edit-name-en"
+                value={editFormData.name_en}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, name_en: e.target.value })
+                }
+                placeholder={t.enterCompanyNameEn}
               />
             </div>
 

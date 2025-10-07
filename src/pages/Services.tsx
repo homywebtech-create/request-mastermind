@@ -41,10 +41,12 @@ export default function Services() {
   const [loading, setLoading] = useState(true);
   const [serviceFormData, setServiceFormData] = useState({
     name: "",
+    name_en: "",
     description: "",
   });
   const [subServiceFormData, setSubServiceFormData] = useState({
     name: "",
+    name_en: "",
     description: "",
   });
   const { toast } = useToast();
@@ -101,7 +103,7 @@ export default function Services() {
         description: t.serviceAdded,
       });
       setIsServiceFormOpen(false);
-      setServiceFormData({ name: "", description: "" });
+      setServiceFormData({ name: "", name_en: "", description: "" });
       fetchServices();
     }
   };
@@ -127,7 +129,7 @@ export default function Services() {
         description: t.subServiceAdded,
       });
       setIsSubServiceFormOpen(false);
-      setSubServiceFormData({ name: "", description: "" });
+      setSubServiceFormData({ name: "", name_en: "", description: "" });
       setSelectedService(null);
       fetchServices();
     }
@@ -215,6 +217,18 @@ export default function Services() {
                         }
                         required
                         placeholder={t.enterServiceName}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="name_en">{t.serviceNameEn}</Label>
+                      <Input
+                        id="name_en"
+                        value={serviceFormData.name_en}
+                        onChange={(e) =>
+                          setServiceFormData({ ...serviceFormData, name_en: e.target.value })
+                        }
+                        placeholder={t.enterServiceNameEn}
                       />
                     </div>
 
@@ -344,6 +358,18 @@ export default function Services() {
                 }
                 required
                 placeholder={t.enterSubServiceName}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sub-name-en">{t.subServiceNameEn}</Label>
+              <Input
+                id="sub-name-en"
+                value={subServiceFormData.name_en}
+                onChange={(e) =>
+                  setSubServiceFormData({ ...subServiceFormData, name_en: e.target.value })
+                }
+                placeholder={t.enterSubServiceNameEn}
               />
             </div>
 

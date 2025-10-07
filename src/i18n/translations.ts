@@ -174,6 +174,8 @@ export const translations = {
     mustSelectSubServices: "You must select sub-services for:",
     loadServicesError: "Failed to load services",
     loadCompaniesError: "Failed to load companies",
+    companyNameEn: "Company Name (English)",
+    enterCompanyNameEn: "Enter company name in English",
   },
 
   // Services
@@ -203,6 +205,10 @@ export const translations = {
     startAdding: "Start by adding your first service",
     loadError: "Failed to load services",
     sub: "Sub",
+    serviceNameEn: "Service Name (English)",
+    enterServiceNameEn: "Enter service name in English",
+    subServiceNameEn: "Sub-Service Name (English)",
+    enterSubServiceNameEn: "Enter sub-service name in English",
   },
 
   // Orders
