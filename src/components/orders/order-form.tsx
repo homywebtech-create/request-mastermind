@@ -9,7 +9,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { countries } from "@/data/countries";
 import { qatarAreas } from "@/data/areas";
-import { Plus, Phone, User, Users, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Phone, User, Users, Check, ChevronsUpDown, ArrowRight, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -79,6 +79,7 @@ interface OrderFormProps {
 
 export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const { toast } = useToast();
+  const [currentStep, setCurrentStep] = useState(1);
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -101,6 +102,8 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     specialistIds: [],
     notes: '',
   });
+
+  const totalSteps = 4;
 
   useEffect(() => {
     fetchServices();
@@ -210,111 +213,133 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     }
   };
 
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1:
+        // Validate phone number
+        if (!formData.phoneNumber || formData.phoneNumber.length < 7) {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى إدخال رقم واتساب صحيح / Please enter a valid WhatsApp number",
+            variant: "destructive",
+          });
+          return false;
+        }
+        // Validate customer name
+        if (!formData.customerName || formData.customerName.trim() === '') {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى إدخال اسم العميل / Please enter customer name",
+            variant: "destructive",
+          });
+          return false;
+        }
+        // Validate area
+        if (!formData.area || formData.area.trim() === '') {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى اختيار المنطقة / Please select area",
+            variant: "destructive",
+          });
+          return false;
+        }
+        // Validate budget - both fields must be filled or both empty
+        if ((formData.budget && !formData.budgetType) || (!formData.budget && formData.budgetType)) {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى إدخال الميزانية ونوع السعر معاً / Please enter both budget and price type",
+            variant: "destructive",
+          });
+          return false;
+        }
+        // Validate budget is a number if provided
+        if (formData.budget && isNaN(Number(formData.budget))) {
+          toast({
+            title: "بيانات خاطئة / Invalid Data",
+            description: "يرجى إدخال رقم صحيح للميزانية / Please enter a valid budget number",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+
+      case 2:
+        // Validate service
+        if (!formData.serviceId) {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى اختيار نوع الخدمة / Please select service type",
+            variant: "destructive",
+          });
+          return false;
+        }
+        // Verify sub-service selection if available
+        if (selectedService && selectedService.sub_services.length > 0 && !formData.subServiceId) {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى اختيار الخدمة الفرعية / Please select a sub-service",
+            variant: "destructive",
+          });
+          return false;
+        }
+        // Validate booking type and hours for hourly services
+        const serviceRequiresBooking = formData.serviceId && selectedService?.sub_services.some(
+          sub => sub.id === formData.subServiceId && sub.name.includes('ساعات')
+        );
+        if (serviceRequiresBooking) {
+          if (!formData.bookingType) {
+            toast({
+              title: "بيانات ناقصة / Missing Data",
+              description: "يرجى اختيار نوع الحجز / Please select booking type",
+              variant: "destructive",
+            });
+            return false;
+          }
+          if (!formData.hoursCount || formData.hoursCount.trim() === '') {
+            toast({
+              title: "بيانات ناقصة / Missing Data",
+              description: "يرجى إدخال عدد الساعات / Please enter hours count",
+              variant: "destructive",
+            });
+            return false;
+          }
+        }
+        return true;
+
+      case 3:
+        // Verify company selection if not sending to all
+        if (!formData.sendToAll && !formData.companyId) {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى اختيار شركة محددة أو تفعيل الإرسال لجميع الشركات / Please select a specific company or enable send to all companies",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+
+      case 4:
+        return true;
+
+      default:
+        return false;
+    }
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate customer name
-    if (!formData.customerName || formData.customerName.trim() === '') {
-      toast({
-        title: "بيانات ناقصة / Missing Data",
-        description: "يرجى إدخال اسم العميل / Please enter customer name",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate phone number
-    if (!formData.phoneNumber || formData.phoneNumber.length < 7) {
-      toast({
-        title: "بيانات ناقصة / Missing Data",
-        description: "يرجى إدخال رقم واتساب صحيح / Please enter a valid WhatsApp number",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate area
-    if (!formData.area || formData.area.trim() === '') {
-      toast({
-        title: "بيانات ناقصة / Missing Data",
-        description: "يرجى اختيار المنطقة / Please select area",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate budget - both fields must be filled or both empty
-    if ((formData.budget && !formData.budgetType) || (!formData.budget && formData.budgetType)) {
-      toast({
-        title: "بيانات ناقصة / Missing Data",
-        description: "يرجى إدخال الميزانية ونوع السعر معاً / Please enter both budget and price type",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate budget is a number if provided
-    if (formData.budget && isNaN(Number(formData.budget))) {
-      toast({
-        title: "بيانات خاطئة / Invalid Data",
-        description: "يرجى إدخال رقم صحيح للميزانية / Please enter a valid budget number",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate service
-    if (!formData.serviceId) {
-      toast({
-        title: "بيانات ناقصة / Missing Data",
-        description: "يرجى اختيار نوع الخدمة / Please select service type",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Verify sub-service selection if available
-    if (selectedService && selectedService.sub_services.length > 0 && !formData.subServiceId) {
-      toast({
-        title: "بيانات ناقصة / Missing Data",
-        description: "يرجى اختيار الخدمة الفرعية / Please select a sub-service",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate booking type and hours for hourly services
-    const serviceRequiresBooking = formData.serviceId && selectedService?.sub_services.some(
-      sub => sub.id === formData.subServiceId && sub.name.includes('ساعات')
-    );
-
-    if (serviceRequiresBooking) {
-      if (!formData.bookingType) {
-        toast({
-          title: "بيانات ناقصة / Missing Data",
-          description: "يرجى اختيار نوع الحجز / Please select booking type",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!formData.hoursCount || formData.hoursCount.trim() === '') {
-        toast({
-          title: "بيانات ناقصة / Missing Data",
-          description: "يرجى إدخال عدد الساعات / Please enter hours count",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Verify company selection if not sending to all
-    if (!formData.sendToAll && !formData.companyId) {
-      toast({
-        title: "بيانات ناقصة / Missing Data",
-        description: "يرجى اختيار شركة محددة أو تفعيل الإرسال لجميع الشركات / Please select a specific company or enable send to all companies",
-        variant: "destructive",
-      });
+    if (!validateStep(currentStep)) {
       return;
     }
 
@@ -361,6 +386,56 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       notes: '',
     });
     setSelectedService(null);
+    setCurrentStep(1);
+  };
+
+  const renderStepIndicator = () => {
+    const steps = [
+      { number: 1, title: 'بيانات العميل', titleEn: 'Customer Info' },
+      { number: 2, title: 'الخدمة', titleEn: 'Service' },
+      { number: 3, title: 'الشركة', titleEn: 'Company' },
+      { number: 4, title: 'ملاحظات', titleEn: 'Notes' }
+    ];
+
+    return (
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          {steps.map((step, index) => (
+            <div key={step.number} className="flex items-center flex-1">
+              <div className="flex flex-col items-center relative">
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all",
+                    currentStep >= step.number
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {step.number}
+                </div>
+                <div className="mt-2 text-center">
+                  <div className={cn(
+                    "text-sm font-medium",
+                    currentStep >= step.number ? "text-foreground" : "text-muted-foreground"
+                  )}>
+                    {step.title}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{step.titleEn}</div>
+                </div>
+              </div>
+              {index < steps.length - 1 && (
+                <div
+                  className={cn(
+                    "flex-1 h-1 mx-2 transition-all",
+                    currentStep > step.number ? "bg-primary" : "bg-muted"
+                  )}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   // Check for existing customer when phone number is entered
@@ -445,14 +520,17 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Plus className="h-5 w-5" />
-          Create New Order
+          إنشاء طلب جديد / Create New Order
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {renderStepIndicator()}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Customer Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Customer Information</h3>
+          {/* Step 1: Customer Information */}
+          {currentStep === 1 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">بيانات العميل / Customer Information</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {formData.phoneNumber && formData.phoneNumber.length >= 7 && (
@@ -636,11 +714,13 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )}
 
-          {/* Service Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Service Details</h3>
+          {/* Step 2: Service Information */}
+          {currentStep === 2 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">بيانات الخدمة / Service Details</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -732,9 +812,16 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 </div>
               </div>
             )}
+            </div>
+          )}
 
-            <div className="space-y-2">
-              <Label>Send Order To</Label>
+          {/* Step 3: Company Selection */}
+          {currentStep === 3 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">اختيار الشركة / Company Selection</h3>
+              
+              <div className="space-y-2">
+                <Label>إرسال الطلب إلى / Send Order To</Label>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -851,27 +938,67 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 )}
               </>
             )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Enter any additional notes..."
-                rows={3}
-              />
             </div>
-          </div>
+          )}
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" className="flex-1">
-              Create Order
-            </Button>
+          {/* Step 4: Notes */}
+          {currentStep === 4 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">ملاحظات إضافية / Additional Notes</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="notes">ملاحظات / Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  placeholder="أدخل أي ملاحظات إضافية... / Enter any additional notes..."
+                  rows={5}
+                  dir="auto"
+                />
+                <p className="text-xs text-muted-foreground">
+                  اختياري - يمكنك ترك هذا الحقل فارغاً / Optional - you can leave this field empty
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Actions */}
+          <div className="flex gap-3 pt-6 border-t">
+            {currentStep > 1 && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handlePrevious}
+                className="flex items-center gap-2"
+              >
+                <ArrowRight className="h-4 w-4" />
+                السابق / Previous
+              </Button>
+            )}
+            
+            {currentStep < totalSteps ? (
+              <Button 
+                type="button" 
+                onClick={handleNext}
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                متابعة / Next
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button 
+                type="submit" 
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                تأكيد إنشاء الطلب / Create Order
+              </Button>
+            )}
+
             {onCancel && (
               <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
+                إلغاء / Cancel
               </Button>
             )}
           </div>
