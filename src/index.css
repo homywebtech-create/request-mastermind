@@ -37,6 +37,10 @@
     --pending-foreground: 0 0% 100%;
     --pending-light: 213 94% 95%;
 
+    --awaiting: 280 65% 60%;
+    --awaiting-foreground: 0 0% 100%;
+    --awaiting-light: 280 65% 95%;
+
     --muted: 213 27% 84%;
     --muted-foreground: 215 13% 65%;
 
@@ -98,6 +102,10 @@
     --pending: 213 94% 68%;
     --pending-foreground: 0 0% 100%;
     --pending-light: 213 94% 15%;
+
+    --awaiting: 280 65% 60%;
+    --awaiting-foreground: 0 0% 100%;
+    --awaiting-light: 280 65% 15%;
 
     --muted: 215 25% 27%;
     --muted-foreground: 215 13% 65%;

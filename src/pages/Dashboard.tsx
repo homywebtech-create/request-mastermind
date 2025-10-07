@@ -502,7 +502,7 @@ export default function Dashboard() {
               title="Awaiting Response"
               value={stats.awaitingResponse}
               icon={<Clock className="h-4 w-4" />}
-              variant="pending"
+              variant="awaiting"
             />
           </div>
           <div onClick={() => setFilter('in-progress')} className="cursor-pointer">

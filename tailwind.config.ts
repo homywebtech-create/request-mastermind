@@ -47,6 +47,11 @@ export default {
           foreground: "hsl(var(--pending-foreground))",
           light: "hsl(var(--pending-light))",
         },
+        awaiting: {
+          DEFAULT: "hsl(var(--awaiting))",
+          foreground: "hsl(var(--awaiting-foreground))",
+          light: "hsl(var(--awaiting-light))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",

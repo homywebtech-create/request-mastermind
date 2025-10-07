@@ -5,7 +5,7 @@ interface StatsCardProps {
   title: string;
   value: number;
   icon: React.ReactNode;
-  variant?: 'default' | 'success' | 'warning' | 'pending';
+  variant?: 'default' | 'success' | 'warning' | 'pending' | 'awaiting';
   className?: string;
 }
 
@@ -14,6 +14,7 @@ const variantStyles = {
   success: "border-success/20 bg-success-light",
   warning: "border-warning/20 bg-warning-light",
   pending: "border-pending/20 bg-pending-light",
+  awaiting: "border-awaiting/20 bg-awaiting-light",
 };
 
 export function StatsCard({ title, value, icon, variant = 'default', className }: StatsCardProps) {
