@@ -423,10 +423,10 @@ export default function CompanyBooking() {
                 <RadioGroup value={bookingType} onValueChange={setBookingType}>
                   <div className="space-y-3">
                     {[
-                      { value: 'once', label: language === 'ar' ? 'مرة واحدة' : 'One Time' },
-                      { value: 'weekly', label: language === 'ar' ? 'أسبوعي' : 'Weekly' },
-                      { value: 'bi-weekly', label: language === 'ar' ? 'نصف شهري' : 'Bi-Weekly' },
-                      { value: 'monthly', label: language === 'ar' ? 'شهري' : 'Monthly' }
+                      { value: 'once', label: t.oneTime },
+                      { value: 'weekly', label: t.weekly },
+                      { value: 'bi-weekly', label: t.biWeekly },
+                      { value: 'monthly', label: t.monthly }
                     ].map((option) => (
                       <label
                         key={option.value}
