@@ -9,9 +9,85 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MapLocationPicker } from '@/components/booking/MapLocationPicker';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+
+// Translations
+const translations = {
+  ar: {
+    completeBooking: 'أكمل معلومات الحجز',
+    location: 'الموقع',
+    bookingType: 'نوع الحجز',
+    date: 'التاريخ',
+    prices: 'الأسعار',
+    selectLocation: 'حدد موقع الخدمة',
+    buildingInfo: 'معلومات المبنى والعنوان *',
+    buildingPlaceholder: 'مثال: الطابق الثالث، شقة 305، بجانب مدخل المصعد...',
+    selectBookingType: 'اختر نوع الحجز',
+    oneTime: 'مرة واحدة',
+    weekly: 'أسبوعي',
+    biWeekly: 'نصف شهري',
+    monthly: 'شهري',
+    selectDate: 'اختر تاريخ الحجز',
+    today: 'اليوم',
+    tomorrow: 'غداً',
+    customDate: 'تاريخ آخر',
+    chooseDate: 'اختر التاريخ',
+    specialistsAndPrices: 'العاملات والأسعار المتاحة',
+    lowestPrice: 'أقل سعر',
+    noSpecialists: 'لا يوجد محترفون متاحون حالياً',
+    previous: 'السابق',
+    next: 'التالي',
+    submit: 'تأكيد الحجز',
+    missingData: 'بيانات ناقصة',
+    selectLocationError: 'يرجى تحديد الموقع على الخريطة',
+    enterBuildingInfo: 'يرجى إدخال معلومات المبنى',
+    selectBookingTypeError: 'يرجى اختيار نوع الحجز',
+    selectDateError: 'يرجى اختيار تاريخ الحجز',
+    selectCustomDateError: 'يرجى اختيار التاريخ',
+    saved: 'تم الحفظ',
+    bookingSaved: 'تم حفظ معلومات الحجز بنجاح',
+    error: 'خطأ',
+    loadError: 'حدث خطأ في تحميل البيانات',
+  },
+  en: {
+    completeBooking: 'Complete Booking Information',
+    location: 'Location',
+    bookingType: 'Booking Type',
+    date: 'Date',
+    prices: 'Prices',
+    selectLocation: 'Select Service Location',
+    buildingInfo: 'Building and Address Information *',
+    buildingPlaceholder: 'Example: 3rd floor, Apartment 305, next to elevator entrance...',
+    selectBookingType: 'Choose Booking Type',
+    oneTime: 'One Time',
+    weekly: 'Weekly',
+    biWeekly: 'Bi-Weekly',
+    monthly: 'Monthly',
+    selectDate: 'Select Booking Date',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    customDate: 'Custom Date',
+    chooseDate: 'Choose Date',
+    specialistsAndPrices: 'Available Specialists & Prices',
+    lowestPrice: 'Lowest Price',
+    noSpecialists: 'No specialists available at the moment',
+    previous: 'Previous',
+    next: 'Next',
+    submit: 'Confirm Booking',
+    missingData: 'Missing Data',
+    selectLocationError: 'Please select location on the map',
+    enterBuildingInfo: 'Please enter building information',
+    selectBookingTypeError: 'Please select booking type',
+    selectDateError: 'Please select booking date',
+    selectCustomDateError: 'Please select date',
+    saved: 'Saved',
+    bookingSaved: 'Booking information saved successfully',
+    error: 'Error',
+    loadError: 'An error occurred while loading data',
+  }
+};
 
 interface Company {
   id: string;
@@ -37,6 +113,7 @@ export default function CompanyBooking() {
   const [currentStep, setCurrentStep] = useState(1);
   const [company, setCompany] = useState<Company | null>(null);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
+  const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   
   // Form data
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -46,6 +123,7 @@ export default function CompanyBooking() {
   const [customDate, setCustomDate] = useState('');
 
   const totalSteps = 4;
+  const t = translations[language];
 
   useEffect(() => {
     fetchData();
@@ -98,8 +176,8 @@ export default function CompanyBooking() {
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
-        title: 'خطأ',
-        description: 'حدث خطأ في تحميل البيانات',
+        title: t.error,
+        description: t.loadError,
         variant: 'destructive',
       });
     } finally {
@@ -110,40 +188,40 @@ export default function CompanyBooking() {
   const handleNext = () => {
     if (currentStep === 1 && !location) {
       toast({
-        title: 'بيانات ناقصة',
-        description: 'يرجى تحديد الموقع على الخريطة',
+        title: t.missingData,
+        description: t.selectLocationError,
         variant: 'destructive',
       });
       return;
     }
     if (currentStep === 1 && !buildingInfo.trim()) {
       toast({
-        title: 'بيانات ناقصة',
-        description: 'يرجى إدخال معلومات المبنى',
+        title: t.missingData,
+        description: t.enterBuildingInfo,
         variant: 'destructive',
       });
       return;
     }
     if (currentStep === 2 && !bookingType) {
       toast({
-        title: 'بيانات ناقصة',
-        description: 'يرجى اختيار نوع الحجز',
+        title: t.missingData,
+        description: t.selectBookingTypeError,
         variant: 'destructive',
       });
       return;
     }
     if (currentStep === 3 && !bookingDateType) {
       toast({
-        title: 'بيانات ناقصة',
-        description: 'يرجى اختيار تاريخ الحجز',
+        title: t.missingData,
+        description: t.selectDateError,
         variant: 'destructive',
       });
       return;
     }
     if (currentStep === 3 && bookingDateType === 'custom' && !customDate) {
       toast({
-        title: 'بيانات ناقصة',
-        description: 'يرجى اختيار التاريخ',
+        title: t.missingData,
+        description: t.selectCustomDateError,
         variant: 'destructive',
       });
       return;
@@ -179,8 +257,8 @@ export default function CompanyBooking() {
       if (error) throw error;
 
       toast({
-        title: 'تم الحفظ',
-        description: 'تم حفظ معلومات الحجز بنجاح',
+        title: t.saved,
+        description: t.bookingSaved,
       });
 
       // Navigate back or to confirmation page
@@ -188,7 +266,7 @@ export default function CompanyBooking() {
     } catch (error: any) {
       console.error('Error saving booking:', error);
       toast({
-        title: 'خطأ',
+        title: t.error,
         description: error.message,
         variant: 'destructive',
       });
@@ -207,10 +285,10 @@ export default function CompanyBooking() {
 
   const renderStepIndicator = () => {
     const steps = [
-      { number: 1, title: 'الموقع', titleEn: 'Location' },
-      { number: 2, title: 'نوع الحجز', titleEn: 'Booking Type' },
-      { number: 3, title: 'التاريخ', titleEn: 'Date' },
-      { number: 4, title: 'الأسعار', titleEn: 'Prices' }
+      { number: 1, title: t.location },
+      { number: 2, title: t.bookingType },
+      { number: 3, title: t.date },
+      { number: 4, title: t.prices }
     ];
 
     return (
@@ -240,7 +318,6 @@ export default function CompanyBooking() {
                   )}>
                     {step.title}
                   </div>
-                  <div className="text-xs text-muted-foreground">{step.titleEn}</div>
                 </div>
               </div>
               {index < steps.length - 1 && (
@@ -267,8 +344,21 @@ export default function CompanyBooking() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-background py-8 px-4">
+    <div className="min-h-screen bg-white dark:bg-background py-8 px-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="container mx-auto max-w-4xl">
+        {/* Language Toggle */}
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
+            className="gap-2"
+          >
+            <Languages className="h-4 w-4" />
+            {language === 'ar' ? 'English' : 'العربية'}
+          </Button>
+        </div>
+
         {/* Company Header */}
         {company && (
           <Card className="mb-8">
@@ -287,7 +377,7 @@ export default function CompanyBooking() {
                 )}
                 <div>
                   <CardTitle className="text-2xl">{company.name}</CardTitle>
-                  <p className="text-muted-foreground mt-1">أكمل معلومات الحجز</p>
+                  <p className="text-muted-foreground mt-1">{t.completeBooking}</p>
                 </div>
               </div>
             </CardHeader>
@@ -303,7 +393,7 @@ export default function CompanyBooking() {
             {/* Step 1: Location */}
             {currentStep === 1 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">حدد موقع الخدمة</h3>
+                <h3 className="text-lg font-semibold">{t.selectLocation}</h3>
                 
                 <MapLocationPicker
                   onLocationSelect={(lat, lng) => setLocation({ lat, lng })}
@@ -312,12 +402,12 @@ export default function CompanyBooking() {
                 />
 
                 <div className="space-y-2">
-                  <Label htmlFor="buildingInfo">معلومات المبنى والعنوان *</Label>
+                  <Label htmlFor="buildingInfo">{t.buildingInfo}</Label>
                   <Textarea
                     id="buildingInfo"
                     value={buildingInfo}
                     onChange={(e) => setBuildingInfo(e.target.value)}
-                    placeholder="مثال: الطابق الثالث، شقة 305، بجانب مدخل المصعد..."
+                    placeholder={t.buildingPlaceholder}
                     rows={4}
                     dir="auto"
                   />
@@ -328,15 +418,15 @@ export default function CompanyBooking() {
             {/* Step 2: Booking Type */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">اختر نوع الحجز</h3>
+                <h3 className="text-lg font-semibold">{t.selectBookingType}</h3>
                 
                 <RadioGroup value={bookingType} onValueChange={setBookingType}>
                   <div className="space-y-3">
                     {[
-                      { value: 'once', label: 'مرة واحدة', labelEn: 'One Time' },
-                      { value: 'weekly', label: 'أسبوعي', labelEn: 'Weekly' },
-                      { value: 'bi-weekly', label: 'نصف شهري', labelEn: 'Bi-Weekly' },
-                      { value: 'monthly', label: 'شهري', labelEn: 'Monthly' }
+                      { value: 'once', label: language === 'ar' ? 'مرة واحدة' : 'One Time' },
+                      { value: 'weekly', label: language === 'ar' ? 'أسبوعي' : 'Weekly' },
+                      { value: 'bi-weekly', label: language === 'ar' ? 'نصف شهري' : 'Bi-Weekly' },
+                      { value: 'monthly', label: language === 'ar' ? 'شهري' : 'Monthly' }
                     ].map((option) => (
                       <label
                         key={option.value}
@@ -350,9 +440,6 @@ export default function CompanyBooking() {
                         <RadioGroupItem value={option.value} id={option.value} />
                         <div className="flex-1">
                           <span className="font-medium">{option.label}</span>
-                          <span className="text-sm text-muted-foreground ml-2">
-                            {option.labelEn}
-                          </span>
                         </div>
                       </label>
                     ))}
@@ -364,14 +451,14 @@ export default function CompanyBooking() {
             {/* Step 3: Booking Date */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">اختر تاريخ الحجز</h3>
+                <h3 className="text-lg font-semibold">{t.selectDate}</h3>
                 
                 <RadioGroup value={bookingDateType} onValueChange={setBookingDateType}>
                   <div className="space-y-3">
                     {[
-                      { value: 'today', label: 'اليوم', labelEn: 'Today' },
-                      { value: 'tomorrow', label: 'غداً', labelEn: 'Tomorrow' },
-                      { value: 'custom', label: 'تاريخ آخر', labelEn: 'Custom Date' }
+                      { value: 'today', label: t.today },
+                      { value: 'tomorrow', label: t.tomorrow },
+                      { value: 'custom', label: t.customDate }
                     ].map((option) => (
                       <label
                         key={option.value}
@@ -386,9 +473,6 @@ export default function CompanyBooking() {
                         <div className="flex-1 flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
                           <span className="font-medium">{option.label}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {option.labelEn}
-                          </span>
                         </div>
                       </label>
                     ))}
@@ -397,7 +481,7 @@ export default function CompanyBooking() {
 
                 {bookingDateType === 'custom' && (
                   <div className="space-y-2 mt-4">
-                    <Label htmlFor="customDate">اختر التاريخ</Label>
+                    <Label htmlFor="customDate">{t.chooseDate}</Label>
                     <Input
                       type="date"
                       id="customDate"
@@ -415,7 +499,7 @@ export default function CompanyBooking() {
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  العاملات والأسعار المتاحة
+                  {t.specialistsAndPrices}
                 </h3>
 
                 <div className="space-y-4">
@@ -473,7 +557,7 @@ export default function CompanyBooking() {
                                   </Badge>
                                   {isLowest && (
                                     <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                                      أقل سعر ⭐
+                                      {t.lowestPrice} ⭐
                                     </p>
                                   )}
                                 </div>
@@ -491,7 +575,7 @@ export default function CompanyBooking() {
 
                 {specialists.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p>لا توجد عروض أسعار متاحة حالياً</p>
+                    <p>{t.noSpecialists}</p>
                   </div>
                 )}
               </div>
@@ -506,8 +590,17 @@ export default function CompanyBooking() {
                   onClick={handlePrevious}
                   className="flex items-center gap-2"
                 >
-                  <ArrowRight className="h-4 w-4" />
-                  السابق
+                  {language === 'ar' ? (
+                    <>
+                      <ArrowRight className="h-4 w-4" />
+                      {t.previous}
+                    </>
+                  ) : (
+                    <>
+                      {t.previous}
+                      <ArrowLeft className="h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               )}
 
@@ -517,8 +610,17 @@ export default function CompanyBooking() {
                   onClick={handleNext}
                   className="flex-1 flex items-center justify-center gap-2"
                 >
-                  التالي
-                  <ArrowLeft className="h-4 w-4" />
+                  {language === 'ar' ? (
+                    <>
+                      {t.next}
+                      <ArrowLeft className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="h-4 w-4" />
+                      {t.next}
+                    </>
+                  )}
                 </Button>
               ) : (
                 <Button
@@ -527,7 +629,7 @@ export default function CompanyBooking() {
                   className="flex-1 flex items-center justify-center gap-2"
                 >
                   <Check className="h-4 w-4" />
-                  حفظ معلومات الحجز
+                  {t.submit}
                 </Button>
               )}
             </div>
