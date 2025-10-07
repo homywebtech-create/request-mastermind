@@ -537,89 +537,77 @@ export default function SpecialistOrders() {
           </div>
         )}
 
-        <div className="flex gap-2">
-          {showQuoteButton && !hasQuote && (
-            <Dialog open={quoteDialog.open && quoteDialog.orderId === order.id} onOpenChange={(open) => {
-              if (!open) {
-                setQuoteDialog({ open: false, orderId: null });
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={() => setQuoteDialog({ open: true, orderId: order.id })}
-                  className="flex-1 gap-2"
-                  size="lg"
-                >
-                  <Tag className="h-4 w-4" />
-                  Submit Quote
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Choose Your Price</DialogTitle>
-                  <DialogDescription>
-                    {baseBudget > 0 
-                      ? `Customer Budget: ${baseBudget} QAR - Choose the price that suits you`
-                      : "Choose a price that suits you"}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-3 py-4">
-                  {priceOptions.length > 0 ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-3">
-                        {priceOptions.map((option, index) => (
-                          <Button
-                            key={index}
-                            onClick={() => handleSubmitQuote(option.value)}
-                            disabled={isSubmitting}
-                            variant={index === 0 ? "default" : "outline"}
-                            className="h-auto py-4 flex flex-col gap-1"
-                          >
-                            <span className="text-lg font-bold">{option.label}</span>
-                            {index === 0 && <span className="text-xs opacity-80">Customer Price</span>}
-                            {index > 0 && <span className="text-xs opacity-80">×{option.multiplier}</span>}
-                          </Button>
-                        ))}
-                      </div>
-                      <div className="pt-2 border-t">
+        {showQuoteButton && !hasQuote && (
+          <Dialog open={quoteDialog.open && quoteDialog.orderId === order.id} onOpenChange={(open) => {
+            if (!open) {
+              setQuoteDialog({ open: false, orderId: null });
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button
+                onClick={() => setQuoteDialog({ open: true, orderId: order.id })}
+                className="w-full gap-2"
+                size="lg"
+              >
+                <Tag className="h-4 w-4" />
+                Submit Quote
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Choose Your Price</DialogTitle>
+                <DialogDescription>
+                  {baseBudget > 0 
+                    ? `Customer Budget: ${baseBudget} QAR - Choose the price that suits you`
+                    : "Choose a price that suits you"}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 py-4">
+                {priceOptions.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      {priceOptions.map((option, index) => (
                         <Button
-                          onClick={handleSkipOrder}
+                          key={index}
+                          onClick={() => handleSubmitQuote(option.value)}
                           disabled={isSubmitting}
-                          variant="ghost"
-                          className="w-full"
+                          variant={index === 0 ? "default" : "outline"}
+                          className="h-auto py-4 flex flex-col gap-1"
                         >
-                          Skip This Order
+                          <span className="text-lg font-bold">{option.label}</span>
+                          {index === 0 && <span className="text-xs opacity-80">Customer Price</span>}
+                          {index > 0 && <span className="text-xs opacity-80">×{option.multiplier}</span>}
                         </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No budget specified by customer</p>
+                      ))}
+                    </div>
+                    <div className="pt-2 border-t">
                       <Button
                         onClick={handleSkipOrder}
                         disabled={isSubmitting}
-                        variant="outline"
+                        variant="ghost"
                         className="w-full"
                       >
                         Skip This Order
                       </Button>
                     </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-          
-          <Button
-            onClick={() => order.customer && openWhatsApp(order.customer.whatsapp_number)}
-            className={`${showQuoteButton && !hasQuote ? 'flex-1' : 'w-full'} gap-2`}
-            variant={showQuoteButton && !hasQuote ? "outline" : "default"}
-            size="lg"
-          >
-            <Phone className="h-4 w-4" />
-            Contact via WhatsApp
-          </Button>
-        </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">No budget specified by customer</p>
+                    <Button
+                      onClick={handleSkipOrder}
+                      disabled={isSubmitting}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Skip This Order
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </Card>
     );
   };
