@@ -255,27 +255,13 @@ export default function Orders() {
       if (orderError) throw orderError;
 
       // Link specialists to the order
+      let specialistsToLink: string[] = [];
+      
       if (formData.specialistIds && formData.specialistIds.length > 0) {
-        // If specific specialists selected, we need to override the trigger behavior
-        // First, delete any specialists that were auto-added by the trigger
-        await supabase
-          .from('order_specialists')
-          .delete()
-          .eq('order_id', newOrder.id);
-
-        // Now add only the selected specialists
-        const orderSpecialists = formData.specialistIds.map(specialistId => ({
-          order_id: newOrder.id,
-          specialist_id: specialistId
-        }));
-
-        const { error: linkError } = await supabase
-          .from('order_specialists')
-          .insert(orderSpecialists);
-
-        if (linkError) throw linkError;
+        // Specific specialists selected
+        specialistsToLink = formData.specialistIds;
       } else if (formData.sendToAll) {
-        // Trigger will handle this automatically, but we may need to ensure all specialists are added
+        // Get all active specialists
         const { data: allSpecialists, error: specialistsError } = await supabase
           .from('specialists')
           .select('id')
@@ -286,31 +272,10 @@ export default function Orders() {
           throw specialistsError;
         }
 
-        console.log('Found specialists:', allSpecialists?.length || 0);
-
-        if (allSpecialists && allSpecialists.length > 0) {
-          const orderSpecialists = allSpecialists.map(specialist => ({
-            order_id: newOrder.id,
-            specialist_id: specialist.id
-          }));
-
-          console.log('Inserting order_specialists:', orderSpecialists);
-
-          const { error: linkError } = await supabase
-            .from('order_specialists')
-            .insert(orderSpecialists);
-
-          if (linkError) {
-            console.error('Error linking specialists to order:', linkError);
-            throw linkError;
-          }
-          
-          console.log('Successfully linked specialists to order');
-        } else {
-          console.warn('No active specialists found!');
-        }
+        specialistsToLink = allSpecialists?.map(s => s.id) || [];
+        console.log('Found specialists:', specialistsToLink.length);
       } else if (formData.companyId) {
-        // If specific company selected, get all specialists from that company
+        // Get all specialists from the specific company
         const { data: companySpecialists, error: specialistsError } = await supabase
           .from('specialists')
           .select('id')
@@ -322,27 +287,35 @@ export default function Orders() {
           throw specialistsError;
         }
 
-        console.log('Found company specialists:', companySpecialists?.length || 0);
+        specialistsToLink = companySpecialists?.map(s => s.id) || [];
+        console.log('Found company specialists:', specialistsToLink.length);
+      }
 
-        if (companySpecialists && companySpecialists.length > 0) {
-          const orderSpecialists = companySpecialists.map(specialist => ({
-            order_id: newOrder.id,
-            specialist_id: specialist.id
-          }));
+      // Insert all specialists at once with proper error handling
+      if (specialistsToLink.length > 0) {
+        const orderSpecialists = specialistsToLink.map(specialistId => ({
+          order_id: newOrder.id,
+          specialist_id: specialistId
+        }));
 
-          const { error: linkError } = await supabase
-            .from('order_specialists')
-            .insert(orderSpecialists);
+        const { error: linkError } = await supabase
+          .from('order_specialists')
+          .insert(orderSpecialists);
 
-          if (linkError) {
-            console.error('Error linking company specialists:', linkError);
-            throw linkError;
-          }
-          
-          console.log('Successfully linked company specialists to order');
-        } else {
-          console.warn('No active specialists found for company!');
+        // Handle duplicate key errors gracefully
+        if (linkError && !linkError.message.includes('duplicate key')) {
+          console.error('Error linking specialists to order:', linkError);
+          throw linkError;
         }
+        
+        console.log('Successfully linked specialists to order');
+      } else {
+        console.warn('No active specialists found!');
+        toast({
+          title: "تحذير",
+          description: "لم يتم العثور على محترفين نشطين للشركة المحددة",
+          variant: "default",
+        });
       }
 
       toast({
