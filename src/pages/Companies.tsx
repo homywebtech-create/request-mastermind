@@ -455,16 +455,24 @@ export default function Companies() {
       }
     }
 
+    const updateData = {
+      name: editFormData.name,
+      name_en: editFormData.name_en || null,
+      phone: fullPhone,
+      email: editFormData.email || null,
+      address: editFormData.address || null,
+      logo_url: logoUrl
+    };
+
+    console.log('Updating company with data:', updateData);
+
     const { error } = await supabase
       .from("companies")
-      .update({
-        ...editFormData,
-        phone: fullPhone,
-        logo_url: logoUrl
-      })
+      .update(updateData)
       .eq("id", selectedCompany.id);
 
     if (error) {
+      console.error('Update error:', error);
       toast({
         title: tCommon.error,
         description: error.message,
