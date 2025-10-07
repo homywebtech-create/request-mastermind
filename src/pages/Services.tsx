@@ -406,7 +406,10 @@ export default function Services() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="font-cairo">{service.name}</CardTitle>
+                    <CardTitle className="font-cairo">{service.name_en || service.name}</CardTitle>
+                    {service.name_en && service.name !== service.name_en && (
+                      <p className="text-sm text-muted-foreground mt-1">{service.name}</p>
+                    )}
                     <CardDescription>
                       {service.description || t.noDescription}
                     </CardDescription>
@@ -453,7 +456,10 @@ export default function Services() {
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50"
                         >
                           <div className="flex-1">
-                            <p className="text-sm font-medium">{subService.name}</p>
+                            <p className="text-sm font-medium">{subService.name_en || subService.name}</p>
+                            {subService.name_en && subService.name !== subService.name_en && (
+                              <p className="text-xs text-muted-foreground">{subService.name}</p>
+                            )}
                             {subService.description && (
                               <p className="text-xs text-muted-foreground">
                                 {subService.description}

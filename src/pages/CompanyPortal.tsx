@@ -10,9 +10,11 @@ import { OrdersTable } from "@/components/orders/orders-table";
 interface Company {
   id: string;
   name: string;
+  name_en?: string;
   phone: string;
   email: string;
   address: string;
+  logo_url?: string;
 }
 
 interface Order {
@@ -296,12 +298,25 @@ export default function CompanyPortal() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-3">
-              <Building2 className="h-8 w-8 text-primary" />
+              {company.logo_url ? (
+                <img 
+                  src={company.logo_url} 
+                  alt={company.name}
+                  className="h-16 w-16 rounded-lg object-cover border border-border"
+                />
+              ) : (
+                <Building2 className="h-16 w-16 text-primary" />
+              )}
               <div>
-                <h1 className="text-3xl font-bold text-foreground font-cairo">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-cairo">
                   {company.name}
                 </h1>
-                <p className="text-muted-foreground mt-1">
+                {company.name_en && (
+                  <h2 className="text-lg sm:text-xl font-semibold text-muted-foreground">
+                    {company.name_en}
+                  </h2>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">
                   {company.phone}
                 </p>
               </div>
