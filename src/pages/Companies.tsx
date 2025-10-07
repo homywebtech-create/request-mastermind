@@ -728,9 +728,9 @@ export default function Companies() {
       <main className="container mx-auto px-4 py-8">
         {companies.length > 0 ? (
           <div className="relative">
-            <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {companies.map((company) => (
-                <Card key={company.id} className="min-w-[320px] max-w-[320px] snap-center flex-shrink-0">
+                <Card key={company.id}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3 flex-1">
