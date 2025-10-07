@@ -6,15 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Settings, Trash2, ArrowRight } from "lucide-react";
+import { Plus, Settings, Trash2, ArrowRight, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { translations } from "@/i18n/translations";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Service {
   id: string;
   name: string;
+  name_en?: string;
   description?: string;
   is_active: boolean;
   created_at: string;
@@ -25,6 +27,7 @@ interface SubService {
   id: string;
   service_id: string;
   name: string;
+  name_en?: string;
   description?: string;
   is_active: boolean;
   created_at: string;
@@ -38,6 +41,13 @@ export default function Services() {
   const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
   const [isSubServiceFormOpen, setIsSubServiceFormOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedSubService, setSelectedSubService] = useState<SubService | null>(null);
+  const [isEditingService, setIsEditingService] = useState(false);
+  const [isEditingSubService, setIsEditingSubService] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const [subServiceToDelete, setSubServiceToDelete] = useState<SubService | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteSubDialogOpen, setIsDeleteSubDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [serviceFormData, setServiceFormData] = useState({
     name: "",
@@ -89,22 +99,49 @@ export default function Services() {
   const handleCreateService = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { error } = await supabase.from("services").insert([serviceFormData]);
+    if (isEditingService && selectedService) {
+      // Update existing service
+      const { error } = await supabase
+        .from("services")
+        .update(serviceFormData)
+        .eq("id", selectedService.id);
 
-    if (error) {
-      toast({
-        title: tCommon.error,
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error) {
+        toast({
+          title: tCommon.error,
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: tCommon.success,
+          description: "Service updated successfully",
+        });
+        setIsServiceFormOpen(false);
+        setServiceFormData({ name: "", name_en: "", description: "" });
+        setIsEditingService(false);
+        setSelectedService(null);
+        fetchServices();
+      }
     } else {
-      toast({
-        title: tCommon.success,
-        description: t.serviceAdded,
-      });
-      setIsServiceFormOpen(false);
-      setServiceFormData({ name: "", name_en: "", description: "" });
-      fetchServices();
+      // Create new service
+      const { error } = await supabase.from("services").insert([serviceFormData]);
+
+      if (error) {
+        toast({
+          title: tCommon.error,
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: tCommon.success,
+          description: t.serviceAdded,
+        });
+        setIsServiceFormOpen(false);
+        setServiceFormData({ name: "", name_en: "", description: "" });
+        fetchServices();
+      }
     }
   };
 
@@ -112,10 +149,64 @@ export default function Services() {
     e.preventDefault();
     if (!selectedService) return;
 
-    const { error } = await supabase.from("sub_services").insert([{
-      ...subServiceFormData,
-      service_id: selectedService.id
-    }]);
+    if (isEditingSubService && selectedSubService) {
+      // Update existing sub-service
+      const { error } = await supabase
+        .from("sub_services")
+        .update(subServiceFormData)
+        .eq("id", selectedSubService.id);
+
+      if (error) {
+        toast({
+          title: tCommon.error,
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: tCommon.success,
+          description: "Sub-service updated successfully",
+        });
+        setIsSubServiceFormOpen(false);
+        setSubServiceFormData({ name: "", name_en: "", description: "" });
+        setIsEditingSubService(false);
+        setSelectedSubService(null);
+        setSelectedService(null);
+        fetchServices();
+      }
+    } else {
+      // Create new sub-service
+      const { error } = await supabase.from("sub_services").insert([{
+        ...subServiceFormData,
+        service_id: selectedService.id
+      }]);
+
+      if (error) {
+        toast({
+          title: tCommon.error,
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: tCommon.success,
+          description: t.subServiceAdded,
+        });
+        setIsSubServiceFormOpen(false);
+        setSubServiceFormData({ name: "", name_en: "", description: "" });
+        setSelectedService(null);
+        fetchServices();
+      }
+    }
+  };
+
+  const handleDeleteService = async () => {
+    if (!serviceToDelete) return;
+
+    const { error } = await supabase
+      .from("services")
+      .delete()
+      .eq("id", serviceToDelete.id);
 
     if (error) {
       toast({
@@ -126,22 +217,21 @@ export default function Services() {
     } else {
       toast({
         title: tCommon.success,
-        description: t.subServiceAdded,
+        description: "Service deleted successfully",
       });
-      setIsSubServiceFormOpen(false);
-      setSubServiceFormData({ name: "", name_en: "", description: "" });
-      setSelectedService(null);
+      setIsDeleteDialogOpen(false);
+      setServiceToDelete(null);
       fetchServices();
     }
   };
 
-  const handleDeleteSubService = async (subServiceId: string) => {
-    if (!confirm(t.confirmDeleteSubService)) return;
+  const handleDeleteSubService = async () => {
+    if (!subServiceToDelete) return;
 
     const { error } = await supabase
       .from("sub_services")
       .delete()
-      .eq("id", subServiceId);
+      .eq("id", subServiceToDelete.id);
 
     if (error) {
       toast({
@@ -154,13 +244,50 @@ export default function Services() {
         title: tCommon.success,
         description: t.subServiceDeleted,
       });
+      setIsDeleteSubDialogOpen(false);
+      setSubServiceToDelete(null);
       fetchServices();
     }
   };
 
   const openSubServiceDialog = (service: Service) => {
     setSelectedService(service);
+    setIsEditingSubService(false);
+    setSubServiceFormData({ name: "", name_en: "", description: "" });
     setIsSubServiceFormOpen(true);
+  };
+
+  const openEditServiceDialog = (service: Service) => {
+    setSelectedService(service);
+    setIsEditingService(true);
+    setServiceFormData({
+      name: service.name,
+      name_en: service.name_en || "",
+      description: service.description || "",
+    });
+    setIsServiceFormOpen(true);
+  };
+
+  const openEditSubServiceDialog = (service: Service, subService: SubService) => {
+    setSelectedService(service);
+    setSelectedSubService(subService);
+    setIsEditingSubService(true);
+    setSubServiceFormData({
+      name: subService.name,
+      name_en: subService.name_en || "",
+      description: subService.description || "",
+    });
+    setIsSubServiceFormOpen(true);
+  };
+
+  const openDeleteServiceDialog = (service: Service) => {
+    setServiceToDelete(service);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const openDeleteSubServiceDialog = (subService: SubService) => {
+    setSubServiceToDelete(subService);
+    setIsDeleteSubDialogOpen(true);
   };
 
   if (loading) {
@@ -195,7 +322,14 @@ export default function Services() {
                 {t.backToHome}
               </Button>
 
-              <Dialog open={isServiceFormOpen} onOpenChange={setIsServiceFormOpen}>
+              <Dialog open={isServiceFormOpen} onOpenChange={(open) => {
+                setIsServiceFormOpen(open);
+                if (!open) {
+                  setIsEditingService(false);
+                  setServiceFormData({ name: "", name_en: "", description: "" });
+                  setSelectedService(null);
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
@@ -204,7 +338,9 @@ export default function Services() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle className="font-cairo">{t.addService}</DialogTitle>
+                    <DialogTitle className="font-cairo">
+                      {isEditingService ? tCommon.edit + " " + t.serviceName : t.addService}
+                    </DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleCreateService} className="space-y-4">
                     <div className="space-y-2">
@@ -269,21 +405,41 @@ export default function Services() {
             <Card key={service.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className="flex-1">
                     <CardTitle className="font-cairo">{service.name}</CardTitle>
                     <CardDescription>
                       {service.description || t.noDescription}
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openSubServiceDialog(service)}
-                    className="flex items-center gap-1"
-                  >
-                    <Plus className="h-3 w-3" />
-                    {t.sub}
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditServiceDialog(service)}
+                      title={tCommon.edit}
+                      className="h-8 w-8"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openDeleteServiceDialog(service)}
+                      title={tCommon.delete}
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openSubServiceDialog(service)}
+                      className="flex items-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                      {t.sub}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -304,14 +460,24 @@ export default function Services() {
                               </p>
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive"
-                            onClick={() => handleDeleteSubService(subService.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => openEditSubServiceDialog(service, subService)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => openDeleteSubServiceDialog(subService)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -340,11 +506,19 @@ export default function Services() {
       </main>
 
       {/* حوار إضافة خدمة فرعية */}
-      <Dialog open={isSubServiceFormOpen} onOpenChange={setIsSubServiceFormOpen}>
+      <Dialog open={isSubServiceFormOpen} onOpenChange={(open) => {
+        setIsSubServiceFormOpen(open);
+        if (!open) {
+          setIsEditingSubService(false);
+          setSubServiceFormData({ name: "", name_en: "", description: "" });
+          setSelectedService(null);
+          setSelectedSubService(null);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-cairo">
-              {t.addSubServiceFor} {selectedService?.name}
+              {isEditingSubService ? tCommon.edit + " " + t.subServiceName : t.addSubServiceFor + " " + selectedService?.name}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateSubService} className="space-y-4">
@@ -402,6 +576,46 @@ export default function Services() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* حوار تأكيد حذف خدمة رئيسية */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-cairo">{tCommon.delete} {t.serviceName}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this service? All sub-services will also be deleted. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setServiceToDelete(null)}>
+              {tCommon.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteService} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {tCommon.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* حوار تأكيد حذف خدمة فرعية */}
+      <AlertDialog open={isDeleteSubDialogOpen} onOpenChange={setIsDeleteSubDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-cairo">{tCommon.delete} {t.subServiceName}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.confirmDeleteSubService}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSubServiceToDelete(null)}>
+              {tCommon.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSubService} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {tCommon.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
