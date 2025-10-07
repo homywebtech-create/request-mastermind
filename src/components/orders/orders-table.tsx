@@ -795,7 +795,7 @@ Thank you for contacting us! 🌟`;
                                       </div>
                                       <div className="flex items-center gap-2 flex-shrink-0">
                                         <Badge variant="secondary" className="whitespace-nowrap text-xs">
-                                          {company.quotesCount} عروض
+                                          {company.quotesCount} {company.quotesCount === 1 ? 'quote' : 'quotes'}
                                         </Badge>
                                         <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 whitespace-nowrap text-xs">
                                           {company.lowestPriceFormatted}
@@ -812,14 +812,14 @@ Thank you for contacting us! 🌟`;
                                         }}
                                       >
                                         <Building2 className="h-3 w-3 mr-2" />
-                                        الدخول لصفحة الشركة
+                                        Enter Company Page
                                       </Button>
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-sm">لا توجد عروض</span>
+                              <span className="text-muted-foreground text-sm">No quotes available</span>
                             );
                           })()
                         ) : (
