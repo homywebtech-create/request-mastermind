@@ -213,10 +213,61 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerName || !formData.phoneNumber || !formData.serviceId) {
+    // Validate customer name
+    if (!formData.customerName || formData.customerName.trim() === '') {
       toast({
-        title: "Missing Data",
-        description: "Please fill all required fields",
+        title: "بيانات ناقصة / Missing Data",
+        description: "يرجى إدخال اسم العميل / Please enter customer name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate phone number
+    if (!formData.phoneNumber || formData.phoneNumber.length < 7) {
+      toast({
+        title: "بيانات ناقصة / Missing Data",
+        description: "يرجى إدخال رقم واتساب صحيح / Please enter a valid WhatsApp number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate area
+    if (!formData.area || formData.area.trim() === '') {
+      toast({
+        title: "بيانات ناقصة / Missing Data",
+        description: "يرجى اختيار المنطقة / Please select area",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate budget - both fields must be filled or both empty
+    if ((formData.budget && !formData.budgetType) || (!formData.budget && formData.budgetType)) {
+      toast({
+        title: "بيانات ناقصة / Missing Data",
+        description: "يرجى إدخال الميزانية ونوع السعر معاً / Please enter both budget and price type",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate budget is a number if provided
+    if (formData.budget && isNaN(Number(formData.budget))) {
+      toast({
+        title: "بيانات خاطئة / Invalid Data",
+        description: "يرجى إدخال رقم صحيح للميزانية / Please enter a valid budget number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate service
+    if (!formData.serviceId) {
+      toast({
+        title: "بيانات ناقصة / Missing Data",
+        description: "يرجى اختيار نوع الخدمة / Please select service type",
         variant: "destructive",
       });
       return;
@@ -225,18 +276,43 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     // Verify sub-service selection if available
     if (selectedService && selectedService.sub_services.length > 0 && !formData.subServiceId) {
       toast({
-        title: "Missing Data",
-        description: "Please select a sub-service",
+        title: "بيانات ناقصة / Missing Data",
+        description: "يرجى اختيار الخدمة الفرعية / Please select a sub-service",
         variant: "destructive",
       });
       return;
     }
 
+    // Validate booking type and hours for hourly services
+    const serviceRequiresBooking = formData.serviceId && selectedService?.sub_services.some(
+      sub => sub.id === formData.subServiceId && sub.name.includes('ساعات')
+    );
+
+    if (serviceRequiresBooking) {
+      if (!formData.bookingType) {
+        toast({
+          title: "بيانات ناقصة / Missing Data",
+          description: "يرجى اختيار نوع الحجز / Please select booking type",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!formData.hoursCount || formData.hoursCount.trim() === '') {
+        toast({
+          title: "بيانات ناقصة / Missing Data",
+          description: "يرجى إدخال عدد الساعات / Please enter hours count",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     // Verify company selection if not sending to all
     if (!formData.sendToAll && !formData.companyId) {
       toast({
-        title: "Missing Data",
-        description: "Please select a specific company or enable send to all companies",
+        title: "بيانات ناقصة / Missing Data",
+        description: "يرجى اختيار شركة محددة أو تفعيل الإرسال لجميع الشركات / Please select a specific company or enable send to all companies",
         variant: "destructive",
       });
       return;
@@ -460,7 +536,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="area">المنطقة / Area</Label>
+                <Label htmlFor="area">المنطقة / Area *</Label>
                 <Popover open={areaOpen} onOpenChange={setAreaOpen}>
                   <PopoverTrigger asChild>
                     <Button
