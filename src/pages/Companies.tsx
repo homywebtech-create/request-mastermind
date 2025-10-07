@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy, Upload, Image as ImageIcon } from "lucide-react";
+import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy, Upload, Image as ImageIcon, Phone, Mail, MapPin, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -727,134 +727,143 @@ export default function Companies() {
 
       <main className="container mx-auto px-4 py-8">
         {companies.length > 0 ? (
-          <div className="space-y-4 max-w-3xl mx-auto">
-            {companies.map((company) => (
-              <Card key={company.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        {company.logo_url ? (
-                          <img 
-                            src={company.logo_url} 
-                            alt={company.name}
-                            className="h-16 w-16 rounded-lg object-cover border border-border"
-                          />
-                        ) : (
-                          <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="h-8 w-8 text-primary" />
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      <th className="text-left p-4 font-medium">{t.uploadLogo}</th>
+                      <th className="text-left p-4 font-medium">{t.companyName}</th>
+                      <th className="text-left p-4 font-medium">{t.phone}</th>
+                      <th className="text-left p-4 font-medium">{tCommon.email}</th>
+                      <th className="text-left p-4 font-medium">{t.address}</th>
+                      <th className="text-left p-4 font-medium">{t.services}</th>
+                      <th className="text-left p-4 font-medium">{tCommon.status}</th>
+                      <th className="text-left p-4 font-medium">{tCommon.actions}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {companies.map((company) => (
+                      <tr key={company.id} className="border-b hover:bg-muted/30 transition-colors">
+                        <td className="p-4">
+                          {company.logo_url ? (
+                            <img 
+                              src={company.logo_url} 
+                              alt={company.name}
+                              className="h-12 w-12 rounded-lg object-cover border border-border"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Building2 className="h-6 w-6 text-primary" />
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div className="font-medium">{company.name}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-sm text-muted-foreground" dir="ltr">
+                            {company.phone || '-'}
                           </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="font-cairo truncate">{company.name}</CardTitle>
-                          <CardDescription>
-                            {company.is_active ? tStatus.active : tStatus.inactive}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleManageServices(company)}
-                        title={t.manageServices}
-                        className="flex-shrink-0"
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {company.phone && (
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium">{t.phone}:</span> {company.phone}
-                      </p>
-                    )}
-                    {company.email && (
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium">{tCommon.email}:</span> {company.email}
-                      </p>
-                    )}
-                    {company.address && (
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium">{t.address}:</span> {company.address}
-                      </p>
-                    )}
-                    
-                    {company.company_services && company.company_services.length > 0 && (
-                      <div className="pt-2 border-t">
-                        <p className="text-sm font-medium mb-2">{t.services}:</p>
-                        <div className="space-y-1">
-                          {Object.entries(
-                            company.company_services.reduce((acc: any, cs) => {
-                              if (!acc[cs.service_name]) {
-                                acc[cs.service_name] = [];
-                              }
-                              if (cs.sub_service_name) {
-                                acc[cs.service_name].push(cs.sub_service_name);
-                              }
-                              return acc;
-                            }, {})
-                          ).map(([serviceName, subServices]: [string, any]) => (
-                            <div key={serviceName} className="text-xs">
-                              <Badge variant="secondary" className="mb-1">
-                                {serviceName}
-                              </Badge>
-                              {subServices.length > 0 && (
-                                <div className="mr-4 flex flex-wrap gap-1 mt-1">
-                                  {subServices.map((sub: string) => (
-                                    <Badge key={sub} variant="outline" className="text-xs">
-                                      {sub}
-                                    </Badge>
-                                  ))}
-                                </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-sm text-muted-foreground">
+                            {company.email || '-'}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-sm text-muted-foreground max-w-[200px] truncate">
+                            {company.address || '-'}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          {company.company_services && company.company_services.length > 0 ? (
+                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                              {Object.entries(
+                                company.company_services.reduce((acc: any, cs) => {
+                                  if (!acc[cs.service_name]) {
+                                    acc[cs.service_name] = [];
+                                  }
+                                  if (cs.sub_service_name) {
+                                    acc[cs.service_name].push(cs.sub_service_name);
+                                  }
+                                  return acc;
+                                }, {})
+                              ).slice(0, 2).map(([serviceName]: [string, any]) => (
+                                <Badge key={serviceName} variant="secondary" className="text-xs">
+                                  {serviceName}
+                                </Badge>
+                              ))}
+                              {Object.keys(
+                                company.company_services.reduce((acc: any, cs) => {
+                                  if (!acc[cs.service_name]) acc[cs.service_name] = [];
+                                  return acc;
+                                }, {})
+                              ).length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{Object.keys(
+                                    company.company_services.reduce((acc: any, cs) => {
+                                      if (!acc[cs.service_name]) acc[cs.service_name] = [];
+                                      return acc;
+                                    }, {})
+                                  ).length - 2}
+                                </Badge>
                               )}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {(!company.company_services || company.company_services.length === 0) && (
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-muted-foreground">{t.noServicesYet}</p>
-                      </div>
-                    )}
-                    
-                    <div className="pt-3 border-t flex flex-col gap-2">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleEditCompany(company)}
-                        >
-                          <Edit className="h-4 w-4 ml-2" />
-                          {t.edit}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleCopyLoginLink(company)}
-                        >
-                          <Copy className="h-4 w-4 ml-2" />
-                          {t.copyLink}
-                        </Button>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => handleResendLoginLink(company)}
-                        disabled={!company.phone}
-                      >
-                        <Send className="h-4 w-4 ml-2" />
-                        {t.sendViaWhatsApp}
-                      </Button>
-                    </div>
-                  </CardContent>
-              </Card>
-            ))}
-          </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">{t.noServicesYet}</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <Badge variant={company.is_active ? "default" : "secondary"}>
+                            {company.is_active ? tStatus.active : tStatus.inactive}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleManageServices(company)}
+                              title={t.manageServices}
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditCompany(company)}
+                              title={t.edit}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleCopyLoginLink(company)}
+                              title={t.copyLink}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleResendLoginLink(company)}
+                              disabled={!company.phone}
+                              title={t.sendViaWhatsApp}
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
