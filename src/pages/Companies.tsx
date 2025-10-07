@@ -557,7 +557,7 @@ export default function Companies() {
 
               <Button
                 variant="outline"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/admin")}
                 className="flex items-center gap-2"
               >
                 <ArrowRight className="h-4 w-4" />
