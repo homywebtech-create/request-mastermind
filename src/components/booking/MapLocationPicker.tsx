@@ -19,24 +19,13 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
     initialLat && initialLng ? { lat: initialLat, lng: initialLng } : null
   );
   const [mapboxToken, setMapboxToken] = useState<string>('');
+  const [showMap, setShowMap] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || !showMap || !mapboxToken) return;
 
-    // Use placeholder token - admin should add real token via input or Supabase secret
-    const token = mapboxToken || 'YOUR_MAPBOX_TOKEN_HERE';
-    
-    if (!token || token === 'YOUR_MAPBOX_TOKEN_HERE') {
-      toast({
-        title: 'تنبيه',
-        description: 'يرجى إضافة Mapbox Token أولاً',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    mapboxgl.accessToken = token;
+    mapboxgl.accessToken = mapboxToken;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -88,7 +77,21 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken]);
+  }, [mapboxToken, showMap]);
+
+  const handleUseDefaultLocation = () => {
+    // Default location: Doha, Qatar
+    const defaultLat = 25.286106;
+    const defaultLng = 51.534817;
+    
+    setSelectedLocation({ lat: defaultLat, lng: defaultLng });
+    onLocationSelect(defaultLat, defaultLng);
+
+    toast({
+      title: 'تم تحديد الموقع',
+      description: 'تم استخدام الموقع الافتراضي (الدوحة، قطر)',
+    });
+  };
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -147,8 +150,64 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
 
   return (
     <div className="space-y-4">
-      {/* Mapbox Token Input (temporary until added to Supabase secrets) */}
-      {!mapboxToken && (
+      {/* Testing Mode Notice */}
+      {!showMap && (
+        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+            🧪 وضع الاختبار - استخدم الموقع الافتراضي
+          </p>
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            للاختبار فقط: يمكنك استخدام الموقع الافتراضي (الدوحة). بعد الانتهاء من الاختبار، يمكن إضافة خريطة تفاعلية حقيقية.
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-primary" />
+          <span className="font-medium">حدد موقع الخدمة</span>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={handleUseDefaultLocation}
+            className="flex items-center gap-2"
+          >
+            <MapPin className="h-4 w-4" />
+            موقع افتراضي (الدوحة)
+          </Button>
+          {showMap && mapboxToken && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleUseCurrentLocation}
+              className="flex items-center gap-2"
+            >
+              <Navigation className="h-4 w-4" />
+              موقعي الحالي
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Optional: Show map with token */}
+      {!showMap && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => setShowMap(true)}
+            className="text-sm text-primary hover:underline"
+          >
+            أو استخدم الخريطة التفاعلية (يتطلب Mapbox Token)
+          </button>
+        </div>
+      )}
+
+      {/* Mapbox Token Input */}
+      {showMap && !mapboxToken && (
         <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
             يرجى إدخال Mapbox Token
@@ -167,35 +226,23 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-primary" />
-          <span className="font-medium">حدد موقع الخدمة</span>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleUseCurrentLocation}
-          className="flex items-center gap-2"
-          disabled={!mapboxToken}
-        >
-          <Navigation className="h-4 w-4" />
-          موقعي الحالي
-        </Button>
-      </div>
+      {/* Map Container */}
+      {showMap && mapboxToken && (
+        <div 
+          ref={mapContainer} 
+          className="h-[400px] w-full rounded-lg border-2 border-border shadow-sm"
+        />
+      )}
 
-      <div 
-        ref={mapContainer} 
-        className="h-[400px] w-full rounded-lg border-2 border-border shadow-sm"
-      />
-
+      {/* Selected Location Display */}
       {selectedLocation && (
         <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
           <p className="font-medium mb-1">الموقع المحدد:</p>
-          <p>خط العرض: {selectedLocation.lat.toFixed(6)}</p>
-          <p>خط الطول: {selectedLocation.lng.toFixed(6)}</p>
-          <p className="text-xs mt-2 text-primary">يمكنك سحب العلامة لتعديل الموقع</p>
+          <p>📍 خط العرض: {selectedLocation.lat.toFixed(6)}</p>
+          <p>📍 خط الطول: {selectedLocation.lng.toFixed(6)}</p>
+          {showMap && mapboxToken && (
+            <p className="text-xs mt-2 text-primary">يمكنك سحب العلامة لتعديل الموقع</p>
+          )}
         </div>
       )}
     </div>
