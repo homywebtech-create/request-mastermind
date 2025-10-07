@@ -251,7 +251,14 @@ export default function Orders() {
 
       // Link specialists to the order
       if (formData.specialistIds && formData.specialistIds.length > 0) {
-        // If specific specialists selected
+        // If specific specialists selected, we need to override the trigger behavior
+        // First, delete any specialists that were auto-added by the trigger
+        await supabase
+          .from('order_specialists')
+          .delete()
+          .eq('order_id', newOrder.id);
+
+        // Now add only the selected specialists
         const orderSpecialists = formData.specialistIds.map(specialistId => ({
           order_id: newOrder.id,
           specialist_id: specialistId
@@ -263,7 +270,7 @@ export default function Orders() {
 
         if (linkError) throw linkError;
       } else if (formData.sendToAll) {
-        // If send to all companies, get all active specialists
+        // Trigger will handle this automatically, but we may need to ensure all specialists are added
         const { data: allSpecialists, error: specialistsError } = await supabase
           .from('specialists')
           .select('id')

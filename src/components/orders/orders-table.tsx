@@ -444,7 +444,25 @@ Thank you for contacting us! 🌟`;
         return;
       }
 
-      // Update order timestamp to trigger notification (keeping same specialists)
+      // Delete existing assignments first to avoid duplicates
+      await supabase
+        .from('order_specialists')
+        .delete()
+        .eq('order_id', order.id);
+
+      // Re-add the same specialists
+      const orderSpecialists = currentSpecialists.map(s => ({
+        order_id: order.id,
+        specialist_id: s.specialist_id
+      }));
+
+      const { error: insertError } = await supabase
+        .from('order_specialists')
+        .insert(orderSpecialists);
+
+      if (insertError) throw insertError;
+
+      // Update order timestamp to trigger notification
       const { error } = await supabase
         .from('orders')
         .update({
