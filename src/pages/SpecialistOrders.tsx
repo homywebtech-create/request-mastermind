@@ -567,18 +567,29 @@ export default function SpecialistOrders() {
               <div className="space-y-3 py-4">
                 {priceOptions.length > 0 ? (
                   <>
-                    <div className="grid grid-cols-2 gap-3">
-                      {priceOptions.map((option, index) => (
+                    {/* Customer Price - First option */}
+                    <Button
+                      onClick={() => handleSubmitQuote(priceOptions[0].value)}
+                      disabled={isSubmitting}
+                      variant="default"
+                      className="w-full h-auto py-4 flex flex-col gap-1"
+                    >
+                      <span className="text-lg font-bold">{priceOptions[0].label}</span>
+                      <span className="text-xs opacity-80">Customer Price</span>
+                    </Button>
+                    
+                    {/* Other price options in grid */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {priceOptions.slice(1).map((option, index) => (
                         <Button
-                          key={index}
+                          key={index + 1}
                           onClick={() => handleSubmitQuote(option.value)}
                           disabled={isSubmitting}
-                          variant={index === 0 ? "default" : "outline"}
-                          className="h-auto py-4 flex flex-col gap-1"
+                          variant="outline"
+                          className="h-auto py-3 flex flex-col gap-1"
                         >
-                          <span className="text-lg font-bold">{option.label}</span>
-                          {index === 0 && <span className="text-xs opacity-80">Customer Price</span>}
-                          {index > 0 && <span className="text-xs opacity-80">+{index * 3} QAR</span>}
+                          <span className="text-base font-bold">{option.label}</span>
+                          <span className="text-xs opacity-80">+{(index + 1) * 3} QAR</span>
                         </Button>
                       ))}
                     </div>
