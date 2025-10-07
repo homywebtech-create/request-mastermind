@@ -10,6 +10,7 @@ import { Plus, Settings, Trash2, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { translations } from "@/i18n/translations";
 
 interface Service {
   id: string;
@@ -28,6 +29,9 @@ interface SubService {
   is_active: boolean;
   created_at: string;
 }
+
+const t = translations.services;
+const tCommon = translations.common;
 
 export default function Services() {
   const [services, setServices] = useState<Service[]>([]);
@@ -59,8 +63,8 @@ export default function Services() {
 
     if (servicesError) {
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل الخدمات",
+        title: tCommon.error,
+        description: t.loadError,
         variant: "destructive",
       });
       setLoading(false);
@@ -87,14 +91,14 @@ export default function Services() {
 
     if (error) {
       toast({
-        title: "خطأ",
+        title: tCommon.error,
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "نجح",
-        description: "تم إضافة الخدمة بنجاح",
+        title: tCommon.success,
+        description: t.serviceAdded,
       });
       setIsServiceFormOpen(false);
       setServiceFormData({ name: "", description: "" });
@@ -113,14 +117,14 @@ export default function Services() {
 
     if (error) {
       toast({
-        title: "خطأ",
+        title: tCommon.error,
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "نجح",
-        description: "تم إضافة الخدمة الفرعية بنجاح",
+        title: tCommon.success,
+        description: t.subServiceAdded,
       });
       setIsSubServiceFormOpen(false);
       setSubServiceFormData({ name: "", description: "" });
@@ -130,7 +134,7 @@ export default function Services() {
   };
 
   const handleDeleteSubService = async (subServiceId: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الخدمة الفرعية؟")) return;
+    if (!confirm(t.confirmDeleteSubService)) return;
 
     const { error } = await supabase
       .from("sub_services")
@@ -139,14 +143,14 @@ export default function Services() {
 
     if (error) {
       toast({
-        title: "خطأ",
+        title: tCommon.error,
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "نجح",
-        description: "تم حذف الخدمة الفرعية",
+        title: tCommon.success,
+        description: t.subServiceDeleted,
       });
       fetchServices();
     }
@@ -172,37 +176,37 @@ export default function Services() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground font-cairo">
-                إدارة الخدمات
+                {t.title}
               </h1>
               <p className="text-muted-foreground mt-1">
-                إدارة الخدمات والخدمات الفرعية
+                {t.subtitle}
               </p>
             </div>
 
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/admin")}
                 className="flex items-center gap-2"
               >
                 <ArrowRight className="h-4 w-4" />
-                العودة للرئيسية
+                {t.backToHome}
               </Button>
 
               <Dialog open={isServiceFormOpen} onOpenChange={setIsServiceFormOpen}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
-                    خدمة جديدة
+                    {t.newService}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle className="font-cairo">إضافة خدمة جديدة</DialogTitle>
+                    <DialogTitle className="font-cairo">{t.addService}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleCreateService} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">اسم الخدمة *</Label>
+                      <Label htmlFor="name">{t.serviceName} *</Label>
                       <Input
                         id="name"
                         value={serviceFormData.name}
@@ -210,19 +214,19 @@ export default function Services() {
                           setServiceFormData({ ...serviceFormData, name: e.target.value })
                         }
                         required
-                        placeholder="أدخل اسم الخدمة"
+                        placeholder={t.enterServiceName}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">الوصف</Label>
+                      <Label htmlFor="description">{t.description}</Label>
                       <Textarea
                         id="description"
                         value={serviceFormData.description}
                         onChange={(e) =>
                           setServiceFormData({ ...serviceFormData, description: e.target.value })
                         }
-                        placeholder="أدخل وصف الخدمة"
+                        placeholder={t.enterDescription}
                         rows={3}
                       />
                     </div>
@@ -233,9 +237,9 @@ export default function Services() {
                         variant="outline"
                         onClick={() => setIsServiceFormOpen(false)}
                       >
-                        إلغاء
+                        {tCommon.cancel}
                       </Button>
-                      <Button type="submit">حفظ</Button>
+                      <Button type="submit">{tCommon.save}</Button>
                     </div>
                   </form>
                 </DialogContent>
@@ -254,7 +258,7 @@ export default function Services() {
                   <div>
                     <CardTitle className="font-cairo">{service.name}</CardTitle>
                     <CardDescription>
-                      {service.description || "لا يوجد وصف"}
+                      {service.description || t.noDescription}
                     </CardDescription>
                   </div>
                   <Button
@@ -264,14 +268,14 @@ export default function Services() {
                     className="flex items-center gap-1"
                   >
                     <Plus className="h-3 w-3" />
-                    فرعية
+                    {t.sub}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {service.sub_services && service.sub_services.length > 0 ? (
                   <div>
-                    <p className="text-sm font-medium mb-2">الخدمات الفرعية:</p>
+                    <p className="text-sm font-medium mb-2">{t.subServices}:</p>
                     <div className="space-y-2">
                       {service.sub_services.map((subService) => (
                         <div
@@ -300,7 +304,7 @@ export default function Services() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    لا توجد خدمات فرعية بعد
+                    {t.noSubServices}
                   </p>
                 )}
               </CardContent>
@@ -312,10 +316,10 @@ export default function Services() {
           <div className="text-center py-12">
             <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
-              لا توجد خدمات بعد
+              {t.noServicesYet}
             </h3>
             <p className="text-muted-foreground mb-4">
-              ابدأ بإضافة أول خدمة لك
+              {t.startAdding}
             </p>
           </div>
         )}
@@ -326,12 +330,12 @@ export default function Services() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-cairo">
-              إضافة خدمة فرعية لـ {selectedService?.name}
+              {t.addSubServiceFor} {selectedService?.name}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateSubService} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="sub-name">اسم الخدمة الفرعية *</Label>
+              <Label htmlFor="sub-name">{t.subServiceName} *</Label>
               <Input
                 id="sub-name"
                 value={subServiceFormData.name}
@@ -339,19 +343,19 @@ export default function Services() {
                   setSubServiceFormData({ ...subServiceFormData, name: e.target.value })
                 }
                 required
-                placeholder="أدخل اسم الخدمة الفرعية"
+                placeholder={t.enterSubServiceName}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sub-description">الوصف</Label>
+              <Label htmlFor="sub-description">{t.description}</Label>
               <Textarea
                 id="sub-description"
                 value={subServiceFormData.description}
                 onChange={(e) =>
                   setSubServiceFormData({ ...subServiceFormData, description: e.target.value })
                 }
-                placeholder="أدخل وصف الخدمة الفرعية"
+                placeholder={t.enterSubServiceDescription}
                 rows={3}
               />
             </div>
@@ -365,9 +369,9 @@ export default function Services() {
                   setSelectedService(null);
                 }}
               >
-                إلغاء
+                {tCommon.cancel}
               </Button>
-              <Button type="submit">حفظ</Button>
+              <Button type="submit">{tCommon.save}</Button>
             </div>
           </form>
         </DialogContent>

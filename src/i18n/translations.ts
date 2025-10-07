@@ -176,6 +176,35 @@ export const translations = {
     loadCompaniesError: "Failed to load companies",
   },
 
+  // Services
+  services: {
+    title: "Services Management",
+    subtitle: "Manage services and sub-services",
+    backToHome: "Back to Home",
+    newService: "New Service",
+    addService: "Add New Service",
+    serviceName: "Service Name",
+    enterServiceName: "Enter service name",
+    description: "Description",
+    enterDescription: "Enter service description",
+    subServices: "Sub-Services",
+    noSubServices: "No sub-services yet",
+    addSubService: "Add Sub-Service",
+    addSubServiceFor: "Add sub-service for",
+    subServiceName: "Sub-Service Name",
+    enterSubServiceName: "Enter sub-service name",
+    enterSubServiceDescription: "Enter sub-service description",
+    noDescription: "No description",
+    serviceAdded: "Service added successfully",
+    subServiceAdded: "Sub-service added successfully",
+    subServiceDeleted: "Sub-service deleted",
+    confirmDeleteSubService: "Are you sure you want to delete this sub-service?",
+    noServicesYet: "No services yet",
+    startAdding: "Start by adding your first service",
+    loadError: "Failed to load services",
+    sub: "Sub",
+  },
+
   // Orders
   orders: {
     title: "Orders",
