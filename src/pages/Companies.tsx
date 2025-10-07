@@ -633,19 +633,20 @@ export default function Companies() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="name_en">{t.companyNameEn}</Label>
+                      <Label htmlFor="name_en">{t.companyNameEn} *</Label>
                       <Input
                         id="name_en"
                         value={formData.name_en}
                         onChange={(e) =>
                           setFormData({ ...formData, name_en: e.target.value })
                         }
+                        required
                         placeholder={t.enterCompanyNameEn}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">{t.phone}</Label>
+                      <Label htmlFor="phone">{t.phone} *</Label>
                       <div className="flex gap-2">
                         <Select value={countryCode} onValueChange={setCountryCode}>
                           <SelectTrigger className="w-[140px]">
@@ -686,6 +687,7 @@ export default function Companies() {
                             const value = e.target.value.replace(/\D/g, '');
                             setFormData({ ...formData, phone: value });
                           }}
+                          required
                           placeholder="501234567"
                           dir="ltr"
                           className="flex-1"
@@ -697,7 +699,7 @@ export default function Companies() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">{tCommon.email}</Label>
+                      <Label htmlFor="email">{tCommon.email} *</Label>
                       <Input
                         id="email"
                         type="email"
@@ -705,18 +707,20 @@ export default function Companies() {
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
+                        required
                         placeholder="example@email.com"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="address">{t.address}</Label>
+                      <Label htmlFor="address">{t.address} *</Label>
                       <Input
                         id="address"
                         value={formData.address}
                         onChange={(e) =>
                           setFormData({ ...formData, address: e.target.value })
                         }
+                        required
                         placeholder={t.address}
                       />
                     </div>
