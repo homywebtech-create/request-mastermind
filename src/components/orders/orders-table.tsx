@@ -810,8 +810,7 @@ Thank you for contacting us! 🌟`;
                                         variant="default"
                                         className="w-full"
                                         onClick={() => {
-                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
-                                          window.open(url, '_blank');
+                                          navigate(`/company-booking/${order.id}/${company.companyId}`);
                                         }}
                                       >
                                         <Building2 className="h-3 w-3 mr-2" />
