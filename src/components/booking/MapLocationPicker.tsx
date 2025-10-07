@@ -9,9 +9,54 @@ interface MapLocationPickerProps {
   onLocationSelect: (lat: number, lng: number) => void;
   initialLat?: number;
   initialLng?: number;
+  language?: 'ar' | 'en';
 }
 
-export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, initialLng = 51.534817 }: MapLocationPickerProps) {
+const translations = {
+  ar: {
+    testingMode: '🧪 وضع الاختبار - استخدم الموقع الافتراضي',
+    testingDesc: 'للاختبار فقط: يمكنك استخدام الموقع الافتراضي (الدوحة). بعد الانتهاء من الاختبار، يمكن إضافة خريطة تفاعلية حقيقية.',
+    selectLocation: 'حدد موقع الخدمة',
+    defaultLocation: 'موقع افتراضي (الدوحة)',
+    currentLocation: 'موقعي الحالي',
+    useInteractiveMap: 'أو استخدم الخريطة التفاعلية (يتطلب Mapbox Token)',
+    enterToken: 'يرجى إدخال Mapbox Token',
+    getToken: 'احصل على token مجاني من https://mapbox.com',
+    locationSelected: 'الموقع المحدد:',
+    latitude: 'خط العرض',
+    longitude: 'خط الطول',
+    dragMarker: 'يمكنك سحب العلامة لتعديل الموقع',
+    locationSet: 'تم تحديد الموقع',
+    defaultLocationUsed: 'تم استخدام الموقع الافتراضي (الدوحة، قطر)',
+    currentLocationUsed: 'تم تحديد موقعك الحالي بنجاح',
+    error: 'خطأ',
+    geoError: 'متصفحك لا يدعم خاصية تحديد الموقع',
+    geoPermissionError: 'لم نتمكن من الوصول لموقعك. تأكد من منح الإذن للمتصفح.',
+  },
+  en: {
+    testingMode: '🧪 Testing Mode - Use Default Location',
+    testingDesc: 'For testing only: You can use the default location (Doha). After testing, an interactive map can be added.',
+    selectLocation: 'Select Service Location',
+    defaultLocation: 'Default Location (Doha)',
+    currentLocation: 'My Current Location',
+    useInteractiveMap: 'Or use interactive map (requires Mapbox Token)',
+    enterToken: 'Please enter Mapbox Token',
+    getToken: 'Get free token from https://mapbox.com',
+    locationSelected: 'Selected Location:',
+    latitude: 'Latitude',
+    longitude: 'Longitude',
+    dragMarker: 'You can drag the marker to adjust location',
+    locationSet: 'Location Set',
+    defaultLocationUsed: 'Default location set (Doha, Qatar)',
+    currentLocationUsed: 'Your current location has been set successfully',
+    error: 'Error',
+    geoError: 'Your browser does not support geolocation',
+    geoPermissionError: 'Could not access your location. Make sure to grant permission to the browser.',
+  }
+};
+
+export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, initialLng = 51.534817, language = 'ar' }: MapLocationPickerProps) {
+  const t = translations[language];
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
@@ -88,16 +133,16 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
     onLocationSelect(defaultLat, defaultLng);
 
     toast({
-      title: 'تم تحديد الموقع',
-      description: 'تم استخدام الموقع الافتراضي (الدوحة، قطر)',
+      title: t.locationSet,
+      description: t.defaultLocationUsed,
     });
   };
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast({
-        title: 'خطأ',
-        description: 'متصفحك لا يدعم خاصية تحديد الموقع',
+        title: t.error,
+        description: t.geoError,
         variant: 'destructive',
       });
       return;
@@ -134,14 +179,14 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
         onLocationSelect(latitude, longitude);
 
         toast({
-          title: 'تم تحديد الموقع',
-          description: 'تم تحديد موقعك الحالي بنجاح',
+          title: t.locationSet,
+          description: t.currentLocationUsed,
         });
       },
       (error) => {
         toast({
-          title: 'خطأ',
-          description: 'لم نتمكن من الوصول لموقعك. تأكد من منح الإذن للمتصفح.',
+          title: t.error,
+          description: t.geoPermissionError,
           variant: 'destructive',
         });
       }
@@ -154,10 +199,10 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
       {!showMap && (
         <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-            🧪 وضع الاختبار - استخدم الموقع الافتراضي
+            {t.testingMode}
           </p>
           <p className="text-xs text-blue-700 dark:text-blue-300">
-            للاختبار فقط: يمكنك استخدام الموقع الافتراضي (الدوحة). بعد الانتهاء من الاختبار، يمكن إضافة خريطة تفاعلية حقيقية.
+            {t.testingDesc}
           </p>
         </div>
       )}
@@ -165,7 +210,7 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <MapPin className="h-5 w-5 text-primary" />
-          <span className="font-medium">حدد موقع الخدمة</span>
+          <span className="font-medium">{t.selectLocation}</span>
         </div>
         <div className="flex gap-2">
           <Button
@@ -176,7 +221,7 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
             className="flex items-center gap-2"
           >
             <MapPin className="h-4 w-4" />
-            موقع افتراضي (الدوحة)
+            {t.defaultLocation}
           </Button>
           {showMap && mapboxToken && (
             <Button
@@ -187,7 +232,7 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
               className="flex items-center gap-2"
             >
               <Navigation className="h-4 w-4" />
-              موقعي الحالي
+              {t.currentLocation}
             </Button>
           )}
         </div>
@@ -201,7 +246,7 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
             onClick={() => setShowMap(true)}
             className="text-sm text-primary hover:underline"
           >
-            أو استخدم الخريطة التفاعلية (يتطلب Mapbox Token)
+            {t.useInteractiveMap}
           </button>
         </div>
       )}
@@ -210,10 +255,10 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
       {showMap && !mapboxToken && (
         <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-            يرجى إدخال Mapbox Token
+            {t.enterToken}
           </p>
           <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-3">
-            احصل على token مجاني من https://mapbox.com
+            {t.getToken}
           </p>
           <input
             type="text"
@@ -237,11 +282,11 @@ export function MapLocationPicker({ onLocationSelect, initialLat = 25.286106, in
       {/* Selected Location Display */}
       {selectedLocation && (
         <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-          <p className="font-medium mb-1">الموقع المحدد:</p>
-          <p>📍 خط العرض: {selectedLocation.lat.toFixed(6)}</p>
-          <p>📍 خط الطول: {selectedLocation.lng.toFixed(6)}</p>
+          <p className="font-medium mb-1">{t.locationSelected}</p>
+          <p>📍 {t.latitude}: {selectedLocation.lat.toFixed(6)}</p>
+          <p>📍 {t.longitude}: {selectedLocation.lng.toFixed(6)}</p>
           {showMap && mapboxToken && (
-            <p className="text-xs mt-2 text-primary">يمكنك سحب العلامة لتعديل الموقع</p>
+            <p className="text-xs mt-2 text-primary">{t.dragMarker}</p>
           )}
         </div>
       )}

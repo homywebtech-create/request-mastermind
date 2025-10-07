@@ -399,6 +399,7 @@ export default function CompanyBooking() {
                   onLocationSelect={(lat, lng) => setLocation({ lat, lng })}
                   initialLat={location?.lat}
                   initialLng={location?.lng}
+                  language={language}
                 />
 
                 <div className="space-y-2">
