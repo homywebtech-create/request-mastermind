@@ -14,6 +14,7 @@ import CompanyPortal from "./pages/CompanyPortal";
 import Specialists from "./pages/Specialists";
 import SpecialistAuth from "./pages/SpecialistAuth";
 import SpecialistOrders from "./pages/SpecialistOrders";
+import CompanyBooking from "./pages/CompanyBooking";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
 import DeletionRequests from "./pages/DeletionRequests";
@@ -53,7 +54,8 @@ function PathBasedRouter() {
   
   // Admin routes
   if (pathname === '/auth' || pathname === '/admin' || pathname === '/companies' || 
-      pathname === '/services' || pathname === '/orders' || pathname === '/deletion-requests') {
+      pathname === '/services' || pathname === '/orders' || pathname === '/deletion-requests' ||
+      pathname.startsWith('/company-booking/')) {
     return (
       <BrowserRouter>
         <Routes>
@@ -97,6 +99,10 @@ function PathBasedRouter() {
                 <DeletionRequests />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/company-booking/:orderId/:companyId"
+            element={<CompanyBooking />}
           />
           <Route path="*" element={<Navigate to="/auth" replace />} />
         </Routes>

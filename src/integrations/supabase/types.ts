@@ -240,17 +240,23 @@ export type Database = {
       }
       orders: {
         Row: {
+          booking_date: string | null
+          booking_date_type: string | null
           booking_type: string | null
+          building_info: string | null
           company_id: string | null
           created_at: string
           created_by: string | null
           customer_id: string
+          gps_latitude: number | null
+          gps_longitude: number | null
           hours_count: string | null
           id: string
           last_sent_at: string | null
           link_copied_at: string | null
           notes: string | null
           order_link: string | null
+          selected_booking_type: string | null
           send_to_all_companies: boolean
           service_type: string
           specialist_id: string | null
@@ -258,17 +264,23 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          booking_date?: string | null
+          booking_date_type?: string | null
           booking_type?: string | null
+          building_info?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_id: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
           hours_count?: string | null
           id?: string
           last_sent_at?: string | null
           link_copied_at?: string | null
           notes?: string | null
           order_link?: string | null
+          selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type: string
           specialist_id?: string | null
@@ -276,17 +288,23 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          booking_date?: string | null
+          booking_date_type?: string | null
           booking_type?: string | null
+          building_info?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
           hours_count?: string | null
           id?: string
           last_sent_at?: string | null
           link_copied_at?: string | null
           notes?: string | null
           order_link?: string | null
+          selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type?: string
           specialist_id?: string | null

@@ -784,9 +784,9 @@ Thank you for contacting us! 🌟`;
                                 {companyQuotes.map((company) => (
                                   <div 
                                     key={company.companyId} 
-                                    className="bg-muted/50 rounded-md p-2 border border-border"
+                                    className="bg-muted/50 rounded-md p-3 border border-border hover:border-primary transition-all"
                                   >
-                                    <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center justify-between gap-3">
                                       <div className="flex items-center gap-2 min-w-0">
                                         <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                         <span className="text-sm font-medium truncate">
@@ -794,13 +794,26 @@ Thank you for contacting us! 🌟`;
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2 flex-shrink-0">
-                                        <Badge variant="secondary" className="whitespace-nowrap">
+                                        <Badge variant="secondary" className="whitespace-nowrap text-xs">
                                           {company.quotesCount} عروض
                                         </Badge>
-                                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 whitespace-nowrap">
-                                          أقل سعر: {company.lowestPriceFormatted}
+                                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 whitespace-nowrap text-xs">
+                                          {company.lowestPriceFormatted}
                                         </Badge>
                                       </div>
+                                    </div>
+                                    <div className="mt-2">
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        className="w-full"
+                                        onClick={() => {
+                                          window.open(`/company-booking/${order.id}/${company.companyId}`, '_blank');
+                                        }}
+                                      >
+                                        <Building2 className="h-3 w-3 mr-2" />
+                                        الدخول لصفحة الشركة
+                                      </Button>
                                     </div>
                                   </div>
                                 ))}
