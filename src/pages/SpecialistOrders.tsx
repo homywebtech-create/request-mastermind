@@ -200,6 +200,12 @@ export default function SpecialistOrders() {
         };
       });
 
+      console.log('📊 All orders with status:', ordersWithQuotes?.map(o => ({
+        id: o.id,
+        is_accepted: o.order_specialist?.is_accepted,
+        quoted_price: o.order_specialist?.quoted_price
+      })));
+      
       setOrders(ordersWithQuotes || []);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
@@ -371,6 +377,14 @@ export default function SpecialistOrders() {
     o.order_specialist?.quoted_price &&
     o.order_specialist?.rejection_reason !== 'Skipped by specialist'
   );
+  
+  console.log('🎯 Filtered orders:', {
+    new: newOrders.length,
+    quoted: quotedOrders.length,
+    accepted: acceptedOrders.length,
+    skipped: skippedOrders.length,
+    rejected: rejectedOrders.length
+  });
 
   const renderOrderCard = (order: Order, showQuoteButton: boolean = false) => {
     const hasQuote = !!order.order_specialist?.quoted_price;
