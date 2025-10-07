@@ -143,6 +143,8 @@ export default function CompanyBooking() {
       if (companyError) throw companyError;
       setCompany(companyData);
 
+      console.log('🔍 Fetching specialists for order:', orderId, 'company:', companyId);
+
       // Fetch specialists with their quotes for this order
       const { data: specialistsData, error: specialistsError } = await supabase
         .from('order_specialists')
@@ -162,7 +164,13 @@ export default function CompanyBooking() {
         .not('quoted_price', 'is', null)
         .eq('is_accepted', null);
 
-      if (specialistsError) throw specialistsError;
+      if (specialistsError) {
+        console.error('❌ Error fetching specialists:', specialistsError);
+        throw specialistsError;
+      }
+
+      console.log('📊 Raw specialists data:', specialistsData);
+      console.log('📊 Total specialists with quotes:', specialistsData?.length || 0);
 
       const formattedSpecialists = specialistsData
         .map((os: any) => ({
@@ -171,6 +179,9 @@ export default function CompanyBooking() {
           quoted_at: os.quoted_at,
         }))
         .filter((s: any) => s.company_id === companyId);
+
+      console.log('✅ Filtered specialists for this company:', formattedSpecialists.length);
+      console.log('👥 Specialists:', formattedSpecialists);
 
       setSpecialists(formattedSpecialists);
     } catch (error: any) {
