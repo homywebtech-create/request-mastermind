@@ -63,8 +63,7 @@ export default function DeletionRequests() {
         .from("deletion_requests")
         .select(`
           *,
-          companies(name, name_en),
-          profiles!deletion_requests_requested_by_fkey(full_name)
+          companies(name, name_en)
         `)
         .order("created_at", { ascending: false });
 
