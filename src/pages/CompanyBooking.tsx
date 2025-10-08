@@ -740,9 +740,37 @@ export default function CompanyBooking() {
                                       </div>
                                     </div>
 
-                                    <p className="text-sm text-muted-foreground" dir="ltr">
+                                    <p className="text-sm text-muted-foreground mb-3" dir="ltr">
                                       📞 {specialist.phone}
                                     </p>
+
+                                    {/* Available Times Preview - Show only when NOT selected */}
+                                    {!isSelected && (
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                                          <Clock className="h-4 w-4" />
+                                          <span>
+                                            {language === 'ar' ? 'الأوقات المتاحة' : 'Available Times'}
+                                          </span>
+                                        </div>
+                                        <div className="flex gap-2 flex-wrap">
+                                          {timeSlots.slice(0, 4).map((slot) => (
+                                            <div
+                                              key={slot}
+                                              className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs font-medium animate-fade-in"
+                                            >
+                                              {slot}
+                                            </div>
+                                          ))}
+                                          <div className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
+                                            +{timeSlots.length - 4} {language === 'ar' ? 'المزيد' : 'more'}
+                                          </div>
+                                        </div>
+                                        <p className="text-xs text-primary font-medium animate-pulse">
+                                          {language === 'ar' ? '👆 اضغط للمزيد من الأوقات' : '👆 Click for more times'}
+                                        </p>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
