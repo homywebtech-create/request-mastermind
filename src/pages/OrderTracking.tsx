@@ -184,12 +184,18 @@ export default function OrderTracking() {
     if (!orderId) return;
 
     try {
+      // Only update status to completed when work is actually finished
+      const statusUpdate = newStage === 'completed' || newStage === 'invoice_requested' 
+        ? 'completed' 
+        : newStage === 'cancelled' 
+          ? 'cancelled' 
+          : 'in_progress'; // Keep as in_progress for tracking stages
+
       const { error } = await supabase
         .from('orders')
         .update({ 
           tracking_stage: newStage,
-          status: newStage === 'moving' || newStage === 'arrived' ? 'in_progress' : 
-                  newStage === 'completed' ? 'completed' : 'in_progress'
+          status: statusUpdate
         })
         .eq('id', orderId);
 

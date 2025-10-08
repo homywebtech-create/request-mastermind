@@ -127,9 +127,21 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
              !order.order_specialists.some(os => os.is_accepted === true);
     }
     if (filter === 'upcoming') {
-      // Upcoming: confirmed bookings with accepted quotes
+      // Upcoming: confirmed bookings with accepted quotes, but specialist hasn't started yet
       return order.order_specialists && 
-             order.order_specialists.some(os => os.is_accepted === true);
+             order.order_specialists.some(os => os.is_accepted === true) &&
+             (!order.tracking_stage || order.tracking_stage === null);
+    }
+    if (filter === 'in-progress') {
+      // In progress: specialist is actively working (moving, arrived, or working)
+      return order.tracking_stage && 
+             ['moving', 'arrived', 'working'].includes(order.tracking_stage);
+    }
+    if (filter === 'completed') {
+      // Completed: work finished or invoice requested
+      return order.tracking_stage === 'completed' || 
+             order.tracking_stage === 'invoice_requested' ||
+             order.status === 'completed';
     }
     return order.status === filter;
   });
