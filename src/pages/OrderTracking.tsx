@@ -59,33 +59,48 @@ export default function OrderTracking() {
     // Fetch order data
     fetchOrder();
 
-    // Set initial stage to moving when specialist starts tracking
-    const initializeTracking = async () => {
-      // Check current stage first
+    // Check if order already has a tracking stage
+    const checkAndSetStage = async () => {
       const { data: currentOrder } = await supabase
         .from('orders')
         .select('tracking_stage')
         .eq('id', orderId)
         .single();
 
-      // Only set to moving if no stage is set, or if returning to an invoice_requested order
-      if (!currentOrder?.tracking_stage) {
-        await updateOrderStage('moving');
-      } else if (currentOrder.tracking_stage === 'invoice_requested') {
-        setStage('invoice_requested');
-      } else if (currentOrder.tracking_stage === 'payment_received') {
-        setStage('payment_received');
+      if (currentOrder?.tracking_stage) {
+        // Resume from existing stage
+        if (currentOrder.tracking_stage === 'invoice_requested') {
+          setStage('invoice_requested');
+        } else if (currentOrder.tracking_stage === 'payment_received') {
+          setStage('payment_received');
+        } else if (currentOrder.tracking_stage === 'arrived') {
+          setStage('arrived');
+          setArrivedStartTime(new Date());
+        } else if (currentOrder.tracking_stage === 'working') {
+          setStage('working');
+        } else {
+          setStage(currentOrder.tracking_stage as Stage);
+        }
+      } else {
+        // Start with 'moving' stage in UI only (not in DB yet)
+        setStage('moving');
       }
     };
 
-    initializeTracking();
+    checkAndSetStage();
   }, [orderId]);
 
   // Timer for moving stage (60 seconds countdown)
   useEffect(() => {
     if (stage === 'moving' && movingTimer > 0) {
       const timer = setInterval(() => {
-        setMovingTimer(prev => prev - 1);
+        setMovingTimer(prev => {
+          if (prev === 1) {
+            // When timer reaches 0, update database to mark as moving
+            updateOrderStage('moving');
+          }
+          return prev - 1;
+        });
       }, 1000);
       return () => clearInterval(timer);
     }
@@ -250,6 +265,12 @@ export default function OrderTracking() {
   };
 
   const handleArrived = async () => {
+    // First time tracking_stage is set - when specialist confirms arrival
+    if (movingTimer > 0) {
+      // If timer hasn't finished, set it now
+      await updateOrderStage('moving');
+    }
+    
     setStage('arrived');
     setArrivedStartTime(new Date());
     await updateOrderStage('arrived');
