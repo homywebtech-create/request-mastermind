@@ -616,42 +616,47 @@ export default function CompanyBooking() {
                     setSelectedSpecialistId(null);
                     setSelectedTime('');
                   }}>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                      {availableDates.map((date) => {
-                        const dateValue = date.toISOString().split('T')[0];
-                        const isSelected = bookingDateType === dateValue;
-                        const isToday = date.toDateString() === new Date().toDateString();
-                        
-                        return (
-                          <label
-                            key={dateValue}
-                            className={cn(
-                              'flex flex-col items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-all',
-                              isSelected
-                                ? 'border-primary bg-primary text-primary-foreground shadow-lg scale-105'
-                                : isToday
-                                ? 'border-green-500 bg-green-50 dark:bg-green-950/20 hover:border-green-600'
-                                : 'border-border hover:border-primary/50 hover:shadow-md'
-                            )}
-                          >
-                            <RadioGroupItem value={dateValue} id={dateValue} className="sr-only" />
-                            <div className="text-center">
-                              <div className={cn(
-                                "text-xs font-medium mb-1",
-                                isSelected ? "text-primary-foreground" : "text-muted-foreground"
-                              )}>
-                                {formatDateDisplay(date)}
+                    <div className="relative">
+                      <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:bg-primary/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary">
+                        {availableDates.map((date) => {
+                          const dateValue = date.toISOString().split('T')[0];
+                          const isSelected = bookingDateType === dateValue;
+                          const isToday = date.toDateString() === new Date().toDateString();
+                          
+                          return (
+                            <label
+                              key={dateValue}
+                              className={cn(
+                                'flex flex-col items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-all flex-shrink-0 w-24 snap-start',
+                                isSelected
+                                  ? 'border-primary bg-primary text-primary-foreground shadow-lg scale-105'
+                                  : isToday
+                                  ? 'border-green-500 bg-green-50 dark:bg-green-950/20 hover:border-green-600'
+                                  : 'border-border hover:border-primary/50 hover:shadow-md'
+                              )}
+                            >
+                              <RadioGroupItem value={dateValue} id={dateValue} className="sr-only" />
+                              <div className="text-center">
+                                <div className={cn(
+                                  "text-xs font-medium mb-1",
+                                  isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                                )}>
+                                  {formatDateDisplay(date)}
+                                </div>
+                                <div className={cn(
+                                  "text-lg font-bold",
+                                  isSelected && "text-primary-foreground"
+                                )}>
+                                  {date.getDate()}
+                                </div>
                               </div>
-                              <div className={cn(
-                                "text-lg font-bold",
-                                isSelected && "text-primary-foreground"
-                              )}>
-                                {date.getDate()}
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <div className="text-center mt-2 text-xs text-muted-foreground">
+                        {language === 'ar' ? '← اسحب لرؤية المزيد من التواريخ →' : '← Scroll for more dates →'}
+                      </div>
                     </div>
                   </RadioGroup>
                 </div>
@@ -865,10 +870,17 @@ export default function CompanyBooking() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={!bookingDateType || !selectedSpecialistId || !selectedTime}
-                  className="flex-1 flex items-center justify-center gap-2"
+                  className="flex-1 flex items-center justify-center gap-2 text-base h-12"
                 >
-                  <Check className="h-4 w-4" />
-                  {t.submit}
+                  <Check className="h-5 w-5" />
+                  <span>
+                    {t.submit}
+                    {selectedSpecialistId && specialists.find(s => s.id === selectedSpecialistId) && (
+                      <span className="font-bold mr-2 ml-2">
+                        ({specialists.find(s => s.id === selectedSpecialistId)?.quoted_price})
+                      </span>
+                    )}
+                  </span>
                 </Button>
               )}
             </div>
