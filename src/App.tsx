@@ -14,6 +14,7 @@ import CompanyPortal from "./pages/CompanyPortal";
 import Specialists from "./pages/Specialists";
 import SpecialistAuth from "./pages/SpecialistAuth";
 import SpecialistOrders from "./pages/SpecialistOrders";
+import OrderTracking from "./pages/OrderTracking";
 import CompanyBooking from "./pages/CompanyBooking";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
@@ -130,6 +131,7 @@ function PathBasedRouter() {
       <Routes>
         <Route path="/specialist-auth" element={<SpecialistAuth />} />
         <Route path="/specialist-orders" element={<SpecialistOrders />} />
+        <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
         <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
         <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
       </Routes>

@@ -59,7 +59,6 @@ export default function SpecialistOrders() {
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [showLocationMap, setShowLocationMap] = useState<{ [orderId: string]: boolean }>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -704,7 +703,7 @@ export default function SpecialistOrders() {
             {canMoveNow() ? (
               <div className="space-y-4">
                 <Button
-                  onClick={() => setShowLocationMap(prev => ({ ...prev, [order.id]: true }))}
+                  onClick={() => navigate(`/order-tracking/${order.id}`)}
                   className="w-full bg-green-600 hover:bg-green-700 h-auto py-5 px-6 shadow-lg hover:shadow-xl transition-all"
                   size="lg"
                 >
@@ -726,62 +725,6 @@ export default function SpecialistOrders() {
                     )}
                   </div>
                 </Button>
-                
-                {/* Location Map - Show after clicking Move Now */}
-                {showLocationMap[order.id] && order.gps_latitude && order.gps_longitude && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="flex items-start gap-4 p-5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 shadow-md">
-                      <div className="p-2.5 rounded-lg bg-primary/20">
-                        <Map className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1 space-y-4">
-                        <div>
-                          <p className="text-sm text-primary mb-2 font-bold">📍 Work Location</p>
-                          {order.building_info && (
-                            <p className="text-sm text-muted-foreground mb-2">{order.building_info}</p>
-                          )}
-                          <p className="text-xs font-mono text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block" dir="ltr">
-                            {order.gps_latitude.toFixed(6)}, {order.gps_longitude.toFixed(6)}
-                          </p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <Button
-                            onClick={() => {
-                              const url = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
-                              window.open(url, '_blank');
-                            }}
-                            variant="default"
-                            size="lg"
-                            className="gap-2 h-12 font-bold shadow-md hover:shadow-lg"
-                          >
-                            <MapPin className="h-5 w-5" />
-                            Google Maps
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              const url = `https://maps.apple.com/?q=${order.gps_latitude},${order.gps_longitude}`;
-                              window.open(url, '_blank');
-                            }}
-                            variant="default"
-                            size="lg"
-                            className="gap-2 h-12 font-bold shadow-md hover:shadow-lg"
-                          >
-                            <MapPin className="h-5 w-5" />
-                            Apple Maps
-                          </Button>
-                        </div>
-                        <Button
-                          onClick={() => order.customer && openWhatsApp(order.customer.whatsapp_number)}
-                          className="w-full gap-2 bg-green-600 hover:bg-green-700 h-12 font-bold shadow-md hover:shadow-lg"
-                          size="lg"
-                        >
-                          <Phone className="h-5 w-5" />
-                          Contact Customer
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <Button
