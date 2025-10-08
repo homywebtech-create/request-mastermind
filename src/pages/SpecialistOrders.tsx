@@ -439,21 +439,18 @@ export default function SpecialistOrders() {
         const bookingDateTime = parseISO(order.booking_date);
         const minutesUntilBooking = differenceInMinutes(bookingDateTime, currentTime);
         
-        if (minutesUntilBooking > 60) {
-          const totalHours = Math.floor(minutesUntilBooking / 60);
-          const days = Math.floor(totalHours / 24);
-          const hours = totalHours % 24;
-          const minutes = minutesUntilBooking % 60;
-          
-          if (days > 0) {
-            return { days, hours, minutes, text: `${days} يوم و ${hours} ساعة و ${minutes} دقيقة` };
-          } else if (hours > 0) {
-            return { days: 0, hours, minutes, text: `${hours} ساعة و ${minutes} دقيقة` };
-          } else {
-            return { days: 0, hours: 0, minutes, text: `${minutes} دقيقة` };
-          }
+        const totalHours = Math.floor(Math.abs(minutesUntilBooking) / 60);
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+        const minutes = Math.abs(minutesUntilBooking) % 60;
+        
+        if (days > 0) {
+          return { days, hours, minutes, text: `${days} يوم و ${hours} ساعة و ${minutes} دقيقة` };
+        } else if (hours > 0) {
+          return { days: 0, hours, minutes, text: `${hours} ساعة و ${minutes} دقيقة` };
+        } else {
+          return { days: 0, hours: 0, minutes, text: `${minutes} دقيقة` };
         }
-        return null;
       } catch (error) {
         return null;
       }
@@ -734,11 +731,24 @@ export default function SpecialistOrders() {
               <div className="space-y-3">
                 <Button
                   onClick={() => setShowLocationMap(prev => ({ ...prev, [order.id]: true }))}
-                  className="w-full gap-2 bg-green-600 hover:bg-green-700"
+                  className="w-full gap-2 bg-green-600 hover:bg-green-700 flex-col h-auto py-4"
                   size="lg"
                 >
-                  <Navigation className="h-5 w-5" />
-                  تحرك الآن - Move Now
+                  <div className="flex items-center gap-2">
+                    <Navigation className="h-5 w-5" />
+                    <span className="text-base font-bold">تحرك الآن - Move Now</span>
+                  </div>
+                  {getTimeUntilMovement() && (
+                    <div className="flex items-center gap-2 text-xs text-white/80 mt-1">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
+                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
+                        {getTimeUntilMovement()!.minutes}m
+                        {' '}حتى الموعد
+                      </span>
+                    </div>
+                  )}
                 </Button>
                 
                 {/* Location Map - Show after clicking Move Now */}
