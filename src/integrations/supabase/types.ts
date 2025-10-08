@@ -249,6 +249,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           customer_id: string
+          customer_rating: number | null
+          customer_review_notes: string | null
           gps_latitude: number | null
           gps_longitude: number | null
           hours_count: string | null
@@ -276,6 +278,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id: string
+          customer_rating?: number | null
+          customer_review_notes?: string | null
           gps_latitude?: number | null
           gps_longitude?: number | null
           hours_count?: string | null
@@ -303,6 +307,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          customer_rating?: number | null
+          customer_review_notes?: string | null
           gps_latitude?: number | null
           gps_longitude?: number | null
           hours_count?: string | null

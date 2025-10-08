@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight } from "lucide-react";
+import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -407,7 +407,7 @@ export default function OrderTracking() {
         .update({
           customer_rating: customerRating,
           customer_review_notes: customerReviewNotes || null,
-        })
+        } as any)
         .eq('id', orderId);
 
       if (error) throw error;
@@ -702,18 +702,59 @@ export default function OrderTracking() {
           </Card>
         )}
 
-        {/* Invoice Requested Stage - Waiting for Payment */}
-        {stage === 'invoice_requested' && (
+        {/* Invoice Details Stage */}
+        {stage === 'invoice_details' && (
           <Card className="p-6 space-y-6">
-            <h3 className="text-xl font-bold text-center">Invoice Requested</h3>
+            <h3 className="text-xl font-bold text-center">Invoice Details</h3>
             
-            <div className="text-center space-y-4">
-              <div className="text-6xl">📄</div>
-              <p className="text-lg text-muted-foreground">
-                Invoice has been sent to management
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Please wait for payment from the customer
+            <div className="space-y-4">
+              <div className="text-center text-6xl mb-4">💰</div>
+              
+              <div className="bg-muted p-4 rounded-lg space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Service Type:</span>
+                  <span className="font-semibold">{order.service_type}</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Hours:</span>
+                  <span className="font-semibold">{order.hours_count}</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Customer Budget:</span>
+                  <span className="font-semibold">
+                    {order.customer?.budget || 'Not specified'} 
+                    {order.customer?.budget_type && ` (${order.customer.budget_type})`}
+                  </span>
+                </div>
+                
+                <div className="border-t pt-3 mt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Quoted Price:</span>
+                    <span className="font-semibold">{invoiceAmount} KWD</span>
+                  </div>
+                  
+                  {discount > 0 && (
+                    <div className="flex justify-between items-center text-green-600 mt-2">
+                      <span>Discount:</span>
+                      <span className="font-semibold">-{discount} KWD</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="border-t pt-3 mt-3">
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="font-bold">Total Amount:</span>
+                    <span className="font-bold text-primary text-2xl">
+                      {(invoiceAmount - discount).toFixed(2)} KWD
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-sm text-center text-muted-foreground">
+                Please collect this amount from the customer
               </p>
             </div>
 
@@ -723,7 +764,75 @@ export default function OrderTracking() {
               size="lg"
             >
               <CheckCircle className="ml-2 h-5 w-5" />
-              Payment Received
+              Confirm Payment Received
+            </Button>
+          </Card>
+        )}
+
+        {/* Customer Rating Stage */}
+        {stage === 'customer_rating' && (
+          <Card className="p-6 space-y-6">
+            <h3 className="text-xl font-bold text-center">Rate the Customer</h3>
+            
+            <div className="space-y-6">
+              <div className="text-center space-y-4">
+                <p className="text-muted-foreground">How was your experience with this customer?</p>
+                
+                {/* Star Rating */}
+                <div className="flex justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setCustomerRating(star)}
+                      className="transition-all hover:scale-110"
+                    >
+                      <Star
+                        className={`h-12 w-12 ${
+                          star <= customerRating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                
+                {customerRating > 0 && (
+                  <p className="text-sm font-semibold">
+                    {customerRating === 5 && '⭐ Excellent Customer!'}
+                    {customerRating === 4 && '👍 Good Customer'}
+                    {customerRating === 3 && '😊 Average Customer'}
+                    {customerRating === 2 && '🤔 Below Average'}
+                    {customerRating === 1 && '😟 Poor Experience'}
+                  </p>
+                )}
+              </div>
+              
+              {/* Review Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="customer_notes">Additional Notes (Optional)</Label>
+                <Textarea
+                  id="customer_notes"
+                  value={customerReviewNotes}
+                  onChange={(e) => setCustomerReviewNotes(e.target.value)}
+                  placeholder="Share your experience with this customer..."
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will help us improve service quality
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleCustomerRatingSubmit}
+              className="w-full"
+              size="lg"
+              disabled={customerRating === 0}
+            >
+              <CheckCircle className="ml-2 h-5 w-5" />
+              Submit Rating
             </Button>
           </Card>
         )}
