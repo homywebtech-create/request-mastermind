@@ -386,7 +386,7 @@ export default function CompanyBooking() {
         return;
       }
 
-      const bookingDate = bookingDateType;
+      const bookingDate = bookingDateType; // This is already in ISO format (YYYY-MM-DD)
 
       // Update order details
       const { error: orderError } = await supabase
@@ -397,7 +397,7 @@ export default function CompanyBooking() {
           building_info: buildingInfo,
           selected_booking_type: bookingType,
           booking_date: bookingDate,
-          booking_date_type: bookingDateType,
+          booking_date_type: 'custom', // Fixed: use 'custom' instead of the actual date
           status: 'in-progress',
         })
         .eq('id', orderId);
