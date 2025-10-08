@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { differenceInMinutes, parseISO } from "date-fns";
 import {
   Dialog,
@@ -61,6 +60,7 @@ export default function SpecialistOrders() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<'new' | 'quoted' | 'accepted' | 'skipped' | 'rejected'>('new');
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
@@ -806,107 +806,164 @@ export default function SpecialistOrders() {
           </div>
         </Card>
 
-        {/* Stats Cards */}
+        {/* Interactive Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
+              activeFilter === 'new' 
+                ? 'bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/50 border-4 shadow-xl scale-105' 
+                : 'bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:shadow-lg'
+            }`}
+            onClick={() => setActiveFilter('new')}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">New Orders</p>
-                <p className="text-3xl font-bold text-blue-600">{newOrders.length}</p>
+                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'new' ? 'text-blue-700' : 'text-muted-foreground'}`}>
+                  New Orders
+                </p>
+                <p className={`text-3xl font-bold ${activeFilter === 'new' ? 'text-blue-700' : 'text-blue-600'}`}>
+                  {newOrders.length}
+                </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <AlertCircle className="h-6 w-6 text-blue-600" />
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                activeFilter === 'new' ? 'bg-blue-500/40' : 'bg-blue-500/20'
+              }`}>
+                <AlertCircle className={`h-6 w-6 ${activeFilter === 'new' ? 'text-blue-700' : 'text-blue-600'}`} />
               </div>
             </div>
+            {activeFilter === 'new' && (
+              <div className="text-xs font-bold text-blue-700 mt-2">● القسم النشط</div>
+            )}
           </Card>
 
-          <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
+              activeFilter === 'quoted' 
+                ? 'bg-gradient-to-br from-orange-500/20 to-orange-500/10 border-orange-500/50 border-4 shadow-xl scale-105' 
+                : 'bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 hover:shadow-lg'
+            }`}
+            onClick={() => setActiveFilter('quoted')}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Under Review</p>
-                <p className="text-3xl font-bold text-orange-600">{quotedOrders.length}</p>
+                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'quoted' ? 'text-orange-700' : 'text-muted-foreground'}`}>
+                  Under Review
+                </p>
+                <p className={`text-3xl font-bold ${activeFilter === 'quoted' ? 'text-orange-700' : 'text-orange-600'}`}>
+                  {quotedOrders.length}
+                </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                <Tag className="h-6 w-6 text-orange-600" />
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                activeFilter === 'quoted' ? 'bg-orange-500/40' : 'bg-orange-500/20'
+              }`}>
+                <Tag className={`h-6 w-6 ${activeFilter === 'quoted' ? 'text-orange-700' : 'text-orange-600'}`} />
               </div>
             </div>
+            {activeFilter === 'quoted' && (
+              <div className="text-xs font-bold text-orange-700 mt-2">● القسم النشط</div>
+            )}
           </Card>
 
-          <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
+              activeFilter === 'accepted' 
+                ? 'bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/50 border-4 shadow-xl scale-105' 
+                : 'bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-lg'
+            }`}
+            onClick={() => setActiveFilter('accepted')}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Accepted</p>
-                <p className="text-3xl font-bold text-green-600">{acceptedOrders.length}</p>
+                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'accepted' ? 'text-green-700' : 'text-muted-foreground'}`}>
+                  Accepted
+                </p>
+                <p className={`text-3xl font-bold ${activeFilter === 'accepted' ? 'text-green-700' : 'text-green-600'}`}>
+                  {acceptedOrders.length}
+                </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                activeFilter === 'accepted' ? 'bg-green-500/40' : 'bg-green-500/20'
+              }`}>
+                <CheckCircle className={`h-6 w-6 ${activeFilter === 'accepted' ? 'text-green-700' : 'text-green-600'}`} />
               </div>
             </div>
+            {activeFilter === 'accepted' && (
+              <div className="text-xs font-bold text-green-700 mt-2">● القسم النشط</div>
+            )}
           </Card>
 
-          <Card className="p-6 bg-gradient-to-br from-gray-500/10 to-gray-500/5 border-gray-500/20">
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
+              activeFilter === 'skipped' 
+                ? 'bg-gradient-to-br from-gray-500/20 to-gray-500/10 border-gray-500/50 border-4 shadow-xl scale-105' 
+                : 'bg-gradient-to-br from-gray-500/10 to-gray-500/5 border-gray-500/20 hover:shadow-lg'
+            }`}
+            onClick={() => setActiveFilter('skipped')}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Skipped</p>
-                <p className="text-3xl font-bold text-gray-600">{skippedOrders.length}</p>
+                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'skipped' ? 'text-gray-700' : 'text-muted-foreground'}`}>
+                  Skipped
+                </p>
+                <p className={`text-3xl font-bold ${activeFilter === 'skipped' ? 'text-gray-700' : 'text-gray-600'}`}>
+                  {skippedOrders.length}
+                </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-gray-500/20 flex items-center justify-center">
-                <XCircle className="h-6 w-6 text-gray-600" />
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                activeFilter === 'skipped' ? 'bg-gray-500/40' : 'bg-gray-500/20'
+              }`}>
+                <XCircle className={`h-6 w-6 ${activeFilter === 'skipped' ? 'text-gray-700' : 'text-gray-600'}`} />
               </div>
             </div>
+            {activeFilter === 'skipped' && (
+              <div className="text-xs font-bold text-gray-700 mt-2">● القسم النشط</div>
+            )}
           </Card>
 
-          <Card className="p-6 bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
+              activeFilter === 'rejected' 
+                ? 'bg-gradient-to-br from-red-500/20 to-red-500/10 border-red-500/50 border-4 shadow-xl scale-105' 
+                : 'bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20 hover:shadow-lg'
+            }`}
+            onClick={() => setActiveFilter('rejected')}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Rejected by Customer</p>
-                <p className="text-3xl font-bold text-red-600">{rejectedOrders.length}</p>
+                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'rejected' ? 'text-red-700' : 'text-muted-foreground'}`}>
+                  Rejected
+                </p>
+                <p className={`text-3xl font-bold ${activeFilter === 'rejected' ? 'text-red-700' : 'text-red-600'}`}>
+                  {rejectedOrders.length}
+                </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                <XCircle className="h-6 w-6 text-red-600" />
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                activeFilter === 'rejected' ? 'bg-red-500/40' : 'bg-red-500/20'
+              }`}>
+                <XCircle className={`h-6 w-6 ${activeFilter === 'rejected' ? 'text-red-700' : 'text-red-600'}`} />
               </div>
             </div>
+            {activeFilter === 'rejected' && (
+              <div className="text-xs font-bold text-red-700 mt-2">● القسم النشط</div>
+            )}
           </Card>
         </div>
 
-        {/* Orders Tabs */}
-        <Tabs defaultValue="new" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
-            <TabsTrigger value="new" className="gap-2">
-              <AlertCircle className="h-4 w-4" />
-              New ({newOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="quoted" className="gap-2">
-              <Tag className="h-4 w-4" />
-              Under Review ({quotedOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="accepted" className="gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Accepted ({acceptedOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="skipped" className="gap-2">
-              <XCircle className="h-4 w-4" />
-              Skipped ({skippedOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="rejected" className="gap-2">
-              <AlertCircle className="h-4 w-4" />
-              Rejected by Customer ({rejectedOrders.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="new" className="space-y-4">
-            {newOrders.length === 0 ? (
+        {/* Filtered Orders */}
+        <div className="space-y-4 mt-6">
+          {activeFilter === 'new' && (
+            newOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg text-muted-foreground">No new orders</p>
               </Card>
             ) : (
               newOrders.map((order) => renderOrderCard(order, true))
-            )}
-          </TabsContent>
+            )
+          )}
 
-          <TabsContent value="quoted" className="space-y-4">
-            {quotedOrders.length === 0 ? (
+          {activeFilter === 'quoted' && (
+            quotedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <Tag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg text-muted-foreground">No submitted quotes</p>
@@ -914,33 +971,33 @@ export default function SpecialistOrders() {
               </Card>
             ) : (
               quotedOrders.map((order) => renderOrderCard(order))
-            )}
-          </TabsContent>
+            )
+          )}
 
-          <TabsContent value="accepted" className="space-y-4">
-            {acceptedOrders.length === 0 ? (
+          {activeFilter === 'accepted' && (
+            acceptedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <CheckCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg text-muted-foreground">No accepted orders</p>
               </Card>
             ) : (
               acceptedOrders.map((order) => renderOrderCard(order))
-            )}
-          </TabsContent>
+            )
+          )}
 
-          <TabsContent value="skipped" className="space-y-4">
-            {skippedOrders.length === 0 ? (
+          {activeFilter === 'skipped' && (
+            skippedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg text-muted-foreground">No skipped orders</p>
               </Card>
             ) : (
               skippedOrders.map((order) => renderOrderCard(order))
-            )}
-          </TabsContent>
+            )
+          )}
 
-          <TabsContent value="rejected" className="space-y-4">
-            {rejectedOrders.length === 0 ? (
+          {activeFilter === 'rejected' && (
+            rejectedOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg text-muted-foreground">No orders rejected by customers</p>
@@ -948,9 +1005,9 @@ export default function SpecialistOrders() {
               </Card>
             ) : (
               rejectedOrders.map((order) => renderOrderCard(order))
-            )}
-          </TabsContent>
-        </Tabs>
+            )
+          )}
+        </div>
       </div>
     </div>
   );
