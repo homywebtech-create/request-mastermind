@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle } from "lucide-react";
+import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { differenceInMinutes, parseISO } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,9 @@ interface Order {
   notes: string | null;
   booking_type: string | null;
   hours_count: string | null;
+  booking_date: string | null;
+  booking_date_type: string | null;
+  selected_booking_type: string | null;
   customer: {
     name: string;
     whatsapp_number: string;
@@ -170,6 +174,9 @@ export default function SpecialistOrders() {
           notes,
           booking_type,
           hours_count,
+          booking_date,
+          booking_date_type,
+          selected_booking_type,
           customer:customers (
             name,
             whatsapp_number,
@@ -389,18 +396,49 @@ export default function SpecialistOrders() {
   const renderOrderCard = (order: Order, showQuoteButton: boolean = false) => {
     const hasQuote = !!order.order_specialist?.quoted_price;
     const isRejected = order.order_specialist?.is_accepted === false;
+    const isAccepted = order.order_specialist?.is_accepted === true;
+    
+    // Calculate if specialist can move now (within 1 hour before booking time)
+    const canMoveNow = () => {
+      if (!isAccepted || !order.booking_date) return false;
+      
+      try {
+        const bookingDateTime = parseISO(order.booking_date);
+        const now = new Date();
+        const minutesUntilBooking = differenceInMinutes(bookingDateTime, now);
+        
+        // Allow movement within 60 minutes before and after the booking time
+        return minutesUntilBooking <= 60 && minutesUntilBooking >= -60;
+      } catch (error) {
+        console.error('Error parsing booking date:', error);
+        return false;
+      }
+    };
+    
+    const getTimeUntilMovement = () => {
+      if (!order.booking_date) return null;
+      
+      try {
+        const bookingDateTime = parseISO(order.booking_date);
+        const now = new Date();
+        const minutesUntilBooking = differenceInMinutes(bookingDateTime, now);
+        
+        if (minutesUntilBooking > 60) {
+          const hoursUntil = Math.floor(minutesUntilBooking / 60);
+          const minsRemaining = minutesUntilBooking % 60;
+          return `${hoursUntil}h ${minsRemaining}m`;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    };
     
     // Calculate price options based on customer budget
     // Extract numeric value from budget string
     const budgetStr = order.customer?.budget || '';
     const numericBudget = parseFloat(budgetStr.replace(/[^0-9.]/g, ''));
     const baseBudget = !isNaN(numericBudget) && numericBudget > 0 ? numericBudget : 0;
-    
-    console.log('Budget calculation:', { 
-      rawBudget: order.customer?.budget, 
-      numericBudget, 
-      baseBudget 
-    });
     
     const priceOptions = baseBudget > 0 ? [
       { label: `${baseBudget} QAR`, value: `${baseBudget} QAR` },
@@ -637,15 +675,65 @@ export default function SpecialistOrders() {
         )}
         
         {order.order_specialist?.is_accepted === true && (
-          <Button
-            onClick={() => order.customer && openWhatsApp(order.customer.whatsapp_number)}
-            className="w-full gap-2"
-            variant="default"
-            size="lg"
-          >
-            <Phone className="h-4 w-4" />
-            Contact via WhatsApp
-          </Button>
+          <div className="space-y-3">
+            {order.booking_date && (
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200">
+                <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs text-blue-600 mb-2 font-semibold">Booking Details</p>
+                  <div className="space-y-1">
+                    <p className="text-sm">
+                      <span className="text-muted-foreground">Date & Time:</span>{' '}
+                      <span className="font-bold">
+                        {new Date(order.booking_date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </p>
+                    {order.booking_date_type && (
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Type:</span>{' '}
+                        <span className="font-medium">{order.booking_date_type}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {canMoveNow() ? (
+              <Button
+                onClick={() => order.customer && openWhatsApp(order.customer.whatsapp_number)}
+                className="w-full gap-2 bg-green-600 hover:bg-green-700"
+                size="lg"
+              >
+                <Navigation className="h-5 w-5" />
+                تحرك الآن - Move Now
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <Button
+                  disabled
+                  className="w-full gap-2"
+                  variant="outline"
+                  size="lg"
+                >
+                  <Navigation className="h-5 w-5" />
+                  تحرك الآن - Move Now
+                </Button>
+                {getTimeUntilMovement() && (
+                  <p className="text-xs text-center text-muted-foreground bg-muted/50 p-2 rounded-md">
+                    ⏰ الزر سيكون متاحاً قبل ساعة من الموعد<br/>
+                    <span className="font-semibold">الوقت المتبقي: {getTimeUntilMovement()}</span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </Card>
     );
