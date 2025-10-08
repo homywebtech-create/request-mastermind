@@ -36,7 +36,6 @@ interface OrderFormData {
   budgetType: string;
   serviceId: string;
   subServiceId: string;
-  bookingType: string;
   hoursCount: string;
   sendToAll: boolean;
   companyId: string;
@@ -51,7 +50,6 @@ interface SubmittedOrderData {
   budget: string;
   budgetType: string;
   serviceType: string;
-  bookingType: string;
   hoursCount: string;
   sendToAll: boolean;
   companyId?: string;
@@ -95,7 +93,6 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     budgetType: '',
     serviceId: '',
     subServiceId: '',
-    bookingType: '',
     hoursCount: '',
     sendToAll: true,
     companyId: '',
@@ -282,28 +279,6 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
           });
           return false;
         }
-        // Validate booking type and hours for hourly services
-        const serviceRequiresBooking = formData.serviceId && selectedService?.sub_services.some(
-          sub => sub.id === formData.subServiceId && sub.name.includes('ساعات')
-        );
-        if (serviceRequiresBooking) {
-          if (!formData.bookingType) {
-            toast({
-              title: "بيانات ناقصة / Missing Data",
-              description: "يرجى اختيار نوع الحجز / Please select booking type",
-              variant: "destructive",
-            });
-            return false;
-          }
-          if (!formData.hoursCount || formData.hoursCount.trim() === '') {
-            toast({
-              title: "بيانات ناقصة / Missing Data",
-              description: "يرجى إدخال عدد الساعات / Please enter hours count",
-              variant: "destructive",
-            });
-            return false;
-          }
-        }
         return true;
 
       case 3:
@@ -359,7 +334,6 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       budget: formData.budget,
       budgetType: formData.budgetType,
       serviceType,
-      bookingType: formData.bookingType,
       hoursCount: formData.hoursCount,
       sendToAll: formData.sendToAll,
       companyId: formData.sendToAll ? undefined : formData.companyId,
@@ -378,7 +352,6 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       budgetType: '',
       serviceId: '',
       subServiceId: '',
-      bookingType: '',
       hoursCount: '',
       sendToAll: true,
       companyId: '',
@@ -769,47 +742,16 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
             </div>
 
             {formData.serviceId && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bookingType">نوع الحجز / Booking Type</Label>
-                  <Select value={formData.bookingType} onValueChange={(value) => handleInputChange('bookingType', value)}>
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="اختر نوع الحجز / Select booking type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      <SelectItem value="weekly">
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">أسبوعي</span>
-                          <span className="text-xs text-muted-foreground">Weekly</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="bi-weekly">
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">نصف شهري</span>
-                          <span className="text-xs text-muted-foreground">Bi-Weekly</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="monthly">
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">شهري</span>
-                          <span className="text-xs text-muted-foreground">Monthly</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="hoursCount">عدد الساعات / Hours</Label>
-                  <Input
-                    id="hoursCount"
-                    type="number"
-                    min="1"
-                    value={formData.hoursCount}
-                    onChange={(e) => handleInputChange('hoursCount', e.target.value)}
-                    placeholder="مثال: 8"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="hoursCount">عدد الساعات / Hours</Label>
+                <Input
+                  id="hoursCount"
+                  type="number"
+                  min="1"
+                  value={formData.hoursCount}
+                  onChange={(e) => handleInputChange('hoursCount', e.target.value)}
+                  placeholder="مثال: 8"
+                />
               </div>
             )}
             </div>
