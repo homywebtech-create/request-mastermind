@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation } from "lucide-react";
+import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { differenceInMinutes, parseISO } from "date-fns";
@@ -38,6 +38,9 @@ interface Order {
   booking_date: string | null;
   booking_date_type: string | null;
   selected_booking_type: string | null;
+  gps_latitude: number | null;
+  gps_longitude: number | null;
+  building_info: string | null;
   customer: {
     name: string;
     whatsapp_number: string;
@@ -187,6 +190,9 @@ export default function SpecialistOrders() {
           booking_date,
           booking_date_type,
           selected_booking_type,
+          gps_latitude,
+          gps_longitude,
+          building_info,
           customer:customers (
             name,
             whatsapp_number,
@@ -718,6 +724,52 @@ export default function SpecialistOrders() {
                         <span className="font-medium">{order.booking_date_type}</span>
                       </p>
                     )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Location Map */}
+            {order.gps_latitude && order.gps_longitude && (
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
+                  <Map className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <p className="text-xs text-primary mb-2 font-semibold">موقع العمل - Work Location</p>
+                      {order.building_info && (
+                        <p className="text-sm text-muted-foreground mb-2">{order.building_info}</p>
+                      )}
+                      <p className="text-xs font-mono text-muted-foreground" dir="ltr">
+                        {order.gps_latitude.toFixed(6)}, {order.gps_longitude.toFixed(6)}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => {
+                          const url = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
+                          window.open(url, '_blank');
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        Google Maps
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const url = `https://maps.apple.com/?q=${order.gps_latitude},${order.gps_longitude}`;
+                          window.open(url, '_blank');
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        Apple Maps
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
