@@ -547,38 +547,20 @@ export default function SpecialistOrders() {
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Show quote info if exists */}
-          {hasQuote && !isRejected && (
-            <div className="flex items-start gap-3 p-5 rounded-xl bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border-2 border-green-200 dark:border-green-800 shadow-sm">
-              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
-                <Tag className="h-5 w-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-green-700 dark:text-green-300 mb-3 font-bold">✓ Your Submitted Quote</p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground font-medium">Price:</span>
-                    <span className="font-bold text-base text-foreground">{order.order_specialist?.quoted_price}</span>
-                  </div>
-                  {order.order_specialist?.quote_notes && (
-                    <div className="flex items-start gap-2">
-                      <span className="text-xs text-muted-foreground font-medium">Notes:</span>
-                      <span className="text-sm text-foreground">{order.order_specialist.quote_notes}</span>
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Submitted on {order.order_specialist?.quoted_at && new Date(order.order_specialist.quoted_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </p>
+            {/* Show quote info if exists */}
+            {hasQuote && !isRejected && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border-2 border-green-200 dark:border-green-800 hover:shadow-md transition-all">
+                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
+                  <Tag className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium mb-0.5">Your Quote</p>
+                  <p className="font-bold text-sm break-words text-foreground">{order.order_specialist?.quoted_price}</p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Show rejection info if rejected */}
           {isRejected && (
