@@ -340,18 +340,14 @@ export default function OrderTracking() {
   };
 
   const confirmEarlyFinish = async () => {
-    await updateOrderStage('completed');
     setShowEarlyFinishDialog(false);
-    toast({
-      title: "Work Completed",
-      description: "Work has been marked as completed early",
-    });
-    // Show invoice request immediately
-    handleRequestInvoice();
+    // Request invoice directly without marking as completed first
+    await handleRequestInvoice();
   };
 
   const handleRequestInvoice = async () => {
     await updateOrderStage('invoice_requested');
+    setStage('invoice_requested');
     toast({
       title: "Invoice Requested",
       description: "Invoice request has been sent to management",
