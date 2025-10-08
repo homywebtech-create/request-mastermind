@@ -55,11 +55,21 @@ export default function SpecialistOrders() {
   const [specialistId, setSpecialistId] = useState('');
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     checkAuth();
+  }, []);
+
+  // Update current time every minute for countdown
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -420,13 +430,21 @@ export default function SpecialistOrders() {
       
       try {
         const bookingDateTime = parseISO(order.booking_date);
-        const now = new Date();
-        const minutesUntilBooking = differenceInMinutes(bookingDateTime, now);
+        const minutesUntilBooking = differenceInMinutes(bookingDateTime, currentTime);
         
         if (minutesUntilBooking > 60) {
-          const hoursUntil = Math.floor(minutesUntilBooking / 60);
-          const minsRemaining = minutesUntilBooking % 60;
-          return `${hoursUntil}h ${minsRemaining}m`;
+          const totalHours = Math.floor(minutesUntilBooking / 60);
+          const days = Math.floor(totalHours / 24);
+          const hours = totalHours % 24;
+          const minutes = minutesUntilBooking % 60;
+          
+          if (days > 0) {
+            return { days, hours, minutes, text: `${days} يوم و ${hours} ساعة و ${minutes} دقيقة` };
+          } else if (hours > 0) {
+            return { days: 0, hours, minutes, text: `${hours} ساعة و ${minutes} دقيقة` };
+          } else {
+            return { days: 0, hours: 0, minutes, text: `${minutes} دقيقة` };
+          }
         }
         return null;
       } catch (error) {
@@ -715,7 +733,7 @@ export default function SpecialistOrders() {
                 تحرك الآن - Move Now
               </Button>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Button
                   disabled
                   className="w-full gap-2"
@@ -726,10 +744,33 @@ export default function SpecialistOrders() {
                   تحرك الآن - Move Now
                 </Button>
                 {getTimeUntilMovement() && (
-                  <p className="text-xs text-center text-muted-foreground bg-muted/50 p-2 rounded-md">
-                    ⏰ الزر سيكون متاحاً قبل ساعة من الموعد<br/>
-                    <span className="font-semibold">الوقت المتبقي: {getTimeUntilMovement()}</span>
-                  </p>
+                  <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <Clock className="h-5 w-5 animate-pulse" />
+                      <p className="text-sm font-semibold">الزر سيكون متاحاً قبل ساعة من الموعد</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground mb-2">الوقت المتبقي:</p>
+                      <div className="flex items-center justify-center gap-3">
+                        {getTimeUntilMovement()!.days > 0 && (
+                          <div className="bg-background rounded-lg px-3 py-2 border border-primary/20">
+                            <div className="text-2xl font-bold text-primary">{getTimeUntilMovement()!.days}</div>
+                            <div className="text-xs text-muted-foreground">يوم</div>
+                          </div>
+                        )}
+                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && (
+                          <div className="bg-background rounded-lg px-3 py-2 border border-primary/20">
+                            <div className="text-2xl font-bold text-primary">{getTimeUntilMovement()!.hours}</div>
+                            <div className="text-xs text-muted-foreground">ساعة</div>
+                          </div>
+                        )}
+                        <div className="bg-background rounded-lg px-3 py-2 border border-primary/20">
+                          <div className="text-2xl font-bold text-primary">{getTimeUntilMovement()!.minutes}</div>
+                          <div className="text-xs text-muted-foreground">دقيقة</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
