@@ -257,6 +257,7 @@ export type Database = {
           link_copied_at: string | null
           notes: string | null
           order_link: string | null
+          order_number: string | null
           selected_booking_type: string | null
           send_to_all_companies: boolean
           service_type: string
@@ -282,6 +283,7 @@ export type Database = {
           link_copied_at?: string | null
           notes?: string | null
           order_link?: string | null
+          order_number?: string | null
           selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type: string
@@ -307,6 +309,7 @@ export type Database = {
           link_copied_at?: string | null
           notes?: string | null
           order_link?: string | null
+          order_number?: string | null
           selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type?: string
@@ -660,6 +663,10 @@ export type Database = {
       cleanup_expired_verification_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generate_order_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       has_role: {
         Args: {
