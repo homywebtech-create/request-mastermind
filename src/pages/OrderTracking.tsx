@@ -189,7 +189,7 @@ export default function OrderTracking() {
         ? 'completed' 
         : newStage === 'cancelled' 
           ? 'cancelled' 
-          : 'in_progress'; // Keep as in_progress for tracking stages
+          : 'in-progress'; // Keep as in-progress for tracking stages (note: with dash not underscore)
 
       const { error } = await supabase
         .from('orders')
