@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-type Stage = 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested';
+type Stage = 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'payment_received';
 
 interface Order {
   id: string;
@@ -61,7 +61,21 @@ export default function OrderTracking() {
 
     // Set initial stage to moving when specialist starts tracking
     const initializeTracking = async () => {
-      await updateOrderStage('moving');
+      // Check current stage first
+      const { data: currentOrder } = await supabase
+        .from('orders')
+        .select('tracking_stage')
+        .eq('id', orderId)
+        .single();
+
+      // Only set to moving if no stage is set, or if returning to an invoice_requested order
+      if (!currentOrder?.tracking_stage) {
+        await updateOrderStage('moving');
+      } else if (currentOrder.tracking_stage === 'invoice_requested') {
+        setStage('invoice_requested');
+      } else if (currentOrder.tracking_stage === 'payment_received') {
+        setStage('payment_received');
+      }
     };
 
     initializeTracking();
@@ -184,12 +198,12 @@ export default function OrderTracking() {
     if (!orderId) return;
 
     try {
-      // Only update status to completed when work is actually finished
-      const statusUpdate = newStage === 'completed' || newStage === 'invoice_requested' 
+      // Only update status to completed when payment is received
+      const statusUpdate = newStage === 'payment_received' 
         ? 'completed' 
         : newStage === 'cancelled' 
           ? 'cancelled' 
-          : 'in-progress'; // Keep as in-progress for tracking stages (note: with dash not underscore)
+          : 'in-progress'; // Keep as in-progress for all other tracking stages
 
       const { error } = await supabase
         .from('orders')
@@ -320,6 +334,15 @@ export default function OrderTracking() {
     toast({
       title: "Invoice Requested",
       description: "Invoice request has been sent to management",
+    });
+    // Don't navigate away - stay on page to allow payment confirmation
+  };
+
+  const handlePaymentReceived = async () => {
+    await updateOrderStage('payment_received');
+    toast({
+      title: "Payment Received",
+      description: "Work has been completed successfully",
     });
     navigate(-1);
   };
@@ -581,16 +604,68 @@ export default function OrderTracking() {
               </Dialog>
 
               {workingTime >= totalWorkSeconds && (
-                <Button
-                  onClick={handleRequestInvoice}
-                  className="w-full"
-                  size="lg"
-                >
-                  <FileText className="ml-2 h-5 w-5" />
-                  Request Invoice
-                </Button>
+                <>
+                  {stage === 'working' && (
+                    <Button
+                      onClick={handleRequestInvoice}
+                      className="w-full"
+                      size="lg"
+                    >
+                      <FileText className="ml-2 h-5 w-5" />
+                      Request Invoice
+                    </Button>
+                  )}
+                </>
               )}
             </div>
+          </Card>
+        )}
+
+        {/* Invoice Requested Stage - Waiting for Payment */}
+        {stage === 'invoice_requested' && (
+          <Card className="p-6 space-y-6">
+            <h3 className="text-xl font-bold text-center">Invoice Requested</h3>
+            
+            <div className="text-center space-y-4">
+              <div className="text-6xl">📄</div>
+              <p className="text-lg text-muted-foreground">
+                Invoice has been sent to management
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Please wait for payment from the customer
+              </p>
+            </div>
+
+            <Button
+              onClick={handlePaymentReceived}
+              className="w-full"
+              size="lg"
+            >
+              <CheckCircle className="ml-2 h-5 w-5" />
+              Payment Received
+            </Button>
+          </Card>
+        )}
+
+        {/* Payment Received Stage */}
+        {stage === 'payment_received' && (
+          <Card className="p-6 space-y-6">
+            <h3 className="text-xl font-bold text-center text-green-600">Work Completed!</h3>
+            
+            <div className="text-center space-y-4">
+              <div className="text-6xl">✅</div>
+              <p className="text-lg text-muted-foreground">
+                Payment has been received and work is completed
+              </p>
+            </div>
+
+            <Button
+              onClick={() => navigate(-1)}
+              className="w-full"
+              size="lg"
+            >
+              Back to Orders
+            </Button>
           </Card>
         )}
 

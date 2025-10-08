@@ -133,14 +133,13 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
              (!order.tracking_stage || order.tracking_stage === null);
     }
     if (filter === 'in-progress') {
-      // In progress: specialist is actively working (moving, arrived, or working)
+      // In progress: specialist is actively working (moving, arrived, working, or invoice requested)
       return order.tracking_stage && 
-             ['moving', 'arrived', 'working'].includes(order.tracking_stage);
+             ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
     }
     if (filter === 'completed') {
-      // Completed: work finished or invoice requested
-      return order.tracking_stage === 'completed' || 
-             order.tracking_stage === 'invoice_requested' ||
+      // Completed: payment received
+      return order.tracking_stage === 'payment_received' ||
              order.status === 'completed';
     }
     return order.status === filter;
@@ -713,7 +712,9 @@ Thank you for contacting us! 🌟`;
       case 'completed':
         return { label: '✅ Work Completed', color: 'text-green-600 dark:text-green-400' };
       case 'invoice_requested':
-        return { label: '📄 Invoice Requested', color: 'text-emerald-600 dark:text-emerald-400' };
+        return { label: '📄 Invoice Requested', color: 'text-indigo-600 dark:text-indigo-400' };
+      case 'payment_received':
+        return { label: '💰 Payment Received', color: 'text-emerald-600 dark:text-emerald-400' };
       case 'cancelled':
         return { label: '❌ Cancelled', color: 'text-red-600 dark:text-red-400' };
       default:
