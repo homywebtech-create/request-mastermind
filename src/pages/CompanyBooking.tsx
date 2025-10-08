@@ -995,11 +995,15 @@ export default function CompanyBooking() {
                   className="flex-1 flex items-center justify-center gap-2 text-base h-12"
                 >
                   <Check className="h-5 w-5" />
-                  <span>
-                    {t.submit}
+                  <span className="flex items-center gap-2">
+                    <span>{t.submit}</span>
                     {selectedSpecialistId && specialists.find(s => s.id === selectedSpecialistId) && (
-                      <span className="font-bold mr-2 ml-2">
-                        ({calculateTotalPrice(specialists.find(s => s.id === selectedSpecialistId)!)})
+                      <span className="font-bold flex items-center gap-1">
+                        <span>-</span>
+                        <span>{calculateTotalPrice(specialists.find(s => s.id === selectedSpecialistId)!)}</span>
+                        <span className="text-sm opacity-80">
+                          ({hoursCount} {language === 'ar' ? (hoursCount === 1 ? 'ساعة' : 'ساعات') : (hoursCount === 1 ? 'hour' : 'hours')})
+                        </span>
                       </span>
                     )}
                   </span>
