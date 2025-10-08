@@ -127,18 +127,23 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
              !order.order_specialists.some(os => os.is_accepted === true);
     }
     if (filter === 'upcoming') {
-      // Upcoming: confirmed bookings with accepted quotes, but specialist hasn't started yet
-      return order.order_specialists && 
-             order.order_specialists.some(os => os.is_accepted === true) &&
-             (!order.tracking_stage || order.tracking_stage === null);
+      // Upcoming: confirmed bookings with accepted quotes, but specialist hasn't started tracking yet
+      // This includes orders where tracking_stage is null OR where status is not yet completed
+      const hasAcceptedQuote = order.order_specialists && 
+                               order.order_specialists.some(os => os.is_accepted === true);
+      const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
+      const notCompleted = order.status !== 'completed';
+      
+      return hasAcceptedQuote && notStartedTracking && notCompleted;
     }
     if (filter === 'in-progress') {
-      // In progress: specialist is actively working (moving, arrived, working, or invoice requested)
+      // In progress: specialist is actively working (has started tracking)
       return order.tracking_stage && 
+             order.tracking_stage !== null &&
              ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
     }
     if (filter === 'completed') {
-      // Completed: payment received
+      // Completed: payment received or status is completed
       return order.tracking_stage === 'payment_received' ||
              order.status === 'completed';
     }
