@@ -523,6 +523,7 @@ export default function Dashboard() {
               value={stats.pending}
               icon={<Package className="h-4 w-4" />}
               variant="pending"
+              isActive={filter === 'pending'}
             />
           </div>
           <div onClick={() => setFilter('awaiting-response')} className="cursor-pointer">
@@ -531,6 +532,7 @@ export default function Dashboard() {
               value={stats.awaitingResponse}
               icon={<Clock className="h-4 w-4" />}
               variant="awaiting"
+              isActive={filter === 'awaiting-response'}
             />
           </div>
           <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
@@ -539,6 +541,7 @@ export default function Dashboard() {
               value={stats.upcoming}
               icon={<CheckCircle className="h-4 w-4" />}
               variant="success"
+              isActive={filter === 'upcoming'}
             />
           </div>
           <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
@@ -547,6 +550,7 @@ export default function Dashboard() {
               value={stats.inProgress}
               icon={<Users className="h-4 w-4" />}
               variant="warning"
+              isActive={filter === 'in-progress'}
             />
           </div>
           <div onClick={() => setFilter('completed')} className="cursor-pointer">
@@ -555,6 +559,7 @@ export default function Dashboard() {
               value={stats.completed}
               icon={<CheckCircle className="h-4 w-4" />}
               variant="success"
+              isActive={filter === 'completed'}
             />
           </div>
         </div>
