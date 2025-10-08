@@ -59,6 +59,7 @@ export default function SpecialistOrders() {
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showLocationMap, setShowLocationMap] = useState<{ [orderId: string]: boolean }>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -729,102 +730,97 @@ export default function SpecialistOrders() {
               </div>
             )}
             
-            {/* Location Map */}
-            {order.gps_latitude && order.gps_longitude && (
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
-                  <Map className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div className="flex-1 space-y-3">
-                    <div>
-                      <p className="text-xs text-primary mb-2 font-semibold">موقع العمل - Work Location</p>
-                      {order.building_info && (
-                        <p className="text-sm text-muted-foreground mb-2">{order.building_info}</p>
-                      )}
-                      <p className="text-xs font-mono text-muted-foreground" dir="ltr">
-                        {order.gps_latitude.toFixed(6)}, {order.gps_longitude.toFixed(6)}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        onClick={() => {
-                          const url = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
-                          window.open(url, '_blank');
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                      >
-                        <MapPin className="h-4 w-4" />
-                        Google Maps
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          const url = `https://maps.apple.com/?q=${order.gps_latitude},${order.gps_longitude}`;
-                          window.open(url, '_blank');
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                      >
-                        <MapPin className="h-4 w-4" />
-                        Apple Maps
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
             {canMoveNow() ? (
-              <Button
-                onClick={() => order.customer && openWhatsApp(order.customer.whatsapp_number)}
-                className="w-full gap-2 bg-green-600 hover:bg-green-700"
-                size="lg"
-              >
-                <Navigation className="h-5 w-5" />
-                تحرك الآن - Move Now
-              </Button>
-            ) : (
               <div className="space-y-3">
                 <Button
-                  disabled
-                  className="w-full gap-2"
-                  variant="outline"
+                  onClick={() => setShowLocationMap(prev => ({ ...prev, [order.id]: true }))}
+                  className="w-full gap-2 bg-green-600 hover:bg-green-700"
                   size="lg"
                 >
                   <Navigation className="h-5 w-5" />
                   تحرك الآن - Move Now
                 </Button>
-                {getTimeUntilMovement() && (
-                  <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20 rounded-lg p-4 space-y-2">
-                    <div className="flex items-center justify-center gap-2 text-primary">
-                      <Clock className="h-5 w-5 animate-pulse" />
-                      <p className="text-sm font-semibold">الزر سيكون متاحاً قبل ساعة من الموعد</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground mb-2">الوقت المتبقي:</p>
-                      <div className="flex items-center justify-center gap-3">
-                        {getTimeUntilMovement()!.days > 0 && (
-                          <div className="bg-background rounded-lg px-3 py-2 border border-primary/20">
-                            <div className="text-2xl font-bold text-primary">{getTimeUntilMovement()!.days}</div>
-                            <div className="text-xs text-muted-foreground">يوم</div>
-                          </div>
-                        )}
-                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && (
-                          <div className="bg-background rounded-lg px-3 py-2 border border-primary/20">
-                            <div className="text-2xl font-bold text-primary">{getTimeUntilMovement()!.hours}</div>
-                            <div className="text-xs text-muted-foreground">ساعة</div>
-                          </div>
-                        )}
-                        <div className="bg-background rounded-lg px-3 py-2 border border-primary/20">
-                          <div className="text-2xl font-bold text-primary">{getTimeUntilMovement()!.minutes}</div>
-                          <div className="text-xs text-muted-foreground">دقيقة</div>
+                
+                {/* Location Map - Show after clicking Move Now */}
+                {showLocationMap[order.id] && order.gps_latitude && order.gps_longitude && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-start gap-3 p-4 rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
+                      <Map className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <p className="text-xs text-primary mb-2 font-semibold">موقع العمل - Work Location</p>
+                          {order.building_info && (
+                            <p className="text-sm text-muted-foreground mb-2">{order.building_info}</p>
+                          )}
+                          <p className="text-xs font-mono text-muted-foreground" dir="ltr">
+                            {order.gps_latitude.toFixed(6)}, {order.gps_longitude.toFixed(6)}
+                          </p>
                         </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            onClick={() => {
+                              const url = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
+                              window.open(url, '_blank');
+                            }}
+                            variant="default"
+                            size="sm"
+                            className="gap-2"
+                          >
+                            <MapPin className="h-4 w-4" />
+                            Google Maps
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              const url = `https://maps.apple.com/?q=${order.gps_latitude},${order.gps_longitude}`;
+                              window.open(url, '_blank');
+                            }}
+                            variant="default"
+                            size="sm"
+                            className="gap-2"
+                          >
+                            <MapPin className="h-4 w-4" />
+                            Apple Maps
+                          </Button>
+                        </div>
+                        <Button
+                          onClick={() => order.customer && openWhatsApp(order.customer.whatsapp_number)}
+                          className="w-full gap-2 bg-green-600 hover:bg-green-700"
+                          size="sm"
+                        >
+                          <Phone className="h-4 w-4" />
+                          تواصل مع العميل - Contact Customer
+                        </Button>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
+            ) : (
+              <Button
+                disabled
+                className="w-full gap-2 flex-col h-auto py-4"
+                variant="outline"
+                size="lg"
+              >
+                <div className="flex items-center gap-2">
+                  <Navigation className="h-5 w-5" />
+                  <span>تحرك الآن - Move Now</span>
+                </div>
+                {getTimeUntilMovement() && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                    <Clock className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                      {getTimeUntilMovement()!.days > 0 && (
+                        <span className="font-bold">{getTimeUntilMovement()!.days}d</span>
+                      )}
+                      {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && (
+                        <span className="font-bold">{getTimeUntilMovement()!.hours}h</span>
+                      )}
+                      <span className="font-bold">{getTimeUntilMovement()!.minutes}m</span>
+                    </div>
+                  </div>
+                )}
+              </Button>
             )}
           </div>
         )}
