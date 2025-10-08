@@ -242,6 +242,7 @@ export type Database = {
         Row: {
           booking_date: string | null
           booking_date_type: string | null
+          booking_time: string | null
           booking_type: string | null
           building_info: string | null
           company_id: string | null
@@ -266,6 +267,7 @@ export type Database = {
         Insert: {
           booking_date?: string | null
           booking_date_type?: string | null
+          booking_time?: string | null
           booking_type?: string | null
           building_info?: string | null
           company_id?: string | null
@@ -290,6 +292,7 @@ export type Database = {
         Update: {
           booking_date?: string | null
           booking_date_type?: string | null
+          booking_time?: string | null
           booking_type?: string | null
           building_info?: string | null
           company_id?: string | null

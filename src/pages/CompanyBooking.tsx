@@ -398,6 +398,7 @@ export default function CompanyBooking() {
           selected_booking_type: bookingType,
           booking_date: bookingDate,
           booking_date_type: 'custom', // Fixed: use 'custom' instead of the actual date
+          booking_time: selectedTime, // Save the selected time slot
           status: 'in-progress',
         })
         .eq('id', orderId);
@@ -425,13 +426,14 @@ export default function CompanyBooking() {
       const selectedSpec = specialists.find(s => s.id === selectedSpecialistId);
       
       // Prepare WhatsApp message
+      const totalPrice = calculateTotalPrice(selectedSpec);
       const message = encodeURIComponent(
         `تم تأكيد الحجز ✅\n\n` +
         `المحترفة: ${selectedSpec?.name}\n` +
         `التاريخ: ${bookingDate}\n` +
         `الوقت: ${selectedTime}\n` +
         `نوع الحجز: ${bookingType}\n` +
-        `السعر: ${selectedSpec?.quoted_price}\n\n` +
+        `السعر الإجمالي: ${totalPrice} (${hoursCount} ${hoursCount === 1 ? 'ساعة' : 'ساعات'})\n\n` +
         `سيتم التواصل معك قريباً لتأكيد التفاصيل.`
       );
 
