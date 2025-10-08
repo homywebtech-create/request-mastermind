@@ -127,8 +127,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     }
     if (filter === 'upcoming') {
       // Upcoming: confirmed bookings with accepted quotes
-      return order.status === 'in-progress' &&
-             order.order_specialists && 
+      return order.order_specialists && 
              order.order_specialists.some(os => os.is_accepted === true);
     }
     return order.status === filter;
