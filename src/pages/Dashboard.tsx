@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { OrderForm } from "@/components/orders/order-form";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { StatsCard } from "@/components/dashboard/stats-card";
@@ -8,8 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getSoundNotification } from "@/lib/soundNotification";
 
 interface Order {
   id: string;
@@ -72,9 +73,23 @@ export default function Dashboard() {
     completed: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const soundNotification = useRef(getSoundNotification());
+  const previousOrdersCount = useRef<number>(0);
+  const previousQuotesCount = useRef<number>(0);
+
+  // Initialize audio context on first user interaction
+  useEffect(() => {
+    const initAudio = async () => {
+      await soundNotification.current.initialize();
+    };
+    
+    document.addEventListener('click', initAudio, { once: true });
+    return () => document.removeEventListener('click', initAudio);
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -85,7 +100,29 @@ export default function Dashboard() {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('New order detected:', payload);
+          fetchOrders();
+          
+          // Play sound notification for new order
+          if (soundEnabled) {
+            soundNotification.current.playNewOrderSound();
+          }
+          
+          toast({
+            title: "🔔 طلب جديد",
+            description: "تم إضافة طلب جديد للنظام",
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
           schema: 'public',
           table: 'orders'
         },
@@ -101,16 +138,36 @@ export default function Dashboard() {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'order_specialists'
         },
-        () => {
+        (payload) => {
+          console.log('New order_specialist entry:', payload);
           fetchOrders();
-          toast({
-            title: "تحديث",
-            description: "تم استلام عرض سعر جديد",
-          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'order_specialists'
+        },
+        (payload) => {
+          console.log('Order specialist updated:', payload);
+          const newRecord = payload.new as any;
+          
+          // Check if quoted_price was added (new quote)
+          if (newRecord.quoted_price && soundEnabled) {
+            soundNotification.current.playNewQuoteSound();
+            toast({
+              title: "💰 عرض سعر جديد",
+              description: "تم استلام عرض سعر جديد من المحترف",
+            });
+          }
+          
+          fetchOrders();
         }
       )
       .subscribe();
@@ -119,7 +176,7 @@ export default function Dashboard() {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(quotesChannel);
     };
-  }, []);
+  }, [soundEnabled]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -460,6 +517,15 @@ export default function Dashboard() {
             </div>
             
             <div className="flex gap-2">
+              <Button
+                variant={soundEnabled ? "default" : "outline"}
+                size="icon"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                title={soundEnabled ? "تعطيل التنبيهات الصوتية" : "تفعيل التنبيهات الصوتية"}
+              >
+                <Volume2 className={`h-4 w-4 ${soundEnabled ? '' : 'opacity-50'}`} />
+              </Button>
+
               <Button
                 variant="outline"
                 onClick={() => navigate('/companies')}

@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map } from "lucide-react";
+import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { differenceInMinutes, parseISO } from "date-fns";
@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getSoundNotification } from "@/lib/soundNotification";
 
 interface OrderSpecialist {
   id: string;
@@ -59,8 +60,20 @@ export default function SpecialistOrders() {
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const soundNotification = useRef(getSoundNotification());
+
+  // Initialize audio context on first user interaction
+  useEffect(() => {
+    const initAudio = async () => {
+      await soundNotification.current.initialize();
+    };
+    
+    document.addEventListener('click', initAudio, { once: true });
+    return () => document.removeEventListener('click', initAudio);
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -94,10 +107,15 @@ export default function SpecialistOrders() {
           // Refresh orders when a new order is assigned to this specialist
           fetchOrders(specialistId);
           
+          // Play sound notification for new order
+          if (soundEnabled) {
+            soundNotification.current.playNewOrderSound();
+          }
+          
           // Show notification
           toast({
-            title: "New Order!",
-            description: "A new order has been added for you",
+            title: "🔔 طلب جديد!",
+            description: "تم إضافة طلب جديد لك",
           });
         }
       )
@@ -120,7 +138,7 @@ export default function SpecialistOrders() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [specialistId]);
+  }, [specialistId, soundEnabled]);
 
   const checkAuth = async () => {
     try {
@@ -770,10 +788,21 @@ export default function SpecialistOrders() {
               </h1>
               <p className="text-muted-foreground">Welcome {specialistName}</p>
             </div>
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant={soundEnabled ? "default" : "outline"} 
+                size="sm"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                title={soundEnabled ? "تعطيل التنبيهات الصوتية" : "تفعيل التنبيهات الصوتية"}
+              >
+                <Volume2 className={`mr-2 h-4 w-4 ${soundEnabled ? '' : 'opacity-50'}`} />
+                {soundEnabled ? 'Sound On' : 'Sound Off'}
+              </Button>
+              <Button onClick={handleLogout} variant="outline" size="sm">
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </Card>
 
