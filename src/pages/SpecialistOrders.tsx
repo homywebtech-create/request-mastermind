@@ -395,18 +395,6 @@ export default function SpecialistOrders() {
   );
   const acceptedOrders = orders.filter(o => o.order_specialist?.is_accepted === true);
   
-  // Upcoming orders: accepted orders with future booking dates
-  const upcomingOrders = acceptedOrders.filter(o => {
-    if (!o.booking_date) return false;
-    try {
-      const bookingDateTime = parseISO(o.booking_date);
-      const now = new Date();
-      return bookingDateTime > now; // Future bookings
-    } catch {
-      return false;
-    }
-  });
-  
   // Rejected orders: rejected by admin (has quote and is_accepted = false)
   const rejectedOrders = orders.filter(o => 
     o.order_specialist?.is_accepted === false && 
@@ -418,7 +406,6 @@ export default function SpecialistOrders() {
     new: newOrders.length,
     quoted: quotedOrders.length,
     accepted: acceptedOrders.length,
-    upcoming: upcomingOrders.length,
     skipped: skippedOrders.length,
     rejected: rejectedOrders.length
   });
@@ -840,7 +827,7 @@ export default function SpecialistOrders() {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
             <div className="flex items-center justify-between">
               <div>
@@ -861,18 +848,6 @@ export default function SpecialistOrders() {
               </div>
               <div className="h-12 w-12 rounded-full bg-orange-500/20 flex items-center justify-center">
                 <Tag className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Upcoming</p>
-                <p className="text-3xl font-bold text-purple-600">{upcomingOrders.length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-purple-600" />
               </div>
             </div>
           </Card>
@@ -916,7 +891,7 @@ export default function SpecialistOrders() {
 
         {/* Orders Tabs */}
         <Tabs defaultValue="new" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
             <TabsTrigger value="new" className="gap-2">
               <AlertCircle className="h-4 w-4" />
               New ({newOrders.length})
@@ -924,10 +899,6 @@ export default function SpecialistOrders() {
             <TabsTrigger value="quoted" className="gap-2">
               <Tag className="h-4 w-4" />
               Under Review ({quotedOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="upcoming" className="gap-2">
-              <Clock className="h-4 w-4" />
-              Upcoming ({upcomingOrders.length})
             </TabsTrigger>
             <TabsTrigger value="accepted" className="gap-2">
               <CheckCircle className="h-4 w-4" />
@@ -963,18 +934,6 @@ export default function SpecialistOrders() {
               </Card>
             ) : (
               quotedOrders.map((order) => renderOrderCard(order))
-            )}
-          </TabsContent>
-
-          <TabsContent value="upcoming" className="space-y-4">
-            {upcomingOrders.length === 0 ? (
-              <Card className="p-12 text-center">
-                <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">No upcoming orders</p>
-                <p className="text-sm text-muted-foreground mt-2">Accepted orders with scheduled dates will appear here</p>
-              </Card>
-            ) : (
-              upcomingOrders.map((order) => renderOrderCard(order))
             )}
           </TabsContent>
 
