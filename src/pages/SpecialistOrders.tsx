@@ -698,35 +698,6 @@ export default function SpecialistOrders() {
         
         {order.order_specialist?.is_accepted === true && (
           <div className="space-y-3">
-            {order.booking_date && (
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200">
-                <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-xs text-blue-600 mb-2 font-semibold">Booking Details</p>
-                  <div className="space-y-1">
-                    <p className="text-sm">
-                      <span className="text-muted-foreground">Date & Time:</span>{' '}
-                      <span className="font-bold">
-                        {new Date(order.booking_date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </p>
-                    {order.booking_date_type && (
-                      <p className="text-sm">
-                        <span className="text-muted-foreground">Type:</span>{' '}
-                        <span className="font-medium">{order.booking_date_type}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-            
             {canMoveNow() ? (
               <div className="space-y-3">
                 <Button
@@ -738,10 +709,10 @@ export default function SpecialistOrders() {
                     <Navigation className="h-5 w-5" />
                     <span className="text-base font-bold">تحرك الآن - Move Now</span>
                   </div>
-                  {getTimeUntilMovement() && (
-                    <div className="flex items-center gap-2 text-xs text-white/80 mt-1">
-                      <Clock className="h-3 w-3" />
-                      <span>
+                  {getTimeUntilMovement() && order.booking_date && (
+                    <div className="flex items-center gap-2 text-xs text-white/90 mt-2 bg-white/10 px-3 py-1 rounded-full">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span className="font-medium">
                         {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
                         {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
                         {getTimeUntilMovement()!.minutes}m
@@ -816,18 +787,15 @@ export default function SpecialistOrders() {
                   <Navigation className="h-5 w-5" />
                   <span>تحرك الآن - Move Now</span>
                 </div>
-                {getTimeUntilMovement() && (
+                {getTimeUntilMovement() && order.booking_date && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
                     <Clock className="h-4 w-4" />
-                    <div className="flex items-center gap-2">
-                      {getTimeUntilMovement()!.days > 0 && (
-                        <span className="font-bold">{getTimeUntilMovement()!.days}d</span>
-                      )}
-                      {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && (
-                        <span className="font-bold">{getTimeUntilMovement()!.hours}h</span>
-                      )}
-                      <span className="font-bold">{getTimeUntilMovement()!.minutes}m</span>
-                    </div>
+                    <span className="font-medium">
+                      {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
+                      {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
+                      {getTimeUntilMovement()!.minutes}m
+                      {' '}حتى الموعد
+                    </span>
                   </div>
                 )}
               </Button>
