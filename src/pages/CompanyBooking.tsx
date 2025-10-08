@@ -129,7 +129,7 @@ export default function CompanyBooking() {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedSpecialistId, setSelectedSpecialistId] = useState<string | null>(null);
 
-  const totalSteps = 4;
+  const totalSteps = 3;
   const t = translations[language];
 
   // Generate available time slots from 8:00 AM to 4:00 PM
@@ -263,6 +263,22 @@ export default function CompanyBooking() {
       });
       return;
     }
+    if (currentStep === 3 && !selectedSpecialistId) {
+      toast({
+        title: t.missingData,
+        description: language === 'ar' ? 'يرجى اختيار المحترفة' : 'Please select a specialist',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (currentStep === 3 && !selectedTime) {
+      toast({
+        title: t.missingData,
+        description: t.selectTimeError,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
   };
@@ -380,8 +396,7 @@ export default function CompanyBooking() {
     const steps = [
       { number: 1, title: t.location },
       { number: 2, title: t.bookingType },
-      { number: 3, title: t.date },
-      { number: 4, title: t.prices }
+      { number: 3, title: language === 'ar' ? 'التاريخ والمحترفة' : 'Date & Specialist' }
     ];
 
     return (
@@ -542,175 +557,189 @@ export default function CompanyBooking() {
               </div>
             )}
 
-            {/* Step 3: Booking Date */}
+            {/* Step 3: Date Selection & Specialists */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">{t.selectDate}</h3>
-                
-                <RadioGroup value={bookingDateType} onValueChange={setBookingDateType}>
-                  <div className="space-y-3">
-                    {[
-                      { value: 'today', label: t.today },
-                      { value: 'tomorrow', label: t.tomorrow },
-                      { value: 'custom', label: t.customDate }
-                    ].map((option) => (
-                      <label
-                        key={option.value}
-                        className={cn(
-                          'flex items-center space-x-3 space-x-reverse border-2 rounded-lg p-4 cursor-pointer transition-all',
-                          bookingDateType === option.value
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        )}
-                      >
-                        <RadioGroupItem value={option.value} id={option.value} />
-                        <div className="flex-1 flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          <span className="font-medium">{option.label}</span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </RadioGroup>
-
-                {bookingDateType === 'custom' && (
-                  <div className="space-y-2 mt-4">
-                    <Label htmlFor="customDate">{t.chooseDate}</Label>
-                    <Input
-                      type="date"
-                      id="customDate"
-                      value={customDate}
-                      onChange={(e) => setCustomDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 4: Specialists & Prices */}
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  {language === 'ar' ? 'اختر المحترفة والوقت المناسب' : 'Choose Specialist & Time'}
-                </h3>
-
+                {/* Date Selection Section */}
                 <div className="space-y-4">
-                  {specialists
-                    .sort((a, b) => {
-                      const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                      const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                      return priceA - priceB;
-                    })
-                    .map((specialist) => {
-                      const price = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                      const isLowest = price === lowestPrice;
-                      const isSelected = selectedSpecialistId === specialist.id;
-
-                      return (
-                        <div
-                          key={specialist.id}
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    {t.selectDate}
+                  </h3>
+                  
+                  <RadioGroup value={bookingDateType} onValueChange={setBookingDateType}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {[
+                        { value: 'today', label: t.today },
+                        { value: 'tomorrow', label: t.tomorrow },
+                        { value: 'custom', label: t.customDate }
+                      ].map((option) => (
+                        <label
+                          key={option.value}
                           className={cn(
-                            'border-2 rounded-lg p-4 transition-all',
-                            isSelected
-                              ? 'border-primary bg-primary/5'
-                              : isLowest 
-                              ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
-                              : 'border-border'
+                            'flex items-center justify-center border-2 rounded-lg p-4 cursor-pointer transition-all',
+                            bookingDateType === option.value
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-border hover:border-primary/50'
                           )}
                         >
-                          {/* Specialist Info */}
-                          <div 
-                            className="flex gap-4 cursor-pointer"
-                            onClick={() => setSelectedSpecialistId(specialist.id)}
-                          >
-                            {specialist.image_url ? (
-                              <img 
-                                src={specialist.image_url} 
-                                alt={specialist.name}
-                                className="w-24 h-24 rounded-lg object-cover border-2 border-border"
-                              />
-                            ) : (
-                              <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
-                                <Users className="h-12 w-12 text-muted-foreground" />
-                              </div>
-                            )}
-
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-2">
-                                <div>
-                                  <h4 className="font-semibold text-lg flex items-center gap-2">
-                                    {specialist.name}
-                                    {isSelected && <Check className="h-5 w-5 text-primary" />}
-                                  </h4>
-                                  {specialist.nationality && (
-                                    <p className="text-sm text-muted-foreground">
-                                      {specialist.nationality}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="text-left">
-                                  <Badge 
-                                    className={cn(
-                                      'text-lg px-3 py-1',
-                                      isLowest && 'bg-green-600 hover:bg-green-700'
-                                    )}
-                                  >
-                                    {specialist.quoted_price}
-                                  </Badge>
-                                  {isLowest && (
-                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                                      {t.lowestPrice} ⭐
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-
-                              <p className="text-sm text-muted-foreground" dir="ltr">
-                                📞 {specialist.phone}
-                              </p>
-                            </div>
+                          <RadioGroupItem value={option.value} id={option.value} className="sr-only" />
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5" />
+                            <span className="font-semibold">{option.label}</span>
                           </div>
+                        </label>
+                      ))}
+                    </div>
+                  </RadioGroup>
 
-                          {/* Available Times - Show only for selected specialist */}
-                          {isSelected && (
-                            <div className="mt-4 pt-4 border-t">
-                              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                {t.selectTime}
-                              </h4>
-                              <RadioGroup value={selectedTime} onValueChange={setSelectedTime}>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                  {timeSlots.map((slot) => (
-                                    <label
-                                      key={slot}
-                                      className={cn(
-                                        'flex items-center justify-center border-2 rounded-lg p-2 cursor-pointer transition-all',
-                                        selectedTime === slot
-                                          ? 'border-primary bg-primary text-primary-foreground'
-                                          : 'border-border hover:border-primary/50'
-                                      )}
-                                    >
-                                      <RadioGroupItem value={slot} id={slot} className="sr-only" />
-                                      <div className="flex items-center gap-1.5">
-                                        <Clock className="h-3.5 w-3.5" />
-                                        <span className="font-medium text-xs">{slot}</span>
-                                      </div>
-                                    </label>
-                                  ))}
-                                </div>
-                              </RadioGroup>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  {bookingDateType === 'custom' && (
+                    <div className="space-y-2 mt-4 p-4 bg-muted/50 rounded-lg">
+                      <Label htmlFor="customDate" className="text-base font-semibold">
+                        {t.chooseDate}
+                      </Label>
+                      <Input
+                        type="date"
+                        id="customDate"
+                        value={customDate}
+                        onChange={(e) => setCustomDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="text-base"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {specialists.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>{t.noSpecialists}</p>
+                {/* Show Specialists after date selection */}
+                {bookingDateType && (bookingDateType !== 'custom' || customDate) && (
+                  <div className="space-y-4 pt-6 border-t-2">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      {language === 'ar' ? 'اختر المحترفة والوقت المناسب' : 'Choose Specialist & Time'}
+                    </h3>
+
+                    {specialists.length > 0 ? (
+                      <div className="space-y-4">
+                        {specialists
+                          .sort((a, b) => {
+                            const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                            const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                            return priceA - priceB;
+                          })
+                          .map((specialist) => {
+                            const price = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                            const isLowest = price === lowestPrice;
+                            const isSelected = selectedSpecialistId === specialist.id;
+
+                            return (
+                              <div
+                                key={specialist.id}
+                                className={cn(
+                                  'border-2 rounded-xl overflow-hidden transition-all',
+                                  isSelected
+                                    ? 'border-primary shadow-lg'
+                                    : isLowest 
+                                    ? 'border-green-500 shadow-md' 
+                                    : 'border-border hover:shadow-md'
+                                )}
+                              >
+                                {/* Specialist Info Header */}
+                                <div 
+                                  className={cn(
+                                    'flex gap-4 p-4 cursor-pointer transition-colors',
+                                    isSelected && 'bg-primary/5',
+                                    isLowest && !isSelected && 'bg-green-50 dark:bg-green-950/20'
+                                  )}
+                                  onClick={() => setSelectedSpecialistId(specialist.id)}
+                                >
+                                  {specialist.image_url ? (
+                                    <img 
+                                      src={specialist.image_url} 
+                                      alt={specialist.name}
+                                      className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover border-2 border-border flex-shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-muted flex items-center justify-center border-2 border-border flex-shrink-0">
+                                      <Users className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground" />
+                                    </div>
+                                  )}
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold text-base md:text-lg flex items-center gap-2 flex-wrap">
+                                          <span className="truncate">{specialist.name}</span>
+                                          {isSelected && <Check className="h-5 w-5 text-primary flex-shrink-0" />}
+                                        </h4>
+                                        {specialist.nationality && (
+                                          <p className="text-sm text-muted-foreground truncate">
+                                            {specialist.nationality}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="text-right flex-shrink-0">
+                                        <Badge 
+                                          className={cn(
+                                            'text-base md:text-lg px-3 py-1 font-bold',
+                                            isLowest && 'bg-green-600 hover:bg-green-700'
+                                          )}
+                                        >
+                                          {specialist.quoted_price}
+                                        </Badge>
+                                        {isLowest && (
+                                          <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-bold">
+                                            {t.lowestPrice} ⭐
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <p className="text-sm text-muted-foreground" dir="ltr">
+                                      📞 {specialist.phone}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Available Times - Show only for selected specialist */}
+                                {isSelected && (
+                                  <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-t-2 border-primary/20">
+                                    <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+                                      <Clock className="h-4 w-4" />
+                                      {t.selectTime}
+                                    </h4>
+                                    <RadioGroup value={selectedTime} onValueChange={setSelectedTime}>
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        {timeSlots.map((slot) => (
+                                          <label
+                                            key={slot}
+                                            className={cn(
+                                              'flex items-center justify-center border-2 rounded-lg p-2.5 cursor-pointer transition-all',
+                                              selectedTime === slot
+                                                ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
+                                                : 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
+                                            )}
+                                          >
+                                            <RadioGroupItem value={slot} id={slot} className="sr-only" />
+                                            <div className="flex items-center gap-1.5">
+                                              <Clock className="h-4 w-4" />
+                                              <span className="font-semibold text-xs">{slot}</span>
+                                            </div>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </RadioGroup>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-lg">
+                        <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p className="font-medium">{t.noSpecialists}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
