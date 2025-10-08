@@ -123,8 +123,8 @@ export default function OrderTracking() {
     } catch (error) {
       console.error('Error fetching order:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل بيانات الطلب",
+        title: "Error",
+        description: "Failed to load order data",
         variant: "destructive",
       });
     } finally {
@@ -135,8 +135,8 @@ export default function OrderTracking() {
   const openMaps = () => {
     if (!order?.gps_latitude || !order?.gps_longitude) {
       toast({
-        title: "خطأ",
-        description: "موقع العميل غير متوفر",
+        title: "Error",
+        description: "Customer location not available",
         variant: "destructive",
       });
       return;
@@ -152,22 +152,22 @@ export default function OrderTracking() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           toast({
-            title: "تم الحصول على الموقع",
-            description: `خط العرض: ${position.coords.latitude.toFixed(4)}, خط الطول: ${position.coords.longitude.toFixed(4)}`,
+            title: "Location Retrieved",
+            description: `Latitude: ${position.coords.latitude.toFixed(4)}, Longitude: ${position.coords.longitude.toFixed(4)}`,
           });
         },
         (error) => {
           toast({
-            title: "خطأ",
-            description: "فشل في الحصول على موقعك",
+            title: "Error",
+            description: "Failed to get your location",
             variant: "destructive",
           });
         }
       );
     } else {
       toast({
-        title: "خطأ",
-        description: "المتصفح لا يدعم خدمة الموقع",
+        title: "Error",
+        description: "Browser does not support location service",
         variant: "destructive",
       });
     }
@@ -179,8 +179,8 @@ export default function OrderTracking() {
         async (position) => {
           try {
             await navigator.share({
-              title: 'موقعي الحالي',
-              text: `موقعي: https://www.google.com/maps/search/?api=1&query=${position.coords.latitude},${position.coords.longitude}`,
+              title: 'My Current Location',
+              text: `My location: https://www.google.com/maps/search/?api=1&query=${position.coords.latitude},${position.coords.longitude}`,
             });
           } catch (error) {
             console.error('Error sharing:', error);
@@ -188,16 +188,16 @@ export default function OrderTracking() {
         },
         () => {
           toast({
-            title: "خطأ",
-            description: "فشل في الحصول على موقعك",
+            title: "Error",
+            description: "Failed to get your location",
             variant: "destructive",
           });
         }
       );
     } else {
       toast({
-        title: "خطأ",
-        description: "المشاركة غير متاحة على هذا الجهاز",
+        title: "Error",
+        description: "Sharing not available on this device",
         variant: "destructive",
       });
     }
@@ -206,32 +206,32 @@ export default function OrderTracking() {
   const handleArrived = () => {
     setStage('arrived');
     toast({
-      title: "تم التأكيد",
-      description: "تم تسجيل وصولك إلى الموقع",
+      title: "Confirmed",
+      description: "Your arrival has been recorded",
     });
   };
 
   const handleStartWork = () => {
     setStage('working');
     toast({
-      title: "بدء العمل",
-      description: "تم بدء عداد الوقت",
+      title: "Work Started",
+      description: "Timer has been started",
     });
   };
 
   const togglePause = () => {
     setIsPaused(!isPaused);
     toast({
-      title: isPaused ? "استئناف العمل" : "إيقاف مؤقت",
-      description: isPaused ? "تم استئناف العمل" : "تم إيقاف العمل مؤقتاً",
+      title: isPaused ? "Work Resumed" : "Work Paused",
+      description: isPaused ? "Work has been resumed" : "Work has been paused temporarily",
     });
   };
 
   const handleEmergency = () => {
     // Get company phone from order - in real app, this would come from order data
     toast({
-      title: "الاتصال بالطوارئ",
-      description: "سيتم الاتصال بالشركة الآن",
+      title: "Emergency Call",
+      description: "Calling company now",
     });
     // In real implementation, call the company
   };
@@ -239,8 +239,8 @@ export default function OrderTracking() {
   const handleCancelWork = () => {
     if (!cancelReason) {
       toast({
-        title: "خطأ",
-        description: "يرجى اختيار سبب الإلغاء",
+        title: "Error",
+        description: "Please select a cancellation reason",
         variant: "destructive",
       });
       return;
@@ -248,8 +248,8 @@ export default function OrderTracking() {
 
     if (cancelReason === 'other' && !otherReason.trim()) {
       toast({
-        title: "خطأ",
-        description: "يرجى كتابة السبب",
+        title: "Error",
+        description: "Please write the reason",
         variant: "destructive",
       });
       return;
@@ -257,8 +257,8 @@ export default function OrderTracking() {
 
     // Handle cancellation
     toast({
-      title: "تم إلغاء العمل",
-      description: "تم تسجيل الإلغاء بنجاح",
+      title: "Work Cancelled",
+      description: "Cancellation recorded successfully",
     });
     setShowCancelDialog(false);
     navigate(-1);
@@ -266,8 +266,8 @@ export default function OrderTracking() {
 
   const handleRequestInvoice = () => {
     toast({
-      title: "طلب الفاتورة",
-      description: "تم إرسال طلب الفاتورة للإدارة",
+      title: "Invoice Requested",
+      description: "Invoice request has been sent to management",
     });
     navigate(-1);
   };
@@ -284,7 +284,7 @@ export default function OrderTracking() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -293,7 +293,7 @@ export default function OrderTracking() {
   if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">الطلب غير موجود</p>
+        <p className="text-muted-foreground">Order not found</p>
       </div>
     );
   }
@@ -305,30 +305,30 @@ export default function OrderTracking() {
         <Card className="p-6">
           <h2 className="text-2xl font-bold mb-4">{order.customer?.name}</h2>
           <div className="space-y-2 text-sm">
-            <p><span className="font-semibold">الخدمة:</span> {order.service_type}</p>
-            <p><span className="font-semibold">المنطقة:</span> {order.customer?.area}</p>
-            <p><span className="font-semibold">عدد الساعات:</span> {order.hours_count}</p>
+            <p><span className="font-semibold">Service:</span> {order.service_type}</p>
+            <p><span className="font-semibold">Area:</span> {order.customer?.area}</p>
+            <p><span className="font-semibold">Hours:</span> {order.hours_count}</p>
           </div>
         </Card>
 
         {/* Moving Stage */}
         {stage === 'moving' && (
           <Card className="p-6 space-y-4">
-            <h3 className="text-xl font-bold text-center mb-6">الانتقال إلى العميل</h3>
+            <h3 className="text-xl font-bold text-center mb-6">Moving to Customer</h3>
             
             <Button onClick={openMaps} className="w-full" size="lg">
               <Navigation className="ml-2 h-5 w-5" />
-              فتح الخريطة
+              Click to Navigate to Customer
             </Button>
 
             <Button onClick={getMyLocation} variant="outline" className="w-full" size="lg">
               <MapPin className="ml-2 h-5 w-5" />
-              الحصول على موقعي الحالي
+              Get My Current Location
             </Button>
 
             <Button onClick={shareLocation} variant="outline" className="w-full" size="lg">
               <Share2 className="ml-2 h-5 w-5" />
-              مشاركة موقعي
+              Share My Location
             </Button>
 
             <div className="pt-4 border-t">
@@ -340,7 +340,7 @@ export default function OrderTracking() {
                 variant={movingTimer > 0 ? "secondary" : "default"}
               >
                 <CheckCircle className="ml-2 h-5 w-5" />
-                وصلت إلى المكان
+                I Have Arrived
                 {movingTimer > 0 && (
                   <span className="mr-2 text-sm">({movingTimer}s)</span>
                 )}
@@ -352,21 +352,21 @@ export default function OrderTracking() {
         {/* Arrived Stage */}
         {stage === 'arrived' && (
           <Card className="p-6 space-y-4">
-            <h3 className="text-xl font-bold text-center mb-6">وصلت إلى الموقع</h3>
+            <h3 className="text-xl font-bold text-center mb-6">Arrived at Location</h3>
             
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <div className="flex items-start gap-2">
                 <MapPin className="h-5 w-5 text-primary mt-0.5" />
                 <div className="flex-1">
-                  <p className="font-semibold">عنوان العميل:</p>
-                  <p className="text-sm text-muted-foreground">{order.building_info || 'لا توجد تفاصيل'}</p>
+                  <p className="font-semibold">Customer Address:</p>
+                  <p className="text-sm text-muted-foreground">{order.building_info || 'No details available'}</p>
                 </div>
               </div>
             </div>
 
             <Button onClick={openMaps} variant="outline" className="w-full">
               <Navigation className="ml-2 h-5 w-5" />
-              عرض الموقع على الخريطة
+              View Location on Map
             </Button>
 
             <div className="pt-4 border-t">
@@ -378,7 +378,7 @@ export default function OrderTracking() {
                 variant={arrivedTimer > 0 ? "secondary" : "default"}
               >
                 <Play className="ml-2 h-5 w-5" />
-                بدء العمل
+                Start Work
                 {arrivedTimer > 0 && (
                   <span className="mr-2 text-sm">({arrivedTimer}s)</span>
                 )}
@@ -390,7 +390,7 @@ export default function OrderTracking() {
         {/* Working Stage */}
         {stage === 'working' && (
           <Card className="p-6 space-y-6">
-            <h3 className="text-xl font-bold text-center">جاري العمل</h3>
+            <h3 className="text-xl font-bold text-center">Working</h3>
             
             {/* Work Timer */}
             <div className="text-center space-y-2">
@@ -398,11 +398,11 @@ export default function OrderTracking() {
                 {formatTime(workingTime)}
               </div>
               <div className="text-sm text-muted-foreground">
-                من أصل {formatTime(totalWorkSeconds)}
+                of {formatTime(totalWorkSeconds)}
               </div>
               {workingTime >= totalWorkSeconds && (
                 <div className="text-sm font-semibold text-green-600">
-                  ⏰ انتهى الوقت المحدد
+                  ⏰ Time Limit Reached
                 </div>
               )}
             </div>
@@ -426,12 +426,12 @@ export default function OrderTracking() {
                 {isPaused ? (
                   <>
                     <Play className="ml-2 h-5 w-5" />
-                    استئناف العمل
+                    Resume Work
                   </>
                 ) : (
                   <>
                     <Pause className="ml-2 h-5 w-5" />
-                    إيقاف مؤقت
+                    Pause
                   </>
                 )}
               </Button>
@@ -442,53 +442,53 @@ export default function OrderTracking() {
                 className="w-full"
               >
                 <AlertTriangle className="ml-2 h-5 w-5" />
-                طوارئ - الاتصال بالشركة
+                Emergency - Call Company
               </Button>
 
               <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive hover:text-white">
                     <XCircle className="ml-2 h-5 w-5" />
-                    إلغاء العمل
+                    Cancel Work
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>سبب الإلغاء</DialogTitle>
+                    <DialogTitle>Cancellation Reason</DialogTitle>
                     <DialogDescription>
-                      يرجى اختيار سبب إلغاء العمل
+                      Please select a reason for cancelling the work
                     </DialogDescription>
                   </DialogHeader>
                   <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="customer_requested" id="customer_requested" />
-                      <Label htmlFor="customer_requested">العميل طلب الإلغاء</Label>
+                      <Label htmlFor="customer_requested">Customer Requested Cancellation</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="not_family" id="not_family" />
-                      <Label htmlFor="not_family">العميل ليس عائلة</Label>
+                      <Label htmlFor="not_family">Customer is Not Family</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="other" id="other" />
-                      <Label htmlFor="other">أسباب أخرى</Label>
+                      <Label htmlFor="other">Other Reasons</Label>
                     </div>
                   </RadioGroup>
                   
                   {cancelReason === 'other' && (
                     <div className="space-y-2">
-                      <Label htmlFor="other_reason">اكتب السبب</Label>
+                      <Label htmlFor="other_reason">Write the Reason</Label>
                       <Textarea
                         id="other_reason"
                         value={otherReason}
                         onChange={(e) => setOtherReason(e.target.value)}
-                        placeholder="اكتب سبب الإلغاء هنا..."
+                        placeholder="Write cancellation reason here..."
                         rows={4}
                       />
                     </div>
                   )}
                   
                   <Button onClick={handleCancelWork} variant="destructive" className="w-full">
-                    تأكيد الإلغاء
+                    Confirm Cancellation
                   </Button>
                 </DialogContent>
               </Dialog>
@@ -500,7 +500,7 @@ export default function OrderTracking() {
                   size="lg"
                 >
                   <FileText className="ml-2 h-5 w-5" />
-                  طلب الفاتورة
+                  Request Invoice
                 </Button>
               )}
             </div>
@@ -513,7 +513,7 @@ export default function OrderTracking() {
           variant="outline"
           className="w-full"
         >
-          العودة
+          Back
         </Button>
       </div>
     </div>
