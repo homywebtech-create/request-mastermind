@@ -102,7 +102,16 @@ export default function Orders() {
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          *,
+          id,
+          order_number,
+          customer_id,
+          company_id,
+          service_type,
+          status,
+          notes,
+          order_link,
+          created_at,
+          send_to_all_companies,
           customers (
             name,
             whatsapp_number
@@ -120,12 +129,7 @@ export default function Orders() {
               name,
               phone,
               nationality,
-              image_url,
-              company_id,
-              companies (
-                id,
-                name
-              )
+              image_url
             )
           )
         `)
