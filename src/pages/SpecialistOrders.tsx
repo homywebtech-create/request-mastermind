@@ -71,7 +71,7 @@ export default function SpecialistOrders() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Update every minute
+    }, 1000); // Update every second
 
     return () => clearInterval(timer);
   }, []);
@@ -437,20 +437,15 @@ export default function SpecialistOrders() {
       
       try {
         const bookingDateTime = parseISO(order.booking_date);
-        const minutesUntilBooking = differenceInMinutes(bookingDateTime, currentTime);
+        const now = currentTime;
+        const totalSeconds = Math.floor((bookingDateTime.getTime() - now.getTime()) / 1000);
         
-        const totalHours = Math.floor(Math.abs(minutesUntilBooking) / 60);
-        const days = Math.floor(totalHours / 24);
-        const hours = totalHours % 24;
-        const minutes = Math.abs(minutesUntilBooking) % 60;
+        const days = Math.floor(Math.abs(totalSeconds) / 86400);
+        const hours = Math.floor((Math.abs(totalSeconds) % 86400) / 3600);
+        const minutes = Math.floor((Math.abs(totalSeconds) % 3600) / 60);
+        const seconds = Math.abs(totalSeconds) % 60;
         
-        if (days > 0) {
-          return { days, hours, minutes, text: `${days} يوم و ${hours} ساعة و ${minutes} دقيقة` };
-        } else if (hours > 0) {
-          return { days: 0, hours, minutes, text: `${hours} ساعة و ${minutes} دقيقة` };
-        } else {
-          return { days: 0, hours: 0, minutes, text: `${minutes} دقيقة` };
-        }
+        return { days, hours, minutes, seconds };
       } catch (error) {
         return null;
       }
@@ -711,12 +706,13 @@ export default function SpecialistOrders() {
                       <span className="text-base font-bold">Move Now - تحرك الآن</span>
                     </div>
                     {getTimeUntilMovement() && order.booking_date && (
-                      <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1.5 rounded-full border border-white/30">
-                        <Clock className="h-4 w-4" />
-                        <span className="font-bold text-sm">
+                      <div className="flex items-center gap-1.5 bg-blue-500/30 px-3 py-1.5 rounded-full border-2 border-blue-400/50 backdrop-blur-sm">
+                        <Clock className="h-4 w-4 text-white" />
+                        <span className="font-bold text-sm text-white font-mono">
                           {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
-                          {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
-                          {getTimeUntilMovement()!.minutes}m
+                          {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${String(getTimeUntilMovement()!.hours).padStart(2, '0')}:`}
+                          {String(getTimeUntilMovement()!.minutes).padStart(2, '0')}:
+                          {String(getTimeUntilMovement()!.seconds).padStart(2, '0')}
                         </span>
                       </div>
                     )}
@@ -790,12 +786,13 @@ export default function SpecialistOrders() {
                     <span className="font-semibold">Move Now - تحرك الآن</span>
                   </div>
                   {getTimeUntilMovement() && order.booking_date && (
-                    <div className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full border">
-                      <Clock className="h-4 w-4" />
-                      <span className="font-bold text-sm">
+                    <div className="flex items-center gap-1.5 bg-red-50 px-3 py-1.5 rounded-full border-2 border-red-200">
+                      <Clock className="h-4 w-4 text-red-600" />
+                      <span className="font-bold text-sm text-red-600 font-mono">
                         {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
-                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
-                        {getTimeUntilMovement()!.minutes}m
+                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${String(getTimeUntilMovement()!.hours).padStart(2, '0')}:`}
+                        {String(getTimeUntilMovement()!.minutes).padStart(2, '0')}:
+                        {String(getTimeUntilMovement()!.seconds).padStart(2, '0')}
                       </span>
                     </div>
                   )}
