@@ -149,7 +149,46 @@ export default function CompanyBooking() {
     return slots;
   };
 
+  // Generate available dates for the next 15 days
+  const generateAvailableDates = () => {
+    const dates = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 15; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date);
+    }
+    
+    return dates;
+  };
+
   const timeSlots = generateTimeSlots();
+  const availableDates = generateAvailableDates();
+
+  // Format date for display
+  const formatDateDisplay = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    
+    const diffDays = Math.floor((compareDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return language === 'ar' ? 'اليوم' : 'Today';
+    if (diffDays === 1) return language === 'ar' ? 'غداً' : 'Tomorrow';
+    
+    const dayName = language === 'ar' 
+      ? ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'][date.getDay()]
+      : date.toLocaleDateString('en-US', { weekday: 'short' });
+    
+    const dateStr = date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+    
+    return `${dayName} ${dateStr}`;
+  };
 
   useEffect(() => {
     fetchData();
@@ -307,11 +346,16 @@ export default function CompanyBooking() {
         return;
       }
 
-      const bookingDate = bookingDateType === 'today' 
-        ? new Date().toISOString().split('T')[0]
-        : bookingDateType === 'tomorrow'
-        ? new Date(Date.now() + 86400000).toISOString().split('T')[0]
-        : customDate;
+      if (!bookingDateType) {
+        toast({
+          title: t.missingData,
+          description: t.selectDateError,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const bookingDate = bookingDateType;
 
       // Update order details
       const { error: orderError } = await supabase
@@ -564,54 +608,56 @@ export default function CompanyBooking() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    {t.selectDate}
+                    {language === 'ar' ? 'اختر التاريخ المناسب' : 'Choose Date'}
                   </h3>
                   
-                  <RadioGroup value={bookingDateType} onValueChange={setBookingDateType}>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {[
-                        { value: 'today', label: t.today },
-                        { value: 'tomorrow', label: t.tomorrow },
-                        { value: 'custom', label: t.customDate }
-                      ].map((option) => (
-                        <label
-                          key={option.value}
-                          className={cn(
-                            'flex items-center justify-center border-2 rounded-lg p-4 cursor-pointer transition-all',
-                            bookingDateType === option.value
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border hover:border-primary/50'
-                          )}
-                        >
-                          <RadioGroupItem value={option.value} id={option.value} className="sr-only" />
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5" />
-                            <span className="font-semibold">{option.label}</span>
-                          </div>
-                        </label>
-                      ))}
+                  <RadioGroup value={bookingDateType} onValueChange={(value) => {
+                    setBookingDateType(value);
+                    setSelectedSpecialistId(null);
+                    setSelectedTime('');
+                  }}>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                      {availableDates.map((date) => {
+                        const dateValue = date.toISOString().split('T')[0];
+                        const isSelected = bookingDateType === dateValue;
+                        const isToday = date.toDateString() === new Date().toDateString();
+                        
+                        return (
+                          <label
+                            key={dateValue}
+                            className={cn(
+                              'flex flex-col items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-all',
+                              isSelected
+                                ? 'border-primary bg-primary text-primary-foreground shadow-lg scale-105'
+                                : isToday
+                                ? 'border-green-500 bg-green-50 dark:bg-green-950/20 hover:border-green-600'
+                                : 'border-border hover:border-primary/50 hover:shadow-md'
+                            )}
+                          >
+                            <RadioGroupItem value={dateValue} id={dateValue} className="sr-only" />
+                            <div className="text-center">
+                              <div className={cn(
+                                "text-xs font-medium mb-1",
+                                isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                              )}>
+                                {formatDateDisplay(date)}
+                              </div>
+                              <div className={cn(
+                                "text-lg font-bold",
+                                isSelected && "text-primary-foreground"
+                              )}>
+                                {date.getDate()}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
                     </div>
                   </RadioGroup>
-
-                  {bookingDateType === 'custom' && (
-                    <div className="space-y-2 mt-4 p-4 bg-muted/50 rounded-lg">
-                      <Label htmlFor="customDate" className="text-base font-semibold">
-                        {t.chooseDate}
-                      </Label>
-                      <Input
-                        type="date"
-                        id="customDate"
-                        value={customDate}
-                        onChange={(e) => setCustomDate(e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="text-base"
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {/* Show Specialists after date selection */}
-                {bookingDateType && (bookingDateType !== 'custom' || customDate) && (
+                {bookingDateType && (
                   <div className="space-y-4 pt-6 border-t-2">
                     <h3 className="text-lg font-semibold flex items-center gap-2">
                       <Users className="h-5 w-5" />
@@ -790,6 +836,7 @@ export default function CompanyBooking() {
                 <Button
                   type="button"
                   onClick={handleSubmit}
+                  disabled={!bookingDateType || !selectedSpecialistId || !selectedTime}
                   className="flex-1 flex items-center justify-center gap-2"
                 >
                   <Check className="h-4 w-4" />
