@@ -48,6 +48,8 @@ export default function OrderTracking() {
   const [cancelReason, setCancelReason] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showEarlyFinishDialog, setShowEarlyFinishDialog] = useState(false);
+  const [arrivedStartTime, setArrivedStartTime] = useState<Date | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -84,6 +86,27 @@ export default function OrderTracking() {
       return () => clearInterval(timer);
     }
   }, [stage, arrivedTimer]);
+
+  // Auto-start work after 5 minutes if specialist didn't start
+  useEffect(() => {
+    if (stage === 'arrived' && arrivedStartTime) {
+      const checkAutoStart = setInterval(() => {
+        const now = new Date();
+        const minutesPassed = (now.getTime() - arrivedStartTime.getTime()) / 1000 / 60;
+        
+        if (minutesPassed >= 5) {
+          handleStartWork();
+          toast({
+            title: "Auto-Started",
+            description: "Work timer has been automatically started",
+          });
+          clearInterval(checkAutoStart);
+        }
+      }, 1000);
+
+      return () => clearInterval(checkAutoStart);
+    }
+  }, [stage, arrivedStartTime]);
 
   // Timer for working stage (count up)
   useEffect(() => {
@@ -208,6 +231,7 @@ export default function OrderTracking() {
 
   const handleArrived = async () => {
     setStage('arrived');
+    setArrivedStartTime(new Date());
     await updateOrderStage('arrived');
     toast({
       title: "Confirmed",
@@ -268,6 +292,21 @@ export default function OrderTracking() {
     });
     setShowCancelDialog(false);
     navigate(-1);
+  };
+
+  const handleEarlyFinish = () => {
+    setShowEarlyFinishDialog(true);
+  };
+
+  const confirmEarlyFinish = async () => {
+    await updateOrderStage('completed');
+    setShowEarlyFinishDialog(false);
+    toast({
+      title: "Work Completed",
+      description: "Work has been marked as completed early",
+    });
+    // Show invoice request immediately
+    handleRequestInvoice();
   };
 
   const handleRequestInvoice = async () => {
@@ -437,6 +476,46 @@ export default function OrderTracking() {
                   </>
                 )}
               </Button>
+
+              {/* Early Finish Button - only show if not at time limit yet */}
+              {workingTime < totalWorkSeconds && (
+                <Dialog open={showEarlyFinishDialog} onOpenChange={setShowEarlyFinishDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white">
+                      <CheckCircle className="ml-2 h-5 w-5" />
+                      Finish Work Early
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Finish Work Early?</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to finish the work before the scheduled time?
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <p className="text-sm text-muted-foreground">
+                        By confirming, you will mark the work as completed and request the invoice.
+                      </p>
+                      <div className="flex gap-3">
+                        <Button 
+                          onClick={() => setShowEarlyFinishDialog(false)} 
+                          variant="outline" 
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={confirmEarlyFinish} 
+                          className="flex-1"
+                        >
+                          Yes, I'm Sure
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
 
               <Button
                 onClick={handleEmergency}
