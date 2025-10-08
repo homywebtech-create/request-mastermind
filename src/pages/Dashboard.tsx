@@ -17,6 +17,7 @@ interface Order {
   company_id: string | null;
   service_type: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  tracking_stage?: string | null;
   notes?: string;
   order_link?: string;
   created_at: string;
@@ -125,7 +126,19 @@ export default function Dashboard() {
     const { data, error } = await supabase
       .from('orders')
       .select(`
-        *,
+        id,
+        customer_id,
+        company_id,
+        service_type,
+        status,
+        tracking_stage,
+        notes,
+        order_link,
+        created_at,
+        updated_at,
+        send_to_all_companies,
+        booking_type,
+        hours_count,
         customers (name, whatsapp_number, area, budget, budget_type),
         companies (name),
         order_specialists (
@@ -173,23 +186,40 @@ export default function Dashboard() {
     // Awaiting Response: Orders with at least one quote, not accepted yet
     const awaitingOrders = ordersList.filter(o => 
       o.order_specialists && 
-      o.order_specialists.some(os => os.quoted_price && os.is_accepted === null)
+      o.order_specialists.some(os => os.quoted_price) &&
+      !o.order_specialists.some(os => os.is_accepted === true)
     );
     
-    // Upcoming: Orders with accepted quotes (confirmed bookings)
-    const upcomingOrders = ordersList.filter(o => 
-      o.status === 'in-progress' &&
-      o.order_specialists && 
-      o.order_specialists.some(os => os.is_accepted === true)
-    );
+    // Upcoming: Orders with accepted quotes but tracking hasn't started yet
+    const upcomingOrders = ordersList.filter(o => {
+      const hasAcceptedQuote = o.order_specialists && 
+                               o.order_specialists.some(os => os.is_accepted === true);
+      const notStartedTracking = !(o as any).tracking_stage;
+      const notCompleted = o.status !== 'completed';
+      
+      return hasAcceptedQuote && notStartedTracking && notCompleted;
+    });
+    
+    // In Progress: Orders where specialist has started tracking
+    const inProgressOrders = ordersList.filter(o => {
+      const trackingStage = (o as any).tracking_stage;
+      return trackingStage && 
+             ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
+    });
+    
+    // Completed: Orders where payment received or status is completed
+    const completedOrders = ordersList.filter(o => {
+      const trackingStage = (o as any).tracking_stage;
+      return trackingStage === 'payment_received' || o.status === 'completed';
+    });
     
     setStats({
       total: ordersList.filter(o => o.company_id || o.send_to_all_companies).length,
       pending: pendingOrders.length,
       awaitingResponse: awaitingOrders.length,
       upcoming: upcomingOrders.length,
-      inProgress: ordersList.filter(o => o.status === 'in-progress' && !o.order_specialists?.some(os => os.is_accepted === true)).length,
-      completed: ordersList.filter(o => o.status === 'completed').length,
+      inProgress: inProgressOrders.length,
+      completed: completedOrders.length,
     });
   };
 
