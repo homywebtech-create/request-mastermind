@@ -123,6 +123,12 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
       return order.order_specialists && 
              order.order_specialists.some(os => os.quoted_price && os.is_accepted === null);
     }
+    if (filter === 'upcoming') {
+      // Upcoming: confirmed bookings with accepted quotes
+      return order.status === 'in-progress' &&
+             order.order_specialists && 
+             order.order_specialists.some(os => os.is_accepted === true);
+    }
     return order.status === filter;
   });
 
@@ -700,6 +706,7 @@ Thank you for contacting us! 🌟`;
                 <SelectItem value="all">All Orders</SelectItem>
                 <SelectItem value="new">New Requests</SelectItem>
                 <SelectItem value="awaiting-response">Awaiting Response</SelectItem>
+                <SelectItem value="upcoming">Upcoming</SelectItem>
                 <SelectItem value="in-progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
