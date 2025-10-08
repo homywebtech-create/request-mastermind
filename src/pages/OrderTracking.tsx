@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-type Stage = 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'payment_received';
+type Stage = 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
 interface Order {
   id: string;
@@ -32,7 +32,13 @@ interface Order {
     name: string;
     whatsapp_number: string;
     area: string | null;
+    budget: string | null;
+    budget_type: string | null;
   } | null;
+  order_specialists?: Array<{
+    quoted_price: string | null;
+    is_accepted: boolean | null;
+  }>;
 }
 
 export default function OrderTracking() {
@@ -50,6 +56,10 @@ export default function OrderTracking() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showEarlyFinishDialog, setShowEarlyFinishDialog] = useState(false);
   const [arrivedStartTime, setArrivedStartTime] = useState<Date | null>(null);
+  const [customerRating, setCustomerRating] = useState(0);
+  const [customerReviewNotes, setCustomerReviewNotes] = useState('');
+  const [invoiceAmount, setInvoiceAmount] = useState(0);
+  const [discount, setDiscount] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -174,14 +184,31 @@ export default function OrderTracking() {
           customer:customers (
             name,
             whatsapp_number,
-            area
+            area,
+            budget,
+            budget_type
+          ),
+          order_specialists (
+            quoted_price,
+            is_accepted
           )
         `)
         .eq('id', orderId)
         .single();
 
       if (error) throw error;
-      setOrder(data);
+      setOrder(data as Order);
+      
+      // Calculate invoice amount from accepted quote
+      if (data?.order_specialists) {
+        const acceptedQuote = data.order_specialists.find((os: any) => os.is_accepted === true);
+        if (acceptedQuote?.quoted_price) {
+          const priceMatch = acceptedQuote.quoted_price.match(/(\d+(\.\d+)?)/);
+          if (priceMatch) {
+            setInvoiceAmount(parseFloat(priceMatch[1]));
+          }
+        }
+      }
     } catch (error) {
       console.error('Error fetching order:', error);
       toast({
@@ -347,21 +374,58 @@ export default function OrderTracking() {
 
   const handleRequestInvoice = async () => {
     await updateOrderStage('invoice_requested');
-    setStage('invoice_requested');
+    setStage('invoice_details');
     toast({
-      title: "Invoice Requested",
-      description: "Invoice request has been sent to management",
+      title: "Invoice Ready",
+      description: "Please review the invoice details",
     });
-    // Don't navigate away - stay on page to allow payment confirmation
+    // Don't navigate away - stay on page to show invoice
   };
 
   const handlePaymentReceived = async () => {
-    await updateOrderStage('payment_received');
+    setStage('customer_rating');
     toast({
-      title: "Payment Received",
-      description: "Work has been completed successfully",
+      title: "Payment Confirmed",
+      description: "Please rate the customer",
     });
-    navigate(-1);
+  };
+
+  const handleCustomerRatingSubmit = async () => {
+    if (customerRating === 0) {
+      toast({
+        title: "Error",
+        description: "Please select a rating",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Update order with customer rating
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          customer_rating: customerRating,
+          customer_review_notes: customerReviewNotes || null,
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      await updateOrderStage('payment_received');
+      toast({
+        title: "Thank You!",
+        description: "Rating submitted successfully",
+      });
+      navigate(-1);
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit rating",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatTime = (seconds: number) => {
