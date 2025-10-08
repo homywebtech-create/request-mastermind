@@ -406,6 +406,61 @@ export type Database = {
         }
         Relationships: []
       }
+      specialist_reviews: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          order_id: string
+          rating: number
+          review_text: string | null
+          specialist_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          order_id: string
+          rating: number
+          review_text?: string | null
+          specialist_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          order_id?: string
+          rating?: number
+          review_text?: string | null
+          specialist_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_reviews_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_reviews_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialist_specialties: {
         Row: {
           created_at: string
@@ -454,6 +509,8 @@ export type Database = {
           nationality: string | null
           notes: string | null
           phone: string
+          rating: number | null
+          reviews_count: number | null
           specialty: string | null
           updated_at: string
         }
@@ -468,6 +525,8 @@ export type Database = {
           nationality?: string | null
           notes?: string | null
           phone: string
+          rating?: number | null
+          reviews_count?: number | null
           specialty?: string | null
           updated_at?: string
         }
@@ -482,6 +541,8 @@ export type Database = {
           nationality?: string | null
           notes?: string | null
           phone?: string
+          rating?: number | null
+          reviews_count?: number | null
           specialty?: string | null
           updated_at?: string
         }

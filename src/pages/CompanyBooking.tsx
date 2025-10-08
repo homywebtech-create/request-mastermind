@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { ReviewsDialog } from '@/components/booking/ReviewsDialog';
 
 // Translations
 const translations = {
@@ -108,6 +109,18 @@ interface Specialist {
   nationality: string | null;
   quoted_price: string;
   quoted_at: string;
+  rating?: number;
+  reviews_count?: number;
+}
+
+interface SpecialistReview {
+  id: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
+  customers: {
+    name: string;
+  };
 }
 
 export default function CompanyBooking() {
@@ -129,6 +142,8 @@ export default function CompanyBooking() {
   const [customDate, setCustomDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedSpecialistId, setSelectedSpecialistId] = useState<string | null>(null);
+  const [showReviews, setShowReviews] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<SpecialistReview[]>([]);
 
   const totalSteps = 3;
   const t = translations[language];
@@ -236,7 +251,9 @@ export default function CompanyBooking() {
             phone,
             image_url,
             nationality,
-            company_id
+            company_id,
+            rating,
+            reviews_count
           )
         `)
         .eq('order_id', orderId)
@@ -460,6 +477,57 @@ export default function CompanyBooking() {
     // Extract currency from original price string
     const currency = specialist.quoted_price?.replace(/[\d.,]/g, '').trim() || '';
     return `${total} ${currency}`;
+  };
+
+  // Fetch reviews for a specialist
+  const fetchReviews = async (specialistId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('specialist_reviews')
+        .select(`
+          id,
+          rating,
+          review_text,
+          created_at,
+          customers (
+            name
+          )
+        `)
+        .eq('specialist_id', specialistId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReviews(data || []);
+      setShowReviews(specialistId);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      setReviews([]);
+    }
+  };
+
+  // Render star rating
+  const renderStars = (rating: number, size: 'sm' | 'md' = 'sm') => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const sizeClass = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(
+          <span key={i} className={`text-yellow-500 ${sizeClass} inline-block`}>★</span>
+        );
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <span key={i} className={`text-yellow-500 ${sizeClass} inline-block`}>⯨</span>
+        );
+      } else {
+        stars.push(
+          <span key={i} className={`text-gray-300 ${sizeClass} inline-block`}>★</span>
+        );
+      }
+    }
+    return stars;
   };
 
   const renderStepIndicator = () => {
@@ -775,9 +843,33 @@ export default function CompanyBooking() {
                                       </div>
                                     </div>
 
-                                    <p className="text-sm text-muted-foreground mb-3" dir="ltr">
-                                      📞 {specialist.phone}
-                                    </p>
+                                    <div className="flex items-center gap-3 mb-3">
+                                      {/* Nationality */}
+                                      {specialist.nationality && (
+                                        <p className="text-sm text-muted-foreground">
+                                          {specialist.nationality}
+                                        </p>
+                                      )}
+                                      
+                                      {/* Rating Display */}
+                                      <div 
+                                        className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity bg-muted/50 px-2 py-1 rounded-md"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          fetchReviews(specialist.id);
+                                        }}
+                                      >
+                                        <div className="flex items-center">
+                                          {renderStars(specialist.rating || 0)}
+                                        </div>
+                                        <span className="text-sm font-semibold text-foreground">
+                                          {specialist.rating?.toFixed(1) || '0.0'}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          ({specialist.reviews_count || 0})
+                                        </span>
+                                      </div>
+                                    </div>
 
                                     {/* Available Times Preview - Show only when NOT selected */}
                                     {!isSelected && (
@@ -916,6 +1008,17 @@ export default function CompanyBooking() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Reviews Dialog */}
+        {showReviews && (
+          <ReviewsDialog
+            open={!!showReviews}
+            onOpenChange={(open) => !open && setShowReviews(null)}
+            reviews={reviews}
+            specialistName={specialists.find(s => s.id === showReviews)?.name || ''}
+            language={language}
+          />
+        )}
       </div>
     </div>
   );
