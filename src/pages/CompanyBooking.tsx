@@ -405,16 +405,38 @@ export default function CompanyBooking() {
 
       if (orderError) throw orderError;
 
+      // First, reject all other specialists for this order
+      const { error: rejectError } = await supabase
+        .from('order_specialists')
+        .update({ 
+          is_accepted: false,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: 'تم اختيار عرض آخر'
+        })
+        .eq('order_id', orderId)
+        .neq('specialist_id', selectedSpecialistId);
+
+      if (rejectError) {
+        console.error('Error rejecting other specialists:', rejectError);
+      }
+
       // Accept the selected specialist
       const { error: acceptError } = await supabase
         .from('order_specialists')
         .update({ 
           is_accepted: true,
+          rejected_at: null,
+          rejection_reason: null
         })
         .eq('order_id', orderId)
         .eq('specialist_id', selectedSpecialistId);
 
-      if (acceptError) throw acceptError;
+      if (acceptError) {
+        console.error('Error accepting specialist:', acceptError);
+        throw acceptError;
+      }
+
+      console.log('Successfully accepted specialist:', selectedSpecialistId);
 
       // Get company data for WhatsApp
       const { data: orderData } = await supabase
