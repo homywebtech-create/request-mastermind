@@ -10,7 +10,7 @@ export class SoundNotification {
   }
 
   /**
-   * Play a notification sound for new orders
+   * Play a notification sound for new orders (specialist version - louder and longer)
    */
   async playNewOrderSound() {
     if (!this.audioContext) return;
@@ -21,41 +21,31 @@ export class SoundNotification {
         await this.audioContext.resume();
       }
 
-      const duration = 0.3;
-      const oscillator = this.audioContext.createOscillator();
-      const gainNode = this.audioContext.createGain();
+      // Play 5 loud beeps with increasing frequency for maximum attention
+      const beepCount = 5;
+      const duration = 0.4;
+      const frequencies = [659.25, 783.99, 880, 1046.5, 1174.66]; // E5, G5, A5, C6, D6
+      
+      for (let i = 0; i < beepCount; i++) {
+        setTimeout(() => {
+          const oscillator = this.audioContext!.createOscillator();
+          const gainNode = this.audioContext!.createGain();
 
-      oscillator.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
+          oscillator.connect(gainNode);
+          gainNode.connect(this.audioContext!.destination);
 
-      // New order sound: Pleasant rising tone
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime); // A4
-      oscillator.frequency.exponentialRampToValueAtTime(880, this.audioContext.currentTime + duration); // A5
+          // Use square wave for more piercing sound
+          oscillator.type = 'square';
+          oscillator.frequency.setValueAtTime(frequencies[i], this.audioContext!.currentTime);
 
-      gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+          // Higher volume for better attention
+          gainNode.gain.setValueAtTime(0.5, this.audioContext!.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext!.currentTime + duration);
 
-      oscillator.start(this.audioContext.currentTime);
-      oscillator.stop(this.audioContext.currentTime + duration);
-
-      // Play second tone
-      setTimeout(() => {
-        const osc2 = this.audioContext!.createOscillator();
-        const gain2 = this.audioContext!.createGain();
-
-        osc2.connect(gain2);
-        gain2.connect(this.audioContext!.destination);
-
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(880, this.audioContext!.currentTime);
-        
-        gain2.gain.setValueAtTime(0.3, this.audioContext!.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, this.audioContext!.currentTime + duration);
-
-        osc2.start(this.audioContext!.currentTime);
-        osc2.stop(this.audioContext!.currentTime + duration);
-      }, 150);
+          oscillator.start(this.audioContext!.currentTime);
+          oscillator.stop(this.audioContext!.currentTime + duration);
+        }, i * 500); // 500ms between each beep
+      }
 
     } catch (error) {
       console.error('Error playing new order sound:', error);
