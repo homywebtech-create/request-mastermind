@@ -53,6 +53,26 @@ function PathBasedRouter() {
 
   const pathname = window.location.pathname;
   
+  // Detect if running in Capacitor (mobile app)
+  const isCapacitor = window.location.protocol === 'capacitor:' || 
+                      window.location.protocol === 'ionic:' ||
+                      (typeof window !== 'undefined' && (window as any).Capacitor);
+  
+  // If running in Capacitor, always use HashRouter for specialist routes
+  if (isCapacitor) {
+    return (
+      <HashRouter key={renderKey}>
+        <Routes>
+          <Route path="/specialist-auth" element={<SpecialistAuth />} />
+          <Route path="/specialist-orders" element={<SpecialistOrders />} />
+          <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+          <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
+          <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
+        </Routes>
+      </HashRouter>
+    );
+  }
+  
   // Admin routes
   if (pathname === '/auth' || pathname === '/admin' || pathname === '/companies' || 
       pathname === '/services' || pathname === '/orders' || pathname === '/deletion-requests' ||
