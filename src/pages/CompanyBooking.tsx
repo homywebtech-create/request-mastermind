@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MapLocationPicker } from '@/components/booking/MapLocationPicker';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages } from 'lucide-react';
+import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +34,8 @@ const translations = {
     tomorrow: 'غداً',
     customDate: 'تاريخ آخر',
     chooseDate: 'اختر التاريخ',
+    selectTime: 'اختر الوقت المتاح',
+    selectTimeError: 'يرجى اختيار الوقت',
     specialistsAndPrices: 'العاملات والأسعار المتاحة',
     lowestPrice: 'أقل سعر',
     noSpecialists: 'لا يوجد محترفون متاحون حالياً',
@@ -70,6 +72,8 @@ const translations = {
     tomorrow: 'Tomorrow',
     customDate: 'Custom Date',
     chooseDate: 'Choose Date',
+    selectTime: 'Select Available Time',
+    selectTimeError: 'Please select time',
     specialistsAndPrices: 'Available Specialists & Prices',
     lowestPrice: 'Lowest Price',
     noSpecialists: 'No specialists available at the moment',
@@ -121,10 +125,30 @@ export default function CompanyBooking() {
   const [bookingType, setBookingType] = useState('');
   const [bookingDateType, setBookingDateType] = useState('');
   const [customDate, setCustomDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
   const [selectedSpecialistId, setSelectedSpecialistId] = useState<string | null>(null);
 
   const totalSteps = 4;
   const t = translations[language];
+
+  // Generate available time slots from 8:00 AM to 4:00 PM
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 8; hour < 16; hour++) {
+      // First half hour slot
+      const startTime1 = `${hour.toString().padStart(2, '0')}:00`;
+      const endTime1 = `${hour.toString().padStart(2, '0')}:30`;
+      slots.push(`${startTime1}-${endTime1}`);
+      
+      // Second half hour slot
+      const startTime2 = `${hour.toString().padStart(2, '0')}:30`;
+      const endTime2 = `${(hour + 1).toString().padStart(2, '0')}:00`;
+      slots.push(`${startTime2}-${endTime2}`);
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
 
   useEffect(() => {
     fetchData();
@@ -234,6 +258,14 @@ export default function CompanyBooking() {
       toast({
         title: t.missingData,
         description: t.selectCustomDateError,
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (currentStep === 3 && !selectedTime) {
+      toast({
+        title: t.missingData,
+        description: t.selectTimeError,
         variant: 'destructive',
       });
       return;
@@ -524,6 +556,38 @@ export default function CompanyBooking() {
                       onChange={(e) => setCustomDate(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
                     />
+                  </div>
+                )}
+
+                {/* Time Selection - Show after date is selected */}
+                {bookingDateType && (
+                  <div className="space-y-4 mt-6">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      {t.selectTime}
+                    </h3>
+                    
+                    <RadioGroup value={selectedTime} onValueChange={setSelectedTime}>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {timeSlots.map((slot) => (
+                          <label
+                            key={slot}
+                            className={cn(
+                              'flex items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-all',
+                              selectedTime === slot
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border hover:border-primary/50'
+                            )}
+                          >
+                            <RadioGroupItem value={slot} id={slot} className="sr-only" />
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span className="font-medium text-sm">{slot}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </RadioGroup>
                   </div>
                 )}
               </div>
