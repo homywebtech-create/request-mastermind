@@ -263,6 +263,7 @@ export type Database = {
           service_type: string
           specialist_id: string | null
           status: string
+          tracking_stage: string | null
           updated_at: string
         }
         Insert: {
@@ -289,6 +290,7 @@ export type Database = {
           service_type: string
           specialist_id?: string | null
           status?: string
+          tracking_stage?: string | null
           updated_at?: string
         }
         Update: {
@@ -315,6 +317,7 @@ export type Database = {
           service_type?: string
           specialist_id?: string | null
           status?: string
+          tracking_stage?: string | null
           updated_at?: string
         }
         Relationships: [

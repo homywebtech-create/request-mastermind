@@ -30,6 +30,7 @@ interface Order {
   company_id: string | null;
   service_type: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  tracking_stage?: string | null;
   notes?: string;
   order_link?: string;
   created_at: string;
@@ -108,6 +109,7 @@ export default function Orders() {
           company_id,
           service_type,
           status,
+          tracking_stage,
           notes,
           order_link,
           created_at,

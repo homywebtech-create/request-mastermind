@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-type Stage = 'moving' | 'arrived' | 'working' | 'completed';
+type Stage = 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested';
 
 interface Order {
   id: string;
@@ -52,7 +52,17 @@ export default function OrderTracking() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!orderId) return;
+
+    // Fetch order data
     fetchOrder();
+
+    // Set initial stage to moving when specialist starts tracking
+    const initializeTracking = async () => {
+      await updateOrderStage('moving');
+    };
+
+    initializeTracking();
   }, [orderId]);
 
   // Timer for moving stage (60 seconds countdown)
@@ -147,29 +157,22 @@ export default function OrderTracking() {
     window.open(mapsUrl, '_blank');
   };
 
-  const getMyLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          toast({
-            title: "Location Retrieved",
-            description: `Latitude: ${position.coords.latitude.toFixed(4)}, Longitude: ${position.coords.longitude.toFixed(4)}`,
-          });
-        },
-        (error) => {
-          toast({
-            title: "Error",
-            description: "Failed to get your location",
-            variant: "destructive",
-          });
-        }
-      );
-    } else {
-      toast({
-        title: "Error",
-        description: "Browser does not support location service",
-        variant: "destructive",
-      });
+  const updateOrderStage = async (newStage: Stage) => {
+    if (!orderId) return;
+
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          tracking_stage: newStage,
+          status: newStage === 'moving' || newStage === 'arrived' ? 'in_progress' : 
+                  newStage === 'completed' ? 'completed' : 'in_progress'
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating order stage:', error);
     }
   };
 
@@ -203,16 +206,18 @@ export default function OrderTracking() {
     }
   };
 
-  const handleArrived = () => {
+  const handleArrived = async () => {
     setStage('arrived');
+    await updateOrderStage('arrived');
     toast({
       title: "Confirmed",
       description: "Your arrival has been recorded",
     });
   };
 
-  const handleStartWork = () => {
+  const handleStartWork = async () => {
     setStage('working');
+    await updateOrderStage('working');
     toast({
       title: "Work Started",
       description: "Timer has been started",
@@ -236,7 +241,7 @@ export default function OrderTracking() {
     // In real implementation, call the company
   };
 
-  const handleCancelWork = () => {
+  const handleCancelWork = async () => {
     if (!cancelReason) {
       toast({
         title: "Error",
@@ -256,6 +261,7 @@ export default function OrderTracking() {
     }
 
     // Handle cancellation
+    await updateOrderStage('cancelled');
     toast({
       title: "Work Cancelled",
       description: "Cancellation recorded successfully",
@@ -264,7 +270,8 @@ export default function OrderTracking() {
     navigate(-1);
   };
 
-  const handleRequestInvoice = () => {
+  const handleRequestInvoice = async () => {
+    await updateOrderStage('invoice_requested');
     toast({
       title: "Invoice Requested",
       description: "Invoice request has been sent to management",
@@ -319,11 +326,6 @@ export default function OrderTracking() {
             <Button onClick={openMaps} className="w-full" size="lg">
               <Navigation className="ml-2 h-5 w-5" />
               Click to Navigate to Customer
-            </Button>
-
-            <Button onClick={getMyLocation} variant="outline" className="w-full" size="lg">
-              <MapPin className="ml-2 h-5 w-5" />
-              Get My Current Location
             </Button>
 
             <Button onClick={shareLocation} variant="outline" className="w-full" size="lg">

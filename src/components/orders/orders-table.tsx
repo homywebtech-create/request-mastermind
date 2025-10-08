@@ -21,6 +21,7 @@ interface Order {
   company_id: string | null;
   service_type: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  tracking_stage?: string | null;
   notes?: string;
   order_link?: string;
   created_at: string;
@@ -689,6 +690,25 @@ Thank you for contacting us! 🌟`;
     );
   };
 
+  const getTrackingStageLabel = (stage: string | null | undefined): { label: string; color: string } => {
+    switch (stage) {
+      case 'moving':
+        return { label: '🚗 Moving to Customer', color: 'text-blue-600 dark:text-blue-400' };
+      case 'arrived':
+        return { label: '📍 Arrived at Location', color: 'text-purple-600 dark:text-purple-400' };
+      case 'working':
+        return { label: '⚙️ Working', color: 'text-orange-600 dark:text-orange-400' };
+      case 'completed':
+        return { label: '✅ Work Completed', color: 'text-green-600 dark:text-green-400' };
+      case 'invoice_requested':
+        return { label: '📄 Invoice Requested', color: 'text-emerald-600 dark:text-emerald-400' };
+      case 'cancelled':
+        return { label: '❌ Cancelled', color: 'text-red-600 dark:text-red-400' };
+      default:
+        return { label: '', color: '' };
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -856,6 +876,12 @@ Thank you for contacting us! 🌟`;
                             <Calendar className="h-3 w-3" />
                             {formatDate(order.created_at)}
                           </div>
+                          <StatusBadge status={order.status} />
+                          {order.tracking_stage && (
+                            <div className={`text-xs font-medium ${getTrackingStageLabel(order.tracking_stage).color}`}>
+                              {getTrackingStageLabel(order.tracking_stage).label}
+                            </div>
+                          )}
                           {isPending && (
                             <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : isRecentlySent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                               {isDelayed 
