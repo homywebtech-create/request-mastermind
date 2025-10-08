@@ -97,6 +97,7 @@ interface Company {
   id: string;
   name: string;
   logo_url: string | null;
+  phone: string | null;
 }
 
 interface Specialist {
@@ -161,7 +162,7 @@ export default function CompanyBooking() {
       // Fetch company info
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
-        .select('id, name, logo_url')
+        .select('id, name, logo_url, phone')
         .eq('id', companyId)
         .single();
 
@@ -262,14 +263,6 @@ export default function CompanyBooking() {
       });
       return;
     }
-    if (currentStep === 3 && !selectedTime) {
-      toast({
-        title: t.missingData,
-        description: t.selectTimeError,
-        variant: 'destructive',
-      });
-      return;
-    }
 
     setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
   };
@@ -284,6 +277,15 @@ export default function CompanyBooking() {
         toast({
           title: t.missingData,
           description: 'الرجاء اختيار محترفة',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!selectedTime) {
+        toast({
+          title: t.missingData,
+          description: t.selectTimeError,
           variant: 'destructive',
         });
         return;
@@ -322,13 +324,38 @@ export default function CompanyBooking() {
 
       if (acceptError) throw acceptError;
 
+      // Get company data for WhatsApp
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('customers(whatsapp_number)')
+        .eq('id', orderId)
+        .single();
+
+      const selectedSpec = specialists.find(s => s.id === selectedSpecialistId);
+      
+      // Prepare WhatsApp message
+      const message = encodeURIComponent(
+        `تم تأكيد الحجز ✅\n\n` +
+        `المحترفة: ${selectedSpec?.name}\n` +
+        `التاريخ: ${bookingDate}\n` +
+        `الوقت: ${selectedTime}\n` +
+        `نوع الحجز: ${bookingType}\n` +
+        `السعر: ${selectedSpec?.quoted_price}\n\n` +
+        `سيتم التواصل معك قريباً لتأكيد التفاصيل.`
+      );
+
+      // Redirect to WhatsApp
+      if (company?.phone) {
+        window.open(`https://wa.me/${company.phone}?text=${message}`, '_blank');
+      }
+
       toast({
         title: t.saved,
         description: 'تم تأكيد الحجز بنجاح',
       });
 
-      // Navigate back or to confirmation page
-      navigate(-1);
+      // Navigate back after a short delay
+      setTimeout(() => navigate(-1), 2000);
     } catch (error: any) {
       console.error('Error saving booking:', error);
       toast({
@@ -558,38 +585,6 @@ export default function CompanyBooking() {
                     />
                   </div>
                 )}
-
-                {/* Time Selection - Show after date is selected */}
-                {bookingDateType && (
-                  <div className="space-y-4 mt-6">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      {t.selectTime}
-                    </h3>
-                    
-                    <RadioGroup value={selectedTime} onValueChange={setSelectedTime}>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {timeSlots.map((slot) => (
-                          <label
-                            key={slot}
-                            className={cn(
-                              'flex items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-all',
-                              selectedTime === slot
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary/50'
-                            )}
-                          >
-                            <RadioGroupItem value={slot} id={slot} className="sr-only" />
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span className="font-medium text-sm">{slot}</span>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </RadioGroup>
-                  </div>
-                )}
               </div>
             )}
 
@@ -598,88 +593,120 @@ export default function CompanyBooking() {
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  اختر المحترفة المناسبة
+                  {language === 'ar' ? 'اختر المحترفة والوقت المناسب' : 'Choose Specialist & Time'}
                 </h3>
 
-                <RadioGroup value={selectedSpecialistId || ''} onValueChange={setSelectedSpecialistId}>
-                  <div className="space-y-4">
-                    {specialists
-                      .sort((a, b) => {
-                        const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                        const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                        return priceA - priceB;
-                      })
-                      .map((specialist) => {
-                        const price = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                        const isLowest = price === lowestPrice;
-                        const isSelected = selectedSpecialistId === specialist.id;
+                <div className="space-y-4">
+                  {specialists
+                    .sort((a, b) => {
+                      const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                      const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                      return priceA - priceB;
+                    })
+                    .map((specialist) => {
+                      const price = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                      const isLowest = price === lowestPrice;
+                      const isSelected = selectedSpecialistId === specialist.id;
 
-                        return (
-                          <label
-                            key={specialist.id}
-                            className={cn(
-                              'border-2 rounded-lg p-4 transition-all cursor-pointer',
-                              isSelected
-                                ? 'border-primary bg-primary/5'
-                                : isLowest 
-                                ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
-                                : 'border-border hover:border-primary/50'
-                            )}
+                      return (
+                        <div
+                          key={specialist.id}
+                          className={cn(
+                            'border-2 rounded-lg p-4 transition-all',
+                            isSelected
+                              ? 'border-primary bg-primary/5'
+                              : isLowest 
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
+                              : 'border-border'
+                          )}
+                        >
+                          {/* Specialist Info */}
+                          <div 
+                            className="flex gap-4 cursor-pointer"
+                            onClick={() => setSelectedSpecialistId(specialist.id)}
                           >
-                            <RadioGroupItem value={specialist.id} id={specialist.id} className="sr-only" />
-                            <div className="flex gap-4">
-                              {specialist.image_url ? (
-                                <img 
-                                  src={specialist.image_url} 
-                                  alt={specialist.name}
-                                  className="w-24 h-24 rounded-lg object-cover border-2 border-border"
-                                />
-                              ) : (
-                                <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
-                                  <Users className="h-12 w-12 text-muted-foreground" />
-                                </div>
-                              )}
+                            {specialist.image_url ? (
+                              <img 
+                                src={specialist.image_url} 
+                                alt={specialist.name}
+                                className="w-24 h-24 rounded-lg object-cover border-2 border-border"
+                              />
+                            ) : (
+                              <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
+                                <Users className="h-12 w-12 text-muted-foreground" />
+                              </div>
+                            )}
 
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between mb-2">
-                                  <div>
-                                    <h4 className="font-semibold text-lg flex items-center gap-2">
-                                      {specialist.name}
-                                      {isSelected && <Check className="h-5 w-5 text-primary" />}
-                                    </h4>
-                                    {specialist.nationality && (
-                                      <p className="text-sm text-muted-foreground">
-                                        {specialist.nationality}
-                                      </p>
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <h4 className="font-semibold text-lg flex items-center gap-2">
+                                    {specialist.name}
+                                    {isSelected && <Check className="h-5 w-5 text-primary" />}
+                                  </h4>
+                                  {specialist.nationality && (
+                                    <p className="text-sm text-muted-foreground">
+                                      {specialist.nationality}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="text-left">
+                                  <Badge 
+                                    className={cn(
+                                      'text-lg px-3 py-1',
+                                      isLowest && 'bg-green-600 hover:bg-green-700'
                                     )}
-                                  </div>
-                                  <div className="text-left">
-                                    <Badge 
+                                  >
+                                    {specialist.quoted_price}
+                                  </Badge>
+                                  {isLowest && (
+                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                                      {t.lowestPrice} ⭐
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <p className="text-sm text-muted-foreground" dir="ltr">
+                                📞 {specialist.phone}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Available Times - Show only for selected specialist */}
+                          {isSelected && (
+                            <div className="mt-4 pt-4 border-t">
+                              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                {t.selectTime}
+                              </h4>
+                              <RadioGroup value={selectedTime} onValueChange={setSelectedTime}>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                  {timeSlots.map((slot) => (
+                                    <label
+                                      key={slot}
                                       className={cn(
-                                        'text-lg px-3 py-1',
-                                        isLowest && 'bg-green-600 hover:bg-green-700'
+                                        'flex items-center justify-center border-2 rounded-lg p-2 cursor-pointer transition-all',
+                                        selectedTime === slot
+                                          ? 'border-primary bg-primary text-primary-foreground'
+                                          : 'border-border hover:border-primary/50'
                                       )}
                                     >
-                                      {specialist.quoted_price}
-                                    </Badge>
-                                    {isLowest && (
-                                      <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                                        {t.lowestPrice} ⭐
-                                      </p>
-                                    )}
-                                  </div>
+                                      <RadioGroupItem value={slot} id={slot} className="sr-only" />
+                                      <div className="flex items-center gap-1.5">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        <span className="font-medium text-xs">{slot}</span>
+                                      </div>
+                                    </label>
+                                  ))}
                                 </div>
-
-                                <p className="text-sm text-muted-foreground" dir="ltr">
-                                  📞 {specialist.phone}
-                                </p>
-                              </div>
+                              </RadioGroup>
                             </div>
-                          </label>
-                        );
-                      })}
-                  </div>
-                </RadioGroup>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
 
                 {specialists.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
