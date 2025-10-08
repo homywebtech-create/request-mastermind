@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { TrackingStageBadge } from "@/components/ui/tracking-stage-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -889,16 +890,14 @@ Thank you for contacting us! 🌟`;
                       </TableCell>
                       
                       <TableCell>
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
                             <Calendar className="h-3 w-3" />
                             {formatDate(order.created_at)}
                           </div>
                           <StatusBadge status={order.status} />
                           {order.tracking_stage && (
-                            <div className={`text-xs font-medium ${getTrackingStageLabel(order.tracking_stage).color}`}>
-                              {getTrackingStageLabel(order.tracking_stage).label}
-                            </div>
+                            <TrackingStageBadge stage={order.tracking_stage} />
                           )}
                           {isPending && (
                             <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : isRecentlySent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
