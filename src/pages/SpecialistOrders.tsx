@@ -415,17 +415,18 @@ export default function SpecialistOrders() {
     const isRejected = order.order_specialist?.is_accepted === false;
     const isAccepted = order.order_specialist?.is_accepted === true;
     
-    // Calculate if specialist can move now (within 1 hour before booking time)
+    // Calculate if specialist can move now (1 hour before booking time)
     const canMoveNow = () => {
       if (!isAccepted || !order.booking_date) return false;
       
       try {
         const bookingDateTime = parseISO(order.booking_date);
+        // Subtract 1 hour (60 minutes) from booking time
+        const moveTime = new Date(bookingDateTime.getTime() - 60 * 60 * 1000);
         const now = new Date();
-        const minutesUntilBooking = differenceInMinutes(bookingDateTime, now);
         
-        // Allow movement within 60 minutes before and after the booking time
-        return minutesUntilBooking <= 60 && minutesUntilBooking >= -60;
+        // Allow movement if current time is after or equal to move time
+        return now >= moveTime;
       } catch (error) {
         console.error('Error parsing booking date:', error);
         return false;
@@ -437,13 +438,20 @@ export default function SpecialistOrders() {
       
       try {
         const bookingDateTime = parseISO(order.booking_date);
+        // Subtract 1 hour from booking time to get the move time
+        const moveTime = new Date(bookingDateTime.getTime() - 60 * 60 * 1000);
         const now = currentTime;
-        const totalSeconds = Math.floor((bookingDateTime.getTime() - now.getTime()) / 1000);
+        const totalSeconds = Math.floor((moveTime.getTime() - now.getTime()) / 1000);
         
-        const days = Math.floor(Math.abs(totalSeconds) / 86400);
-        const hours = Math.floor((Math.abs(totalSeconds) % 86400) / 3600);
-        const minutes = Math.floor((Math.abs(totalSeconds) % 3600) / 60);
-        const seconds = Math.abs(totalSeconds) % 60;
+        // If time has passed, show 0
+        if (totalSeconds <= 0) {
+          return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+        }
+        
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
         
         return { days, hours, minutes, seconds };
       } catch (error) {
