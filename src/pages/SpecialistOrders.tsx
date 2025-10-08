@@ -467,163 +467,206 @@ export default function SpecialistOrders() {
     return (
       <Card 
         key={order.id} 
-        className={`p-6 space-y-4 transition-all hover:shadow-lg ${!hasQuote && showQuoteButton ? 'border-primary border-2 bg-primary/5' : ''}`}
+        className={`overflow-hidden transition-all hover:shadow-xl ${!hasQuote && showQuoteButton ? 'border-primary border-2 shadow-lg' : 'border-border'}`}
       >
-        {!hasQuote && showQuoteButton && (
-          <div className="flex items-center gap-2 text-primary mb-2">
-            <Sparkles className="h-4 w-4 animate-pulse" />
-            <span className="text-sm font-semibold">New Order - Submit Your Quote</span>
-          </div>
-        )}
-        
-        <div className="flex items-start justify-between">
-          <div className="space-y-2 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-xl font-bold">{order.customer?.name}</h3>
-              {getStatusBadge(order.status, hasQuote)}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              {new Date(order.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+        {/* Header Section with Gradient */}
+        <div className={`p-6 pb-4 ${!hasQuote && showQuoteButton ? 'bg-gradient-to-r from-primary/10 via-primary/5 to-transparent' : 'bg-gradient-to-r from-muted/50 to-transparent'}`}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-3">
+              {!hasQuote && showQuoteButton && (
+                <div className="flex items-center gap-2 text-primary">
+                  <Sparkles className="h-5 w-5 animate-pulse" />
+                  <span className="text-sm font-bold">New Order - Submit Your Quote</span>
+                </div>
+              )}
+              <div className="flex items-center gap-3 flex-wrap">
+                <h3 className="text-2xl font-bold text-foreground">{order.customer?.name}</h3>
+                {getStatusBadge(order.status, hasQuote)}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                <span>
+                  {new Date(order.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-            <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground mb-1">Service Type</p>
-              <p className="font-semibold text-sm break-words">{order.service_type}</p>
+        {/* Information Grid */}
+        <div className="p-6 pt-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:shadow-md transition-all">
+              <div className="p-2 rounded-lg bg-primary/20">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground font-medium mb-0.5">Service</p>
+                <p className="font-bold text-sm break-words text-foreground">{order.service_type}</p>
+              </div>
             </div>
+
+            {order.customer?.area && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-50/50 dark:from-blue-950/30 dark:to-blue-950/10 border border-blue-200 dark:border-blue-800 hover:shadow-md transition-all">
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+                  <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium mb-0.5">Area</p>
+                  <p className="font-bold text-sm break-words text-foreground">{order.customer.area}</p>
+                </div>
+              </div>
+            )}
+
+            {order.customer?.budget && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border border-green-200 dark:border-green-800 hover:shadow-md transition-all">
+                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
+                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium mb-0.5">Budget</p>
+                  <p className="font-bold text-sm break-words text-foreground">
+                    {order.customer.budget} {order.customer.budget_type ? `(${order.customer.budget_type})` : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {order.booking_type && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-50/50 dark:from-purple-950/30 dark:to-purple-950/10 border border-purple-200 dark:border-purple-800 hover:shadow-md transition-all">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
+                  <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium mb-0.5">Booking Type</p>
+                  <p className="font-bold text-sm break-words text-foreground">{order.booking_type}</p>
+                </div>
+              </div>
+            )}
+
+            {order.hours_count && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-orange-50/50 dark:from-orange-950/30 dark:to-orange-950/10 border border-orange-200 dark:border-orange-800 hover:shadow-md transition-all">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/50">
+                  <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium mb-0.5">Duration</p>
+                  <p className="font-bold text-sm break-words text-foreground">{order.hours_count} hours</p>
+                </div>
+              </div>
+            )}
+
+            {order.order_specialist?.is_accepted === true && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-teal-50 to-teal-50/50 dark:from-teal-950/30 dark:to-teal-950/10 border border-teal-200 dark:border-teal-800 hover:shadow-md transition-all">
+                <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/50">
+                  <Phone className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium mb-0.5">WhatsApp</p>
+                  <p className="font-bold text-sm break-words text-foreground" dir="ltr">{order.customer?.whatsapp_number}</p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {order.customer?.area && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">Area</p>
-                <p className="font-semibold text-sm break-words">{order.customer.area}</p>
+          {/* Show quote info if exists */}
+          {hasQuote && !isRejected && (
+            <div className="flex items-start gap-3 p-5 rounded-xl bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border-2 border-green-200 dark:border-green-800 shadow-sm">
+              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
+                <Tag className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
-            </div>
-          )}
-
-          {order.customer?.budget && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <DollarSign className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">Customer Budget</p>
-                <p className="font-semibold text-sm break-words">
-                  {order.customer.budget} {order.customer.budget_type ? `(${order.customer.budget_type})` : ''}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {order.booking_type && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">Booking Type</p>
-                <p className="font-semibold text-sm break-words">{order.booking_type}</p>
-              </div>
-            </div>
-          )}
-
-          {order.hours_count && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <Clock className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">Hours Count</p>
-                <p className="font-semibold text-sm break-words">{order.hours_count} hours</p>
-              </div>
-            </div>
-          )}
-
-          {order.order_specialist?.is_accepted === true && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <Phone className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">WhatsApp Number</p>
-                <p className="font-semibold text-sm break-words" dir="ltr">{order.customer?.whatsapp_number}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Show quote info if exists */}
-        {hasQuote && !isRejected && (
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
-            <Tag className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-xs text-green-600 mb-2 font-semibold">Your Submitted Quote</p>
-              <div className="space-y-1">
-                <p className="text-sm"><span className="text-muted-foreground">Price:</span> <span className="font-bold">{order.order_specialist?.quoted_price}</span></p>
-                {order.order_specialist?.quote_notes && (
-                  <p className="text-sm"><span className="text-muted-foreground">Notes:</span> {order.order_specialist.quote_notes}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Submitted: {order.order_specialist?.quoted_at && new Date(order.order_specialist.quoted_at).toLocaleDateString('en-US')}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Show rejection info if rejected */}
-        {isRejected && (
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
-            <XCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-xs text-red-600 mb-2 font-semibold">Quote Rejected by Customer</p>
-              <div className="space-y-1">
-                <p className="text-sm"><span className="text-muted-foreground">Your quote:</span> <span className="font-bold">{order.order_specialist?.quoted_price}</span></p>
-                {order.order_specialist?.rejection_reason && (
-                  <div className="mt-2 p-3 bg-red-100 rounded-md">
-                    <p className="text-xs text-red-700 mb-1 font-semibold">Customer's Reason:</p>
-                    <p className="text-sm text-red-900">{order.order_specialist.rejection_reason}</p>
+              <div className="flex-1">
+                <p className="text-sm text-green-700 dark:text-green-300 mb-3 font-bold">✓ Your Submitted Quote</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground font-medium">Price:</span>
+                    <span className="font-bold text-base text-foreground">{order.order_specialist?.quoted_price}</span>
                   </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-2">
-                  Rejection Date: {order.order_specialist?.rejected_at && new Date(order.order_specialist.rejected_at).toLocaleDateString('en-US')}
-                </p>
+                  {order.order_specialist?.quote_notes && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs text-muted-foreground font-medium">Notes:</span>
+                      <span className="text-sm text-foreground">{order.order_specialist.quote_notes}</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Submitted: {order.order_specialist?.quoted_at && new Date(order.order_specialist.quoted_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {order.notes && (
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30 border border-muted">
-            <FileText className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-xs text-muted-foreground mb-2">Admin Notes</p>
-              <p className="text-sm leading-relaxed">{order.notes}</p>
+          {/* Show rejection info if rejected */}
+          {isRejected && (
+            <div className="flex items-start gap-3 p-5 rounded-xl bg-gradient-to-br from-red-50 to-red-50/50 dark:from-red-950/30 dark:to-red-950/10 border-2 border-red-200 dark:border-red-800 shadow-sm">
+              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/50">
+                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-red-700 dark:text-red-300 mb-3 font-bold">✕ Quote Rejected by Customer</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground font-medium">Your quote:</span>
+                    <span className="font-bold text-base text-foreground">{order.order_specialist?.quoted_price}</span>
+                  </div>
+                  {order.order_specialist?.rejection_reason && (
+                    <div className="mt-3 p-4 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800">
+                      <p className="text-xs text-red-700 dark:text-red-300 mb-1 font-bold">Customer's Reason:</p>
+                      <p className="text-sm text-red-900 dark:text-red-200">{order.order_specialist.rejection_reason}</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Rejected on: {order.order_specialist?.rejected_at && new Date(order.order_specialist.rejected_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {order.notes && (
+            <div className="flex items-start gap-3 p-5 rounded-xl bg-gradient-to-br from-amber-50 to-amber-50/50 dark:from-amber-950/30 dark:to-amber-950/10 border border-amber-200 dark:border-amber-800 shadow-sm">
+              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+                <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-amber-700 dark:text-amber-300 mb-2 font-bold">Admin Notes</p>
+                <p className="text-sm leading-relaxed text-foreground">{order.notes}</p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {showQuoteButton && !hasQuote && (
-          <Dialog open={quoteDialog.open && quoteDialog.orderId === order.id} onOpenChange={(open) => {
-            if (!open) {
-              setQuoteDialog({ open: false, orderId: null });
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={() => setQuoteDialog({ open: true, orderId: order.id })}
-                className="w-full gap-2"
-                size="lg"
-              >
-                <Tag className="h-4 w-4" />
-                Submit Quote
-              </Button>
-            </DialogTrigger>
+          <div className="px-6 pb-6">
+            <Dialog open={quoteDialog.open && quoteDialog.orderId === order.id} onOpenChange={(open) => {
+              if (!open) {
+                setQuoteDialog({ open: false, orderId: null });
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => setQuoteDialog({ open: true, orderId: order.id })}
+                  className="w-full gap-2 h-12 text-base font-bold shadow-lg hover:shadow-xl transition-all"
+                  size="lg"
+                >
+                  <Tag className="h-5 w-5" />
+                  Submit Quote
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Choose Your Price</DialogTitle>
@@ -688,25 +731,26 @@ export default function SpecialistOrders() {
                 )}
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         )}
         
         {order.order_specialist?.is_accepted === true && (
-          <div className="space-y-3">
+          <div className="px-6 pb-6 space-y-4">
             {canMoveNow() ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Button
                   onClick={() => setShowLocationMap(prev => ({ ...prev, [order.id]: true }))}
-                  className="w-full bg-green-600 hover:bg-green-700 h-auto py-4 px-6"
+                  className="w-full bg-green-600 hover:bg-green-700 h-auto py-5 px-6 shadow-lg hover:shadow-xl transition-all"
                   size="lg"
                 >
                   <div className="flex items-center justify-between w-full gap-4">
-                    <div className="flex items-center gap-2">
-                      <Navigation className="h-5 w-5" />
-                      <span className="text-base font-bold">Move Now - تحرك الآن</span>
+                    <div className="flex items-center gap-3">
+                      <Navigation className="h-6 w-6" />
+                      <span className="text-lg font-bold">Move Now - تحرك الآن</span>
                     </div>
                     {getTimeUntilMovement() && order.booking_date && (
-                      <div className="flex items-center gap-1.5 bg-blue-500/30 px-3 py-1.5 rounded-full border-2 border-blue-400/50 backdrop-blur-sm">
+                      <div className="flex items-center gap-2 bg-blue-500/30 px-4 py-2 rounded-full border-2 border-blue-400/50 backdrop-blur-sm">
                         <Clock className="h-4 w-4 text-white" />
                         <span className="font-bold text-sm text-white font-mono">
                           {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
@@ -722,29 +766,31 @@ export default function SpecialistOrders() {
                 {/* Location Map - Show after clicking Move Now */}
                 {showLocationMap[order.id] && order.gps_latitude && order.gps_longitude && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="flex items-start gap-3 p-4 rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
-                      <Map className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 space-y-3">
+                    <div className="flex items-start gap-4 p-5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 shadow-md">
+                      <div className="p-2.5 rounded-lg bg-primary/20">
+                        <Map className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="flex-1 space-y-4">
                         <div>
-                          <p className="text-xs text-primary mb-2 font-semibold">موقع العمل - Work Location</p>
+                          <p className="text-sm text-primary mb-2 font-bold">📍 Work Location - موقع العمل</p>
                           {order.building_info && (
                             <p className="text-sm text-muted-foreground mb-2">{order.building_info}</p>
                           )}
-                          <p className="text-xs font-mono text-muted-foreground" dir="ltr">
+                          <p className="text-xs font-mono text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block" dir="ltr">
                             {order.gps_latitude.toFixed(6)}, {order.gps_longitude.toFixed(6)}
                           </p>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-3">
                           <Button
                             onClick={() => {
                               const url = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
                               window.open(url, '_blank');
                             }}
                             variant="default"
-                            size="sm"
-                            className="gap-2"
+                            size="lg"
+                            className="gap-2 h-12 font-bold shadow-md hover:shadow-lg"
                           >
-                            <MapPin className="h-4 w-4" />
+                            <MapPin className="h-5 w-5" />
                             Google Maps
                           </Button>
                           <Button
@@ -753,20 +799,20 @@ export default function SpecialistOrders() {
                               window.open(url, '_blank');
                             }}
                             variant="default"
-                            size="sm"
-                            className="gap-2"
+                            size="lg"
+                            className="gap-2 h-12 font-bold shadow-md hover:shadow-lg"
                           >
-                            <MapPin className="h-4 w-4" />
+                            <MapPin className="h-5 w-5" />
                             Apple Maps
                           </Button>
                         </div>
                         <Button
                           onClick={() => order.customer && openWhatsApp(order.customer.whatsapp_number)}
-                          className="w-full gap-2 bg-green-600 hover:bg-green-700"
-                          size="sm"
+                          className="w-full gap-2 bg-green-600 hover:bg-green-700 h-12 font-bold shadow-md hover:shadow-lg"
+                          size="lg"
                         >
-                          <Phone className="h-4 w-4" />
-                          تواصل مع العميل - Contact Customer
+                          <Phone className="h-5 w-5" />
+                          Contact Customer - تواصل مع العميل
                         </Button>
                       </div>
                     </div>
@@ -776,17 +822,17 @@ export default function SpecialistOrders() {
             ) : (
               <Button
                 disabled
-                className="w-full h-auto py-4 px-6"
+                className="w-full h-auto py-5 px-6 shadow-md"
                 variant="outline"
                 size="lg"
               >
                 <div className="flex items-center justify-between w-full gap-4">
-                  <div className="flex items-center gap-2">
-                    <Navigation className="h-5 w-5" />
-                    <span className="font-semibold">Move Now - تحرك الآن</span>
+                  <div className="flex items-center gap-3">
+                    <Navigation className="h-6 w-6" />
+                    <span className="font-bold text-lg">Move Now - تحرك الآن</span>
                   </div>
                   {getTimeUntilMovement() && order.booking_date && (
-                    <div className="flex items-center gap-1.5 bg-red-50 px-3 py-1.5 rounded-full border-2 border-red-200">
+                    <div className="flex items-center gap-2 bg-red-50 px-4 py-2 rounded-full border-2 border-red-200">
                       <Clock className="h-4 w-4 text-red-600" />
                       <span className="font-bold text-sm text-red-600 font-mono">
                         {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
