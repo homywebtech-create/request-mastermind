@@ -119,6 +119,7 @@ export default function CompanyBooking() {
   const [company, setCompany] = useState<Company | null>(null);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
+  const [hoursCount, setHoursCount] = useState<number>(1);
   
   // Form data
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -197,6 +198,19 @@ export default function CompanyBooking() {
   const fetchData = async () => {
     try {
       setLoading(true);
+
+      // Fetch order info to get hours_count
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('hours_count')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError) throw orderError;
+      
+      // Parse hours_count (it's stored as text in DB)
+      const hours = orderData?.hours_count ? parseInt(orderData.hours_count) : 1;
+      setHoursCount(hours);
 
       // Fetch company info
       const { data: companyData, error: companyError } = await supabase
@@ -429,12 +443,24 @@ export default function CompanyBooking() {
   const getLowestPrice = () => {
     if (specialists.length === 0) return null;
     const prices = specialists
-      .map((s) => parseFloat(s.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0'))
+      .map((s) => {
+        const pricePerHour = parseFloat(s.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+        return pricePerHour * hoursCount;
+      })
       .filter((p) => !isNaN(p));
     return Math.min(...prices);
   };
 
   const lowestPrice = getLowestPrice();
+
+  // Calculate total price for a specialist
+  const calculateTotalPrice = (specialist: Specialist) => {
+    const pricePerHour = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+    const total = pricePerHour * hoursCount;
+    // Extract currency from original price string
+    const currency = specialist.quoted_price?.replace(/[\d.,]/g, '').trim() || '';
+    return `${total} ${currency}`;
+  };
 
   const renderStepIndicator = () => {
     const steps = [
@@ -673,13 +699,14 @@ export default function CompanyBooking() {
                       <div className="space-y-4">
                         {specialists
                           .sort((a, b) => {
-                            const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                            const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                            const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0') * hoursCount;
+                            const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0') * hoursCount;
                             return priceA - priceB;
                           })
                           .map((specialist) => {
-                            const price = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                            const isLowest = price === lowestPrice;
+                            const pricePerHour = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                            const totalPrice = pricePerHour * hoursCount;
+                            const isLowest = totalPrice === lowestPrice;
                             const isSelected = selectedSpecialistId === specialist.id;
 
                             return (
@@ -735,8 +762,11 @@ export default function CompanyBooking() {
                                             isLowest && 'bg-green-600 hover:bg-green-700'
                                           )}
                                         >
-                                          {specialist.quoted_price}
+                                          {calculateTotalPrice(specialist)}
                                         </Badge>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {hoursCount} {language === 'ar' ? 'ساعات' : 'hours'}
+                                        </p>
                                         {isLowest && (
                                           <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-bold">
                                             {t.lowestPrice} ⭐
@@ -877,7 +907,7 @@ export default function CompanyBooking() {
                     {t.submit}
                     {selectedSpecialistId && specialists.find(s => s.id === selectedSpecialistId) && (
                       <span className="font-bold mr-2 ml-2">
-                        ({specialists.find(s => s.id === selectedSpecialistId)?.quoted_price})
+                        ({calculateTotalPrice(specialists.find(s => s.id === selectedSpecialistId)!)})
                       </span>
                     )}
                   </span>
