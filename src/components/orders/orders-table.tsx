@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Order {
   id: string;
+  order_number?: string;
   customer_id: string;
   company_id: string | null;
   service_type: string;
@@ -119,9 +120,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
              (!order.order_specialists || order.order_specialists.every(os => !os.quoted_price));
     }
     if (filter === 'awaiting-response') {
-      // Awaiting response: has at least one quote, not accepted yet
+      // Awaiting response: has at least one quote, no accepted quote yet
       return order.order_specialists && 
-             order.order_specialists.some(os => os.quoted_price && os.is_accepted === null);
+             order.order_specialists.some(os => os.quoted_price) &&
+             !order.order_specialists.some(os => os.is_accepted === true);
     }
     if (filter === 'upcoming') {
       // Upcoming: confirmed bookings with accepted quotes
@@ -724,6 +726,7 @@ Thank you for contacting us! 🌟`;
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="text-left">Order #</TableHead>
                 <TableHead className="text-left">Customer</TableHead>
                 <TableHead className="text-left">Area</TableHead>
                 <TableHead className="text-left">Customer Budget</TableHead>
@@ -738,7 +741,7 @@ Thank you for contacting us! 🌟`;
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No orders available
                   </TableCell>
                 </TableRow>
@@ -758,6 +761,12 @@ Thank you for contacting us! 🌟`;
                       key={order.id}
                       className={isDelayed ? "bg-destructive/10 border-destructive/20" : isRecentlySent ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" : ""}
                     >
+                      <TableCell>
+                        <Badge variant="secondary" className="font-mono">
+                          {order.order_number || 'N/A'}
+                        </Badge>
+                      </TableCell>
+                      
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">

@@ -26,6 +26,7 @@ interface OrderFormData {
 
 interface Order {
   id: string;
+  order_number?: string;
   customer_id: string;
   company_id: string | null;
   service_type: string;
