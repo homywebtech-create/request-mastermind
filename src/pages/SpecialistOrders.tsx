@@ -702,24 +702,25 @@ export default function SpecialistOrders() {
               <div className="space-y-3">
                 <Button
                   onClick={() => setShowLocationMap(prev => ({ ...prev, [order.id]: true }))}
-                  className="w-full gap-2 bg-green-600 hover:bg-green-700 flex-col h-auto py-4"
+                  className="w-full bg-green-600 hover:bg-green-700 h-auto py-4 px-6"
                   size="lg"
                 >
-                  <div className="flex items-center gap-2">
-                    <Navigation className="h-5 w-5" />
-                    <span className="text-base font-bold">تحرك الآن - Move Now</span>
-                  </div>
-                  {getTimeUntilMovement() && order.booking_date && (
-                    <div className="flex items-center gap-2 text-xs text-white/90 mt-2 bg-white/10 px-3 py-1 rounded-full">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span className="font-medium">
-                        {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
-                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
-                        {getTimeUntilMovement()!.minutes}m
-                        {' '}حتى الموعد
-                      </span>
+                  <div className="flex items-center justify-between w-full gap-4">
+                    <div className="flex items-center gap-2">
+                      <Navigation className="h-5 w-5" />
+                      <span className="text-base font-bold">Move Now - تحرك الآن</span>
                     </div>
-                  )}
+                    {getTimeUntilMovement() && order.booking_date && (
+                      <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1.5 rounded-full border border-white/30">
+                        <Clock className="h-4 w-4" />
+                        <span className="font-bold text-sm">
+                          {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
+                          {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
+                          {getTimeUntilMovement()!.minutes}m
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </Button>
                 
                 {/* Location Map - Show after clicking Move Now */}
@@ -779,25 +780,26 @@ export default function SpecialistOrders() {
             ) : (
               <Button
                 disabled
-                className="w-full gap-2 flex-col h-auto py-4"
+                className="w-full h-auto py-4 px-6"
                 variant="outline"
                 size="lg"
               >
-                <div className="flex items-center gap-2">
-                  <Navigation className="h-5 w-5" />
-                  <span>تحرك الآن - Move Now</span>
-                </div>
-                {getTimeUntilMovement() && order.booking_date && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                    <Clock className="h-4 w-4" />
-                    <span className="font-medium">
-                      {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
-                      {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
-                      {getTimeUntilMovement()!.minutes}m
-                      {' '}حتى الموعد
-                    </span>
+                <div className="flex items-center justify-between w-full gap-4">
+                  <div className="flex items-center gap-2">
+                    <Navigation className="h-5 w-5" />
+                    <span className="font-semibold">Move Now - تحرك الآن</span>
                   </div>
-                )}
+                  {getTimeUntilMovement() && order.booking_date && (
+                    <div className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full border">
+                      <Clock className="h-4 w-4" />
+                      <span className="font-bold text-sm">
+                        {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
+                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${getTimeUntilMovement()!.hours}h `}
+                        {getTimeUntilMovement()!.minutes}m
+                      </span>
+                    </div>
+                  )}
+                </div>
               </Button>
             )}
           </div>
