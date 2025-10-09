@@ -16,6 +16,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { getSoundNotification } from "@/lib/soundNotification";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface OrderSpecialist {
   id: string;
@@ -63,6 +69,7 @@ export default function SpecialistOrders() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
+  const isMobile = useIsMobile();
 
   // Initialize audio context on first user interaction
   useEffect(() => {
@@ -492,12 +499,12 @@ export default function SpecialistOrders() {
         className={`overflow-hidden transition-all hover:shadow-xl ${!hasQuote && showQuoteButton ? 'border-primary border-2 shadow-lg' : 'border-border'}`}
       >
         {/* Header Section with Gradient */}
-        <div className={`p-6 pb-4 ${!hasQuote && showQuoteButton ? 'bg-gradient-to-r from-primary/10 via-primary/5 to-transparent' : 'bg-gradient-to-r from-muted/50 to-transparent'}`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-3">
+        <div className={`p-3 md:p-6 pb-2 md:pb-4 ${!hasQuote && showQuoteButton ? 'bg-gradient-to-r from-primary/10 via-primary/5 to-transparent' : 'bg-gradient-to-r from-muted/50 to-transparent'}`}>
+          <div className="flex items-start justify-between gap-2 md:gap-4">
+            <div className="flex-1 space-y-2 md:space-y-3">
               {!hasQuote && showQuoteButton && (
                 <div className="flex items-center gap-2 text-primary">
-                  <Sparkles className="h-5 w-5 animate-pulse" />
+                  <Sparkles className="h-4 w-4 md:h-5 md:w-5 animate-pulse" />
                   <span className="text-sm font-bold">New Order - Submit Your Quote</span>
                 </div>
               )}
@@ -773,167 +780,152 @@ export default function SpecialistOrders() {
     );
   };
 
+  const filterCards = [
+    {
+      id: 'new' as const,
+      title: 'طلبات جديدة',
+      titleEn: 'New Orders',
+      count: newOrders.length,
+      icon: AlertCircle,
+      color: 'blue'
+    },
+    {
+      id: 'quoted' as const,
+      title: 'قيد المراجعة',
+      titleEn: 'Under Review',
+      count: quotedOrders.length,
+      icon: Tag,
+      color: 'orange'
+    },
+    {
+      id: 'accepted' as const,
+      title: 'موافق عليها',
+      titleEn: 'Accepted',
+      count: acceptedOrders.length,
+      icon: CheckCircle,
+      color: 'green'
+    },
+    {
+      id: 'skipped' as const,
+      title: 'متجاوزة',
+      titleEn: 'Skipped',
+      count: skippedOrders.length,
+      icon: XCircle,
+      color: 'gray'
+    },
+    {
+      id: 'rejected' as const,
+      title: 'مرفوضة',
+      titleEn: 'Rejected',
+      count: rejectedOrders.length,
+      icon: XCircle,
+      color: 'red'
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <div className="container mx-auto p-4 space-y-6 max-w-6xl">
+      <div className="container mx-auto p-3 md:p-4 space-y-4 md:space-y-6 max-w-6xl">
         {/* Header */}
-        <Card className="p-6 shadow-lg">
+        <Card className="p-4 md:p-6 shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                My Orders
+              <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                طلباتي
               </h1>
-              <p className="text-muted-foreground">Welcome {specialistName}</p>
+              <p className="text-sm md:text-base text-muted-foreground">مرحباً {specialistName}</p>
             </div>
             <Button onClick={handleLogout} variant="outline" size="sm">
               <LogOut className="mr-2 h-4 w-4" />
-              Logout
+              خروج
             </Button>
           </div>
         </Card>
 
-        {/* Interactive Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card 
-            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
-              activeFilter === 'new' 
-                ? 'bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/50 border-4 shadow-xl scale-105' 
-                : 'bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:shadow-lg'
-            }`}
-            onClick={() => setActiveFilter('new')}
+        {/* Interactive Stats Cards - Carousel for Mobile */}
+        {isMobile ? (
+          <Carousel
+            opts={{
+              align: "start",
+              direction: "rtl",
+              loop: false,
+            }}
+            className="w-full"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'new' ? 'text-blue-700' : 'text-muted-foreground'}`}>
-                  New Orders
-                </p>
-                <p className={`text-3xl font-bold ${activeFilter === 'new' ? 'text-blue-700' : 'text-blue-600'}`}>
-                  {newOrders.length}
-                </p>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                activeFilter === 'new' ? 'bg-blue-500/40' : 'bg-blue-500/20'
-              }`}>
-                <AlertCircle className={`h-6 w-6 ${activeFilter === 'new' ? 'text-blue-700' : 'text-blue-600'}`} />
-              </div>
-            </div>
-            {activeFilter === 'new' && (
-              <div className="text-xs font-bold text-blue-700 mt-2">● القسم النشط</div>
-            )}
-          </Card>
-
-          <Card 
-            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
-              activeFilter === 'quoted' 
-                ? 'bg-gradient-to-br from-orange-500/20 to-orange-500/10 border-orange-500/50 border-4 shadow-xl scale-105' 
-                : 'bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 hover:shadow-lg'
-            }`}
-            onClick={() => setActiveFilter('quoted')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'quoted' ? 'text-orange-700' : 'text-muted-foreground'}`}>
-                  Under Review
-                </p>
-                <p className={`text-3xl font-bold ${activeFilter === 'quoted' ? 'text-orange-700' : 'text-orange-600'}`}>
-                  {quotedOrders.length}
-                </p>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                activeFilter === 'quoted' ? 'bg-orange-500/40' : 'bg-orange-500/20'
-              }`}>
-                <Tag className={`h-6 w-6 ${activeFilter === 'quoted' ? 'text-orange-700' : 'text-orange-600'}`} />
-              </div>
-            </div>
-            {activeFilter === 'quoted' && (
-              <div className="text-xs font-bold text-orange-700 mt-2">● القسم النشط</div>
-            )}
-          </Card>
-
-          <Card 
-            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
-              activeFilter === 'accepted' 
-                ? 'bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/50 border-4 shadow-xl scale-105' 
-                : 'bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-lg'
-            }`}
-            onClick={() => setActiveFilter('accepted')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'accepted' ? 'text-green-700' : 'text-muted-foreground'}`}>
-                  Accepted
-                </p>
-                <p className={`text-3xl font-bold ${activeFilter === 'accepted' ? 'text-green-700' : 'text-green-600'}`}>
-                  {acceptedOrders.length}
-                </p>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                activeFilter === 'accepted' ? 'bg-green-500/40' : 'bg-green-500/20'
-              }`}>
-                <CheckCircle className={`h-6 w-6 ${activeFilter === 'accepted' ? 'text-green-700' : 'text-green-600'}`} />
-              </div>
-            </div>
-            {activeFilter === 'accepted' && (
-              <div className="text-xs font-bold text-green-700 mt-2">● القسم النشط</div>
-            )}
-          </Card>
-
-          <Card 
-            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
-              activeFilter === 'skipped' 
-                ? 'bg-gradient-to-br from-gray-500/20 to-gray-500/10 border-gray-500/50 border-4 shadow-xl scale-105' 
-                : 'bg-gradient-to-br from-gray-500/10 to-gray-500/5 border-gray-500/20 hover:shadow-lg'
-            }`}
-            onClick={() => setActiveFilter('skipped')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'skipped' ? 'text-gray-700' : 'text-muted-foreground'}`}>
-                  Skipped
-                </p>
-                <p className={`text-3xl font-bold ${activeFilter === 'skipped' ? 'text-gray-700' : 'text-gray-600'}`}>
-                  {skippedOrders.length}
-                </p>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                activeFilter === 'skipped' ? 'bg-gray-500/40' : 'bg-gray-500/20'
-              }`}>
-                <XCircle className={`h-6 w-6 ${activeFilter === 'skipped' ? 'text-gray-700' : 'text-gray-600'}`} />
-              </div>
-            </div>
-            {activeFilter === 'skipped' && (
-              <div className="text-xs font-bold text-gray-700 mt-2">● القسم النشط</div>
-            )}
-          </Card>
-
-          <Card 
-            className={`p-6 cursor-pointer transition-all hover:scale-105 ${
-              activeFilter === 'rejected' 
-                ? 'bg-gradient-to-br from-red-500/20 to-red-500/10 border-red-500/50 border-4 shadow-xl scale-105' 
-                : 'bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20 hover:shadow-lg'
-            }`}
-            onClick={() => setActiveFilter('rejected')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm mb-1 font-semibold ${activeFilter === 'rejected' ? 'text-red-700' : 'text-muted-foreground'}`}>
-                  Rejected
-                </p>
-                <p className={`text-3xl font-bold ${activeFilter === 'rejected' ? 'text-red-700' : 'text-red-600'}`}>
-                  {rejectedOrders.length}
-                </p>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                activeFilter === 'rejected' ? 'bg-red-500/40' : 'bg-red-500/20'
-              }`}>
-                <XCircle className={`h-6 w-6 ${activeFilter === 'rejected' ? 'text-red-700' : 'text-red-600'}`} />
-              </div>
-            </div>
-            {activeFilter === 'rejected' && (
-              <div className="text-xs font-bold text-red-700 mt-2">● القسم النشط</div>
-            )}
-          </Card>
-        </div>
+            <CarouselContent className="-mr-2">
+              {filterCards.map((filter) => {
+                const Icon = filter.icon;
+                const isActive = activeFilter === filter.id;
+                return (
+                  <CarouselItem key={filter.id} className="pr-2 basis-[45%]">
+                    <Card 
+                      className={`p-3 cursor-pointer transition-all ${
+                        isActive
+                          ? `bg-gradient-to-br from-${filter.color}-500/20 to-${filter.color}-500/10 border-${filter.color}-500/50 border-2 shadow-lg` 
+                          : `bg-gradient-to-br from-${filter.color}-500/10 to-${filter.color}-500/5 border-${filter.color}-500/20`
+                      }`}
+                      onClick={() => setActiveFilter(filter.id)}
+                    >
+                      <div className="flex flex-col items-center justify-center gap-2 text-center">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                          isActive ? `bg-${filter.color}-500/40` : `bg-${filter.color}-500/20`
+                        }`}>
+                          <Icon className={`h-5 w-5 ${isActive ? `text-${filter.color}-700` : `text-${filter.color}-600`}`} />
+                        </div>
+                        <p className={`text-xl font-bold ${isActive ? `text-${filter.color}-700` : `text-${filter.color}-600`}`}>
+                          {filter.count}
+                        </p>
+                        <p className={`text-xs font-semibold ${isActive ? `text-${filter.color}-700` : 'text-muted-foreground'}`}>
+                          {filter.title}
+                        </p>
+                        {isActive && (
+                          <div className={`text-[10px] font-bold text-${filter.color}-700`}>● نشط</div>
+                        )}
+                      </div>
+                    </Card>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+          </Carousel>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {filterCards.map((filter) => {
+              const Icon = filter.icon;
+              const isActive = activeFilter === filter.id;
+              return (
+                <Card 
+                  key={filter.id}
+                  className={`p-6 cursor-pointer transition-all hover:scale-105 ${
+                    isActive
+                      ? `bg-gradient-to-br from-${filter.color}-500/20 to-${filter.color}-500/10 border-${filter.color}-500/50 border-4 shadow-xl scale-105` 
+                      : `bg-gradient-to-br from-${filter.color}-500/10 to-${filter.color}-500/5 border-${filter.color}-500/20 hover:shadow-lg`
+                  }`}
+                  onClick={() => setActiveFilter(filter.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`text-sm mb-1 font-semibold ${isActive ? `text-${filter.color}-700` : 'text-muted-foreground'}`}>
+                        {filter.titleEn}
+                      </p>
+                      <p className={`text-3xl font-bold ${isActive ? `text-${filter.color}-700` : `text-${filter.color}-600`}`}>
+                        {filter.count}
+                      </p>
+                    </div>
+                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                      isActive ? `bg-${filter.color}-500/40` : `bg-${filter.color}-500/20`
+                    }`}>
+                      <Icon className={`h-6 w-6 ${isActive ? `text-${filter.color}-700` : `text-${filter.color}-600`}`} />
+                    </div>
+                  </div>
+                  {isActive && (
+                    <div className={`text-xs font-bold text-${filter.color}-700 mt-2`}>● القسم النشط</div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
         {/* Filtered Orders */}
         <div className="space-y-4 mt-6">
