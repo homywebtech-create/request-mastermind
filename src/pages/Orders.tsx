@@ -265,21 +265,6 @@ export default function Orders() {
       if (formData.specialistIds && formData.specialistIds.length > 0) {
         // Specific specialists selected
         specialistsToLink = formData.specialistIds;
-      } else if (formData.sendToAll) {
-        // Get all active specialists
-        const { data: allSpecialists, error: specialistsError } = await supabase
-          .from('specialists')
-          .select('id')
-          .eq('is_active', true);
-
-        if (specialistsError) {
-          console.error('Error fetching specialists:', specialistsError);
-          throw specialistsError;
-        }
-
-        specialistsToLink = allSpecialists?.map(s => s.id) || [];
-        console.log('Found specialists:', specialistsToLink.length);
-      } else if (formData.companyId) {
         // Get all specialists from the specific company
         const { data: companySpecialists, error: specialistsError } = await supabase
           .from('specialists')
@@ -297,6 +282,7 @@ export default function Orders() {
       }
 
       // Insert all specialists at once with proper error handling
+      const linkingSkipped = formData.sendToAll;
       if (specialistsToLink.length > 0) {
         const orderSpecialists = specialistsToLink.map(specialistId => ({
           order_id: newOrder.id,
@@ -315,12 +301,14 @@ export default function Orders() {
         
         console.log('Successfully linked specialists to order');
       } else {
-        console.warn('No active specialists found!');
-        toast({
-          title: "تحذير",
-          description: "لم يتم العثور على محترفين نشطين للشركة المحددة",
-          variant: "default",
-        });
+        if (!linkingSkipped) {
+          console.warn('No active specialists found!');
+          toast({
+            title: "تحذير",
+            description: "لم يتم العثور على محترفين نشطين للشركة المحددة",
+            variant: "default",
+          });
+        }
       }
 
       toast({
