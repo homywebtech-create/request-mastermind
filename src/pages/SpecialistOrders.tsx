@@ -783,40 +783,35 @@ export default function SpecialistOrders() {
   const filterCards = [
     {
       id: 'new' as const,
-      title: 'طلبات جديدة',
-      titleEn: 'New Orders',
+      title: 'New Orders',
       count: newOrders.length,
       icon: AlertCircle,
       color: 'blue'
     },
     {
-      id: 'quoted' as const,
-      title: 'قيد المراجعة',
-      titleEn: 'Under Review',
-      count: quotedOrders.length,
-      icon: Tag,
-      color: 'orange'
-    },
-    {
       id: 'accepted' as const,
-      title: 'موافق عليها',
-      titleEn: 'Accepted',
+      title: 'Accepted',
       count: acceptedOrders.length,
       icon: CheckCircle,
       color: 'green'
     },
     {
+      id: 'quoted' as const,
+      title: 'Under Review',
+      count: quotedOrders.length,
+      icon: Tag,
+      color: 'orange'
+    },
+    {
       id: 'skipped' as const,
-      title: 'متجاوزة',
-      titleEn: 'Skipped',
+      title: 'Skipped',
       count: skippedOrders.length,
       icon: XCircle,
       color: 'gray'
     },
     {
       id: 'rejected' as const,
-      title: 'مرفوضة',
-      titleEn: 'Rejected',
+      title: 'Rejected',
       count: rejectedOrders.length,
       icon: XCircle,
       color: 'red'
@@ -831,13 +826,13 @@ export default function SpecialistOrders() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="space-y-1">
               <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                طلباتي
+                My Orders
               </h1>
-              <p className="text-sm md:text-base text-muted-foreground">مرحباً {specialistName}</p>
+              <p className="text-sm md:text-base text-muted-foreground">Welcome {specialistName}</p>
             </div>
             <Button onClick={handleLogout} variant="outline" size="sm">
               <LogOut className="mr-2 h-4 w-4" />
-              خروج
+              Logout
             </Button>
           </div>
         </Card>
@@ -879,7 +874,7 @@ export default function SpecialistOrders() {
                           {filter.title}
                         </p>
                         {isActive && (
-                          <div className={`text-[10px] font-bold text-${filter.color}-700`}>● نشط</div>
+                          <div className={`text-[10px] font-bold text-${filter.color}-700`}>● Active</div>
                         )}
                       </div>
                     </Card>
@@ -906,7 +901,7 @@ export default function SpecialistOrders() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className={`text-sm mb-1 font-semibold ${isActive ? `text-${filter.color}-700` : 'text-muted-foreground'}`}>
-                        {filter.titleEn}
+                        {filter.title}
                       </p>
                       <p className={`text-3xl font-bold ${isActive ? `text-${filter.color}-700` : `text-${filter.color}-600`}`}>
                         {filter.count}
@@ -919,7 +914,7 @@ export default function SpecialistOrders() {
                     </div>
                   </div>
                   {isActive && (
-                    <div className={`text-xs font-bold text-${filter.color}-700 mt-2`}>● القسم النشط</div>
+                    <div className={`text-xs font-bold text-${filter.color}-700 mt-2`}>● Active Section</div>
                   )}
                 </Card>
               );
