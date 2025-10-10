@@ -394,35 +394,34 @@ Thank you for contacting us! 🌟`;
 
   const handleSendToAll = async (orderId: string) => {
     try {
-      // Delete existing specialists assignments
-      await supabase
+      // 1) Read existing assignments (avoid DELETE which requires admin)
+      const { data: existing, error: existingError } = await supabase
         .from('order_specialists')
-        .delete()
+        .select('specialist_id')
         .eq('order_id', orderId);
 
-      // Get all active specialists from all companies
-      const { data: specialists, error: specialistsError } = await supabase
+      if (existingError) throw existingError;
+      const existingSet = new Set((existing || []).map((e) => e.specialist_id));
+
+      // 2) Get all active specialists from all companies
+      const { data: allSpecialists, error: specialistsError } = await supabase
         .from('specialists')
         .select('id')
         .eq('is_active', true);
 
       if (specialistsError) throw specialistsError;
 
-      // Add all specialists to the order
-      if (specialists && specialists.length > 0) {
-        const orderSpecialists = specialists.map(specialist => ({
-          order_id: orderId,
-          specialist_id: specialist.id,
-        }));
-
+      // 3) Insert only missing specialists (no DELETE needed)
+      const missing = (allSpecialists || []).filter((s) => !existingSet.has(s.id));
+      if (missing.length > 0) {
+        const toInsert = missing.map((s) => ({ order_id: orderId, specialist_id: s.id }));
         const { error: insertError } = await supabase
           .from('order_specialists')
-          .insert(orderSpecialists);
-
+          .insert(toInsert);
         if (insertError) throw insertError;
       }
 
-      // Update order
+      // 4) Update order broadcast flags and timestamp
       const { error } = await supabase
         .from('orders')
         .update({
@@ -436,17 +435,17 @@ Thank you for contacting us! 🌟`;
       if (error) throw error;
 
       toast({
-        title: "تم الإرسال بنجاح",
-        description: `تم إرسال الطلب لـ ${specialists?.length || 0} عاملة/عاملات في جميع الشركات`,
+        title: 'Success',
+        description: `Order broadcasted to ${allSpecialists?.length || 0} active specialists`,
       });
-      
+
       setResendDialogOpen(false);
       window.location.reload();
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: 'Error',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -455,43 +454,40 @@ Thank you for contacting us! 🌟`;
     try {
       if (!order.company_id) {
         toast({
-          title: "خطأ",
-          description: "لا توجد شركة محددة لهذا الطلب",
-          variant: "destructive",
+          title: 'Error',
+          description: 'No company assigned for this order',
+          variant: 'destructive',
         });
         return;
       }
 
-      // Delete existing specialists assignments
-      await supabase
+      // Read existing assignments (avoid DELETE which requires admin)
+      const { data: existing, error: existingError } = await supabase
         .from('order_specialists')
-        .delete()
+        .select('specialist_id')
         .eq('order_id', order.id);
+      if (existingError) throw existingError;
+      const existingSet = new Set((existing || []).map((e) => e.specialist_id));
 
-      // Get all active specialists from the company
-      const { data: specialists, error: specialistsError } = await supabase
+      // Get all active specialists from the same company
+      const { data: companySpecialists, error: specialistsError } = await supabase
         .from('specialists')
         .select('id')
         .eq('company_id', order.company_id)
         .eq('is_active', true);
-
       if (specialistsError) throw specialistsError;
 
-      // Re-add specialists to the order
-      if (specialists && specialists.length > 0) {
-        const orderSpecialists = specialists.map(specialist => ({
-          order_id: order.id,
-          specialist_id: specialist.id,
-        }));
-
+      // Insert only missing
+      const missing = (companySpecialists || []).filter((s) => !existingSet.has(s.id));
+      if (missing.length > 0) {
+        const toInsert = missing.map((s) => ({ order_id: order.id, specialist_id: s.id }));
         const { error: insertError } = await supabase
           .from('order_specialists')
-          .insert(orderSpecialists);
-
+          .insert(toInsert);
         if (insertError) throw insertError;
       }
 
-      // Update order timestamp
+      // Update order timestamp and flags
       const { error } = await supabase
         .from('orders')
         .update({
@@ -505,17 +501,17 @@ Thank you for contacting us! 🌟`;
       if (error) throw error;
 
       toast({
-        title: "تم الإرسال بنجاح",
-        description: `تم إعادة إرسال الطلب لـ ${specialists?.length || 0} عاملة/عاملات`,
+        title: 'Success',
+        description: `Order re-sent to ${companySpecialists?.length || 0} specialist(s) in the company`,
       });
-      
+
       setResendDialogOpen(false);
       window.location.reload();
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: 'Error',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -532,32 +528,14 @@ Thank you for contacting us! 🌟`;
 
       if (!currentSpecialists || currentSpecialists.length === 0) {
         toast({
-          title: "خطأ",
-          description: "لا توجد عاملات محددة لهذا الطلب",
-          variant: "destructive",
+          title: 'Error',
+          description: 'No specialists assigned to this order',
+          variant: 'destructive',
         });
         return;
       }
 
-      // Delete existing assignments first to avoid duplicates
-      await supabase
-        .from('order_specialists')
-        .delete()
-        .eq('order_id', order.id);
-
-      // Re-add the same specialists
-      const orderSpecialists = currentSpecialists.map(s => ({
-        order_id: order.id,
-        specialist_id: s.specialist_id
-      }));
-
-      const { error: insertError } = await supabase
-        .from('order_specialists')
-        .insert(orderSpecialists);
-
-      if (insertError) throw insertError;
-
-      // Update order timestamp to trigger notification
+      // No need to delete/re-insert. Just bump the timestamp to notify.
       const { error } = await supabase
         .from('orders')
         .update({
@@ -568,17 +546,17 @@ Thank you for contacting us! 🌟`;
       if (error) throw error;
 
       toast({
-        title: "تم الإرسال بنجاح",
-        description: `تم إعادة إرسال الطلب لـ ${currentSpecialists.length} عاملة/عاملات`,
+        title: 'Success',
+        description: `Order re-sent to ${currentSpecialists.length} specialist(s)`,
       });
-      
+
       setResendDialogOpen(false);
       window.location.reload();
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: 'Error',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -600,7 +578,7 @@ Thank you for contacting us! 🌟`;
     if (!error && latestOrder) {
       setSelectedOrder(latestOrder as any);
     }
-    
+
     setResendDialogOpen(true);
   };
 
