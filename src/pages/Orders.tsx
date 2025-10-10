@@ -184,11 +184,17 @@ export default function Orders() {
         area: formData.area
       });
 
+      const whatsapp = (formData.whatsappNumber || '').trim();
+      if (!whatsapp) {
+        toast({ title: 'Error', description: 'WhatsApp number is required', variant: 'destructive' });
+        return;
+      }
+
       // Create or get customer
       const { data: existingCustomer } = await supabase
         .from('customers')
         .select('id')
-        .eq('whatsapp_number', formData.whatsappNumber)
+        .eq('whatsapp_number', whatsapp)
         .maybeSingle();
 
       let customerId = existingCustomer?.id;
@@ -196,13 +202,13 @@ export default function Orders() {
       if (!customerId) {
         // Create new customer
         const customerData = {
-          name: formData.customerName,
-          whatsapp_number: formData.whatsappNumber,
-          area: formData.area || null,
+          name: formData.customerName?.trim() || 'Customer',
+          whatsapp_number: whatsapp,
+          area: formData.area?.trim() || null,
           budget: formData.budget || null,
           budget_type: formData.budgetType || null,
           company_id: formData.companyId || null
-        };
+        } as const;
         
         console.log('Creating new customer:', customerData);
         
@@ -221,11 +227,11 @@ export default function Orders() {
       } else {
         // Update existing customer with new budget info
         const updateData = {
-          name: formData.customerName,
-          area: formData.area || null,
+          name: formData.customerName?.trim() || 'Customer',
+          area: formData.area?.trim() || null,
           budget: formData.budget || null,
           budget_type: formData.budgetType || null,
-        };
+        } as const;
         
         console.log('Updating existing customer:', customerId, updateData);
         

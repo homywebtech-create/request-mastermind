@@ -565,16 +565,6 @@ Thank you for contacting us! 🌟`;
     setSelectedOrder(order);
     
     // Fetch latest order data to ensure we have company info
-    const { data: latestOrder, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        customers (name, whatsapp_number, area, budget, budget_type),
-        companies (name)
-      `)
-      .eq('id', order.id)
-      .single();
-    
     if (!error && latestOrder) {
       setSelectedOrder(latestOrder as any);
     }
@@ -651,7 +641,7 @@ Thank you for contacting us! 🌟`;
       }
 
       toast({
-        title: "Success",
+        title: 'Success',
         description,
       });
 

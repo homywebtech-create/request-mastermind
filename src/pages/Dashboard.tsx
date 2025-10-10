@@ -282,11 +282,17 @@ export default function Dashboard() {
 
   const handleCreateOrder = async (formData: any) => {
     try {
+      const whatsapp = (formData.whatsappNumber || '').trim();
+      if (!whatsapp) {
+        toast({ title: 'Error', description: 'WhatsApp number is required', variant: 'destructive' });
+        return;
+      }
+
       // First, create or get customer
       const { data: existingCustomer } = await supabase
         .from('customers')
         .select('id')
-        .eq('whatsapp_number', formData.whatsappNumber)
+        .eq('whatsapp_number', whatsapp)
         .maybeSingle();
 
       let customerId = existingCustomer?.id;
@@ -296,9 +302,9 @@ export default function Dashboard() {
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
           .insert({
-            name: formData.customerName,
-            whatsapp_number: formData.whatsappNumber,
-            area: formData.area || null,
+            name: (formData.customerName || '').trim() || 'Customer',
+            whatsapp_number: whatsapp,
+            area: (formData.area || '').trim() || null,
             budget: formData.budget || null,
             budget_type: formData.budgetType || null,
             company_id: formData.companyId || null
@@ -313,8 +319,8 @@ export default function Dashboard() {
         const { error: updateError } = await supabase
           .from('customers')
           .update({
-            name: formData.customerName,
-            area: formData.area || null,
+            name: (formData.customerName || '').trim() || 'Customer',
+            area: (formData.area || '').trim() || null,
             budget: formData.budget || null,
             budget_type: formData.budgetType || null,
           })
