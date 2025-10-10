@@ -472,6 +472,24 @@ export default function OrderTracking() {
           <Card className="p-6 space-y-4">
             <h3 className="text-xl font-bold text-center mb-6">Moving to Customer</h3>
             
+            {/* Customer Contact */}
+            <div className="bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">Customer Contact:</p>
+                  <p className="text-lg font-bold text-foreground">{order.customer?.whatsapp_number}</p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => window.open(`https://wa.me/${order.customer?.whatsapp_number.replace(/\+/g, '')}`, '_blank')}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <Phone className="ml-2 h-5 w-5" />
+                Call Customer via WhatsApp
+              </Button>
+            </div>
+
             <Button onClick={openMaps} className="w-full" size="lg">
               <Navigation className="ml-2 h-5 w-5" />
               Click to Navigate to Customer
