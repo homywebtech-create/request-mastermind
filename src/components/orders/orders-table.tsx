@@ -563,11 +563,6 @@ Thank you for contacting us! 🌟`;
 
   const openResendDialog = async (order: Order) => {
     setSelectedOrder(order);
-    
-    // Fetch latest order data to ensure we have company info
-    if (!error && latestOrder) {
-      setSelectedOrder(latestOrder as any);
-    }
 
     setResendDialogOpen(true);
   };

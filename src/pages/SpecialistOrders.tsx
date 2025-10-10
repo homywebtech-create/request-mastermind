@@ -97,7 +97,7 @@ export default function SpecialistOrders() {
   useEffect(() => {
     if (!specialistId) return;
 
-    // Set up realtime subscription for new orders
+    // Set up realtime subscription for new orders and updates
     const channel = supabase
       .channel('specialist-orders-changes')
       .on(
@@ -118,8 +118,8 @@ export default function SpecialistOrders() {
           
           // Show notification
           toast({
-            title: "🔔 طلب جديد!",
-            description: "تم إضافة طلب جديد لك",
+            title: "🔔 New Order!",
+            description: "A new order has been assigned to you",
           });
         }
       )
@@ -132,8 +132,29 @@ export default function SpecialistOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         (payload) => {
-          console.log('Order updated:', payload);
-          // Refresh orders when an order is updated
+          console.log('Order specialist updated:', payload);
+          // Refresh orders immediately when an order is updated
+          fetchOrders(specialistId);
+          
+          // Show notification for accepted orders
+          if (payload.new && (payload.new as any).is_accepted === true) {
+            toast({
+              title: "✅ Order Accepted!",
+              description: "Your quote has been accepted by the company",
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order table updated:', payload);
+          // Refresh orders when order details change
           fetchOrders(specialistId);
         }
       )
