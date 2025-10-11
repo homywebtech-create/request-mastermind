@@ -25,26 +25,13 @@
     <script>
       // للتطبيق المحمول: التوجيه التلقائي لصفحة المحترفين
       (function() {
-        // التحقق من وجود Capacitor (التطبيق المحمول فقط)
-        if (window.Capacitor) {
+        // التحقق من وجود Capacitor (التطبيق المحمول)
+        if (window.location.protocol === 'capacitor:' || 
+            window.location.protocol === 'ionic:' ||
+            window.Capacitor) {
           // إذا لم يكن المسار يحتوي على hash، أضف hash للمحترفين
           if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '') {
             window.location.hash = '#/specialist-auth';
-          }
-        } else {
-          // في المتصفح: احذف أي hash خاص بالمحترفين
-          const pathname = window.location.pathname;
-          const isAdminOrCompanyPath = pathname === '/admin' || pathname === '/auth' || 
-                                       pathname === '/companies' || pathname === '/services' || 
-                                       pathname === '/orders' || pathname === '/company-auth' || 
-                                       pathname === '/company-portal' || pathname === '/specialists' ||
-                                       pathname === '/deletion-requests' || pathname.startsWith('/company-booking/');
-          
-          if (isAdminOrCompanyPath && window.location.hash) {
-            // احذف الـ hash فوراً
-            const newUrl = window.location.protocol + '//' + window.location.host + 
-                          window.location.pathname + window.location.search;
-            window.history.replaceState(null, '', newUrl);
           }
         }
       })();
