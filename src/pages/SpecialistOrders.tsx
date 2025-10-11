@@ -553,7 +553,7 @@ export default function SpecialistOrders() {
               {!hasQuote && showQuoteButton && (
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="h-4 w-4 md:h-5 md:w-5 animate-pulse" />
-                  <span className="text-sm font-bold">New Order - Submit Your Quote</span>
+                  <span className="text-sm font-bold">New Order - Submit Your Price</span>
                 </div>
               )}
               <div className="flex items-center gap-3 flex-wrap">
@@ -831,7 +831,7 @@ export default function SpecialistOrders() {
   const filterCards = [
     {
       id: 'new' as const,
-      title: 'New Orders',
+      title: 'New Offers',
       count: newOrders.length,
       icon: AlertCircle,
       color: 'blue'
