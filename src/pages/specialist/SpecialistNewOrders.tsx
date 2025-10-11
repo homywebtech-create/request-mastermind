@@ -91,8 +91,8 @@ export default function SpecialistNewOrders() {
             await LocalNotifications.schedule({
               notifications: [
                 {
-                  title: '🔔 عرض عمل جديد!',
-                  body: 'لديك عرض عمل جديد متاح. اضغط للمشاهدة.',
+                  title: '🔔 New Job Offer!',
+                  body: 'You have a new job offer available. Tap to view.',
                   id: Date.now(),
                   schedule: { at: new Date(Date.now() + 100) },
                   sound: undefined,
@@ -107,8 +107,8 @@ export default function SpecialistNewOrders() {
           }
           
           toast({
-            title: "🔔 عرض عمل جديد!",
-            description: "لديك عرض عمل جديد متاح",
+            title: "🔔 New Job Offer!",
+            description: "You have a new job offer available",
           });
         }
       )
@@ -214,8 +214,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تحميل العروض",
+        title: "Error",
+        description: "Failed to load offers",
         variant: "destructive",
       });
     } finally {
@@ -244,8 +244,8 @@ export default function SpecialistNewOrders() {
       if (error) throw error;
 
       toast({
-        title: "تم إرسال العرض",
-        description: "تم إرسال عرض السعر بنجاح",
+        title: "Quote Submitted",
+        description: "Your price quote has been submitted successfully",
       });
 
       await fetchOrders(specialistId);
@@ -253,8 +253,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error submitting quote:', error);
       toast({
-        title: "خطأ",
-        description: "فشل إرسال العرض",
+        title: "Error",
+        description: "Failed to submit quote",
         variant: "destructive",
       });
     } finally {
@@ -284,8 +284,8 @@ export default function SpecialistNewOrders() {
       if (error) throw error;
 
       toast({
-        title: "تم التجاوز",
-        description: "تم تجاوز هذا العرض",
+        title: "Skipped",
+        description: "This offer has been skipped",
       });
 
       await fetchOrders(specialistId);
@@ -293,8 +293,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error skipping order:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تجاوز العرض",
+        title: "Error",
+        description: "Failed to skip offer",
         variant: "destructive",
       });
     } finally {
@@ -307,7 +307,7 @@ export default function SpecialistNewOrders() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -318,8 +318,8 @@ export default function SpecialistNewOrders() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <h1 className="text-2xl font-bold mb-1">العروض الجديدة</h1>
-          <p className="text-sm opacity-90">{orders.length} عرض متاح</p>
+          <h1 className="text-2xl font-bold mb-1">New Offers</h1>
+          <p className="text-sm opacity-90">{orders.length} available offer{orders.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
 
@@ -328,8 +328,8 @@ export default function SpecialistNewOrders() {
         {orders.length === 0 ? (
           <Card className="p-8 text-center">
             <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-lg font-medium text-muted-foreground">لا توجد عروض جديدة</p>
-            <p className="text-sm text-muted-foreground mt-2">سنعلمك عند وجود عروض جديدة</p>
+            <p className="text-lg font-medium text-muted-foreground">No new offers</p>
+            <p className="text-sm text-muted-foreground mt-2">We'll notify you when new offers are available</p>
           </Card>
         ) : (
           orders.map((order) => {
@@ -338,10 +338,10 @@ export default function SpecialistNewOrders() {
             const baseBudget = !isNaN(numericBudget) && numericBudget > 0 ? numericBudget : 0;
             
             const priceOptions = baseBudget > 0 ? [
-              { label: `${baseBudget} ريال`, value: `${baseBudget} QAR` },
-              { label: `${baseBudget + 3} ريال`, value: `${baseBudget + 3} QAR` },
-              { label: `${baseBudget + 6} ريال`, value: `${baseBudget + 6} QAR` },
-              { label: `${baseBudget + 9} ريال`, value: `${baseBudget + 9} QAR` },
+              { label: `${baseBudget} QAR`, value: `${baseBudget} QAR` },
+              { label: `${baseBudget + 3} QAR`, value: `${baseBudget + 3} QAR` },
+              { label: `${baseBudget + 6} QAR`, value: `${baseBudget + 6} QAR` },
+              { label: `${baseBudget + 9} QAR`, value: `${baseBudget + 9} QAR` },
             ] : [];
 
             return (
@@ -353,7 +353,7 @@ export default function SpecialistNewOrders() {
                 <div className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 p-4">
                   <div className="flex items-center gap-2 text-primary-foreground">
                     <Sparkles className="h-5 w-5 animate-pulse" />
-                    <span className="text-sm font-bold">عرض جديد - قدم سعرك</span>
+                    <span className="text-sm font-bold">New Offer - Submit Your Quote</span>
                   </div>
                 </div>
 
@@ -382,7 +382,7 @@ export default function SpecialistNewOrders() {
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
                       <Package className="h-5 w-5 text-primary" />
                       <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">الخدمة</p>
+                        <p className="text-xs text-muted-foreground">Service</p>
                         <p className="font-bold text-sm">{order.service_type}</p>
                       </div>
                     </div>
@@ -391,7 +391,7 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
                         <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">المنطقة</p>
+                          <p className="text-xs text-muted-foreground">Area</p>
                           <p className="font-bold text-sm">{order.customer.area}</p>
                         </div>
                       </div>
@@ -401,7 +401,7 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
                         <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">نوع الحجز</p>
+                          <p className="text-xs text-muted-foreground">Booking Type</p>
                           <p className="font-bold text-sm">{order.booking_type}</p>
                         </div>
                       </div>
@@ -411,8 +411,8 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
                         <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">المدة</p>
-                          <p className="font-bold text-sm">{order.hours_count} ساعات</p>
+                          <p className="text-xs text-muted-foreground">Duration</p>
+                          <p className="font-bold text-sm">{order.hours_count} hours</p>
                         </div>
                       </div>
                     )}
@@ -422,7 +422,7 @@ export default function SpecialistNewOrders() {
                     <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                       <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-xs text-amber-700 dark:text-amber-300 mb-1 font-bold">ملاحظات</p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mb-1 font-bold">Notes</p>
                         <p className="text-sm leading-relaxed">{order.notes}</p>
                       </div>
                     </div>
@@ -441,16 +441,16 @@ export default function SpecialistNewOrders() {
                         className="w-full h-14 text-base font-bold shadow-lg"
                       >
                         <Tag className="h-5 w-5 ml-2" />
-                        قدم عرض السعر
+                        Submit Quote
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
                       <DialogHeader>
-                        <DialogTitle>اختر السعر المناسب</DialogTitle>
+                        <DialogTitle>Choose the Right Price</DialogTitle>
                         <DialogDescription>
                           {baseBudget > 0 
-                            ? `ميزانية العميل: ${baseBudget} ريال - اختر السعر المناسب`
-                            : "اختر السعر المناسب لك"}
+                            ? `Customer budget: ${baseBudget} QAR - Choose the right price`
+                            : "Choose the price that works for you"}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-3 py-4">
@@ -463,7 +463,7 @@ export default function SpecialistNewOrders() {
                               className="w-full h-auto py-4 flex flex-col gap-1"
                             >
                               <span className="text-lg font-bold">{priceOptions[0].label}</span>
-                              <span className="text-xs opacity-80">سعر العميل</span>
+                              <span className="text-xs opacity-80">Customer price</span>
                             </Button>
                             
                             <div className="grid grid-cols-3 gap-2">
@@ -487,20 +487,20 @@ export default function SpecialistNewOrders() {
                                 variant="ghost"
                                 className="w-full"
                               >
-                                تجاوز هذا العرض
+                                Skip this offer
                               </Button>
                             </div>
                           </>
                         ) : (
                           <div className="text-center py-8">
-                            <p className="text-muted-foreground mb-4">لم يحدد العميل ميزانية</p>
+                            <p className="text-muted-foreground mb-4">Customer has not set a budget</p>
                             <Button
                               onClick={handleSkipOrder}
                               disabled={isSubmitting}
                               variant="outline"
                               className="w-full"
                             >
-                              تجاوز هذا العرض
+                              Skip this offer
                             </Button>
                           </div>
                         )}

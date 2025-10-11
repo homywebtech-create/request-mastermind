@@ -1,9 +1,9 @@
 export const serviceTypes = [
-  "نظافة منزلية",
-  "تنظيف عميق",
-  "تنظيف السجاد",
-  "تنظيف الزجاج",
-  "تنظيف المكاتب",
-  "خدمات التعقيم",
-  "خدمات أخرى"
+  "Home Cleaning",
+  "Deep Cleaning",
+  "Carpet Cleaning",
+  "Glass Cleaning",
+  "Office Cleaning",
+  "Sanitization Services",
+  "Other Services"
 ];
