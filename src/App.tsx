@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
-import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Companies from "./pages/Companies";
@@ -41,32 +40,28 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 // Detect if running in Capacitor (mobile app)
-const isCapacitorApp = () => {
-  return window.location.protocol === 'capacitor:' || 
-         window.location.protocol === 'ionic:' ||
-         (typeof window !== 'undefined' && (window as any).Capacitor);
-};
+const isCapacitorApp = 
+  window.location.protocol === 'capacitor:' || 
+  window.location.protocol === 'ionic:' ||
+  !!(typeof window !== 'undefined' && (window as any).Capacitor);
 
-// Component to detect pathname and route accordingly
-function PathBasedRouter() {
-  const isCapacitor = isCapacitorApp();
-  
-  // If running in Capacitor mobile app, use HashRouter
-  if (isCapacitor) {
-    return (
-      <HashRouter>
-        <Routes>
-          <Route path="/specialist-auth" element={<SpecialistAuth />} />
-          <Route path="/specialist-orders" element={<SpecialistOrders />} />
-          <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
-          <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
-          <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
-        </Routes>
-      </HashRouter>
-    );
-  }
-  
-  // For web browser, use BrowserRouter with all routes
+// Mobile App Router (HashRouter for Capacitor)
+function MobileRouter() {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/specialist-auth" element={<SpecialistAuth />} />
+        <Route path="/specialist-orders" element={<SpecialistOrders />} />
+        <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+        <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
+        <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
+      </Routes>
+    </HashRouter>
+  );
+}
+
+// Web App Router (BrowserRouter for web)
+function WebRouter() {
   return (
     <BrowserRouter>
       <Routes>
@@ -135,7 +130,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <PathBasedRouter />
+      {isCapacitorApp ? <MobileRouter /> : <WebRouter />}
     </TooltipProvider>
   </QueryClientProvider>
 );
