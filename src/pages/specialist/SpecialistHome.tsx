@@ -142,6 +142,7 @@ export default function SpecialistHome() {
           )
         `)
         .in('id', orderIds)
+        .gte('booking_date', new Date().toISOString().split('T')[0]) // Only show today and future orders
         .order('booking_date', { ascending: true });
 
       const ordersWithQuotes = ordersData?.map(order => {
@@ -299,7 +300,7 @@ export default function SpecialistHome() {
                       isTodayOrder && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
                       isFutureOrder && "bg-destructive/10 text-destructive"
                     )}>
-                      {isTodayOrder ? "⭐ طلب اليوم" : "🔒 طلب مغلق"}
+                      {isTodayOrder ? "⭐ طلب اليوم" : "📅 طلب قادم"}
                     </div>
                     {order.booking_date && (
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -367,10 +368,22 @@ export default function SpecialistHome() {
                     </Button>
                   )}
 
-                  {isFutureOrder && (
-                    <div className="text-center p-3 bg-destructive/10 rounded-lg">
-                      <p className="text-sm text-destructive font-medium">
-                        🔒 هذا الطلب مغلق حتى يحين موعده
+                  {isFutureOrder && timeUntil && (
+                    <div className="text-center p-4 bg-destructive/10 rounded-lg space-y-2">
+                      <p className="text-sm text-destructive font-bold">
+                        ⏳ سيفتح الطلب قبل الموعد بساعة
+                      </p>
+                      <div className="flex items-center justify-center gap-2 text-destructive font-mono text-lg">
+                        <Clock className="h-5 w-5" />
+                        <span>
+                          {timeUntil.days > 0 && `${timeUntil.days} يوم و `}
+                          {String(timeUntil.hours).padStart(2, '0')}:
+                          {String(timeUntil.minutes).padStart(2, '0')}:
+                          {String(timeUntil.seconds).padStart(2, '0')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        الوقت المتبقي حتى فتح الطلب
                       </p>
                     </div>
                   )}
