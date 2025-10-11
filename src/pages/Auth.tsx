@@ -13,11 +13,8 @@ const t = translations.auth;
 const tCommon = translations.common;
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -27,40 +24,18 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: t.loginSuccess,
-          description: t.welcomeAdmin,
-        });
-        navigate("/admin");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              phone: phone,
-            },
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-
-        if (error) throw error;
-
-        toast({
-          title: t.accountCreated,
-          description: t.canLoginNow,
-        });
-        setIsLogin(true);
-      }
+      toast({
+        title: t.loginSuccess,
+        description: t.welcomeAdmin,
+      });
+      navigate("/admin");
     } catch (error: any) {
       toast({
         title: t.error,
@@ -80,40 +55,14 @@ export default function Auth() {
             <LogIn className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl font-cairo">
-            {isLogin ? t.loginTitle : t.signupTitle}
+            {t.loginTitle}
           </CardTitle>
           <CardDescription>
-            {isLogin ? t.enterCredentials : t.fillDetails}
+            {t.enterCredentials}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">{t.fullName}</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    placeholder={t.enterFullName}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">{t.phoneNumber}</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder={t.enterPhoneNumber}
-                  />
-                </div>
-              </>
-            )}
-
             <div className="space-y-2">
               <Label htmlFor="email">{t.email}</Label>
               <Input
@@ -140,18 +89,8 @@ export default function Auth() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t.loading : isLogin ? t.loginButton : t.signupButton}
+              {loading ? t.loading : t.loginButton}
             </Button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                {isLogin ? t.noAccount : t.haveAccount}
-              </button>
-            </div>
           </form>
         </CardContent>
       </Card>
