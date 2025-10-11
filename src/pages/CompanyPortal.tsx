@@ -188,6 +188,8 @@ export default function CompanyPortal() {
 
   const fetchOrders = async (companyId: string) => {
     try {
+      console.log('🔍 Fetching orders for company ID:', companyId);
+      
       // جلب جميع الطلبات مع بيانات المحترفات
       const { data, error } = await supabase
         .from("orders")
@@ -219,6 +221,9 @@ export default function CompanyPortal() {
 
       if (error) throw error;
 
+      console.log('📊 Total orders fetched:', data?.length);
+      console.log('📋 Sample order data:', data?.[0]);
+
       // فلترة الطلبات لعرض فقط الطلبات التي تحتوي على محترفات من نفس الشركة
       const filteredOrders = (data as any[])?.filter(order => {
         // التحقق من وجود order_specialists
@@ -227,10 +232,31 @@ export default function CompanyPortal() {
         }
         
         // التحقق من وجود محترف واحد على الأقل من نفس الشركة
-        return order.order_specialists.some((os: any) => 
-          os.specialists?.company_id === companyId
-        );
+        const hasCompanySpecialist = order.order_specialists.some((os: any) => {
+          const specialistCompanyId = os.specialists?.company_id;
+          const match = specialistCompanyId === companyId;
+          
+          if (!match && order.order_specialists.length < 3) {
+            console.log('❌ No match:', {
+              orderId: order.id,
+              orderNumber: order.order_number,
+              specialistCompanyId,
+              targetCompanyId: companyId,
+              specialistName: os.specialists?.name
+            });
+          }
+          
+          return match;
+        });
+        
+        if (hasCompanySpecialist) {
+          console.log('✅ Order matched:', order.order_number);
+        }
+        
+        return hasCompanySpecialist;
       }) || [];
+
+      console.log('✨ Filtered orders count:', filteredOrders.length);
 
       setOrders(filteredOrders);
       calculateStats(filteredOrders);
