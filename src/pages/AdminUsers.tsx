@@ -39,18 +39,31 @@ export default function AdminUsers() {
   });
 
   useEffect(() => {
+    console.log('AdminUsers - Auth State:', { user: user?.id, role, authLoading, roleLoading });
+    
     if (!authLoading && !user) {
+      console.log('AdminUsers - No user, redirecting to auth');
       navigate("/auth");
       return;
     }
 
-    if (!roleLoading && role !== 'admin' && role !== 'admin_full') {
-      toast.error("Access denied");
+    // Wait for both auth and role to finish loading
+    if (authLoading || roleLoading) {
+      console.log('AdminUsers - Still loading...');
+      return;
+    }
+
+    // Now check role
+    if (role !== 'admin' && role !== 'admin_full') {
+      console.log('AdminUsers - Access denied, role:', role);
+      toast.error("Access denied - Admin role required");
       navigate("/");
       return;
     }
 
+    // User is authenticated and has correct role
     if (user && (role === 'admin' || role === 'admin_full')) {
+      console.log('AdminUsers - Access granted, fetching users');
       fetchAdminUsers();
     }
   }, [user, role, authLoading, roleLoading, navigate]);
