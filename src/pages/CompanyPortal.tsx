@@ -465,6 +465,7 @@ export default function CompanyPortal() {
           filter={filter}
           onFilterChange={setFilter}
           isCompanyView={true}
+          companyId={company.id}
         />
       </main>
     </div>

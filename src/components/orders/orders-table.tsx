@@ -101,9 +101,10 @@ interface OrdersTableProps {
   filter: string;
   onFilterChange: (filter: string) => void;
   isCompanyView?: boolean;
+  companyId?: string;
 }
 
-export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false }: OrdersTableProps) {
+export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
@@ -116,39 +117,91 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
+    
     if (filter === 'new' || filter === 'pending') {
-      // New orders: pending status with no quotes
-      return order.status === 'pending' && 
-             (order.company_id || order.send_to_all_companies) &&
-             (!order.order_specialists || order.order_specialists.every(os => !os.quoted_price));
+      if (isCompanyView && companyId) {
+        // For companies: show orders where company specialists haven't quoted yet
+        const companySpecialists = order.order_specialists?.filter(os => 
+          os.specialists?.company_id === companyId
+        );
+        return companySpecialists && companySpecialists.every(os => !os.quoted_price);
+      } else {
+        // For admin: show new orders with no quotes at all
+        return order.status === 'pending' && 
+               (order.company_id || order.send_to_all_companies) &&
+               (!order.order_specialists || order.order_specialists.every(os => !os.quoted_price));
+      }
     }
+    
     if (filter === 'awaiting-response') {
-      // Awaiting response: has at least one quote, no accepted quote yet
-      return order.order_specialists && 
-             order.order_specialists.some(os => os.quoted_price) &&
-             !order.order_specialists.some(os => os.is_accepted === true);
+      if (isCompanyView && companyId) {
+        // For companies: show orders where company specialists have quoted but not accepted yet
+        const companySpecialists = order.order_specialists?.filter(os => 
+          os.specialists?.company_id === companyId
+        );
+        return companySpecialists && 
+               companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+      } else {
+        // For admin: show orders with any quotes not yet accepted
+        return order.order_specialists && 
+               order.order_specialists.some(os => os.quoted_price) &&
+               !order.order_specialists.some(os => os.is_accepted === true);
+      }
     }
+    
     if (filter === 'upcoming') {
-      // Upcoming: confirmed bookings with accepted quotes, but specialist hasn't started tracking yet
-      // This includes orders where tracking_stage is null OR where status is not yet completed
-      const hasAcceptedQuote = order.order_specialists && 
-                               order.order_specialists.some(os => os.is_accepted === true);
-      const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
-      const notCompleted = order.status !== 'completed';
-      
-      return hasAcceptedQuote && notStartedTracking && notCompleted;
+      if (isCompanyView && companyId) {
+        // For companies: show orders where company specialist was accepted but not started tracking
+        const hasAcceptedSpecialist = order.order_specialists?.some(os => 
+          os.is_accepted === true && os.specialists?.company_id === companyId
+        );
+        const notStartedTracking = !order.tracking_stage;
+        const notCompleted = order.status !== 'completed';
+        return hasAcceptedSpecialist && notStartedTracking && notCompleted;
+      } else {
+        // For admin: show orders with accepted quotes but not started tracking
+        const hasAcceptedQuote = order.order_specialists && 
+                                 order.order_specialists.some(os => os.is_accepted === true);
+        const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
+        const notCompleted = order.status !== 'completed';
+        return hasAcceptedQuote && notStartedTracking && notCompleted;
+      }
     }
+    
     if (filter === 'in-progress') {
-      // In progress: specialist is actively working (has started tracking)
-      return order.tracking_stage && 
-             order.tracking_stage !== null &&
-             ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
+      if (isCompanyView && companyId) {
+        // For companies: show orders where company specialist was accepted and is tracking
+        const hasAcceptedSpecialist = order.order_specialists?.some(os => 
+          os.is_accepted === true && os.specialists?.company_id === companyId
+        );
+        const trackingStage = order.tracking_stage;
+        return hasAcceptedSpecialist && 
+               trackingStage && 
+               ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
+      } else {
+        // For admin: show orders with active tracking
+        return order.tracking_stage && 
+               order.tracking_stage !== null &&
+               ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
+      }
     }
+    
     if (filter === 'completed') {
-      // Completed: payment received or status is completed
-      return order.tracking_stage === 'payment_received' ||
-             order.status === 'completed';
+      if (isCompanyView && companyId) {
+        // For companies: show orders where company specialist was accepted and completed
+        const hasAcceptedSpecialist = order.order_specialists?.some(os => 
+          os.is_accepted === true && os.specialists?.company_id === companyId
+        );
+        const trackingStage = order.tracking_stage;
+        return hasAcceptedSpecialist && 
+               (trackingStage === 'payment_received' || order.status === 'completed');
+      } else {
+        // For admin: show completed orders
+        return order.tracking_stage === 'payment_received' ||
+               order.status === 'completed';
+      }
     }
+    
     return order.status === filter;
   });
 
