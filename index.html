@@ -25,13 +25,16 @@
     <script>
       // للتطبيق المحمول: التوجيه التلقائي لصفحة المحترفين
       (function() {
-        // التحقق من وجود Capacitor (التطبيق المحمول)
-        if (window.location.protocol === 'capacitor:' || 
-            window.location.protocol === 'ionic:' ||
-            window.Capacitor) {
+        // التحقق من وجود Capacitor (التطبيق المحمول فقط)
+        if (window.Capacitor) {
           // إذا لم يكن المسار يحتوي على hash، أضف hash للمحترفين
           if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '') {
             window.location.hash = '#/specialist-auth';
+          }
+        } else {
+          // إذا كان في المتصفح وليس Capacitor، احذف أي hash موجود
+          if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
           }
         }
       })();

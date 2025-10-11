@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
-import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Companies from "./pages/Companies";
@@ -40,29 +39,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Component to detect pathname and route accordingly
+// Component to detect environment and route accordingly
 function PathBasedRouter() {
-  const [renderKey, setRenderKey] = useState(0);
-  
-  useEffect(() => {
-    // Force re-render when pathname changes
-    const handlePopState = () => setRenderKey(k => k + 1);
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  const pathname = window.location.pathname;
-  const hash = window.location.hash;
-  
   // Detect if running in Capacitor (mobile app)
   const isCapacitor = window.location.protocol === 'capacitor:' || 
                       window.location.protocol === 'ionic:' ||
                       (typeof window !== 'undefined' && (window as any).Capacitor);
   
-  // If running in Capacitor, always use HashRouter for specialist routes
+  // If running in Capacitor, use HashRouter for specialist routes only
   if (isCapacitor) {
     return (
-      <HashRouter key={renderKey}>
+      <HashRouter>
         <Routes>
           <Route path="/specialist-auth" element={<SpecialistAuth />} />
           <Route path="/specialist-orders" element={<SpecialistOrders />} />
@@ -74,98 +61,72 @@ function PathBasedRouter() {
     );
   }
   
-  // Check if it's a specialist hash route (for mobile app in browser)
-  const isSpecialistRoute = hash.startsWith('#/specialist') || hash.startsWith('#/order-tracking');
-  
-  // Admin routes - explicit check
-  const isAdminRoute = pathname === '/auth' || pathname === '/admin' || pathname === '/companies' || 
-                       pathname === '/services' || pathname === '/orders' || pathname === '/deletion-requests' ||
-                       pathname.startsWith('/company-booking/');
-  
-  // Company routes - explicit check
-  const isCompanyRoute = pathname === '/company-auth' || pathname === '/company-portal' || pathname === '/specialists';
-  
-  // Admin routes
-  if (isAdminRoute && !isSpecialistRoute) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/companies"
-            element={
-              <ProtectedRoute>
-                <Companies />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/services"
-            element={
-              <ProtectedRoute>
-                <Services />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders"
-            element={
-              <ProtectedRoute>
-                <Orders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/deletion-requests"
-            element={
-              <ProtectedRoute>
-                <DeletionRequests />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/company-booking/:orderId/:companyId"
-            element={<CompanyBooking />}
-          />
-          <Route path="*" element={<Navigate to="/auth" replace />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  
-  // Company routes
-  if (isCompanyRoute && !isSpecialistRoute) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/company-auth" element={<CompanyAuth />} />
-          <Route path="/company-portal" element={<CompanyPortal />} />
-          <Route path="/specialists" element={<Specialists />} />
-          <Route path="*" element={<Navigate to="/company-auth" replace />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  
-  // Specialist routes (default for hash routes and root path)
+  // For web browser, use BrowserRouter for all routes
   return (
-    <HashRouter key={renderKey}>
+    <BrowserRouter>
       <Routes>
+        {/* Admin routes */}
+        <Route path="/auth" element={<Auth />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/companies"
+          element={
+            <ProtectedRoute>
+              <Companies />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/services"
+          element={
+            <ProtectedRoute>
+              <Services />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/deletion-requests"
+          element={
+            <ProtectedRoute>
+              <DeletionRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/company-booking/:orderId/:companyId"
+          element={<CompanyBooking />}
+        />
+        
+        {/* Company routes */}
+        <Route path="/company-auth" element={<CompanyAuth />} />
+        <Route path="/company-portal" element={<CompanyPortal />} />
+        <Route path="/specialists" element={<Specialists />} />
+        
+        {/* Specialist routes (web version - not used in mobile) */}
         <Route path="/specialist-auth" element={<SpecialistAuth />} />
         <Route path="/specialist-orders" element={<SpecialistOrders />} />
         <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
-        <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
-        <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
+        
+        {/* Default route */}
+        <Route path="/" element={<Navigate to="/auth" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 
