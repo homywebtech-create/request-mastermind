@@ -193,7 +193,20 @@ export default function CompanyPortal() {
       const { data, error } = await supabase
         .from("orders")
         .select(`
-          *,
+          id,
+          order_number,
+          customer_id,
+          company_id,
+          service_type,
+          status,
+          tracking_stage,
+          notes,
+          order_link,
+          created_at,
+          updated_at,
+          send_to_all_companies,
+          booking_type,
+          hours_count,
           customers (name, whatsapp_number, area, budget, budget_type),
           companies (name),
           order_specialists (
