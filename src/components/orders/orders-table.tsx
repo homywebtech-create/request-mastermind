@@ -917,7 +917,13 @@ Thank you for contacting us! 🌟`;
                                 <div className="bg-muted/50 rounded-md p-3 border border-border">
                                   <div className="space-y-2">
                                     <div className="flex items-center gap-2">
-                                      <User className="h-4 w-4 text-primary" />
+                                      <Building2 className="h-4 w-4 text-primary" />
+                                      <span className="text-sm font-semibold text-primary">
+                                        {acceptedSpecialist.specialists.companies?.name || 'Company'}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <User className="h-4 w-4 text-muted-foreground" />
                                       <span className="text-sm font-medium">
                                         {acceptedSpecialist.specialists.name}
                                       </span>
