@@ -47,6 +47,13 @@ function PathBasedRouter() {
                       window.location.protocol === 'ionic:' ||
                       (typeof window !== 'undefined' && (window as any).Capacitor);
   
+  // Remove any hash from URL on web to prevent conflicts
+  useEffect(() => {
+    if (!isCapacitor && window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }, [isCapacitor]);
+  
   // If running in Capacitor, use HashRouter for specialist routes only
   if (isCapacitor) {
     return (
