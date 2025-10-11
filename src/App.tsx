@@ -48,77 +48,80 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Single Router for ALL environments (Web + Mobile)
 function AppRouter() {
+  // Render different routes based on environment
+  if (isCapacitorApp) {
+    // Mobile App Routes (Capacitor)
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/specialist-auth" element={<SpecialistAuth />} />
+          <Route path="/specialist-orders" element={<SpecialistOrders />} />
+          <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+          <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
+          <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // Web App Routes (Browser)
   return (
     <BrowserRouter>
       <Routes>
-        {/* Mobile-only routes - only accessible in Capacitor */}
-        {isCapacitorApp && (
-          <>
-            <Route path="/specialist-auth" element={<SpecialistAuth />} />
-            <Route path="/specialist-orders" element={<SpecialistOrders />} />
-            <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
-          </>
-        )}
-        
-        {/* Web-only routes - only accessible in browser */}
-        {!isCapacitorApp && (
-          <>
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/companies"
-              element={
-                <ProtectedRoute>
-                  <Companies />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/services"
-              element={
-                <ProtectedRoute>
-                  <Services />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute>
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/deletion-requests"
-              element={
-                <ProtectedRoute>
-                  <DeletionRequests />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company-booking/:orderId/:companyId"
-              element={<CompanyBooking />}
-            />
-            <Route path="/company-auth" element={<CompanyAuth />} />
-            <Route path="/company-portal" element={<CompanyPortal />} />
-            <Route path="/specialists" element={<Specialists />} />
-          </>
-        )}
-        
-        {/* Default routes */}
-        <Route 
-          path="/" 
-          element={<Navigate to={isCapacitorApp ? "/specialist-auth" : "/auth"} replace />} 
+        {/* Admin routes */}
+        <Route path="/auth" element={<Auth />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
         />
+        <Route
+          path="/companies"
+          element={
+            <ProtectedRoute>
+              <Companies />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/services"
+          element={
+            <ProtectedRoute>
+              <Services />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/deletion-requests"
+          element={
+            <ProtectedRoute>
+              <DeletionRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/company-booking/:orderId/:companyId"
+          element={<CompanyBooking />}
+        />
+        
+        {/* Company routes */}
+        <Route path="/company-auth" element={<CompanyAuth />} />
+        <Route path="/company-portal" element={<CompanyPortal />} />
+        <Route path="/specialists" element={<Specialists />} />
+        
+        {/* Default route */}
+        <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
