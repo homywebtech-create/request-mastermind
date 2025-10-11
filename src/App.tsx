@@ -51,6 +51,15 @@ const isCapacitorApp = () => {
 function PathBasedRouter() {
   const isCapacitor = isCapacitorApp();
   
+  // Clean hash from URL on web browsers
+  useEffect(() => {
+    if (!isCapacitor && window.location.hash) {
+      const cleanUrl = window.location.pathname + window.location.search;
+      window.history.replaceState(null, '', cleanUrl);
+      window.location.reload();
+    }
+  }, [isCapacitor]);
+  
   // If running in Capacitor mobile app, use HashRouter
   if (isCapacitor) {
     return (
