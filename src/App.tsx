@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
@@ -46,80 +46,79 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Mobile App Router (HashRouter for Capacitor)
-function MobileRouter() {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route path="/specialist-auth" element={<SpecialistAuth />} />
-        <Route path="/specialist-orders" element={<SpecialistOrders />} />
-        <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
-        <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
-        <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
-      </Routes>
-    </HashRouter>
-  );
-}
-
-// Web App Router (BrowserRouter for web)
-function WebRouter() {
+// Single Router for ALL environments (Web + Mobile)
+function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Admin routes */}
-        <Route path="/auth" element={<Auth />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/companies"
-          element={
-            <ProtectedRoute>
-              <Companies />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/services"
-          element={
-            <ProtectedRoute>
-              <Services />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <Orders />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/deletion-requests"
-          element={
-            <ProtectedRoute>
-              <DeletionRequests />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/company-booking/:orderId/:companyId"
-          element={<CompanyBooking />}
-        />
+        {/* Mobile-only routes - only accessible in Capacitor */}
+        {isCapacitorApp && (
+          <>
+            <Route path="/specialist-auth" element={<SpecialistAuth />} />
+            <Route path="/specialist-orders" element={<SpecialistOrders />} />
+            <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+          </>
+        )}
         
-        {/* Company routes */}
-        <Route path="/company-auth" element={<CompanyAuth />} />
-        <Route path="/company-portal" element={<CompanyPortal />} />
-        <Route path="/specialists" element={<Specialists />} />
+        {/* Web-only routes - only accessible in browser */}
+        {!isCapacitorApp && (
+          <>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/companies"
+              element={
+                <ProtectedRoute>
+                  <Companies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/services"
+              element={
+                <ProtectedRoute>
+                  <Services />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/deletion-requests"
+              element={
+                <ProtectedRoute>
+                  <DeletionRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company-booking/:orderId/:companyId"
+              element={<CompanyBooking />}
+            />
+            <Route path="/company-auth" element={<CompanyAuth />} />
+            <Route path="/company-portal" element={<CompanyPortal />} />
+            <Route path="/specialists" element={<Specialists />} />
+          </>
+        )}
         
-        {/* Default route */}
-        <Route path="/" element={<Navigate to="/auth" replace />} />
+        {/* Default routes */}
+        <Route 
+          path="/" 
+          element={<Navigate to={isCapacitorApp ? "/specialist-auth" : "/auth"} replace />} 
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
@@ -127,22 +126,12 @@ function WebRouter() {
 }
 
 const App = () => {
-  // Additional runtime check - if hash appears after load, remove it
-  useEffect(() => {
-    if (!isCapacitorApp && window.location.hash) {
-      console.log('🟡 Runtime hash detected, cleaning:', window.location.hash);
-      const cleanUrl = window.location.pathname + window.location.search;
-      window.history.replaceState(null, '', cleanUrl);
-      window.location.reload();
-    }
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        {isCapacitorApp ? <MobileRouter /> : <WebRouter />}
+        <AppRouter />
       </TooltipProvider>
     </QueryClientProvider>
   );
