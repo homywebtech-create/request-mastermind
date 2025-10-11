@@ -28,13 +28,6 @@ const isCapacitorApp =
   window.location.protocol === 'ionic:' ||
   !!(typeof window !== 'undefined' && (window as any).Capacitor);
 
-// Clean any hash from URL in web environment
-if (!isCapacitorApp && window.location.hash) {
-  // Remove hash and replace with clean path
-  const cleanPath = window.location.pathname;
-  window.history.replaceState(null, '', cleanPath || '/');
-}
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
@@ -70,24 +63,6 @@ function MobileRouter() {
 
 // Web App Router (BrowserRouter for web)
 function WebRouter() {
-  useEffect(() => {
-    // Continuously monitor and clean any hash that appears in web environment
-    const cleanHash = () => {
-      if (window.location.hash) {
-        const cleanPath = window.location.pathname + window.location.search;
-        window.history.replaceState(null, '', cleanPath);
-      }
-    };
-
-    // Clean on mount
-    cleanHash();
-
-    // Monitor for hash changes
-    const intervalId = setInterval(cleanHash, 100);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
   return (
     <BrowserRouter>
       <Routes>
