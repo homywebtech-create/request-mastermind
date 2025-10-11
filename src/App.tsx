@@ -63,6 +63,35 @@ function MobileRouter() {
 
 // Web App Router (BrowserRouter for web)
 function WebRouter() {
+  useEffect(() => {
+    // Clean any hash from URL immediately and continuously
+    const cleanHash = () => {
+      if (window.location.hash) {
+        console.log('Hash detected in web environment, removing:', window.location.hash);
+        const cleanUrl = window.location.pathname + window.location.search;
+        window.history.replaceState(null, '', cleanUrl);
+      }
+    };
+
+    // Clean on mount
+    cleanHash();
+
+    // Monitor for any hash changes
+    const handleHashChange = () => {
+      cleanHash();
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Also monitor continuously as a backup
+    const intervalId = setInterval(cleanHash, 100);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      clearInterval(intervalId);
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
