@@ -52,6 +52,16 @@ function PathBasedRouter() {
   }, []);
 
   const pathname = window.location.pathname;
+  const hash = window.location.hash;
+  
+  // Clear hash if we're on admin routes to prevent conflicts
+  useEffect(() => {
+    if ((pathname === '/auth' || pathname === '/admin' || pathname === '/companies' || 
+         pathname === '/services' || pathname === '/orders' || pathname === '/deletion-requests' ||
+         pathname.startsWith('/company-booking/')) && hash && hash !== '') {
+      window.history.replaceState(null, '', pathname + window.location.search);
+    }
+  }, [pathname, hash]);
   
   // Detect if running in Capacitor (mobile app)
   const isCapacitor = window.location.protocol === 'capacitor:' || 
