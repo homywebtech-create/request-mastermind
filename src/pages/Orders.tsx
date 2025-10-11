@@ -139,6 +139,9 @@ export default function Orders() {
 
       if (error) throw error;
 
+      console.log('🔍 Admin Orders - Sample:', data?.[0]);
+      console.log('📋 Order number check:', data?.[0]?.order_number);
+
       setOrders((data || []) as Order[]);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
