@@ -45,7 +45,7 @@ const isCapacitorApp =
   window.location.protocol === 'ionic:' ||
   !!(typeof window !== 'undefined' && (window as any).Capacitor);
 
-// Mobile App Router (HashRouter for Capacitor)
+// Mobile App Router (HashRouter for Capacitor) - Specialist only
 function MobileRouter() {
   return (
     <HashRouter>
@@ -60,7 +60,7 @@ function MobileRouter() {
   );
 }
 
-// Web App Router (BrowserRouter for web)
+// Web App Router (BrowserRouter for web) - No specialist routes
 function WebRouter() {
   return (
     <BrowserRouter>
@@ -117,8 +117,14 @@ function WebRouter() {
         <Route path="/company-portal" element={<CompanyPortal />} />
         <Route path="/specialists" element={<Specialists />} />
         
-        {/* Default route */}
+        {/* Default route - redirect to auth */}
         <Route path="/" element={<Navigate to="/auth" replace />} />
+        
+        {/* Block specialist routes on web */}
+        <Route path="/specialist-auth" element={<Navigate to="/auth" replace />} />
+        <Route path="/specialist-orders" element={<Navigate to="/auth" replace />} />
+        <Route path="/order-tracking/:orderId" element={<Navigate to="/auth" replace />} />
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
