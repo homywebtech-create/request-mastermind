@@ -33,7 +33,6 @@ export default function AdminUsers() {
   
   const [newAdmin, setNewAdmin] = useState({
     email: "",
-    password: "",
     full_name: "",
     phone: "",
     role: "admin_viewer"
@@ -98,15 +97,19 @@ export default function AdminUsers() {
     setLoading(true);
 
     try {
-      // Create auth user
+      // Create auth user with a temporary password
+      // User will receive an email to set their own password
+      const temporaryPassword = Math.random().toString(36).slice(-12) + "A1!";
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newAdmin.email,
-        password: newAdmin.password,
+        password: temporaryPassword,
         options: {
           data: {
             full_name: newAdmin.full_name,
             phone: newAdmin.phone
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/auth`
         }
       });
 
@@ -123,11 +126,22 @@ export default function AdminUsers() {
 
       if (roleError) throw roleError;
 
-      toast.success("Admin user created successfully");
+      // Send password reset email so user can set their own password
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        newAdmin.email,
+        {
+          redirectTo: `${window.location.origin}/auth`
+        }
+      );
+
+      if (resetError) {
+        console.error("Password reset email error:", resetError);
+      }
+
+      toast.success("تم إنشاء حساب الأدمن وإرسال رابط تعيين كلمة المرور للبريد الإلكتروني");
       setShowAddForm(false);
       setNewAdmin({
         email: "",
-        password: "",
         full_name: "",
         phone: "",
         role: "admin_viewer"
@@ -183,65 +197,65 @@ export default function AdminUsers() {
       {showAddForm && (
         <Card className="p-6">
           <form onSubmit={handleCreateAdmin} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newAdmin.email}
-                  onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                  required
-                />
+            <div className="space-y-4">
+              <div className="bg-muted/50 p-4 rounded-lg border">
+                <p className="text-sm text-muted-foreground">
+                  سيتم إرسال رابط تعيين كلمة المرور للبريد الإلكتروني للعضو الجديد
+                </p>
               </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={newAdmin.password}
-                  onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                  required
-                  minLength={6}
-                />
-              </div>
-              <div>
-                <Label htmlFor="full_name">Full Name</Label>
-                <Input
-                  id="full_name"
-                  value={newAdmin.full_name}
-                  onChange={(e) => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={newAdmin.phone}
-                  onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Select value={newAdmin.role} onValueChange={(value) => setNewAdmin({ ...newAdmin, role: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin_viewer">Viewer (Can only view)</SelectItem>
-                    <SelectItem value="admin_manager">Manager (Can view and edit)</SelectItem>
-                    <SelectItem value="admin_full">Full Admin (All permissions)</SelectItem>
-                  </SelectContent>
-                </Select>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newAdmin.email}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                    required
+                    placeholder="user@example.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="full_name">الاسم الكامل</Label>
+                  <Input
+                    id="full_name"
+                    value={newAdmin.full_name}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
+                    required
+                    placeholder="أدخل الاسم الكامل"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">رقم الهاتف</Label>
+                  <Input
+                    id="phone"
+                    value={newAdmin.phone}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })}
+                    placeholder="اختياري"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="role">الصلاحية</Label>
+                  <Select value={newAdmin.role} onValueChange={(value) => setNewAdmin({ ...newAdmin, role: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin_viewer">مشاهد (يمكنه المشاهدة فقط)</SelectItem>
+                      <SelectItem value="admin_manager">مدير (يمكنه المشاهدة والتعديل)</SelectItem>
+                      <SelectItem value="admin_full">أدمن كامل (جميع الصلاحيات)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Admin"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "إنشاء الحساب وإرسال الرابط"}
               </Button>
               <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
-                Cancel
+                إلغاء
               </Button>
             </div>
           </form>
