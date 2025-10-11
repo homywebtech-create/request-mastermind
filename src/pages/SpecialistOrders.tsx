@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map } from "lucide-react";
+import { App as CapacitorApp } from '@capacitor/app';
 import { Badge } from "@/components/ui/badge";
 import { differenceInMinutes, parseISO } from "date-fns";
 import {
@@ -79,6 +80,32 @@ export default function SpecialistOrders() {
     
     document.addEventListener('click', initAudio, { once: true });
     return () => document.removeEventListener('click', initAudio);
+  }, []);
+
+  // Handle Android back button - prevent exit from specialist orders
+  useEffect(() => {
+    let backButtonListener: any;
+
+    const setupBackButton = async () => {
+      backButtonListener = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        // Prevent back button from exiting the app or going back
+        // User must use logout button to exit
+        if (!canGoBack) {
+          // If at root of navigation, do nothing (don't exit app)
+          return;
+        }
+        // If can go back, still prevent it on this page
+        // User must use logout button
+      });
+    };
+
+    setupBackButton();
+
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
+    };
   }, []);
 
   useEffect(() => {

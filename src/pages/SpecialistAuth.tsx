@@ -174,7 +174,8 @@ export default function SpecialistAuth() {
         description: `${t.welcome} ${data.specialist.name}`,
       });
 
-      navigate('/specialist-orders');
+      // Use replace instead of push to prevent back button from returning to auth
+      navigate('/specialist-orders', { replace: true });
     } catch (error: any) {
       console.error('Error verifying code:', error);
       toast({
