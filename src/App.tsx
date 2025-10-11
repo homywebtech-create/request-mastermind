@@ -28,21 +28,6 @@ const isCapacitorApp =
   window.location.protocol === 'ionic:' ||
   !!(typeof window !== 'undefined' && (window as any).Capacitor);
 
-// Force clean URL in web environment - run before React renders
-if (!isCapacitorApp) {
-  // Remove any hash from URL
-  if (window.location.hash) {
-    const cleanUrl = window.location.origin + window.location.pathname + window.location.search;
-    window.location.replace(cleanUrl);
-  }
-  
-  // Block specialist routes in web
-  const path = window.location.pathname;
-  if (path.includes('/specialist-auth') || path.includes('/specialist-orders') || path.includes('/order-tracking')) {
-    window.location.replace('/auth');
-  }
-}
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
