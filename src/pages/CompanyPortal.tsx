@@ -188,9 +188,7 @@ export default function CompanyPortal() {
 
   const fetchOrders = async (companyId: string) => {
     try {
-      console.log('🔍 Fetching orders for company ID:', companyId);
-      
-      // جلب جميع الطلبات مع بيانات المحترفات
+      // جلب جميع الطلبات مع بيانات المحترفات (نفس ما يظهر في لوحة الأدمن)
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -221,44 +219,9 @@ export default function CompanyPortal() {
 
       if (error) throw error;
 
-      console.log('📊 Total orders fetched:', data?.length);
-      console.log('📋 Sample order data:', data?.[0]);
-
-      // فلترة الطلبات لعرض فقط الطلبات التي تحتوي على محترفات من نفس الشركة
-      const filteredOrders = (data as any[])?.filter(order => {
-        // التحقق من وجود order_specialists
-        if (!order.order_specialists || order.order_specialists.length === 0) {
-          return false;
-        }
-        
-        // التحقق من وجود محترف واحد على الأقل من نفس الشركة
-        const hasCompanySpecialist = order.order_specialists.some((os: any) => {
-          const specialistCompanyId = os.specialists?.company_id;
-          const match = specialistCompanyId === companyId;
-          
-          console.log('🔎 Checking specialist:', {
-            orderId: order.id,
-            orderNumber: order.order_number,
-            specialistName: os.specialists?.name,
-            specialistCompanyId,
-            targetCompanyId: companyId,
-            match
-          });
-          
-          return match;
-        });
-        
-        if (hasCompanySpecialist) {
-          console.log('✅ Order matched:', order.order_number);
-        }
-        
-        return hasCompanySpecialist;
-      }) || [];
-
-      console.log('✨ Filtered orders count:', filteredOrders.length);
-
-      setOrders(filteredOrders);
-      calculateStats(filteredOrders);
+      // عرض جميع الطلبات (مثل لوحة الأدمن)
+      setOrders((data as Order[]) || []);
+      calculateStats((data as Order[]) || []);
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast({
@@ -270,13 +233,11 @@ export default function CompanyPortal() {
   };
 
   const calculateStats = (ordersList: Order[]) => {
-    // New Orders (الطلبات الجديدة): لم يتم تقديم عروض من محترفات الشركة بعد
-    const pendingOrders = ordersList.filter(o => {
-      const companySpecialists = o.order_specialists?.filter(os => 
-        os.specialists?.company_id === company?.id
-      );
-      return companySpecialists && companySpecialists.every(os => !os.quoted_price);
-    });
+    // New Orders (الطلبات الجديدة): جميع الطلبات الجديدة بدون عروض
+    const pendingOrders = ordersList.filter(o => 
+      o.status === 'pending' && 
+      (!o.order_specialists || o.order_specialists.every(os => !os.quoted_price))
+    );
     
     // Awaiting Response (بانتظار الرد): تم تقديم عرض من محترفات الشركة ولم يتم قبوله بعد
     const awaitingOrders = ordersList.filter(o => {
