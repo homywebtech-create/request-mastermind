@@ -908,6 +908,39 @@ Thank you for contacting us! 🌟`;
                               <span className="text-muted-foreground text-sm">No quotes available</span>
                             );
                           })()
+                        ) : (filter === 'upcoming' || filter === 'in-progress' || filter === 'completed') ? (
+                          // Show accepted specialist info for upcoming, in-progress, and completed orders
+                          (() => {
+                            const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
+                            if (acceptedSpecialist) {
+                              return (
+                                <div className="bg-muted/50 rounded-md p-3 border border-border">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <User className="h-4 w-4 text-primary" />
+                                      <span className="text-sm font-medium">
+                                        {acceptedSpecialist.specialists.name}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Phone className="h-3 w-3" />
+                                      <span dir="ltr">{acceptedSpecialist.specialists.phone}</span>
+                                    </div>
+                                    {acceptedSpecialist.quoted_price && (
+                                      <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+                                        {acceptedSpecialist.quoted_price}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return order.notes ? (
+                              <p className="text-sm max-w-xs line-clamp-2">{order.notes}</p>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            );
+                          })()
                         ) : (
                           // Show notes for other filters
                           order.notes ? (
