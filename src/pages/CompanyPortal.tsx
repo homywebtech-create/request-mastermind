@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog } from "lucide-react";
+import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { OrdersTable } from "@/components/orders/orders-table";
 
@@ -23,6 +23,7 @@ interface Order {
   company_id: string | null;
   service_type: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  tracking_stage?: string | null;
   notes?: string;
   order_link?: string;
   created_at: string;
@@ -65,6 +66,7 @@ interface OrderStats {
   total: number;
   pending: number;
   awaitingResponse: number;
+  upcoming: number;
   inProgress: number;
   completed: number;
 }
@@ -80,6 +82,7 @@ export default function CompanyPortal() {
     total: 0,
     pending: 0,
     awaitingResponse: 0,
+    upcoming: 0,
     inProgress: 0,
     completed: 0,
   });
@@ -259,12 +262,26 @@ export default function CompanyPortal() {
              companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
     });
     
-    // In Progress (تحت الإجراء): تم قبول عرض محترفة من الشركة والطلب قيد التنفيذ
+    // Upcoming (القادمة): تم قبول عرض محترفة من الشركة لكن لم يبدأ التتبع بعد
+    const upcomingOrders = ordersList.filter(o => {
+      const hasAcceptedSpecialist = o.order_specialists?.some(os => 
+        os.is_accepted === true && os.specialists?.company_id === company?.id
+      );
+      const notStartedTracking = !o.tracking_stage;
+      const notCompleted = o.status !== 'completed';
+      
+      return hasAcceptedSpecialist && notStartedTracking && notCompleted;
+    });
+    
+    // In Progress (تحت الإجراء): تم قبول عرض محترفة من الشركة وبدأ المحترف في التتبع
     const inProgressOrders = ordersList.filter(o => {
       const hasAcceptedSpecialist = o.order_specialists?.some(os => 
         os.is_accepted === true && os.specialists?.company_id === company?.id
       );
-      return hasAcceptedSpecialist && o.status === 'in-progress';
+      const trackingStage = o.tracking_stage;
+      return hasAcceptedSpecialist && 
+             trackingStage && 
+             ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
     });
     
     // Completed (منتهية): تم إكمال الطلب لمحترفة من الشركة
@@ -272,13 +289,16 @@ export default function CompanyPortal() {
       const hasAcceptedSpecialist = o.order_specialists?.some(os => 
         os.is_accepted === true && os.specialists?.company_id === company?.id
       );
-      return hasAcceptedSpecialist && o.status === 'completed';
+      const trackingStage = o.tracking_stage;
+      return hasAcceptedSpecialist && 
+             (trackingStage === 'payment_received' || o.status === 'completed');
     });
     
     setStats({
       total: ordersList.length,
       pending: pendingOrders.length,
       awaitingResponse: awaitingOrders.length,
+      upcoming: upcomingOrders.length,
       inProgress: inProgressOrders.length,
       completed: completedOrders.length,
     });
@@ -390,7 +410,7 @@ export default function CompanyPortal() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           <div onClick={() => setFilter('new')} className="cursor-pointer">
             <StatsCard
               title="New Orders"
@@ -405,6 +425,14 @@ export default function CompanyPortal() {
               value={stats.awaitingResponse}
               icon={<Clock className="h-4 w-4" />}
               variant="warning"
+            />
+          </div>
+          <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
+            <StatsCard
+              title="Upcoming"
+              value={stats.upcoming}
+              icon={<Calendar className="h-4 w-4" />}
+              variant="default"
             />
           </div>
           <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
