@@ -52,6 +52,7 @@ function PathBasedRouter() {
   }, []);
 
   const pathname = window.location.pathname;
+  const hash = window.location.hash;
   
   // Detect if running in Capacitor (mobile app)
   const isCapacitor = window.location.protocol === 'capacitor:' || 
@@ -73,10 +74,19 @@ function PathBasedRouter() {
     );
   }
   
+  // Check if it's a specialist hash route (for mobile app in browser)
+  const isSpecialistRoute = hash.startsWith('#/specialist') || hash.startsWith('#/order-tracking');
+  
+  // Admin routes - explicit check
+  const isAdminRoute = pathname === '/auth' || pathname === '/admin' || pathname === '/companies' || 
+                       pathname === '/services' || pathname === '/orders' || pathname === '/deletion-requests' ||
+                       pathname.startsWith('/company-booking/');
+  
+  // Company routes - explicit check
+  const isCompanyRoute = pathname === '/company-auth' || pathname === '/company-portal' || pathname === '/specialists';
+  
   // Admin routes
-  if (pathname === '/auth' || pathname === '/admin' || pathname === '/companies' || 
-      pathname === '/services' || pathname === '/orders' || pathname === '/deletion-requests' ||
-      pathname.startsWith('/company-booking/')) {
+  if (isAdminRoute && !isSpecialistRoute) {
     return (
       <BrowserRouter>
         <Routes>
@@ -132,7 +142,7 @@ function PathBasedRouter() {
   }
   
   // Company routes
-  if (pathname === '/company-auth' || pathname === '/company-portal' || pathname === '/specialists') {
+  if (isCompanyRoute && !isSpecialistRoute) {
     return (
       <BrowserRouter>
         <Routes>
@@ -145,7 +155,7 @@ function PathBasedRouter() {
     );
   }
   
-  // Specialist routes (default for mobile app and root path)
+  // Specialist routes (default for hash routes and root path)
   return (
     <HashRouter key={renderKey}>
       <Routes>
