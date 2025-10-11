@@ -18,11 +18,16 @@ export function useUserRole(userId: string | undefined) {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .single();
+        .eq('user_id', userId);
 
       if (!error && data) {
-        setRole(data.role as UserRole);
+        const roles = data.map((r: any) => r.role as UserRole);
+        // Role priority (highest first)
+        const priority: UserRole[] = ['admin', 'admin_full', 'admin_manager', 'admin_viewer', 'specialist', null];
+        const found = priority.find((r) => (r ? roles.includes(r) : roles.length === 0)) ?? null;
+        setRole(found ?? null);
+      } else {
+        setRole(null);
       }
       setLoading(false);
     };
