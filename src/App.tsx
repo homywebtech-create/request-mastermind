@@ -13,7 +13,10 @@ import CompanyAuth from "./pages/CompanyAuth";
 import CompanyPortal from "./pages/CompanyPortal";
 import Specialists from "./pages/Specialists";
 import SpecialistAuth from "./pages/SpecialistAuth";
-import SpecialistOrders from "./pages/SpecialistOrders";
+import SpecialistHome from "./pages/specialist/SpecialistHome";
+import SpecialistNewOrders from "./pages/specialist/SpecialistNewOrders";
+import SpecialistStats from "./pages/specialist/SpecialistStats";
+import SpecialistProfile from "./pages/specialist/SpecialistProfile";
 import OrderTracking from "./pages/OrderTracking";
 import CompanyBooking from "./pages/CompanyBooking";
 import NotFound from "./pages/NotFound";
@@ -66,8 +69,31 @@ function AppRouter() {
       <BrowserRouter>
         <Routes>
           <Route path="/specialist-auth" element={<SpecialistAuth />} />
-          <Route path="/specialist-orders" element={<SpecialistOrders />} />
-          <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+          <Route path="/specialist-orders" element={
+            <ProtectedRoute>
+              <SpecialistHome />
+            </ProtectedRoute>
+          } />
+          <Route path="/specialist-orders/new" element={
+            <ProtectedRoute>
+              <SpecialistNewOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/specialist-orders/stats" element={
+            <ProtectedRoute>
+              <SpecialistStats />
+            </ProtectedRoute>
+          } />
+          <Route path="/specialist-orders/profile" element={
+            <ProtectedRoute>
+              <SpecialistProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/order-tracking/:orderId" element={
+            <ProtectedRoute>
+              <OrderTracking />
+            </ProtectedRoute>
+          } />
           <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
           <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
         </Routes>
