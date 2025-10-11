@@ -126,14 +126,26 @@ function WebRouter() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      {isCapacitorApp ? <MobileRouter /> : <WebRouter />}
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Additional runtime check - if hash appears after load, remove it
+  useEffect(() => {
+    if (!isCapacitorApp && window.location.hash) {
+      console.log('🟡 Runtime hash detected, cleaning:', window.location.hash);
+      const cleanUrl = window.location.pathname + window.location.search;
+      window.history.replaceState(null, '', cleanUrl);
+      window.location.reload();
+    }
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        {isCapacitorApp ? <MobileRouter /> : <WebRouter />}
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
