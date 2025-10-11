@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map } from "lucide-react";
 import { App as CapacitorApp } from '@capacitor/app';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { Badge } from "@/components/ui/badge";
 import { differenceInMinutes, parseISO } from "date-fns";
 import {
@@ -72,13 +73,24 @@ export default function SpecialistOrders() {
   const soundNotification = useRef(getSoundNotification());
   const isMobile = useIsMobile();
 
-  // Initialize audio context on first user interaction
+  // Initialize audio context and notifications on first user interaction
   useEffect(() => {
     const initAudio = async () => {
       await soundNotification.current.initialize();
     };
     
+    const setupNotifications = async () => {
+      try {
+        const permission = await LocalNotifications.requestPermissions();
+        console.log('Notification permission:', permission);
+      } catch (error) {
+        console.error('Error requesting notification permissions:', error);
+      }
+    };
+    
     document.addEventListener('click', initAudio, { once: true });
+    setupNotifications();
+    
     return () => document.removeEventListener('click', initAudio);
   }, []);
 
@@ -135,19 +147,43 @@ export default function SpecialistOrders() {
           table: 'order_specialists',
           filter: `specialist_id=eq.${specialistId}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('New order detected:', payload);
+          
           // Refresh orders when a new order is assigned to this specialist
           fetchOrders(specialistId);
           
-          // Play sound notification for new order - always enabled for specialists
+          // Play long ringtone sound notification for new order
           soundNotification.current.playNewOrderSound();
           
-          // Show notification
+          // Send local push notification
+          try {
+            await LocalNotifications.schedule({
+              notifications: [
+                {
+                  title: '🔔 عرض عمل جديد!',
+                  body: 'لديك عرض عمل جديد متاح. اضغط للمشاهدة وتقديم سعرك الآن.',
+                  id: Date.now(),
+                  schedule: { at: new Date(Date.now() + 100) },
+                  sound: undefined,
+                  attachments: undefined,
+                  actionTypeId: '',
+                  extra: null
+                }
+              ]
+            });
+          } catch (error) {
+            console.error('Error sending local notification:', error);
+          }
+          
+          // Show in-app toast
           toast({
-            title: "🔔 New Order!",
-            description: "A new order has been assigned to you",
+            title: "🔔 عرض عمل جديد!",
+            description: "لديك عرض عمل جديد متاح في قسم العروض الجديدة",
           });
+          
+          // Switch to new orders filter
+          setActiveFilter('new');
         }
       )
       .on(

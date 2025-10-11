@@ -11,6 +11,7 @@ export class SoundNotification {
 
   /**
    * Play a notification sound for new orders (specialist version - louder and longer)
+   * This plays a long ringtone-like sound similar to phone calls
    */
   async playNewOrderSound() {
     if (!this.audioContext) return;
@@ -21,30 +22,35 @@ export class SoundNotification {
         await this.audioContext.resume();
       }
 
-      // Play 5 loud beeps with increasing frequency for maximum attention
-      const beepCount = 5;
-      const duration = 0.4;
-      const frequencies = [659.25, 783.99, 880, 1046.5, 1174.66]; // E5, G5, A5, C6, D6
+      // Play continuous ringtone for 10 seconds (like a phone call)
+      const ringCount = 10; // 10 rings over 10 seconds
+      const duration = 0.5; // Each beep lasts 0.5 seconds
+      const frequencies = [659.25, 783.99]; // E5, G5 - classic ringtone pattern
       
-      for (let i = 0; i < beepCount; i++) {
+      for (let i = 0; i < ringCount; i++) {
         setTimeout(() => {
-          const oscillator = this.audioContext!.createOscillator();
-          const gainNode = this.audioContext!.createGain();
+          // Play double beep for each ring
+          frequencies.forEach((freq, index) => {
+            setTimeout(() => {
+              const oscillator = this.audioContext!.createOscillator();
+              const gainNode = this.audioContext!.createGain();
 
-          oscillator.connect(gainNode);
-          gainNode.connect(this.audioContext!.destination);
+              oscillator.connect(gainNode);
+              gainNode.connect(this.audioContext!.destination);
 
-          // Use square wave for more piercing sound
-          oscillator.type = 'square';
-          oscillator.frequency.setValueAtTime(frequencies[i], this.audioContext!.currentTime);
+              // Use sine wave for phone-like ringtone
+              oscillator.type = 'sine';
+              oscillator.frequency.setValueAtTime(freq, this.audioContext!.currentTime);
 
-          // Higher volume for better attention
-          gainNode.gain.setValueAtTime(0.5, this.audioContext!.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext!.currentTime + duration);
+              // Medium volume for pleasant but attention-grabbing sound
+              gainNode.gain.setValueAtTime(0.4, this.audioContext!.currentTime);
+              gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext!.currentTime + duration);
 
-          oscillator.start(this.audioContext!.currentTime);
-          oscillator.stop(this.audioContext!.currentTime + duration);
-        }, i * 500); // 500ms between each beep
+              oscillator.start(this.audioContext!.currentTime);
+              oscillator.stop(this.audioContext!.currentTime + duration);
+            }, index * 150); // 150ms between double beeps
+          });
+        }, i * 1000); // 1 second between each ring cycle
       }
 
     } catch (error) {
