@@ -70,6 +70,24 @@ function MobileRouter() {
 
 // Web App Router (BrowserRouter for web)
 function WebRouter() {
+  useEffect(() => {
+    // Continuously monitor and clean any hash that appears in web environment
+    const cleanHash = () => {
+      if (window.location.hash) {
+        const cleanPath = window.location.pathname + window.location.search;
+        window.history.replaceState(null, '', cleanPath);
+      }
+    };
+
+    // Clean on mount
+    cleanHash();
+
+    // Monitor for hash changes
+    const intervalId = setInterval(cleanHash, 100);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
