@@ -14,6 +14,7 @@ import { getSoundNotification } from "@/lib/soundNotification";
 
 interface Order {
   id: string;
+  order_number?: string;
   customer_id: string;
   company_id: string | null;
   service_type: string;
@@ -184,6 +185,7 @@ export default function Dashboard() {
       .from('orders')
       .select(`
         id,
+        order_number,
         customer_id,
         company_id,
         service_type,
