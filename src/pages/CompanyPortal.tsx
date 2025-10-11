@@ -464,6 +464,7 @@ export default function CompanyPortal() {
           onLinkCopied={handleLinkCopied}
           filter={filter}
           onFilterChange={setFilter}
+          isCompanyView={true}
         />
       </main>
     </div>

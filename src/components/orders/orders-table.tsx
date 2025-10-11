@@ -100,9 +100,10 @@ interface OrdersTableProps {
   onLinkCopied: (orderId: string) => void;
   filter: string;
   onFilterChange: (filter: string) => void;
+  isCompanyView?: boolean;
 }
 
-export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange }: OrdersTableProps) {
+export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false }: OrdersTableProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
@@ -774,19 +775,31 @@ Thank you for contacting us! 🌟`;
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{customerName}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="h-3 w-3" />
-                            <span dir="ltr">{customerPhone}</span>
-                          </div>
+                          {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Phone className="h-3 w-3" />
+                              <span dir="ltr">{customerPhone}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">Hidden until quote accepted</span>
+                          )}
                         </div>
                       </TableCell>
 
                       <TableCell>
-                        <span className="text-sm">{customerArea}</span>
+                        {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
+                          <span className="text-sm">{customerArea}</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
                       </TableCell>
 
                       <TableCell>
-                        <span className="text-sm">{customerBudget}</span>
+                        {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
+                          <span className="text-sm">{customerBudget}</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       
                       <TableCell>
