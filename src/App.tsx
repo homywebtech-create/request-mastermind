@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
+import { useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Companies from "./pages/Companies";
@@ -21,6 +22,19 @@ import DeletionRequests from "./pages/DeletionRequests";
 
 const queryClient = new QueryClient();
 
+// Detect if running in Capacitor (mobile app)
+const isCapacitorApp = 
+  window.location.protocol === 'capacitor:' || 
+  window.location.protocol === 'ionic:' ||
+  !!(typeof window !== 'undefined' && (window as any).Capacitor);
+
+// Clean any hash from URL in web environment
+if (!isCapacitorApp && window.location.hash) {
+  // Remove hash and replace with clean path
+  const cleanPath = window.location.pathname;
+  window.history.replaceState(null, '', cleanPath || '/');
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
@@ -38,12 +52,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
-// Detect if running in Capacitor (mobile app)
-const isCapacitorApp = 
-  window.location.protocol === 'capacitor:' || 
-  window.location.protocol === 'ionic:' ||
-  !!(typeof window !== 'undefined' && (window as any).Capacitor);
 
 // Mobile App Router (HashRouter for Capacitor)
 function MobileRouter() {
