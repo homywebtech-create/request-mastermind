@@ -497,6 +497,14 @@ export default function Dashboard() {
     }
   };
 
+  const handleNavigateToUsers = () => {
+    navigate('/admin/users');
+  };
+
+  const handleNavigateToActivityLogs = () => {
+    navigate('/admin/activity');
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
