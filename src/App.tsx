@@ -79,6 +79,11 @@ function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Redirect specialist routes to auth in web */}
+        <Route path="/specialist-auth" element={<Navigate to="/auth" replace />} />
+        <Route path="/specialist-orders" element={<Navigate to="/auth" replace />} />
+        <Route path="/order-tracking/:orderId" element={<Navigate to="/auth" replace />} />
+        
         {/* Admin routes */}
         <Route path="/auth" element={<Auth />} />
         <Route
