@@ -119,18 +119,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     if (filter === 'all') return true;
     
     if (filter === 'new' || filter === 'pending') {
-      if (isCompanyView && companyId) {
-        // For companies: show orders where company specialists haven't quoted yet
-        const companySpecialists = order.order_specialists?.filter(os => 
-          os.specialists?.company_id === companyId
-        );
-        return companySpecialists && companySpecialists.every(os => !os.quoted_price);
-      } else {
-        // For admin: show new orders with no quotes at all
-        return order.status === 'pending' && 
-               (order.company_id || order.send_to_all_companies) &&
-               (!order.order_specialists || order.order_specialists.every(os => !os.quoted_price));
-      }
+      // عرض الطلبات pending بدون أي عروض من أي شركة (نفس منطق الأدمن)
+      return order.status === 'pending' && 
+             (!order.order_specialists || order.order_specialists.length === 0 ||
+              order.order_specialists.every(os => !os.quoted_price));
     }
     
     if (filter === 'awaiting-response') {

@@ -233,10 +233,11 @@ export default function CompanyPortal() {
   };
 
   const calculateStats = (ordersList: Order[]) => {
-    // New Orders (الطلبات الجديدة): جميع الطلبات الجديدة بدون عروض
+    // New Orders (الطلبات الجديدة): جميع الطلبات pending بدون أي عروض من أي شركة
     const pendingOrders = ordersList.filter(o => 
       o.status === 'pending' && 
-      (!o.order_specialists || o.order_specialists.every(os => !os.quoted_price))
+      (!o.order_specialists || o.order_specialists.length === 0 || 
+       o.order_specialists.every(os => !os.quoted_price))
     );
     
     // Awaiting Response (بانتظار الرد): تم تقديم عرض من محترفات الشركة ولم يتم قبوله بعد
