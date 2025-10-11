@@ -52,6 +52,11 @@ interface Order {
       phone: string;
       nationality: string | null;
       image_url: string | null;
+      company_id?: string;
+      companies?: {
+        id: string;
+        name: string;
+      };
     };
   }>;
 }
@@ -180,6 +185,7 @@ export default function CompanyPortal() {
 
   const fetchOrders = async (companyId: string) => {
     try {
+      // جلب جميع الطلبات مع بيانات المحترفات
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -206,41 +212,75 @@ export default function CompanyPortal() {
             )
           )
         `)
-        .or(`company_id.eq.${companyId},send_to_all_companies.eq.true`)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders((data as any) || []);
-      calculateStats((data as any) || []);
+
+      // فلترة الطلبات لعرض فقط الطلبات التي تحتوي على محترفات من نفس الشركة
+      const filteredOrders = (data as any[])?.filter(order => {
+        // التحقق من وجود order_specialists
+        if (!order.order_specialists || order.order_specialists.length === 0) {
+          return false;
+        }
+        
+        // التحقق من وجود محترف واحد على الأقل من نفس الشركة
+        return order.order_specialists.some((os: any) => 
+          os.specialists?.company_id === companyId
+        );
+      }) || [];
+
+      setOrders(filteredOrders);
+      calculateStats(filteredOrders);
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast({
-        title: "Error",
-        description: "Error loading orders",
+        title: "خطأ",
+        description: "خطأ في تحميل الطلبات",
         variant: "destructive",
       });
     }
   };
 
   const calculateStats = (ordersList: Order[]) => {
-    // Pending: Orders with no quotes yet
-    const pendingOrders = ordersList.filter(o => 
-      o.status === 'pending' && 
-      (!o.order_specialists || o.order_specialists.every(os => !os.quoted_price))
-    );
+    // New Orders (الطلبات الجديدة): لم يتم تقديم عروض من محترفات الشركة بعد
+    const pendingOrders = ordersList.filter(o => {
+      const companySpecialists = o.order_specialists?.filter(os => 
+        os.specialists?.company_id === company?.id
+      );
+      return companySpecialists && companySpecialists.every(os => !os.quoted_price);
+    });
     
-    // Awaiting Response: Orders with at least one quote from company specialists, not accepted yet
-    const awaitingOrders = ordersList.filter(o => 
-      o.order_specialists && 
-      o.order_specialists.some(os => os.quoted_price && os.is_accepted === null)
-    );
+    // Awaiting Response (بانتظار الرد): تم تقديم عرض من محترفات الشركة ولم يتم قبوله بعد
+    const awaitingOrders = ordersList.filter(o => {
+      const companySpecialists = o.order_specialists?.filter(os => 
+        os.specialists?.company_id === company?.id
+      );
+      return companySpecialists && 
+             companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+    });
+    
+    // In Progress (تحت الإجراء): تم قبول عرض محترفة من الشركة والطلب قيد التنفيذ
+    const inProgressOrders = ordersList.filter(o => {
+      const hasAcceptedSpecialist = o.order_specialists?.some(os => 
+        os.is_accepted === true && os.specialists?.company_id === company?.id
+      );
+      return hasAcceptedSpecialist && o.status === 'in-progress';
+    });
+    
+    // Completed (منتهية): تم إكمال الطلب لمحترفة من الشركة
+    const completedOrders = ordersList.filter(o => {
+      const hasAcceptedSpecialist = o.order_specialists?.some(os => 
+        os.is_accepted === true && os.specialists?.company_id === company?.id
+      );
+      return hasAcceptedSpecialist && o.status === 'completed';
+    });
     
     setStats({
       total: ordersList.length,
       pending: pendingOrders.length,
       awaitingResponse: awaitingOrders.length,
-      inProgress: ordersList.filter(o => o.status === 'in-progress').length,
-      completed: ordersList.filter(o => o.status === 'completed').length,
+      inProgress: inProgressOrders.length,
+      completed: completedOrders.length,
     });
   };
 
