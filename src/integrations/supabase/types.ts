@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource_id: string | null
+          resource_type: string
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null
@@ -257,6 +290,7 @@ export type Database = {
           id: string
           last_sent_at: string | null
           link_copied_at: string | null
+          modified_by: string | null
           notes: string | null
           order_link: string | null
           order_number: string | null
@@ -286,6 +320,7 @@ export type Database = {
           id?: string
           last_sent_at?: string | null
           link_copied_at?: string | null
+          modified_by?: string | null
           notes?: string | null
           order_link?: string | null
           order_number?: string | null
@@ -315,6 +350,7 @@ export type Database = {
           id?: string
           last_sent_at?: string | null
           link_copied_at?: string | null
+          modified_by?: string | null
           notes?: string | null
           order_link?: string | null
           order_number?: string | null
@@ -683,6 +719,19 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      is_admin: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      log_activity: {
+        Args: {
+          _action_type: string
+          _details?: Json
+          _resource_id?: string
+          _resource_type: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

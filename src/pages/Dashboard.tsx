@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2 } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getSoundNotification } from "@/lib/soundNotification";
 
@@ -559,6 +559,24 @@ export default function Dashboard() {
               >
                 <Settings className="h-4 w-4" />
                 Deletion Requests
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => navigate('/admin/users')}
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Admin Users
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => navigate('/admin/activity')}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Activity Logs
               </Button>
 
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>

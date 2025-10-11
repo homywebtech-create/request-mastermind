@@ -22,6 +22,8 @@ import CompanyBooking from "./pages/CompanyBooking";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
 import DeletionRequests from "./pages/DeletionRequests";
+import AdminUsers from "./pages/AdminUsers";
+import ActivityLogs from "./pages/ActivityLogs";
 
 const queryClient = new QueryClient();
 
@@ -149,6 +151,22 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <DeletionRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/activity"
+          element={
+            <ProtectedRoute>
+              <ActivityLogs />
             </ProtectedRoute>
           }
         />
