@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
+import { useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Companies from "./pages/Companies";
@@ -45,6 +46,25 @@ function PathBasedRouter() {
   const isCapacitor = window.location.protocol === 'capacitor:' || 
                       window.location.protocol === 'ionic:' ||
                       (typeof window !== 'undefined' && (window as any).Capacitor);
+  
+  useEffect(() => {
+    // Clean up hash for non-Capacitor environments
+    if (!isCapacitor && window.location.hash) {
+      const pathname = window.location.pathname;
+      const isAdminOrCompanyPath = pathname === '/admin' || pathname === '/auth' || 
+                                   pathname === '/companies' || pathname === '/services' || 
+                                   pathname === '/orders' || pathname === '/company-auth' || 
+                                   pathname === '/company-portal' || pathname === '/specialists' ||
+                                   pathname === '/deletion-requests' || pathname.startsWith('/company-booking/');
+      
+      if (isAdminOrCompanyPath) {
+        const newUrl = window.location.protocol + '//' + window.location.host + 
+                      window.location.pathname + window.location.search;
+        window.history.replaceState(null, '', newUrl);
+        window.location.reload();
+      }
+    }
+  }, [isCapacitor]);
   
   // If running in Capacitor, use HashRouter for specialist routes only
   if (isCapacitor) {

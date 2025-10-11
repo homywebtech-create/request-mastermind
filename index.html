@@ -32,9 +32,19 @@
             window.location.hash = '#/specialist-auth';
           }
         } else {
-          // إذا كان في المتصفح وليس Capacitor، احذف أي hash موجود
-          if (window.location.hash) {
-            history.replaceState(null, '', window.location.pathname + window.location.search);
+          // في المتصفح: احذف أي hash خاص بالمحترفين
+          const pathname = window.location.pathname;
+          const isAdminOrCompanyPath = pathname === '/admin' || pathname === '/auth' || 
+                                       pathname === '/companies' || pathname === '/services' || 
+                                       pathname === '/orders' || pathname === '/company-auth' || 
+                                       pathname === '/company-portal' || pathname === '/specialists' ||
+                                       pathname === '/deletion-requests' || pathname.startsWith('/company-booking/');
+          
+          if (isAdminOrCompanyPath && window.location.hash) {
+            // احذف الـ hash فوراً
+            const newUrl = window.location.protocol + '//' + window.location.host + 
+                          window.location.pathname + window.location.search;
+            window.history.replaceState(null, '', newUrl);
           }
         }
       })();
