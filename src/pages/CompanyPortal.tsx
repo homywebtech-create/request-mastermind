@@ -236,15 +236,14 @@ export default function CompanyPortal() {
           const specialistCompanyId = os.specialists?.company_id;
           const match = specialistCompanyId === companyId;
           
-          if (!match && order.order_specialists.length < 3) {
-            console.log('❌ No match:', {
-              orderId: order.id,
-              orderNumber: order.order_number,
-              specialistCompanyId,
-              targetCompanyId: companyId,
-              specialistName: os.specialists?.name
-            });
-          }
+          console.log('🔎 Checking specialist:', {
+            orderId: order.id,
+            orderNumber: order.order_number,
+            specialistName: os.specialists?.name,
+            specialistCompanyId,
+            targetCompanyId: companyId,
+            match
+          });
           
           return match;
         });
