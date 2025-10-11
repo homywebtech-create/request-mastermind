@@ -23,10 +23,21 @@ import DeletionRequests from "./pages/DeletionRequests";
 const queryClient = new QueryClient();
 
 // Detect if running in Capacitor (mobile app)
-const isCapacitorApp = 
-  window.location.protocol === 'capacitor:' || 
-  window.location.protocol === 'ionic:' ||
-  !!(typeof window !== 'undefined' && (window as any).Capacitor);
+// Be very strict about detection to avoid false positives
+const isCapacitorApp = (() => {
+  const protocol = window.location.protocol;
+  const hasCapacitor = typeof window !== 'undefined' && 
+                       (window as any).Capacitor?.isNativePlatform?.() === true;
+  
+  console.log('🔍 Environment Detection:', {
+    protocol,
+    hasCapacitor,
+    hostname: window.location.hostname,
+    isCapacitor: (protocol === 'capacitor:' || protocol === 'ionic:' || hasCapacitor)
+  });
+  
+  return protocol === 'capacitor:' || protocol === 'ionic:' || hasCapacitor;
+})();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
