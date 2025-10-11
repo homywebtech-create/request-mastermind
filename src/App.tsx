@@ -40,21 +40,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Detect if running in Capacitor (mobile app)
+const isCapacitorApp = () => {
+  return window.location.protocol === 'capacitor:' || 
+         window.location.protocol === 'ionic:' ||
+         (typeof window !== 'undefined' && (window as any).Capacitor);
+};
+
 // Component to detect pathname and route accordingly
 function PathBasedRouter() {
-  // Detect if running in Capacitor (mobile app)
-  const isCapacitor = window.location.protocol === 'capacitor:' || 
-                      window.location.protocol === 'ionic:' ||
-                      (typeof window !== 'undefined' && (window as any).Capacitor);
+  const isCapacitor = isCapacitorApp();
   
-  // Remove any hash from URL on web to prevent conflicts
-  useEffect(() => {
-    if (!isCapacitor && window.location.hash) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-  }, [isCapacitor]);
-  
-  // If running in Capacitor, use HashRouter for specialist routes only
+  // If running in Capacitor mobile app, use HashRouter
   if (isCapacitor) {
     return (
       <HashRouter>
@@ -69,7 +66,7 @@ function PathBasedRouter() {
     );
   }
   
-  // For web, use BrowserRouter with all routes
+  // For web browser, use BrowserRouter with all routes
   return (
     <BrowserRouter>
       <Routes>

@@ -22,20 +22,6 @@
 
   <body dir="rtl">
     <div id="root"></div>
-    <script>
-      // للتطبيق المحمول: التوجيه التلقائي لصفحة المحترفين
-      (function() {
-        // التحقق من وجود Capacitor (التطبيق المحمول)
-        if (window.location.protocol === 'capacitor:' || 
-            window.location.protocol === 'ionic:' ||
-            window.Capacitor) {
-          // إذا لم يكن المسار يحتوي على hash، أضف hash للمحترفين
-          if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '') {
-            window.location.hash = '#/specialist-auth';
-          }
-        }
-      })();
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
