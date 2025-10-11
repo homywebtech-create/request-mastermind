@@ -28,6 +28,21 @@ const isCapacitorApp =
   window.location.protocol === 'ionic:' ||
   !!(typeof window !== 'undefined' && (window as any).Capacitor);
 
+// Force clean URL in web environment - run before React renders
+if (!isCapacitorApp) {
+  // Remove any hash from URL
+  if (window.location.hash) {
+    const cleanUrl = window.location.origin + window.location.pathname + window.location.search;
+    window.location.replace(cleanUrl);
+  }
+  
+  // Block specialist routes in web
+  const path = window.location.pathname;
+  if (path.includes('/specialist-auth') || path.includes('/specialist-orders') || path.includes('/order-tracking')) {
+    window.location.replace('/auth');
+  }
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
@@ -63,35 +78,6 @@ function MobileRouter() {
 
 // Web App Router (BrowserRouter for web)
 function WebRouter() {
-  useEffect(() => {
-    // Clean any hash from URL immediately and continuously
-    const cleanHash = () => {
-      if (window.location.hash) {
-        console.log('Hash detected in web environment, removing:', window.location.hash);
-        const cleanUrl = window.location.pathname + window.location.search;
-        window.history.replaceState(null, '', cleanUrl);
-      }
-    };
-
-    // Clean on mount
-    cleanHash();
-
-    // Monitor for any hash changes
-    const handleHashChange = () => {
-      cleanHash();
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    
-    // Also monitor continuously as a backup
-    const intervalId = setInterval(cleanHash, 100);
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-      clearInterval(intervalId);
-    };
-  }, []);
-
   return (
     <BrowserRouter>
       <Routes>
