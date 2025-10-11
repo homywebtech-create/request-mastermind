@@ -417,6 +417,7 @@ export default function CompanyPortal() {
               value={stats.pending}
               icon={<Package className="h-4 w-4" />}
               variant="pending"
+              isActive={filter === 'new'}
             />
           </div>
           <div onClick={() => setFilter('awaiting-response')} className="cursor-pointer">
@@ -424,7 +425,8 @@ export default function CompanyPortal() {
               title="Awaiting Response"
               value={stats.awaitingResponse}
               icon={<Clock className="h-4 w-4" />}
-              variant="warning"
+              variant="awaiting"
+              isActive={filter === 'awaiting-response'}
             />
           </div>
           <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
@@ -432,7 +434,8 @@ export default function CompanyPortal() {
               title="Upcoming"
               value={stats.upcoming}
               icon={<Calendar className="h-4 w-4" />}
-              variant="default"
+              variant="success"
+              isActive={filter === 'upcoming'}
             />
           </div>
           <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
@@ -440,7 +443,8 @@ export default function CompanyPortal() {
               title="In Progress"
               value={stats.inProgress}
               icon={<Users className="h-4 w-4" />}
-              variant="default"
+              variant="warning"
+              isActive={filter === 'in-progress'}
             />
           </div>
           <div onClick={() => setFilter('completed')} className="cursor-pointer">
@@ -449,6 +453,7 @@ export default function CompanyPortal() {
               value={stats.completed}
               icon={<CheckCircle className="h-4 w-4" />}
               variant="success"
+              isActive={filter === 'completed'}
             />
           </div>
         </div>
