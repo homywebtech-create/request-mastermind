@@ -119,10 +119,18 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     if (filter === 'all') return true;
     
     if (filter === 'new' || filter === 'pending') {
-      // عرض الطلبات pending بدون أي عروض من أي شركة (نفس منطق الأدمن)
-      return order.status === 'pending' && 
+      // عرض الطلبات pending بدون أي عروض
+      const isPendingWithoutQuotes = order.status === 'pending' && 
              (!order.order_specialists || order.order_specialists.length === 0 ||
               order.order_specialists.every(os => !os.quoted_price));
+      
+      // للأدمن: فقط الطلبات المعينة لشركة أو مرسلة لجميع الشركات
+      if (!isCompanyView) {
+        return isPendingWithoutQuotes && (order.company_id || order.send_to_all_companies);
+      }
+      
+      // للشركات: عرض جميع الطلبات pending بدون عروض
+      return isPendingWithoutQuotes;
     }
     
     if (filter === 'awaiting-response') {
