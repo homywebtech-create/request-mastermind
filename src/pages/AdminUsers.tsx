@@ -41,19 +41,35 @@ export default function AdminUsers() {
   useEffect(() => {
     console.log('AdminUsers - Auth State:', { user: user?.id, role, authLoading, roleLoading });
     
+    // If no auth loading and no user, redirect to login
     if (!authLoading && !user) {
       console.log('AdminUsers - No user, redirecting to auth');
       navigate("/auth");
       return;
     }
 
-    // Wait for both auth and role to finish loading
-    if (authLoading || roleLoading) {
-      console.log('AdminUsers - Still loading...');
+    // Wait for auth to complete
+    if (authLoading) {
+      console.log('AdminUsers - Auth loading...');
       return;
     }
 
-    // Now check role
+    // CRITICAL: If user exists but role is null and not loading, still wait
+    // This handles React batching delays
+    if (user && role === null && !roleLoading) {
+      console.log('AdminUsers - User exists but role not loaded yet, waiting...');
+      // Give it one render cycle for roleLoading to update
+      return;
+    }
+
+    // Wait for role loading
+    if (roleLoading) {
+      console.log('AdminUsers - Role loading...');
+      return;
+    }
+
+    // Now we have both user and role loaded
+    // Check if user has admin access
     if (role !== 'admin' && role !== 'admin_full') {
       console.log('AdminUsers - Access denied, role:', role);
       toast.error("Access denied - Admin role required");
@@ -62,10 +78,8 @@ export default function AdminUsers() {
     }
 
     // User is authenticated and has correct role
-    if (user && (role === 'admin' || role === 'admin_full')) {
-      console.log('AdminUsers - Access granted, fetching users');
-      fetchAdminUsers();
-    }
+    console.log('AdminUsers - Access granted, fetching users');
+    fetchAdminUsers();
   }, [user, role, authLoading, roleLoading, navigate]);
 
   const fetchAdminUsers = async () => {
