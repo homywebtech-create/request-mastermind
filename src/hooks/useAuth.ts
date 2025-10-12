@@ -11,41 +11,17 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        // Persist session to Capacitor Preferences for mobile
-        if (session) {
-          await Preferences.set({
-            key: SESSION_KEY,
-            value: JSON.stringify(session)
-          });
-        } else if (event === 'SIGNED_OUT') {
-          await Preferences.remove({ key: SESSION_KEY });
-        }
-      }
-    );
+    let mounted = true;
 
-    // Initialize session from storage or Supabase
+    // Initialize session from storage FIRST
     const initSession = async () => {
       try {
-        // First try to get session from Supabase
-        const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+        console.log('🔄 Initializing session...');
         
-        if (supabaseSession) {
-          setSession(supabaseSession);
-          setUser(supabaseSession.user);
-          setLoading(false);
-          return;
-        }
-
-        // If no Supabase session, try to restore from Capacitor Preferences
+        // Try to restore from Capacitor Preferences first
         const { value } = await Preferences.get({ key: SESSION_KEY });
-        if (value) {
+        if (value && mounted) {
+          console.log('📱 Found stored session, restoring...');
           const storedSession = JSON.parse(value);
           
           // Restore session to Supabase
@@ -54,24 +30,75 @@ export function useAuth() {
             refresh_token: storedSession.refresh_token
           });
 
-          if (!error && data.session) {
+          if (!error && data.session && mounted) {
+            console.log('✅ Session restored successfully');
             setSession(data.session);
             setUser(data.session.user);
+            setLoading(false);
+            return;
           } else {
-            // Invalid session, remove it
+            console.log('❌ Stored session invalid, removing...');
             await Preferences.remove({ key: SESSION_KEY });
           }
         }
+
+        // If no stored session, check Supabase
+        const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+        if (supabaseSession && mounted) {
+          console.log('✅ Found Supabase session');
+          setSession(supabaseSession);
+          setUser(supabaseSession.user);
+          // Save to preferences
+          await Preferences.set({
+            key: SESSION_KEY,
+            value: JSON.stringify(supabaseSession)
+          });
+        }
       } catch (error) {
-        console.error('Error initializing session:', error);
+        console.error('❌ Error initializing session:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
+    // Initialize session first
     initSession();
 
-    return () => subscription.unsubscribe();
+    // Then set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('🔔 Auth event:', event, session ? 'has session' : 'no session');
+        
+        // Only update state if this is a real auth event
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          // Persist session
+          if (session) {
+            await Preferences.set({
+              key: SESSION_KEY,
+              value: JSON.stringify(session)
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          // Only clear on explicit sign out
+          console.log('👋 Explicit sign out');
+          setSession(null);
+          setUser(null);
+          await Preferences.remove({ key: SESSION_KEY });
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
