@@ -26,8 +26,8 @@ export default function SetPassword() {
         
         if (!session) {
           toast({
-            title: "رابط غير صالح",
-            description: "الرجاء استخدام الرابط المرسل إلى بريدك الإلكتروني",
+            title: "Invalid Link",
+            description: "Please use the link sent to your email",
             variant: "destructive",
           });
           navigate("/auth");
@@ -38,8 +38,8 @@ export default function SetPassword() {
       } catch (error: any) {
         console.error("Session check error:", error);
         toast({
-          title: "خطأ",
-          description: "حدث خطأ في التحقق من الجلسة",
+          title: "Error",
+          description: "An error occurred while verifying the session",
           variant: "destructive",
         });
         navigate("/auth");
@@ -54,8 +54,8 @@ export default function SetPassword() {
 
     if (password !== confirmPassword) {
       toast({
-        title: "خطأ",
-        description: "كلمات المرور غير متطابقة",
+        title: "Error",
+        description: "Passwords do not match",
         variant: "destructive",
       });
       return;
@@ -63,8 +63,8 @@ export default function SetPassword() {
 
     if (password.length < 6) {
       toast({
-        title: "خطأ",
-        description: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+        title: "Error",
+        description: "Password must be at least 6 characters",
         variant: "destructive",
       });
       return;
@@ -95,8 +95,8 @@ export default function SetPassword() {
       }
 
       toast({
-        title: "تم بنجاح",
-        description: "تم تعيين كلمة المرور بنجاح، يمكنك الآن تسجيل الدخول",
+        title: "Success",
+        description: "Password set successfully, you can now log in",
       });
 
       // Sign out and redirect to login
@@ -105,8 +105,8 @@ export default function SetPassword() {
     } catch (error: any) {
       console.error("Set password error:", error);
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ أثناء تعيين كلمة المرور",
+        title: "Error",
+        description: error.message || "An error occurred while setting the password",
         variant: "destructive",
       });
     } finally {
@@ -119,7 +119,7 @@ export default function SetPassword() {
       <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
-            <div className="text-center">جاري التحقق...</div>
+            <div className="text-center">Verifying...</div>
           </CardContent>
         </Card>
       </div>
@@ -134,16 +134,16 @@ export default function SetPassword() {
             <Shield className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl font-cairo">
-            تعيين كلمة المرور
+            Set Password
           </CardTitle>
           <CardDescription>
-            قم بإنشاء كلمة مرور قوية لحسابك
+            Create a strong password for your account
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSetPassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور الجديدة</Label>
+              <Label htmlFor="password">New Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -156,7 +156,7 @@ export default function SetPassword() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -169,7 +169,7 @@ export default function SetPassword() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "جاري الحفظ..." : "حفظ كلمة المرور"}
+              {loading ? "Saving..." : "Save Password"}
             </Button>
           </form>
         </CardContent>

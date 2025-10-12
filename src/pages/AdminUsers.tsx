@@ -174,7 +174,7 @@ export default function AdminUsers() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("تم إنشاء حساب الأدمن وإرسال رابط تعيين كلمة المرور للبريد الإلكتروني");
+      toast.success(data?.message || "Admin user created successfully and invitation email sent");
       setShowAddForm(false);
       setNewAdmin({
         email: "",
@@ -200,10 +200,10 @@ export default function AdminUsers() {
 
       if (error) throw error;
 
-      toast.success(admin.is_active ? "تم إيقاف الحساب" : "تم تفعيل الحساب");
+      toast.success(admin.is_active ? "Account deactivated" : "Account activated");
       fetchAdminUsers();
     } catch (error: any) {
-      toast.error(error.message || "فشل تحديث حالة الحساب");
+      toast.error(error.message || "Failed to update account status");
     }
   };
 
@@ -216,7 +216,7 @@ export default function AdminUsers() {
         .single();
 
       if (profileError || !profileData?.email) {
-        toast.error("لم يتم العثور على البريد الإلكتروني للمستخدم. يجب إضافة البريد الإلكتروني للحساب أولاً.");
+        toast.error("User email not found. Please add email to the account first.");
         return;
       }
 
@@ -229,9 +229,9 @@ export default function AdminUsers() {
 
       if (resetError) throw resetError;
 
-      toast.success("تم إرسال رابط تعيين كلمة المرور إلى البريد الإلكتروني");
+      toast.success("Password setup link sent to email successfully");
     } catch (error: any) {
-      toast.error(error.message || "فشل إرسال البريد الإلكتروني");
+      toast.error(error.message || "Failed to send email");
     }
   };
 
@@ -281,11 +281,11 @@ export default function AdminUsers() {
         if (roleError) throw roleError;
       }
 
-      toast.success("تم تحديث البيانات بنجاح");
+      toast.success("Data updated successfully");
       setShowEditDialog(false);
       fetchAdminUsers();
     } catch (error: any) {
-      toast.error(error.message || "فشل تحديث البيانات");
+      toast.error(error.message || "Failed to update data");
     }
   };
 
@@ -317,11 +317,11 @@ export default function AdminUsers() {
       // Note: Auth user deletion requires admin API or service role
       // For now, we just remove from profiles and roles tables
       
-      toast.success("تم حذف الحساب بنجاح");
+      toast.success("Account deleted successfully");
       setShowDeleteDialog(false);
       fetchAdminUsers();
     } catch (error: any) {
-      toast.error(error.message || "فشل حذف الحساب");
+      toast.error(error.message || "Failed to delete account");
     }
   };
 
@@ -363,16 +363,16 @@ export default function AdminUsers() {
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            الصفحة الرئيسية
+            Home
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">إدارة المستخدمين</h1>
-            <p className="text-muted-foreground">إدارة حسابات الأدمن والصلاحيات</p>
+            <h1 className="text-3xl font-bold">User Management</h1>
+            <p className="text-muted-foreground">Manage admin accounts and permissions</p>
           </div>
         </div>
         <Button onClick={() => setShowAddForm(!showAddForm)} className="gap-2">
           <UserPlus className="h-4 w-4" />
-          إضافة أدمن
+          Add Admin
         </Button>
       </div>
 
@@ -382,13 +382,13 @@ export default function AdminUsers() {
             <div className="space-y-4">
               <div className="bg-muted/50 p-4 rounded-lg border">
                 <p className="text-sm text-muted-foreground">
-                  سيتم إرسال رابط تعيين كلمة المرور للبريد الإلكتروني للعضو الجديد
+                  A password setup link will be sent to the new member's email
                 </p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -399,34 +399,34 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="full_name">الاسم الكامل</Label>
+                  <Label htmlFor="full_name">Full Name</Label>
                   <Input
                     id="full_name"
                     value={newAdmin.full_name}
                     onChange={(e) => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
                     required
-                    placeholder="أدخل الاسم الكامل"
+                    placeholder="Enter full name"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">رقم الهاتف</Label>
+                  <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
                     value={newAdmin.phone}
                     onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })}
-                    placeholder="اختياري"
+                    placeholder="Optional"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="role">الصلاحية</Label>
+                  <Label htmlFor="role">Role</Label>
                   <Select value={newAdmin.role} onValueChange={(value) => setNewAdmin({ ...newAdmin, role: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin_viewer">مشاهد (يمكنه المشاهدة فقط)</SelectItem>
-                      <SelectItem value="admin_manager">مدير (يمكنه المشاهدة والتعديل)</SelectItem>
-                      <SelectItem value="admin_full">أدمن كامل (جميع الصلاحيات)</SelectItem>
+                      <SelectItem value="admin_viewer">Viewer (View Only)</SelectItem>
+                      <SelectItem value="admin_manager">Manager (View & Edit)</SelectItem>
+                      <SelectItem value="admin_full">Full Admin (All Permissions)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -434,10 +434,10 @@ export default function AdminUsers() {
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "إنشاء الحساب وإرسال الرابط"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account & Send Link"}
               </Button>
               <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
-                إلغاء
+                Cancel
               </Button>
             </div>
           </form>
@@ -448,24 +448,24 @@ export default function AdminUsers() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>الاسم</TableHead>
-              <TableHead>الهاتف</TableHead>
-              <TableHead>الصلاحية</TableHead>
-              <TableHead>تاريخ الإنشاء</TableHead>
-              <TableHead>الحالة</TableHead>
-              <TableHead className="text-center">الإجراءات</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Created Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {adminUsers.map((admin) => (
               <TableRow key={admin.id}>
                 <TableCell className="font-medium">{admin.full_name}</TableCell>
-                <TableCell>{admin.phone || "غير متوفر"}</TableCell>
+                <TableCell>{admin.phone || "N/A"}</TableCell>
                 <TableCell>{getRoleBadge(admin.role)}</TableCell>
-                <TableCell>{new Date(admin.created_at).toLocaleDateString('ar-SA')}</TableCell>
+                <TableCell>{new Date(admin.created_at).toLocaleDateString('en-US')}</TableCell>
                 <TableCell>
                   <Badge variant={admin.is_active ? "default" : "secondary"}>
-                    {admin.is_active ? "نشط" : "موقوف"}
+                    {admin.is_active ? "Active" : "Pending Activation"}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -474,7 +474,7 @@ export default function AdminUsers() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleEditClick(admin)}
-                      title="تعديل"
+                      title="Edit"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -482,7 +482,7 @@ export default function AdminUsers() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleResendPasswordEmail(admin)}
-                      title="إعادة إرسال رابط كلمة المرور"
+                      title="Resend Password Link"
                     >
                       <Mail className="h-4 w-4" />
                     </Button>
@@ -490,7 +490,7 @@ export default function AdminUsers() {
                       size="sm"
                       variant={admin.is_active ? "destructive" : "default"}
                       onClick={() => handleToggleActive(admin)}
-                      title={admin.is_active ? "إيقاف" : "تفعيل"}
+                      title={admin.is_active ? "Deactivate" : "Activate"}
                     >
                       {admin.is_active ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                     </Button>
@@ -498,7 +498,7 @@ export default function AdminUsers() {
                       size="sm"
                       variant="destructive"
                       onClick={() => handleDeleteClick(admin)}
-                      title="حذف"
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -514,50 +514,50 @@ export default function AdminUsers() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>تعديل بيانات المستخدم</DialogTitle>
+            <DialogTitle>Edit User Data</DialogTitle>
             <DialogDescription>
-              قم بتعديل البيانات الأساسية للمستخدم
+              Edit basic user information
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit_full_name">الاسم الكامل</Label>
+              <Label htmlFor="edit_full_name">Full Name</Label>
               <Input
                 id="edit_full_name"
                 value={editAdmin.full_name}
                 onChange={(e) => setEditAdmin({ ...editAdmin, full_name: e.target.value })}
-                placeholder="أدخل الاسم الكامل"
+                placeholder="Enter full name"
               />
             </div>
             <div>
-              <Label htmlFor="edit_phone">رقم الهاتف</Label>
+              <Label htmlFor="edit_phone">Phone Number</Label>
               <Input
                 id="edit_phone"
                 value={editAdmin.phone}
                 onChange={(e) => setEditAdmin({ ...editAdmin, phone: e.target.value })}
-                placeholder="اختياري"
+                placeholder="Optional"
               />
             </div>
             <div>
-              <Label htmlFor="edit_role">الصلاحية</Label>
+              <Label htmlFor="edit_role">Role</Label>
               <Select value={editAdmin.role} onValueChange={(value) => setEditAdmin({ ...editAdmin, role: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin_viewer">مشاهد (يمكنه المشاهدة فقط)</SelectItem>
-                  <SelectItem value="admin_manager">مدير (يمكنه المشاهدة والتعديل)</SelectItem>
-                  <SelectItem value="admin_full">أدمن كامل (جميع الصلاحيات)</SelectItem>
+                  <SelectItem value="admin_viewer">Viewer (View Only)</SelectItem>
+                  <SelectItem value="admin_manager">Manager (View & Edit)</SelectItem>
+                  <SelectItem value="admin_full">Full Admin (All Permissions)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              إلغاء
+              Cancel
             </Button>
             <Button onClick={handleUpdateAdmin}>
-              حفظ التغييرات
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -567,15 +567,15 @@ export default function AdminUsers() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد من حذف هذا الحساب؟</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to delete this account?</AlertDialogTitle>
             <AlertDialogDescription>
-              هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع بيانات المستخدم {selectedUser?.full_name} نهائياً.
+              This action cannot be undone. All data for user {selectedUser?.full_name} will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteAdmin} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              حذف
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
