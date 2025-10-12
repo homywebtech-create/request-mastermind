@@ -92,9 +92,9 @@ export default function SpecialistNewOrders() {
 
   useEffect(() => {
     checkAuth();
-    // Show version indicator on app load
-    sonnerToast.success("✅ التطبيق محدث - النسخة 2.2 (إشعارات محسنة)", {
-      duration: 4000,
+    // Show version indicator
+    sonnerToast.success("✅ النسخة 2.3 - إشعارات + Resend محسنة", {
+      duration: 3000,
       position: "top-center",
     });
   }, []);
@@ -104,8 +104,56 @@ export default function SpecialistNewOrders() {
 
     fetchOrders(specialistId);
 
+    // Helper function to trigger notification
+    const triggerNotification = async () => {
+      console.log('🔔 NEW ORDER - Starting notification');
+      
+      try {
+        // 1. Play long ringtone sound
+        soundNotification.current.playNewOrderSound();
+        console.log('✅ Sound playing');
+        
+        // 2. Check app state
+        const state = await App.getState();
+        console.log('📱 App state:', state.isActive ? 'Foreground' : 'Background');
+        
+        // 3. Schedule LOCAL NOTIFICATION (appears in notification tray)
+        const notificationId = Date.now();
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              id: notificationId,
+              title: '🔔 عرض عمل جديد!',
+              body: 'لديك عرض عمل جديد. اضغط للمشاهدة',
+              schedule: { at: new Date(Date.now() + 100) },
+              sound: 'notification_sound.mp3',
+              channelId: 'new-orders',
+              smallIcon: 'ic_stat_icon_config_sample',
+              iconColor: '#FF0000',
+              ongoing: false,
+              autoCancel: true,
+              extra: { route: '/specialist/new-orders' }
+            }
+          ]
+        });
+        
+        console.log('✅ Push notification sent ID:', notificationId);
+        
+        // 4. Show toast if app is open
+        if (state.isActive) {
+          toast({
+            title: "🔔 عرض عمل جديد!",
+            description: "لديك عرض عمل جديد متاح",
+          });
+        }
+      } catch (error) {
+        console.error('❌ Notification error:', error);
+      }
+    };
+
     const channel = supabase
       .channel('specialist-new-orders')
+      // Listen to NEW order assignments
       .on(
         'postgres_changes',
         {
@@ -115,57 +163,40 @@ export default function SpecialistNewOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         async () => {
-          console.log('🔔 NEW ORDER RECEIVED - Starting notification process');
+          console.log('🆕 INSERT: New order assigned');
           fetchOrders(specialistId);
+          await triggerNotification();
+        }
+      )
+      // Listen to RESEND (when order.last_sent_at is updated)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders'
+        },
+        async (payload) => {
+          console.log('🔄 UPDATE: Order updated', payload);
           
-          try {
-            // Play sound FIRST (works when app is open)
-            soundNotification.current.playNewOrderSound();
-            console.log('✅ Sound played');
-            
-            // Check app state
-            const state = await App.getState();
-            console.log('📱 App state:', state.isActive ? 'Active/Foreground' : 'Background/Closed');
-            
-            // Schedule HIGH PRIORITY notification with custom sound
-            const notificationId = Date.now();
-            await LocalNotifications.schedule({
-              notifications: [
-                {
-                  title: '🔔 عرض عمل جديد!',
-                  body: 'لديك عرض عمل جديد متاح. اضغط للمشاهدة الآن',
-                  id: notificationId,
-                  schedule: { at: new Date(Date.now() + 200) },
-                  sound: 'notification_sound.mp3', // Use custom ringtone
-                  attachments: undefined,
-                  actionTypeId: '',
-                  extra: {
-                    route: '/specialist/new-orders'
-                  },
-                  channelId: 'new-orders',
-                  ongoing: false, // Can be dismissed
-                  autoCancel: true, // Auto-dismiss on tap
-                  // Make it appear as high-priority heads-up notification
-                  smallIcon: 'ic_stat_icon_config_sample',
-                  iconColor: '#FF0000',
-                }
-              ]
-            });
-            
-            console.log('✅ Notification scheduled with ID:', notificationId);
-            
-            // Show in-app toast if app is active
-            if (state.isActive) {
-              toast({
-                title: "🔔 عرض عمل جديد!",
-                description: "لديك عرض عمل جديد متاح",
-              });
-            }
-          } catch (error) {
-            console.error('❌ Error in notification process:', error);
+          // Check if this order is assigned to current specialist
+          const { data: assignment } = await supabase
+            .from('order_specialists')
+            .select('id')
+            .eq('order_id', payload.new.id)
+            .eq('specialist_id', specialistId)
+            .is('quoted_price', null)
+            .is('rejected_at', null)
+            .single();
+          
+          if (assignment) {
+            console.log('🔔 RESEND detected for this specialist');
+            fetchOrders(specialistId);
+            await triggerNotification();
           }
         }
       )
+      // Regular updates to order_specialists
       .on(
         'postgres_changes',
         {
@@ -175,6 +206,7 @@ export default function SpecialistNewOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         () => {
+          console.log('📝 UPDATE: Order specialist updated');
           fetchOrders(specialistId);
         }
       )
@@ -183,7 +215,7 @@ export default function SpecialistNewOrders() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [specialistId]);
+  }, [specialistId, toast]);
 
   const checkAuth = async () => {
     try {
