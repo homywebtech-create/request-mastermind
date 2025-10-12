@@ -183,6 +183,16 @@ export default function SpecialistAuth() {
         description: `${t.welcome} ${data.specialist.name}`,
       });
 
+      // Initialize Firebase Push Notifications
+      try {
+        const { firebaseNotifications } = await import('@/lib/firebaseNotifications');
+        await firebaseNotifications.initialize(data.specialist.id);
+        console.log('✅ [FCM] Firebase notifications initialized for specialist:', data.specialist.id);
+      } catch (fcmError) {
+        console.error('⚠️ [FCM] Failed to initialize notifications:', fcmError);
+        // Continue anyway - non-critical
+      }
+
       // Use replace instead of push to prevent back button from returning to auth
       navigate('/specialist-orders', { replace: true });
     } catch (error: any) {
