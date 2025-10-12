@@ -5,9 +5,11 @@ export type UserRole = 'admin' | 'admin_full' | 'admin_manager' | 'admin_viewer'
 
 export function useUserRole(userId: string | undefined) {
   const [role, setRole] = useState<UserRole>(null);
+  // CRITICAL: Start as true, only set false after checking userId
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // CRITICAL: Always start by setting loading to true when userId changes
     if (!userId) {
       console.log('useUserRole - No userId provided');
       setRole(null);
@@ -15,7 +17,7 @@ export function useUserRole(userId: string | undefined) {
       return;
     }
 
-    // CRITICAL: Set loading to true when starting to fetch
+    // Immediately set loading to true to prevent race conditions
     setLoading(true);
     
     const fetchRole = async () => {
