@@ -161,50 +161,19 @@ export default function AdminUsers() {
     setLoading(true);
 
     try {
-      // Create auth user with a temporary password
-      // User will receive an email to set their own password
-      const temporaryPassword = Math.random().toString(36).slice(-12) + "A1!";
-      
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newAdmin.email,
-        password: temporaryPassword,
-        options: {
-          data: {
-            full_name: newAdmin.full_name,
-            phone: newAdmin.phone,
-            email: newAdmin.email
-          },
-          emailRedirectTo: `${window.location.origin}/set-password`
+      // Call edge function to create admin user (bypasses signup restrictions)
+      const { data, error } = await supabase.functions.invoke('create-admin-user', {
+        body: {
+          email: newAdmin.email,
+          full_name: newAdmin.full_name,
+          phone: newAdmin.phone,
+          role: newAdmin.role
         }
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user");
+      if (error) throw error;
 
-      // Assign role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: authData.user.id,
-          role: newAdmin.role as any
-        }]);
-
-      if (roleError) throw roleError;
-
-      // Update profile to be inactive initially and store email
-      const { error: profileUpdateError } = await supabase
-        .from('profiles')
-        .update({ 
-          is_active: false,
-          email: newAdmin.email
-        })
-        .eq('user_id', authData.user.id);
-
-      if (profileUpdateError) {
-        console.error("Profile update error:", profileUpdateError);
-      }
-
-      // Send password reset email so user can set their own password
+      // Send password reset email
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         newAdmin.email,
         {
@@ -226,6 +195,7 @@ export default function AdminUsers() {
       });
       fetchAdminUsers();
     } catch (error: any) {
+      console.error('Create admin error:', error);
       toast.error(error.message || "Failed to create admin user");
     } finally {
       setLoading(false);

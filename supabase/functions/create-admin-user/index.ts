@@ -1,0 +1,112 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const { email, full_name, phone, role } = await req.json()
+
+    // Validate required fields
+    if (!email || !full_name || !role) {
+      throw new Error('Email, full_name, and role are required')
+    }
+
+    // Create Supabase client with service role key (bypasses RLS)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    // Generate a temporary password
+    const temporaryPassword = Math.random().toString(36).slice(-12) + "A1!"
+
+    // Create user with admin API (bypasses signup restrictions)
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: temporaryPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name,
+        phone: phone || '',
+        email
+      }
+    })
+
+    if (authError) throw authError
+    if (!authData.user) throw new Error('Failed to create user')
+
+    // Assign role
+    const { error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .insert([{
+        user_id: authData.user.id,
+        role: role
+      }])
+
+    if (roleError) throw roleError
+
+    // Update profile to inactive and store email
+    const { error: profileUpdateError } = await supabaseAdmin
+      .from('profiles')
+      .update({ 
+        is_active: false,
+        email: email
+      })
+      .eq('user_id', authData.user.id)
+
+    if (profileUpdateError) {
+      console.error('Profile update error:', profileUpdateError)
+    }
+
+    // Generate password reset link
+    const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+    })
+
+    if (resetError) {
+      console.error('Password reset link generation error:', resetError)
+    }
+
+    console.log('User created successfully:', authData.user.id)
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        user_id: authData.user.id,
+        message: 'User created successfully. Password reset email will be sent.',
+        reset_link: resetData?.properties?.action_link // For development/testing
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    )
+
+  } catch (error) {
+    console.error('Error creating admin user:', error)
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'Internal server error' 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400 
+      }
+    )
+  }
+})
