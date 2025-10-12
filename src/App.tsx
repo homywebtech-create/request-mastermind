@@ -24,6 +24,7 @@ import { useAuth } from "./hooks/useAuth";
 import DeletionRequests from "./pages/DeletionRequests";
 import AdminUsers from "./pages/AdminUsers";
 import ActivityLogs from "./pages/ActivityLogs";
+import SetPassword from "./pages/SetPassword";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,7 @@ function AppRouter() {
         
         {/* Admin routes */}
         <Route path="/auth" element={<Auth />} />
+        <Route path="/set-password" element={<SetPassword />} />
         <Route
           path="/admin"
           element={
