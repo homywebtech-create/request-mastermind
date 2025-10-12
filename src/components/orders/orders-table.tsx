@@ -114,6 +114,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [selectedSpecialistIds, setSelectedSpecialistIds] = useState<string[]>([]);
+  
+  // Track recently sent orders with timestamps
+  const [recentlySentOrders, setRecentlySentOrders] = useState<Map<string, number>>(new Map());
+  const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
@@ -257,7 +261,38 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     }).format(new Date(dateString));
   };
 
+  // Timer effect to update recently sent orders
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const newMap = new Map(recentlySentOrders);
+      let updated = false;
+      
+      recentlySentOrders.forEach((timestamp, orderId) => {
+        const minutesPassed = Math.floor((now - timestamp) / (1000 * 60));
+        if (minutesPassed >= 3) {
+          newMap.delete(orderId);
+          updated = true;
+        }
+      });
+      
+      if (updated) {
+        setRecentlySentOrders(newMap);
+      }
+    }, 10000); // Check every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [recentlySentOrders]);
+
   const getTimeSinceSent = (order: Order) => {
+    // Check local state first
+    const localSentTime = recentlySentOrders.get(order.id);
+    if (localSentTime) {
+      const diffInMinutes = Math.floor((Date.now() - localSentTime) / (1000 * 60));
+      return diffInMinutes;
+    }
+    
+    // Fall back to database time
     const now = new Date();
     const sentTime = order.last_sent_at ? new Date(order.last_sent_at) : new Date(order.created_at);
     const diffInMinutes = Math.floor((now.getTime() - sentTime.getTime()) / (1000 * 60));
@@ -270,6 +305,26 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
 
   const isWithinThreeMinutes = (order: Order) => {
     return getTimeSinceSent(order) <= 3;
+  };
+
+  const isProcessing = (orderId: string) => {
+    return processingOrders.has(orderId);
+  };
+
+  const markOrderAsSent = (orderId: string) => {
+    const newMap = new Map(recentlySentOrders);
+    newMap.set(orderId, Date.now());
+    setRecentlySentOrders(newMap);
+  };
+
+  const setOrderProcessing = (orderId: string, processing: boolean) => {
+    const newSet = new Set(processingOrders);
+    if (processing) {
+      newSet.add(orderId);
+    } else {
+      newSet.delete(orderId);
+    }
+    setProcessingOrders(newSet);
   };
 
   const handleCopyOrderLink = async (order: Order) => {
@@ -360,8 +415,7 @@ Thank you for contacting us! 🌟`;
         description: "تم قبول عرض السعر بنجاح",
       });
 
-      // Refresh orders
-      window.location.reload();
+      // No need to reload, realtime subscription will handle the update
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -389,8 +443,7 @@ Thank you for contacting us! 🌟`;
         description: "تم رفض عرض السعر",
       });
 
-      // Refresh orders
-      window.location.reload();
+      // No need to reload, realtime subscription will handle the update
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -447,8 +500,9 @@ Thank you for contacting us! 🌟`;
   }, [selectedCompanyId]);
 
   const handleSendToAll = async (orderId: string) => {
+    setOrderProcessing(orderId, true);
     try {
-      // 1) Read existing assignments (avoid DELETE which requires admin)
+      // 1) Read existing assignments
       const { data: existing, error: existingError } = await supabase
         .from('order_specialists')
         .select('specialist_id')
@@ -465,14 +519,22 @@ Thank you for contacting us! 🌟`;
 
       if (specialistsError) throw specialistsError;
 
-      // 3) Insert only missing specialists (no DELETE needed)
+      // 3) Insert only missing specialists in batches for performance
       const missing = (allSpecialists || []).filter((s) => !existingSet.has(s.id));
       if (missing.length > 0) {
-        const toInsert = missing.map((s) => ({ order_id: orderId, specialist_id: s.id }));
-        const { error: insertError } = await supabase
-          .from('order_specialists')
-          .insert(toInsert);
-        if (insertError) throw insertError;
+        const batchSize = 100;
+        const batches = [];
+        for (let i = 0; i < missing.length; i += batchSize) {
+          batches.push(missing.slice(i, i + batchSize));
+        }
+        
+        await Promise.all(
+          batches.map(batch => 
+            supabase
+              .from('order_specialists')
+              .insert(batch.map(s => ({ order_id: orderId, specialist_id: s.id })))
+          )
+        );
       }
 
       // 4) Update order broadcast flags and timestamp
@@ -488,34 +550,40 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
+      // Mark order as sent locally
+      markOrderAsSent(orderId);
+
       toast({
-        title: 'Success',
-        description: `Order broadcasted to ${allSpecialists?.length || 0} active specialists`,
+        title: '✅ نجح الإرسال',
+        description: `تم إرسال الطلب إلى ${allSpecialists?.length || 0} محترف نشط`,
       });
 
       setResendDialogOpen(false);
-      window.location.reload();
+      setSelectedOrder(null);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: '❌ خطأ',
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setOrderProcessing(orderId, false);
     }
   };
 
   const handleResendToSameCompany = async (order: Order) => {
+    setOrderProcessing(order.id, true);
     try {
       if (!order.company_id) {
         toast({
-          title: 'Error',
-          description: 'No company assigned for this order',
+          title: '❌ خطأ',
+          description: 'لا توجد شركة مخصصة لهذا الطلب',
           variant: 'destructive',
         });
         return;
       }
 
-      // Read existing assignments (avoid DELETE which requires admin)
+      // Read existing assignments
       const { data: existing, error: existingError } = await supabase
         .from('order_specialists')
         .select('specialist_id')
@@ -554,23 +622,29 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
+      // Mark order as sent locally
+      markOrderAsSent(order.id);
+
       toast({
-        title: 'Success',
-        description: `Order re-sent to ${companySpecialists?.length || 0} specialist(s) in the company`,
+        title: '✅ نجح الإرسال',
+        description: `تم إرسال الطلب إلى ${companySpecialists?.length || 0} محترف في الشركة`,
       });
 
       setResendDialogOpen(false);
-      window.location.reload();
+      setSelectedOrder(null);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: '❌ خطأ',
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setOrderProcessing(order.id, false);
     }
   };
 
   const handleResendToSameSpecialists = async (order: Order) => {
+    setOrderProcessing(order.id, true);
     try {
       // Get current specialists for this order
       const { data: currentSpecialists, error: fetchError } = await supabase
@@ -582,14 +656,14 @@ Thank you for contacting us! 🌟`;
 
       if (!currentSpecialists || currentSpecialists.length === 0) {
         toast({
-          title: 'Error',
-          description: 'No specialists assigned to this order',
+          title: '❌ خطأ',
+          description: 'لا يوجد محترفين مخصصين لهذا الطلب',
           variant: 'destructive',
         });
         return;
       }
 
-      // No need to delete/re-insert. Just bump the timestamp to notify.
+      // Update timestamp to trigger notifications
       const { error } = await supabase
         .from('orders')
         .update({
@@ -599,19 +673,24 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
+      // Mark order as sent locally
+      markOrderAsSent(order.id);
+
       toast({
-        title: 'Success',
-        description: `Order re-sent to ${currentSpecialists.length} specialist(s)`,
+        title: '✅ نجح الإرسال',
+        description: `تم إرسال الطلب إلى ${currentSpecialists.length} محترف`,
       });
 
       setResendDialogOpen(false);
-      window.location.reload();
+      setSelectedOrder(null);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: '❌ خطأ',
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setOrderProcessing(order.id, false);
     }
   };
 
@@ -624,6 +703,7 @@ Thank you for contacting us! 🌟`;
   const handleSendToCompany = async () => {
     if (!selectedOrder || !selectedCompanyId) return;
 
+    setOrderProcessing(selectedOrder.id, true);
     try {
       // Update order with company assignment and timestamp
       const { data: updatedOrder, error: orderError } = await supabase
@@ -682,15 +762,18 @@ Thank you for contacting us! 🌟`;
         }
       }
 
-      let description = "Order sent to company";
+      // Mark order as sent locally
+      markOrderAsSent(selectedOrder.id);
+
+      let description = "تم إرسال الطلب للشركة";
       if (selectedSpecialistIds.length > 0) {
-        description = `Order sent to ${selectedSpecialistIds.length} specialist(s)`;
+        description = `تم إرسال الطلب إلى ${selectedSpecialistIds.length} محترف`;
       } else {
-        description = "Order sent to all company specialists";
+        description = "تم إرسال الطلب لجميع محترفي الشركة";
       }
 
       toast({
-        title: 'Success',
+        title: '✅ نجح الإرسال',
         description,
       });
 
@@ -698,13 +781,14 @@ Thank you for contacting us! 🌟`;
       setSelectedOrder(null);
       setSelectedCompanyId('');
       setSelectedSpecialistIds([]);
-      window.location.reload();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "❌ خطأ",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setOrderProcessing(selectedOrder.id, false);
     }
   };
 
@@ -810,6 +894,7 @@ Thank you for contacting us! 🌟`;
                   const minutesSinceSent = getTimeSinceSent(order);
                   const isDelayed = isOverThreeMinutes(order) && isPending;
                   const isRecentlySent = isWithinThreeMinutes(order) && isPending;
+                  const isOrderProcessing = isProcessing(order.id);
                   
                   return (
                     <TableRow 
@@ -988,21 +1073,31 @@ Thank you for contacting us! 🌟`;
                                 size="sm"
                                 variant={isDelayed ? "destructive" : "outline"}
                                 onClick={() => openResendDialog(order)}
-                                disabled={!!isRecentlySent}
+                                disabled={Boolean(isRecentlySent) || Boolean(isOrderProcessing)}
                                 className="flex items-center gap-1"
                               >
-                                <Send className="h-3 w-3" />
-                                {isRecentlySent ? `Resend (${3 - minutesSinceSent}m)` : 'Resend'}
+                                {isOrderProcessing ? (
+                                  <>
+                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    جاري الإرسال...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Send className="h-3 w-3" />
+                                    {isRecentlySent ? `إعادة إرسال (${3 - minutesSinceSent} د)` : 'إعادة إرسال'}
+                                  </>
+                                )}
                               </Button>
 
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => openSendDialog(order)}
+                                disabled={Boolean(isOrderProcessing)}
                                 className="flex items-center gap-1"
                               >
                                 <Building2 className="h-3 w-3" />
-                                Change
+                                تغيير
                               </Button>
                             </>
                           )}
