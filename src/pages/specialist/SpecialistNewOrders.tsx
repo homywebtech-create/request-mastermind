@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Package, FileText, Tag, Sparkles } from "lucide-react";
@@ -81,6 +82,11 @@ export default function SpecialistNewOrders() {
 
   useEffect(() => {
     checkAuth();
+    // Show version indicator on app load
+    sonnerToast.success("✅ التطبيق محدث - النسخة 2.1", {
+      duration: 4000,
+      position: "top-center",
+    });
   }, []);
 
   useEffect(() => {

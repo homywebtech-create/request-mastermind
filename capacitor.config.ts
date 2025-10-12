@@ -4,11 +4,11 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.c9213afe1e6545938c572cfda087384c',
   appName: 'request-mastermind',
   webDir: 'dist',
-  // Enable hot-reload for instant updates during development
-  server: {
-    url: 'https://c9213afe-1e65-4593-8c57-2cfda087384c.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  }
+  // Hot-reload disabled - app runs locally with full native features
+  // server: {
+  //   url: 'https://c9213afe-1e65-4593-8c57-2cfda087384c.lovableproject.com?forceHideBadge=true',
+  //   cleartext: true
+  // }
 };
 
 export default config;
