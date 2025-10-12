@@ -29,20 +29,27 @@ import SetPassword from "./pages/SetPassword";
 const queryClient = new QueryClient();
 
 // Detect if running in Capacitor (mobile app)
-// Be very strict about detection to avoid false positives
 const isCapacitorApp = (() => {
   const protocol = window.location.protocol;
-  const hasCapacitor = typeof window !== 'undefined' && 
-                       (window as any).Capacitor?.isNativePlatform?.() === true;
   
-  console.log('🔍 Environment Detection:', {
-    protocol,
-    hasCapacitor,
-    hostname: window.location.hostname,
-    isCapacitor: (protocol === 'capacitor:' || protocol === 'ionic:' || hasCapacitor)
-  });
+  // Check multiple ways to detect Capacitor
+  const hasCapacitorGlobal = typeof window !== 'undefined' && (window as any).Capacitor !== undefined;
+  const isNativePlatform = hasCapacitorGlobal && (window as any).Capacitor?.isNativePlatform?.() === true;
+  const isCapacitorProtocol = protocol === 'capacitor:' || protocol === 'ionic:';
   
-  return protocol === 'capacitor:' || protocol === 'ionic:' || hasCapacitor;
+  const detected = isCapacitorProtocol || isNativePlatform || hasCapacitorGlobal;
+  
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🔍 [CAPACITOR] Environment Detection');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('Protocol:', protocol);
+  console.log('Has Capacitor Global:', hasCapacitorGlobal);
+  console.log('Is Native Platform:', isNativePlatform);
+  console.log('Is Capacitor Protocol:', isCapacitorProtocol);
+  console.log('Final Detection:', detected ? '✅ MOBILE APP' : '❌ WEB BROWSER');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  
+  return detected;
 })();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
