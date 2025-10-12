@@ -54,53 +54,70 @@ export default function SpecialistNewOrders() {
     
     const setupNotifications = async () => {
       try {
-        console.log('🔔 Setting up notifications...');
+        console.log('🔔 [SETUP] بدء إعداد الإشعارات...');
         
         // Request permissions
         const permissionResult = await LocalNotifications.requestPermissions();
-        console.log('📱 Notification permissions:', permissionResult.display);
+        console.log('📱 [PERMISSIONS] حالة الأذونات:', permissionResult.display);
         
         if (permissionResult.display !== 'granted') {
-          console.warn('⚠️ Notification permission not granted!');
+          console.error('❌ [PERMISSIONS] لم يتم منح أذونات الإشعارات!');
+          alert('يرجى السماح بالإشعارات من إعدادات التطبيق');
           return;
         }
         
-        // Create notification channel for Android with MAXIMUM priority
+        // Create notification channel for Android
         const platform = (window as any).Capacitor?.getPlatform();
-        console.log('📱 Platform:', platform);
+        console.log('📱 [PLATFORM] المنصة:', platform);
         
         if (platform === 'android') {
           try {
-            // Delete old channel
             await LocalNotifications.deleteChannel({ id: 'new-orders' });
-            console.log('🗑️ Deleted old channel');
+            console.log('🗑️ [CHANNEL] تم حذف القناة القديمة');
           } catch (e) {
-            console.log('ℹ️ No old channel to delete');
+            console.log('ℹ️ [CHANNEL] لا توجد قناة قديمة');
           }
           
-          // Create new channel with MAXIMUM priority
           await LocalNotifications.createChannel({
             id: 'new-orders',
             name: 'عروض العمل الجديدة',
-            description: 'إشعارات مهمة لعروض العمل الجديدة مع صوت رنين',
-            importance: 5, // MAX importance
-            visibility: 1, // Public
+            description: 'إشعارات عروض العمل الجديدة',
+            importance: 5, // MAX
+            visibility: 1, // PUBLIC
             sound: 'notification_sound.mp3',
             vibration: true,
             lightColor: '#FF0000',
             lights: true,
           });
-          console.log('✅ Notification channel created');
+          console.log('✅ [CHANNEL] تم إنشاء قناة الإشعارات');
         }
+        
+        // Listen for notification clicks to open app
+        await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
+          console.log('🔔 [CLICK] تم النقر على الإشعار:', notification);
+          console.log('📱 [CLICK] فتح التطبيق...');
+          
+          // Navigate to new orders page
+          if (notification.notification.extra?.route) {
+            navigate(notification.notification.extra.route);
+          }
+          
+          // Bring app to foreground
+          App.getState().then(state => {
+            console.log('📱 [STATE] حالة التطبيق بعد النقر:', state);
+          });
+        });
+        
+        console.log('✅ [SETUP] تم إعداد الإشعارات بنجاح');
       } catch (error) {
-        console.error('❌ Error setting up notifications:', error);
+        console.error('❌ [SETUP] خطأ في إعداد الإشعارات:', error);
       }
     };
     
     // Initialize audio on first user interaction
     const handleFirstInteraction = async () => {
       await initAudio();
-      console.log('✅ Audio initialized');
+      console.log('✅ [AUDIO] تم تهيئة الصوت');
     };
     
     document.addEventListener('click', handleFirstInteraction, { once: true });
@@ -111,13 +128,14 @@ export default function SpecialistNewOrders() {
     return () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
+      LocalNotifications.removeAllListeners();
     };
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     checkAuth();
     // Show version indicator
-    sonnerToast.success("✅ النسخة 3.0 - إصلاح كامل للإشعارات والجلسة", {
+    sonnerToast.success("✅ النسخة 3.1 - إصلاح التنبيهات والواجهة", {
       duration: 3000,
       position: "top-center",
     });
@@ -130,34 +148,38 @@ export default function SpecialistNewOrders() {
 
     // Helper function to trigger notification
     const triggerNotification = async (type: 'new' | 'resend' = 'new') => {
-      console.log(`🔔 [${type.toUpperCase()}] ORDER - Starting notification sequence`);
+      const notificationId = Date.now();
+      const title = type === 'resend' ? '🔁 إعادة إرسال الطلب' : '🔔 عرض عمل جديد!';
+      const body = type === 'resend' 
+        ? 'تم إعادة إرسال الطلب. اضغط للمشاهدة'
+        : 'لديك عرض عمل جديد. اضغط للمشاهدة';
+      
+      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.log(`🔔 [${type.toUpperCase()}] بدء إرسال الإشعار`);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
       
       try {
-        // 1. Check app state FIRST
+        // 1. Check app state
         const state = await App.getState();
-        const isActive = state.isActive;
-        console.log(`📱 App state: ${isActive ? 'FOREGROUND' : 'BACKGROUND'}`);
+        console.log(`📱 [STATE] حالة التطبيق: ${state.isActive ? 'في المقدمة ✅' : 'في الخلفية 🔄'}`);
         
-        // 2. Play ringtone sound (Web Audio API - works in both states)
-        console.log('🔊 Playing sound...');
-        await soundNotification.current.playNewOrderSound();
-        console.log('✅ Sound triggered');
+        // 2. Play sound IMMEDIATELY
+        console.log('🔊 [SOUND] تشغيل الصوت...');
+        soundNotification.current.playNewOrderSound();
+        console.log('✅ [SOUND] تم تشغيل الصوت');
         
-        // 3. Schedule LOCAL NOTIFICATION (System notification)
-        const notificationId = Date.now();
-        const title = type === 'resend' ? '🔁 إعادة إرسال الطلب' : '🔔 عرض عمل جديد!';
-        const body = type === 'resend' 
-          ? 'تم إعادة إرسال الطلب. اضغط للمشاهدة'
-          : 'لديك عرض عمل جديد. اضغط للمشاهدة';
+        // 3. Send LOCAL NOTIFICATION (System notification - works in all states)
+        console.log(`📲 [NOTIFICATION] إرسال إشعار النظام #${notificationId}...`);
+        console.log(`   📝 العنوان: ${title}`);
+        console.log(`   📝 المحتوى: ${body}`);
         
-        console.log('📲 Scheduling notification:', notificationId);
         await LocalNotifications.schedule({
           notifications: [
             {
               id: notificationId,
               title,
               body,
-              schedule: { at: new Date(Date.now() + 500) }, // Slight delay
+              schedule: { at: new Date(Date.now() + 100) }, // Very short delay
               sound: 'notification_sound.mp3',
               channelId: 'new-orders',
               smallIcon: 'ic_stat_icon_config_sample',
@@ -171,21 +193,28 @@ export default function SpecialistNewOrders() {
             }
           ]
         });
-        console.log('✅ System notification scheduled');
         
-        // 4. Show foreground toast ONLY if app is active
-        if (isActive) {
-          console.log('📱 App in foreground - showing toast');
+        console.log('✅ [NOTIFICATION] تم جدولة الإشعار بنجاح');
+        console.log('   ℹ️ الإشعار سيظهر في درج الإشعارات');
+        console.log('   ℹ️ اضغط على الإشعار لفتح التطبيق');
+        
+        // 4. Show toast ONLY in foreground
+        if (state.isActive) {
+          console.log('📱 [TOAST] إظهار Toast لأن التطبيق في المقدمة');
           toast({
             title,
             description: body,
             duration: 5000,
           });
+        } else {
+          console.log('📱 [TOAST] تخطي Toast لأن التطبيق في الخلفية');
         }
         
-        console.log('✅ Notification sequence complete');
+        console.log(`✅ [SUCCESS] اكتمل إرسال الإشعار بنجاح!`);
+        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       } catch (error) {
-        console.error('❌ Notification error:', error);
+        console.error('❌ [ERROR] خطأ في إرسال الإشعار:', error);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       }
     };
 
