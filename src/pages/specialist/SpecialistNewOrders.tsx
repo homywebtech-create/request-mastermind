@@ -48,80 +48,93 @@ export default function SpecialistNewOrders() {
   const soundNotification = useRef(getSoundNotification());
 
   useEffect(() => {
+    let audioInitialized = false;
+    
     const initAudio = async () => {
-      await soundNotification.current.initialize();
+      if (audioInitialized) return;
+      try {
+        await soundNotification.current.initialize();
+        audioInitialized = true;
+        console.log('✅ [AUDIO] تم تهيئة الصوت');
+      } catch (error) {
+        console.error('❌ [AUDIO] خطأ في تهيئة الصوت:', error);
+      }
     };
     
     const setupNotifications = async () => {
       try {
-        console.log('🔔 [SETUP] بدء إعداد الإشعارات...');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🔔 [INIT] بدء تهيئة نظام الإشعارات');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
-        // Request permissions
-        const permissionResult = await LocalNotifications.requestPermissions();
-        console.log('📱 [PERMISSIONS] حالة الأذونات:', permissionResult.display);
+        // Check platform
+        const platform = (window as any).Capacitor?.getPlatform();
+        console.log(`📱 [PLATFORM] المنصة: ${platform || 'web'}`);
         
-        if (permissionResult.display !== 'granted') {
-          console.error('❌ [PERMISSIONS] لم يتم منح أذونات الإشعارات!');
-          alert('يرجى السماح بالإشعارات من إعدادات التطبيق');
+        if (!platform || platform === 'web') {
+          console.log('ℹ️ [PLATFORM] تشغيل على الويب - تخطي الإشعارات المحلية');
           return;
         }
         
-        // Create notification channel for Android
-        const platform = (window as any).Capacitor?.getPlatform();
-        console.log('📱 [PLATFORM] المنصة:', platform);
+        // Step 1: Request permissions
+        console.log('🔐 [STEP 1] طلب أذونات الإشعارات...');
+        const permissionResult = await LocalNotifications.requestPermissions();
+        console.log(`✅ [PERMISSIONS] ${permissionResult.display}`);
         
+        if (permissionResult.display !== 'granted') {
+          console.error('❌ [ERROR] لم يتم منح الأذونات!');
+          alert('⚠️ يرجى السماح بالإشعارات من إعدادات التطبيق لتلقي عروض العمل');
+          return;
+        }
+        
+        // Step 2: Create notification channel (Android only)
         if (platform === 'android') {
+          console.log('🔧 [STEP 2] إنشاء قناة الإشعارات للأندرويد...');
+          
           try {
             await LocalNotifications.deleteChannel({ id: 'new-orders' });
-            console.log('🗑️ [CHANNEL] تم حذف القناة القديمة');
           } catch (e) {
-            console.log('ℹ️ [CHANNEL] لا توجد قناة قديمة');
+            // Channel doesn't exist, that's fine
           }
           
           await LocalNotifications.createChannel({
             id: 'new-orders',
             name: 'عروض العمل الجديدة',
-            description: 'إشعارات عروض العمل الجديدة',
-            importance: 5, // MAX
+            description: 'تنبيهات فورية لعروض العمل الجديدة',
+            importance: 5, // MAX - highest priority
             visibility: 1, // PUBLIC
             sound: 'notification_sound.mp3',
             vibration: true,
             lightColor: '#FF0000',
             lights: true,
           });
-          console.log('✅ [CHANNEL] تم إنشاء قناة الإشعارات');
+          
+          console.log('✅ [CHANNEL] تم إنشاء قناة الإشعارات بنجاح');
         }
         
-        // Listen for notification clicks to open app
+        // Step 3: Setup notification click handler
+        console.log('🔧 [STEP 3] إعداد معالج النقر على الإشعارات...');
         await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
-          console.log('🔔 [CLICK] تم النقر على الإشعار:', notification);
-          console.log('📱 [CLICK] فتح التطبيق...');
-          
-          // Navigate to new orders page
-          if (notification.notification.extra?.route) {
-            navigate(notification.notification.extra.route);
-          }
-          
-          // Bring app to foreground
-          App.getState().then(state => {
-            console.log('📱 [STATE] حالة التطبيق بعد النقر:', state);
-          });
+          console.log('👆 [CLICK] تم النقر على الإشعار');
+          navigate('/specialist/new-orders');
         });
         
-        console.log('✅ [SETUP] تم إعداد الإشعارات بنجاح');
+        console.log('✅ [SUCCESS] تم تهيئة نظام الإشعارات بنجاح');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       } catch (error) {
-        console.error('❌ [SETUP] خطأ في إعداد الإشعارات:', error);
+        console.error('❌ [FATAL ERROR] خطأ خطير في تهيئة الإشعارات:', error);
       }
     };
     
-    // Initialize audio on first user interaction
-    const handleFirstInteraction = async () => {
-      await initAudio();
-      console.log('✅ [AUDIO] تم تهيئة الصوت');
+    // Initialize audio on first interaction
+    const handleFirstInteraction = () => {
+      initAudio();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
     };
     
-    document.addEventListener('click', handleFirstInteraction, { once: true });
-    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('touchstart', handleFirstInteraction);
     
     setupNotifications();
     
@@ -134,11 +147,16 @@ export default function SpecialistNewOrders() {
 
   useEffect(() => {
     checkAuth();
-    // Show version indicator
-    sonnerToast.success("✅ النسخة 3.1 - إصلاح التنبيهات والواجهة", {
-      duration: 3000,
+    
+    // Show version indicator with more details
+    const platform = (window as any).Capacitor?.getPlatform();
+    sonnerToast.success(`✅ النسخة 4.0 - إصلاح شامل للإشعارات | ${platform || 'web'}`, {
+      duration: 4000,
       position: "top-center",
     });
+    
+    console.log('🚀 [APP START] تطبيق المحترفين - جاهز');
+    console.log(`📱 [PLATFORM] ${platform || 'web'}`);
   }, []);
 
   useEffect(() => {
@@ -146,74 +164,61 @@ export default function SpecialistNewOrders() {
 
     fetchOrders(specialistId);
 
-    // Helper function to trigger notification
+    // Simplified notification function
     const triggerNotification = async (type: 'new' | 'resend' = 'new') => {
       const notificationId = Date.now();
-      const title = type === 'resend' ? '🔁 إعادة إرسال الطلب' : '🔔 عرض عمل جديد!';
+      const title = type === 'resend' ? '🔁 إعادة إرسال' : '🔔 عرض عمل جديد';
       const body = type === 'resend' 
-        ? 'تم إعادة إرسال الطلب. اضغط للمشاهدة'
-        : 'لديك عرض عمل جديد. اضغط للمشاهدة';
+        ? 'تم إعادة إرسال الطلب'
+        : 'لديك عرض عمل جديد';
       
-      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-      console.log(`🔔 [${type.toUpperCase()}] بدء إرسال الإشعار`);
-      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`🚨 [${type.toUpperCase()} NOTIFICATION] #${notificationId}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       try {
-        // 1. Check app state
-        const state = await App.getState();
-        console.log(`📱 [STATE] حالة التطبيق: ${state.isActive ? 'في المقدمة ✅' : 'في الخلفية 🔄'}`);
-        
-        // 2. Play sound IMMEDIATELY
-        console.log('🔊 [SOUND] تشغيل الصوت...');
+        // 1. Play sound immediately
+        console.log('🔊 [1/3] تشغيل الصوت...');
         soundNotification.current.playNewOrderSound();
-        console.log('✅ [SOUND] تم تشغيل الصوت');
+        console.log('✅ تم تشغيل الصوت');
         
-        // 3. Send LOCAL NOTIFICATION (System notification - works in all states)
-        console.log(`📲 [NOTIFICATION] إرسال إشعار النظام #${notificationId}...`);
-        console.log(`   📝 العنوان: ${title}`);
-        console.log(`   📝 المحتوى: ${body}`);
+        // 2. Show local notification
+        console.log('📲 [2/3] إرسال الإشعار...');
+        const platform = (window as any).Capacitor?.getPlatform();
         
-        await LocalNotifications.schedule({
-          notifications: [
-            {
+        if (platform && platform !== 'web') {
+          await LocalNotifications.schedule({
+            notifications: [{
               id: notificationId,
               title,
               body,
-              schedule: { at: new Date(Date.now() + 100) }, // Very short delay
+              schedule: { at: new Date(Date.now() + 500) },
               sound: 'notification_sound.mp3',
               channelId: 'new-orders',
               smallIcon: 'ic_stat_icon_config_sample',
               iconColor: '#FF0000',
-              ongoing: false,
               autoCancel: true,
-              extra: { 
-                route: '/specialist/new-orders',
-                type 
-              }
-            }
-          ]
-        });
-        
-        console.log('✅ [NOTIFICATION] تم جدولة الإشعار بنجاح');
-        console.log('   ℹ️ الإشعار سيظهر في درج الإشعارات');
-        console.log('   ℹ️ اضغط على الإشعار لفتح التطبيق');
-        
-        // 4. Show toast ONLY in foreground
-        if (state.isActive) {
-          console.log('📱 [TOAST] إظهار Toast لأن التطبيق في المقدمة');
-          toast({
-            title,
-            description: body,
-            duration: 5000,
+              extra: { route: '/specialist/new-orders' }
+            }]
           });
+          console.log('✅ تم إرسال الإشعار');
         } else {
-          console.log('📱 [TOAST] تخطي Toast لأن التطبيق في الخلفية');
+          console.log('ℹ️ تخطي الإشعار (ويب)');
         }
         
-        console.log(`✅ [SUCCESS] اكتمل إرسال الإشعار بنجاح!`);
-        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+        // 3. Show toast
+        console.log('📱 [3/3] عرض Toast...');
+        toast({
+          title,
+          description: body,
+          duration: 5000,
+        });
+        console.log('✅ تم عرض Toast');
+        
+        console.log('✅ [DONE] اكتمل الإشعار بنجاح!');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       } catch (error) {
-        console.error('❌ [ERROR] خطأ في إرسال الإشعار:', error);
+        console.error('❌ [ERROR] خطأ:', error);
         console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       }
     };
@@ -229,9 +234,10 @@ export default function SpecialistNewOrders() {
           table: 'order_specialists',
           filter: `specialist_id=eq.${specialistId}`
         },
-        async () => {
-          console.log('🆕 INSERT: New order assigned');
-          fetchOrders(specialistId);
+        async (payload) => {
+          console.log('🆕🆕🆕 INSERT DETECTED! 🆕🆕🆕');
+          console.log('Payload:', payload);
+          await fetchOrders(specialistId);
           await triggerNotification('new');
         }
       )
@@ -244,7 +250,7 @@ export default function SpecialistNewOrders() {
           table: 'orders'
         },
         async (payload) => {
-          console.log('🔄 UPDATE: Order updated', payload);
+          console.log('🔄 UPDATE on orders:', payload.new.id);
           
           // Check if this order is assigned to current specialist
           const { data: assignment } = await supabase
@@ -257,8 +263,8 @@ export default function SpecialistNewOrders() {
             .single();
           
           if (assignment) {
-            console.log('🔔 RESEND detected for this specialist');
-            fetchOrders(specialistId);
+            console.log('🔁🔁🔁 RESEND DETECTED! 🔁🔁🔁');
+            await fetchOrders(specialistId);
             await triggerNotification('resend');
           }
         }
@@ -272,12 +278,14 @@ export default function SpecialistNewOrders() {
           table: 'order_specialists',
           filter: `specialist_id=eq.${specialistId}`
         },
-        () => {
-          console.log('📝 UPDATE: Order specialist updated');
-          fetchOrders(specialistId);
+        async (payload) => {
+          console.log('📝 UPDATE on order_specialists:', payload);
+          await fetchOrders(specialistId);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔌 [REALTIME] حالة الاتصال:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
