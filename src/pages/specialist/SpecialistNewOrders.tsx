@@ -57,16 +57,26 @@ export default function SpecialistNewOrders() {
         const permissionResult = await LocalNotifications.requestPermissions();
         console.log('Notification permissions:', permissionResult);
         
-        // Create notification channel for Android with high importance
+        // Create notification channel for Android with CRITICAL importance
         if ((window as any).Capacitor?.getPlatform() === 'android') {
+          // Delete old channel first
+          try {
+            await LocalNotifications.deleteChannel({ id: 'new-orders' });
+          } catch (e) {
+            // Channel might not exist
+          }
+          
+          // Create new channel with ringtone-like behavior
           await LocalNotifications.createChannel({
             id: 'new-orders',
-            name: 'New Job Offers',
-            description: 'Notifications for new job offers',
-            importance: 5, // Maximum importance for heads-up notification
-            visibility: 1,
-            sound: 'default',
+            name: 'New Job Offers - High Priority',
+            description: 'Critical notifications for new job offers with alarm sound',
+            importance: 5, // IMPORTANCE_HIGH - Shows as heads-up notification
+            visibility: 1, // VISIBILITY_PUBLIC
+            sound: 'notification_sound.mp3', // Custom long ringtone
             vibration: true,
+            lightColor: '#FF0000',
+            lights: true,
           });
         }
       } catch (error) {
@@ -83,7 +93,7 @@ export default function SpecialistNewOrders() {
   useEffect(() => {
     checkAuth();
     // Show version indicator on app load
-    sonnerToast.success("✅ التطبيق محدث - النسخة 2.1", {
+    sonnerToast.success("✅ التطبيق محدث - النسخة 2.2 (إشعارات محسنة)", {
       duration: 4000,
       position: "top-center",
     });
@@ -105,45 +115,55 @@ export default function SpecialistNewOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         async () => {
+          console.log('🔔 NEW ORDER RECEIVED - Starting notification process');
           fetchOrders(specialistId);
-          soundNotification.current.playNewOrderSound();
           
           try {
-            // Check app state to bring app to foreground if in background
-            const state = await App.getState();
+            // Play sound FIRST (works when app is open)
+            soundNotification.current.playNewOrderSound();
+            console.log('✅ Sound played');
             
-            // Schedule notification with high priority
+            // Check app state
+            const state = await App.getState();
+            console.log('📱 App state:', state.isActive ? 'Active/Foreground' : 'Background/Closed');
+            
+            // Schedule HIGH PRIORITY notification with custom sound
+            const notificationId = Date.now();
             await LocalNotifications.schedule({
               notifications: [
                 {
-                  title: '🔔 New Job Offer!',
-                  body: 'You have a new job offer available. Tap to view.',
-                  id: Date.now(),
-                  schedule: { at: new Date(Date.now() + 100) },
-                  sound: undefined,
+                  title: '🔔 عرض عمل جديد!',
+                  body: 'لديك عرض عمل جديد متاح. اضغط للمشاهدة الآن',
+                  id: notificationId,
+                  schedule: { at: new Date(Date.now() + 200) },
+                  sound: 'notification_sound.mp3', // Use custom ringtone
                   attachments: undefined,
                   actionTypeId: '',
                   extra: {
                     route: '/specialist/new-orders'
                   },
-                  // High priority for Android to show as heads-up notification
                   channelId: 'new-orders',
-                  ongoing: false,
-                  autoCancel: true,
+                  ongoing: false, // Can be dismissed
+                  autoCancel: true, // Auto-dismiss on tap
+                  // Make it appear as high-priority heads-up notification
+                  smallIcon: 'ic_stat_icon_config_sample',
+                  iconColor: '#FF0000',
                 }
               ]
             });
-
-            // If app is in background, the notification will bring it to foreground when tapped
-            console.log('App state:', state.isActive ? 'Active' : 'Background');
+            
+            console.log('✅ Notification scheduled with ID:', notificationId);
+            
+            // Show in-app toast if app is active
+            if (state.isActive) {
+              toast({
+                title: "🔔 عرض عمل جديد!",
+                description: "لديك عرض عمل جديد متاح",
+              });
+            }
           } catch (error) {
-            console.error('Error sending notification:', error);
+            console.error('❌ Error in notification process:', error);
           }
-          
-          toast({
-            title: "🔔 New Job Offer!",
-            description: "You have a new job offer available",
-          });
         }
       )
       .on(

@@ -8,7 +8,14 @@ const config: CapacitorConfig = {
   // server: {
   //   url: 'https://c9213afe-1e65-4593-8c57-2cfda087384c.lovableproject.com?forceHideBadge=true',
   //   cleartext: true
-  // }
+  // },
+  plugins: {
+    LocalNotifications: {
+      smallIcon: "ic_stat_icon_config_sample",
+      iconColor: "#FF0000",
+      sound: "notification_sound.mp3",
+    },
+  },
 };
 
 export default config;

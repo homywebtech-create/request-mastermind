@@ -1,0 +1,4 @@
+// Placeholder for custom notification sound
+// After running 'npx cap sync', replace this file with an actual MP3 ringtone file
+// Recommended: Use a loud, continuous ringtone similar to phone calls (15-30 seconds)
+// Place your actual notification_sound.mp3 file in: android/app/src/main/res/raw/
