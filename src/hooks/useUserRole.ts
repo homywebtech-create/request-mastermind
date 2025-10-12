@@ -9,7 +9,6 @@ export function useUserRole(userId: string | undefined) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // CRITICAL: Always start by setting loading to true when userId changes
     if (!userId) {
       console.log('useUserRole - No userId provided');
       setRole(null);
@@ -17,8 +16,12 @@ export function useUserRole(userId: string | undefined) {
       return;
     }
 
-    // Immediately set loading to true to prevent race conditions
-    setLoading(true);
+    // CRITICAL: Immediately clear old role and set loading - synchronously!
+    console.log('useUserRole - userId changed, resetting state');
+    setRole(null); // Clear old role immediately
+    setLoading(true); // Set loading immediately
+    
+    let cancelled = false;
     
     const fetchRole = async () => {
       console.log('useUserRole - Fetching role for userId:', userId);
@@ -28,6 +31,11 @@ export function useUserRole(userId: string | undefined) {
         .eq('user_id', userId);
 
       console.log('useUserRole - Query result:', { data, error });
+
+      if (cancelled) {
+        console.log('useUserRole - Fetch cancelled');
+        return;
+      }
 
       if (!error && data) {
         const roles = data.map((r: any) => r.role as UserRole);
@@ -45,6 +53,10 @@ export function useUserRole(userId: string | undefined) {
     };
 
     fetchRole();
+    
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   const isAdmin = role === 'admin' || role === 'admin_full' || role === 'admin_manager' || role === 'admin_viewer';
