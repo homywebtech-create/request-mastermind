@@ -3,12 +3,12 @@
 // Get these from Firebase Console > Project Settings > General
 
 export const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCFq7UwNsU85iwmtSx1CouFe0elTcGjq7c",
+  authDomain: "android-app-bcdb3.firebaseapp.com",
+  projectId: "android-app-bcdb3",
+  storageBucket: "android-app-bcdb3.firebasestorage.app",
+  messagingSenderId: "1089054206297",
+  appId: "1:1089054206297:android:2d8bc3c570fb0c37738448"
 };
 
 // Instructions to get Firebase config:

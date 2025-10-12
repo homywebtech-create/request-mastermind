@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1089054206297",
+    "project_id": "android-app-bcdb3",
+    "storage_bucket": "android-app-bcdb3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1089054206297:android:2d8bc3c570fb0c37738448",
+        "android_client_info": {
+          "package_name": "app.lovable.c9213afe1e6545938c572cfda087384c"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFq7UwNsU85iwmtSx1CouFe0elTcGjq7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
