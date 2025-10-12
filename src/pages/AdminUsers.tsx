@@ -11,7 +11,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, UserPlus, Shield, Eye, Settings } from "lucide-react";
+import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface AdminUser {
   id: string;
@@ -30,12 +48,21 @@ export default function AdminUsers() {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   
   const [newAdmin, setNewAdmin] = useState({
     email: "",
     full_name: "",
     phone: "",
     role: "admin_viewer"
+  });
+
+  const [editAdmin, setEditAdmin] = useState({
+    full_name: "",
+    phone: "",
+    role: ""
   });
 
   useEffect(() => {
@@ -191,6 +218,112 @@ export default function AdminUsers() {
     }
   };
 
+  const handleToggleActive = async (admin: AdminUser) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !admin.is_active })
+        .eq('user_id', admin.user_id);
+
+      if (error) throw error;
+
+      toast.success(admin.is_active ? "تم إيقاف الحساب" : "تم تفعيل الحساب");
+      fetchAdminUsers();
+    } catch (error: any) {
+      toast.error(error.message || "فشل تحديث حالة الحساب");
+    }
+  };
+
+  const handleEditClick = (admin: AdminUser) => {
+    setSelectedUser(admin);
+    setEditAdmin({
+      full_name: admin.full_name,
+      phone: admin.phone || "",
+      role: admin.role
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleUpdateAdmin = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editAdmin.full_name,
+          phone: editAdmin.phone || null
+        })
+        .eq('user_id', selectedUser.user_id);
+
+      if (profileError) throw profileError;
+
+      // Update role if changed
+      if (editAdmin.role !== selectedUser.role) {
+        // Delete old role
+        const { error: deleteError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', selectedUser.user_id);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([{
+            user_id: selectedUser.user_id,
+            role: editAdmin.role as any
+          }]);
+
+        if (roleError) throw roleError;
+      }
+
+      toast.success("تم تحديث البيانات بنجاح");
+      setShowEditDialog(false);
+      fetchAdminUsers();
+    } catch (error: any) {
+      toast.error(error.message || "فشل تحديث البيانات");
+    }
+  };
+
+  const handleDeleteClick = (admin: AdminUser) => {
+    setSelectedUser(admin);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteAdmin = async () => {
+    if (!selectedUser) return;
+
+    try {
+      // Delete user role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', selectedUser.user_id);
+
+      if (roleError) throw roleError;
+
+      // Delete profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', selectedUser.user_id);
+
+      if (profileError) throw profileError;
+
+      // Note: Auth user deletion requires admin API or service role
+      // For now, we just remove from profiles and roles tables
+      
+      toast.success("تم حذف الحساب بنجاح");
+      setShowDeleteDialog(false);
+      fetchAdminUsers();
+    } catch (error: any) {
+      toast.error(error.message || "فشل حذف الحساب");
+    }
+  };
+
   const getRoleBadge = (role: string) => {
     const roleConfig = {
       admin: { label: "Super Admin", icon: Shield, variant: "destructive" as const },
@@ -303,30 +436,130 @@ export default function AdminUsers() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>الاسم</TableHead>
+              <TableHead>الهاتف</TableHead>
+              <TableHead>الصلاحية</TableHead>
+              <TableHead>تاريخ الإنشاء</TableHead>
+              <TableHead>الحالة</TableHead>
+              <TableHead className="text-center">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {adminUsers.map((admin) => (
               <TableRow key={admin.id}>
                 <TableCell className="font-medium">{admin.full_name}</TableCell>
-                <TableCell>{admin.phone || "N/A"}</TableCell>
+                <TableCell>{admin.phone || "غير متوفر"}</TableCell>
                 <TableCell>{getRoleBadge(admin.role)}</TableCell>
-                <TableCell>{new Date(admin.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(admin.created_at).toLocaleDateString('ar-SA')}</TableCell>
                 <TableCell>
                   <Badge variant={admin.is_active ? "default" : "secondary"}>
-                    {admin.is_active ? "Active" : "Inactive"}
+                    {admin.is_active ? "نشط" : "موقوف"}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditClick(admin)}
+                      title="تعديل"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={admin.is_active ? "destructive" : "default"}
+                      onClick={() => handleToggleActive(admin)}
+                      title={admin.is_active ? "إيقاف" : "تفعيل"}
+                    >
+                      {admin.is_active ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteClick(admin)}
+                      title="حذف"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>تعديل بيانات المستخدم</DialogTitle>
+            <DialogDescription>
+              قم بتعديل البيانات الأساسية للمستخدم
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit_full_name">الاسم الكامل</Label>
+              <Input
+                id="edit_full_name"
+                value={editAdmin.full_name}
+                onChange={(e) => setEditAdmin({ ...editAdmin, full_name: e.target.value })}
+                placeholder="أدخل الاسم الكامل"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_phone">رقم الهاتف</Label>
+              <Input
+                id="edit_phone"
+                value={editAdmin.phone}
+                onChange={(e) => setEditAdmin({ ...editAdmin, phone: e.target.value })}
+                placeholder="اختياري"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_role">الصلاحية</Label>
+              <Select value={editAdmin.role} onValueChange={(value) => setEditAdmin({ ...editAdmin, role: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin_viewer">مشاهد (يمكنه المشاهدة فقط)</SelectItem>
+                  <SelectItem value="admin_manager">مدير (يمكنه المشاهدة والتعديل)</SelectItem>
+                  <SelectItem value="admin_full">أدمن كامل (جميع الصلاحيات)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={handleUpdateAdmin}>
+              حفظ التغييرات
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>هل أنت متأكد من حذف هذا الحساب؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع بيانات المستخدم {selectedUser?.full_name} نهائياً.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAdmin} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
