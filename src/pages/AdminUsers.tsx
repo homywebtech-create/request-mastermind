@@ -84,28 +84,38 @@ export default function AdminUsers() {
 
   const fetchAdminUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // First, get all admin user_ids from user_roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('role', ['admin', 'admin_full', 'admin_manager', 'admin_viewer']);
+
+      if (rolesError) throw rolesError;
+
+      if (!rolesData || rolesData.length === 0) {
+        setAdminUsers([]);
+        return;
+      }
+
+      // Extract user_ids and create a map of user_id -> role
+      const userIds = rolesData.map(r => r.user_id);
+      const roleMap = new Map(rolesData.map(r => [r.user_id, r.role]));
+
+      // Then get profiles for those users
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          user_id,
-          full_name,
-          phone,
-          is_active,
-          created_at,
-          user_roles!inner(role)
-        `)
-        .in('user_roles.role', ['admin', 'admin_full', 'admin_manager', 'admin_viewer'])
+        .select('id, user_id, full_name, phone, is_active, created_at')
+        .in('user_id', userIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (profilesError) throw profilesError;
 
-      const formattedData = data.map((item: any) => ({
+      const formattedData = profilesData.map((item: any) => ({
         id: item.id,
         user_id: item.user_id,
         full_name: item.full_name,
         phone: item.phone,
-        role: item.user_roles[0].role,
+        role: roleMap.get(item.user_id),
         created_at: item.created_at,
         is_active: item.is_active
       }));
