@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { App } from '@capacitor/app';
 import { getSoundNotification } from "@/lib/soundNotification";
 
 interface Order {
@@ -52,9 +53,23 @@ export default function SpecialistNewOrders() {
     
     const setupNotifications = async () => {
       try {
-        await LocalNotifications.requestPermissions();
+        const permissionResult = await LocalNotifications.requestPermissions();
+        console.log('Notification permissions:', permissionResult);
+        
+        // Create notification channel for Android with high importance
+        if ((window as any).Capacitor?.getPlatform() === 'android') {
+          await LocalNotifications.createChannel({
+            id: 'new-orders',
+            name: 'New Job Offers',
+            description: 'Notifications for new job offers',
+            importance: 5, // Maximum importance for heads-up notification
+            visibility: 1,
+            sound: 'default',
+            vibration: true,
+          });
+        }
       } catch (error) {
-        console.error('Error requesting notification permissions:', error);
+        console.error('Error setting up notifications:', error);
       }
     };
     
@@ -88,6 +103,10 @@ export default function SpecialistNewOrders() {
           soundNotification.current.playNewOrderSound();
           
           try {
+            // Check app state to bring app to foreground if in background
+            const state = await App.getState();
+            
+            // Schedule notification with high priority
             await LocalNotifications.schedule({
               notifications: [
                 {
@@ -98,10 +117,19 @@ export default function SpecialistNewOrders() {
                   sound: undefined,
                   attachments: undefined,
                   actionTypeId: '',
-                  extra: null
+                  extra: {
+                    route: '/specialist/new-orders'
+                  },
+                  // High priority for Android to show as heads-up notification
+                  channelId: 'new-orders',
+                  ongoing: false,
+                  autoCancel: true,
                 }
               ]
             });
+
+            // If app is in background, the notification will bring it to foreground when tapped
+            console.log('App state:', state.isActive ? 'Active' : 'Background');
           } catch (error) {
             console.error('Error sending notification:', error);
           }

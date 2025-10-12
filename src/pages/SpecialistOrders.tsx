@@ -81,10 +81,23 @@ export default function SpecialistOrders() {
     
     const setupNotifications = async () => {
       try {
-        const permission = await LocalNotifications.requestPermissions();
-        console.log('Notification permission:', permission);
+        const permissionResult = await LocalNotifications.requestPermissions();
+        console.log('Notification permissions:', permissionResult);
+        
+        // Create notification channel for Android with high importance
+        if ((window as any).Capacitor?.getPlatform() === 'android') {
+          await LocalNotifications.createChannel({
+            id: 'new-orders',
+            name: 'New Job Offers',
+            description: 'Notifications for new job offers',
+            importance: 5, // Maximum importance for heads-up notification
+            visibility: 1,
+            sound: 'default',
+            vibration: true,
+          });
+        }
       } catch (error) {
-        console.error('Error requesting notification permissions:', error);
+        console.error('Error setting up notifications:', error);
       }
     };
     
@@ -156,30 +169,41 @@ export default function SpecialistOrders() {
           // Play long ringtone sound notification for new order
           soundNotification.current.playNewOrderSound();
           
-          // Send local push notification
+          // Check app state to bring app to foreground if in background
           try {
+            const state = await CapacitorApp.getState();
+            
+            // Send local push notification with high priority
             await LocalNotifications.schedule({
               notifications: [
                 {
-                  title: '🔔 عرض عمل جديد!',
-                  body: 'لديك عرض عمل جديد متاح. اضغط للمشاهدة وتقديم سعرك الآن.',
+                  title: '🔔 New Job Offer!',
+                  body: 'You have a new job offer available. Tap to view and submit your quote now.',
                   id: Date.now(),
                   schedule: { at: new Date(Date.now() + 100) },
                   sound: undefined,
                   attachments: undefined,
                   actionTypeId: '',
-                  extra: null
+                  extra: {
+                    route: '/specialist/orders'
+                  },
+                  // High priority for Android to show as heads-up notification
+                  channelId: 'new-orders',
+                  ongoing: false,
+                  autoCancel: true,
                 }
               ]
             });
+
+            console.log('App state:', state.isActive ? 'Active' : 'Background');
           } catch (error) {
             console.error('Error sending local notification:', error);
           }
           
           // Show in-app toast
           toast({
-            title: "🔔 عرض عمل جديد!",
-            description: "لديك عرض عمل جديد متاح في قسم العروض الجديدة",
+            title: "🔔 New Job Offer!",
+            description: "You have a new job offer available in New Offers section",
           });
           
           // Switch to new orders filter
