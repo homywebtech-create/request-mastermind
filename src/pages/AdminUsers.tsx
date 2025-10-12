@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircle } from "lucide-react";
+import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircle, Mail } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -190,11 +190,21 @@ export default function AdminUsers() {
 
       if (roleError) throw roleError;
 
+      // Update profile to be inactive initially
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({ is_active: false })
+        .eq('user_id', authData.user.id);
+
+      if (profileUpdateError) {
+        console.error("Profile update error:", profileUpdateError);
+      }
+
       // Send password reset email so user can set their own password
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         newAdmin.email,
         {
-          redirectTo: `${window.location.origin}/auth`
+          redirectTo: `${window.location.origin}/set-password`
         }
       );
 
@@ -231,6 +241,34 @@ export default function AdminUsers() {
       fetchAdminUsers();
     } catch (error: any) {
       toast.error(error.message || "فشل تحديث حالة الحساب");
+    }
+  };
+
+  const handleResendPasswordEmail = async (admin: AdminUser) => {
+    try {
+      // Get user email from auth.users through a function call or directly
+      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
+      
+      if (usersError) throw usersError;
+      
+      const user = users?.find(u => u.id === admin.user_id);
+      if (!user?.email) {
+        toast.error("لم يتم العثور على البريد الإلكتروني للمستخدم");
+        return;
+      }
+
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        user.email,
+        {
+          redirectTo: `${window.location.origin}/set-password`
+        }
+      );
+
+      if (resetError) throw resetError;
+
+      toast.success("تم إرسال رابط تعيين كلمة المرور إلى البريد الإلكتروني");
+    } catch (error: any) {
+      toast.error(error.message || "فشل إرسال البريد الإلكتروني");
     }
   };
 
@@ -465,6 +503,14 @@ export default function AdminUsers() {
                       title="تعديل"
                     >
                       <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleResendPasswordEmail(admin)}
+                      title="إعادة إرسال رابط كلمة المرور"
+                    >
+                      <Mail className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
