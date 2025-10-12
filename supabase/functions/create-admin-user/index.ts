@@ -31,23 +31,22 @@ serve(async (req) => {
       }
     )
 
-    // Generate a temporary password
-    const temporaryPassword = Math.random().toString(36).slice(-12) + "A1!"
-
-    // Create user with admin API (bypasses signup restrictions)
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // Create user with admin API and send invite email (bypasses signup restrictions)
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
-      password: temporaryPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name,
-        phone: phone || '',
-        email
+      {
+        data: {
+          full_name,
+          phone: phone || '',
+        },
+        redirectTo: `${req.headers.get('origin') || 'http://localhost:8080'}/set-password`
       }
-    })
+    )
 
     if (authError) throw authError
     if (!authData.user) throw new Error('Failed to create user')
+
+    console.log('User created successfully:', authData.user.id)
 
     // Assign role
     const { error: roleError } = await supabaseAdmin
@@ -57,7 +56,10 @@ serve(async (req) => {
         role: role
       }])
 
-    if (roleError) throw roleError
+    if (roleError) {
+      console.error('Role assignment error:', roleError)
+      throw roleError
+    }
 
     // Update profile to inactive and store email
     const { error: profileUpdateError } = await supabaseAdmin
@@ -72,24 +74,11 @@ serve(async (req) => {
       console.error('Profile update error:', profileUpdateError)
     }
 
-    // Generate password reset link
-    const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: email,
-    })
-
-    if (resetError) {
-      console.error('Password reset link generation error:', resetError)
-    }
-
-    console.log('User created successfully:', authData.user.id)
-
     return new Response(
       JSON.stringify({
         success: true,
         user_id: authData.user.id,
-        message: 'User created successfully. Password reset email will be sent.',
-        reset_link: resetData?.properties?.action_link // For development/testing
+        message: 'User created successfully. Invitation email sent.'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -172,18 +172,7 @@ export default function AdminUsers() {
       });
 
       if (error) throw error;
-
-      // Send password reset email
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        newAdmin.email,
-        {
-          redirectTo: `${window.location.origin}/set-password`
-        }
-      );
-
-      if (resetError) {
-        console.error("Password reset email error:", resetError);
-      }
+      if (data?.error) throw new Error(data.error);
 
       toast.success("تم إنشاء حساب الأدمن وإرسال رابط تعيين كلمة المرور للبريد الإلكتروني");
       setShowAddForm(false);
