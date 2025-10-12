@@ -94,37 +94,19 @@ export default function CompanyAuth() {
       if (error) throw error;
 
       if (data?.devMode && data?.code) {
-        const copyCode = () => {
-          navigator.clipboard.writeText(data.code);
-          toast({
-            title: t.codeCopied,
-            description: t.codeCopiedSuccess,
-            duration: 2000,
-          });
-        };
-
+        // AUTO-FILL في بيئة التطوير
+        setVerificationCode(data.code);
+        
         toast({
-          title: t.devModeCode,
+          title: "🚀 وضع التطوير - الكود تم ملؤه تلقائياً",
           description: (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <p className="text-2xl font-bold text-center">{data.code}</p>
-              <Button 
-                onClick={copyCode}
-                variant="outline" 
-                size="sm" 
-                className="w-full"
-              >
-                {t.copyCode}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                {t.testingOnly}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t.validFor10Min}
-              </p>
+              <p className="text-xs">✅ تم ملء الكود تلقائياً. اضغط تحقق وتسجيل الدخول</p>
+              <p className="text-xs text-muted-foreground">{t.validFor10Min}</p>
             </div>
           ),
-          duration: 60000,
+          duration: 5000,
         });
       } else {
         toast({

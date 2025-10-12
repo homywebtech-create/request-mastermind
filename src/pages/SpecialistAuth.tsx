@@ -89,11 +89,20 @@ export default function SpecialistAuth() {
         description: `${t.verificationCodeSent} ${fullPhone}`,
       });
 
+      // AUTO-FILL في بيئة التطوير
       if (data?.devMode && data?.code) {
+        // ملء الكود تلقائياً
+        setVerificationCode(data.code);
+        
         toast({
-          title: t.verificationCodeDev,
-          description: `${t.code} ${data.code}`,
-          duration: 10000,
+          title: "🚀 وضع التطوير - الكود تم ملؤه تلقائياً",
+          description: (
+            <div className="space-y-2">
+              <p className="text-2xl font-bold text-center">{data.code}</p>
+              <p className="text-xs">✅ تم ملء الكود تلقائياً. اضغط تسجيل الدخول</p>
+            </div>
+          ),
+          duration: 5000,
         });
       }
 
