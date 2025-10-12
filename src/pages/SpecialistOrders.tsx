@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { getSoundNotification } from "@/lib/soundNotification";
+import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import {
   Carousel,
   CarouselContent,
@@ -280,6 +281,17 @@ export default function SpecialistOrders() {
         if (specialist) {
           setSpecialistId(specialist.id);
           await fetchOrders(specialist.id);
+          
+          // 🔥 Initialize Firebase Push Notifications
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('🚀 [SPECIALIST] Initializing Firebase for:', specialist.id);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          try {
+            await firebaseNotifications.initialize(specialist.id);
+            console.log('✅ [SPECIALIST] Firebase initialized successfully');
+          } catch (error) {
+            console.error('❌ [SPECIALIST] Failed to initialize Firebase:', error);
+          }
         }
       }
     } catch (error) {
