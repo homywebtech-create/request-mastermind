@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircle, Mail } from "lucide-react";
+import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircle, Mail, ArrowLeft } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -396,13 +396,24 @@ export default function AdminUsers() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Users</h1>
-          <p className="text-muted-foreground">Manage admin accounts and permissions</p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/admin")}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            الصفحة الرئيسية
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">إدارة المستخدمين</h1>
+            <p className="text-muted-foreground">إدارة حسابات الأدمن والصلاحيات</p>
+          </div>
         </div>
         <Button onClick={() => setShowAddForm(!showAddForm)} className="gap-2">
           <UserPlus className="h-4 w-4" />
-          Add Admin
+          إضافة أدمن
         </Button>
       </div>
 
