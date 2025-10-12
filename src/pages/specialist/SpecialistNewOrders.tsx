@@ -18,6 +18,7 @@ import {
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { App } from '@capacitor/app';
 import { getSoundNotification } from "@/lib/soundNotification";
+import { firebaseNotifications } from "@/lib/firebaseNotifications";
 
 interface Order {
   id: string;
@@ -161,8 +162,8 @@ export default function SpecialistNewOrders() {
     
     // Show version indicator with more details
     const platform = (window as any).Capacitor?.getPlatform();
-    sonnerToast.success(`✅ النسخة 5.0 - إصلاح كامل: صوت + واجهة | ${platform || 'web'}`, {
-      duration: 4000,
+    sonnerToast.success(`✅ النسخة 6.0 - Firebase Push Notifications 🔥 | ${platform || 'web'}`, {
+      duration: 5000,
       position: "top-center",
     });
     
@@ -366,6 +367,15 @@ export default function SpecialistNewOrders() {
 
         if (specialist) {
           setSpecialistId(specialist.id);
+          
+          // Initialize Firebase Push Notifications
+          try {
+            await firebaseNotifications.initialize(specialist.id);
+            console.log('✅ [FCM] Firebase initialized for specialist:', specialist.id);
+          } catch (fcmError) {
+            console.error('⚠️ [FCM] Failed to initialize Firebase:', fcmError);
+            // Continue without push notifications
+          }
         }
       }
     } catch (error) {

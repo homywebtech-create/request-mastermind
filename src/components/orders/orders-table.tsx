@@ -550,6 +550,29 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
+      // Send Firebase push notifications to all specialists
+      try {
+        console.log('📤 [FCM] إرسال إشعارات Firebase...');
+        const specialistIds = (allSpecialists || []).map(s => s.id);
+        
+        const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
+          body: {
+            specialistIds,
+            title: '🔔 عرض عمل جديد',
+            body: 'لديك عرض عمل جديد - افتح التطبيق الآن',
+            data: { orderId, type: 'new_order' }
+          }
+        });
+        
+        if (fcmError) {
+          console.error('⚠️ [FCM] خطأ في إرسال الإشعارات:', fcmError);
+        } else {
+          console.log('✅ [FCM] تم إرسال الإشعارات:', fcmResult);
+        }
+      } catch (fcmError) {
+        console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
+      }
+
       // Mark order as sent locally
       markOrderAsSent(orderId);
 
@@ -622,6 +645,29 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
+      // Send Firebase push notifications to company specialists
+      try {
+        console.log('📤 [FCM] إرسال إشعارات Firebase لنفس الشركة...');
+        const specialistIds = (companySpecialists || []).map(s => s.id);
+        
+        const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
+          body: {
+            specialistIds,
+            title: '🔁 إعادة إرسال طلب',
+            body: 'تم إعادة إرسال طلب لك - راجعه الآن',
+            data: { orderId: order.id, type: 'resend_order' }
+          }
+        });
+        
+        if (fcmError) {
+          console.error('⚠️ [FCM] خطأ في إرسال الإشعارات:', fcmError);
+        } else {
+          console.log('✅ [FCM] تم إرسال الإشعارات:', fcmResult);
+        }
+      } catch (fcmError) {
+        console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
+      }
+
       // Mark order as sent locally
       markOrderAsSent(order.id);
 
@@ -672,6 +718,29 @@ Thank you for contacting us! 🌟`;
         .eq('id', order.id);
 
       if (error) throw error;
+
+      // Send Firebase push notifications to same specialists
+      try {
+        console.log('📤 [FCM] إرسال إشعارات Firebase لنفس المحترفين...');
+        const specialistIds = currentSpecialists.map(s => s.specialist_id);
+        
+        const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
+          body: {
+            specialistIds,
+            title: '🔁 إعادة إرسال طلب',
+            body: 'تم إعادة إرسال طلب لك - راجعه الآن',
+            data: { orderId: order.id, type: 'resend_order' }
+          }
+        });
+        
+        if (fcmError) {
+          console.error('⚠️ [FCM] خطأ في إرسال الإشعارات:', fcmError);
+        } else {
+          console.log('✅ [FCM] تم إرسال الإشعارات:', fcmResult);
+        }
+      } catch (fcmError) {
+        console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
+      }
 
       // Mark order as sent locally
       markOrderAsSent(order.id);
@@ -726,6 +795,8 @@ Thank you for contacting us! 🌟`;
         .delete()
         .eq('order_id', selectedOrder.id);
 
+      let finalSpecialistIds: string[] = [];
+
       // If specific specialists are selected, add only them
       if (selectedSpecialistIds.length > 0) {
         const orderSpecialists = selectedSpecialistIds.map(specialistId => ({
@@ -738,6 +809,8 @@ Thank you for contacting us! 🌟`;
           .insert(orderSpecialists);
 
         if (junctionError) throw junctionError;
+        
+        finalSpecialistIds = selectedSpecialistIds;
       } else {
         // If no specific specialists selected, add all active specialists from company
         const { data: companySpecialists, error: specialistsError } = await supabase
@@ -759,11 +832,37 @@ Thank you for contacting us! 🌟`;
             .insert(orderSpecialists);
 
           if (insertError) throw insertError;
+          
+          finalSpecialistIds = companySpecialists.map(s => s.id);
         }
       }
 
       // Mark order as sent locally
       markOrderAsSent(selectedOrder.id);
+
+      // Send Firebase push notifications
+      try {
+        console.log('📤 [FCM] إرسال إشعارات Firebase...');
+        
+        if (finalSpecialistIds.length > 0) {
+          const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
+            body: {
+              specialistIds: finalSpecialistIds,
+              title: '🔔 عرض عمل جديد',
+              body: 'لديك عرض عمل جديد - افتح التطبيق الآن',
+              data: { orderId: selectedOrder.id, type: 'new_order' }
+            }
+          });
+          
+          if (fcmError) {
+            console.error('⚠️ [FCM] خطأ في إرسال الإشعارات:', fcmError);
+          } else {
+            console.log('✅ [FCM] تم إرسال الإشعارات:', fcmResult);
+          }
+        }
+      } catch (fcmError) {
+        console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
+      }
 
       let description = "تم إرسال الطلب للشركة";
       if (selectedSpecialistIds.length > 0) {

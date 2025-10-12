@@ -309,6 +309,31 @@ export default function Orders() {
         }
         
         console.log('Successfully linked specialists to order');
+        
+        // Send push notifications via Firebase
+        try {
+          console.log('📤 [FCM] إرسال إشعارات Firebase...');
+          const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
+            body: {
+              specialistIds: specialistsToLink,
+              title: '🔔 عرض عمل جديد',
+              body: `طلب جديد: ${formData.serviceType}`,
+              data: {
+                orderId: newOrder.id,
+                type: 'new_order'
+              }
+            }
+          });
+          
+          if (fcmError) {
+            console.error('⚠️ [FCM] خطأ في إرسال الإشعارات:', fcmError);
+          } else {
+            console.log('✅ [FCM] تم إرسال الإشعارات:', fcmResult);
+          }
+        } catch (fcmError) {
+          console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
+          // Continue even if push notifications fail
+        }
       } else {
         if (!linkingSkipped) {
           console.warn('No active specialists found!');
