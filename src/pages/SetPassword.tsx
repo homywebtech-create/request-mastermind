@@ -79,6 +79,21 @@ export default function SetPassword() {
 
       if (error) throw error;
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Activate the user's profile after setting password
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ is_active: true })
+          .eq('user_id', user.id);
+
+        if (profileError) {
+          console.error("Profile activation error:", profileError);
+        }
+      }
+
       toast({
         title: "تم بنجاح",
         description: "تم تعيين كلمة المرور بنجاح، يمكنك الآن تسجيل الدخول",

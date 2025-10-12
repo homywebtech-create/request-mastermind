@@ -131,7 +131,7 @@ export default function AdminUsers() {
       // Then get profiles for those users
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, user_id, full_name, phone, is_active, created_at')
+        .select('id, user_id, full_name, phone, email, is_active, created_at')
         .in('user_id', userIds)
         .order('created_at', { ascending: false });
 
@@ -171,9 +171,10 @@ export default function AdminUsers() {
         options: {
           data: {
             full_name: newAdmin.full_name,
-            phone: newAdmin.phone
+            phone: newAdmin.phone,
+            email: newAdmin.email
           },
-          emailRedirectTo: `${window.location.origin}/auth`
+          emailRedirectTo: `${window.location.origin}/set-password`
         }
       });
 
@@ -190,10 +191,13 @@ export default function AdminUsers() {
 
       if (roleError) throw roleError;
 
-      // Update profile to be inactive initially
+      // Update profile to be inactive initially and store email
       const { error: profileUpdateError } = await supabase
         .from('profiles')
-        .update({ is_active: false })
+        .update({ 
+          is_active: false,
+          email: newAdmin.email
+        })
         .eq('user_id', authData.user.id);
 
       if (profileUpdateError) {
@@ -246,19 +250,19 @@ export default function AdminUsers() {
 
   const handleResendPasswordEmail = async (admin: AdminUser) => {
     try {
-      // Get user email from auth.users through a function call or directly
-      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
-      
-      if (usersError) throw usersError;
-      
-      const user = users?.find(u => u.id === admin.user_id);
-      if (!user?.email) {
-        toast.error("لم يتم العثور على البريد الإلكتروني للمستخدم");
+  const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('user_id', admin.user_id)
+        .single();
+
+      if (profileError || !profileData?.email) {
+        toast.error("لم يتم العثور على البريد الإلكتروني للمستخدم. يجب إضافة البريد الإلكتروني للحساب أولاً.");
         return;
       }
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        user.email,
+        profileData.email,
         {
           redirectTo: `${window.location.origin}/set-password`
         }
