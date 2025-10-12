@@ -57,11 +57,41 @@ export class FirebaseNotificationManager {
         });
 
         // Step 4: Listen for notification received (foreground)
-        await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
           console.log('📬 [FOREGROUND] إشعار في المقدمة:', notification);
           
-          // App is open - just show toast, realtime will handle data update
-          console.log('ℹ️ التطبيق مفتوح - سيتم التحديث عبر Realtime');
+          // Import dynamically to avoid circular dependencies
+          const { LocalNotifications } = await import('@capacitor/local-notifications');
+          const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+          
+          // Show local notification with high priority and sound
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                title: notification.title || 'طلب جديد',
+                body: notification.body || 'لديك طلب جديد',
+                id: Date.now(),
+                schedule: { at: new Date(Date.now() + 100) },
+                sound: 'notification_sound.mp3',
+                attachments: undefined,
+                actionTypeId: '',
+                extra: notification.data,
+                smallIcon: 'ic_stat_icon_config_sample',
+                channelId: 'new-orders',
+              }
+            ]
+          });
+          
+          // Strong vibration pattern
+          try {
+            await Haptics.vibrate({ duration: 1000 });
+            setTimeout(() => Haptics.vibrate({ duration: 500 }), 1200);
+            setTimeout(() => Haptics.vibrate({ duration: 1000 }), 2000);
+          } catch (e) {
+            console.log('Haptics not available');
+          }
+          
+          console.log('✅ عرض إشعار محلي مع صوت واهتزاز');
         });
 
         // Step 5: Listen for notification action (tap)
