@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar } from "date-fns/locale";
+import { firebaseNotifications } from "@/lib/firebaseNotifications";
 
 interface Order {
   id: string;
@@ -101,6 +102,17 @@ export default function SpecialistHome() {
 
         if (specialist) {
           setSpecialistId(specialist.id);
+          
+          // 🔥 Initialize Firebase Push Notifications
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('🚀 [SPECIALIST] Initializing Firebase for:', specialist.id);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          try {
+            await firebaseNotifications.initialize(specialist.id);
+            console.log('✅ [SPECIALIST] Firebase initialized successfully');
+          } catch (error) {
+            console.error('❌ [SPECIALIST] Failed to initialize Firebase:', error);
+          }
         }
       }
     } catch (error) {
