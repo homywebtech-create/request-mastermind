@@ -35,6 +35,7 @@ interface Order {
   order_specialist?: {
     id: string;
   };
+  isNew?: boolean; // Flag for highlighting new orders
 }
 
 export default function SpecialistNewOrders() {
@@ -44,6 +45,7 @@ export default function SpecialistNewOrders() {
   const [specialistName, setSpecialistName] = useState('');
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set()); // Track new orders for animation
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
@@ -421,15 +423,36 @@ export default function SpecialistNewOrders() {
         .in('id', orderIds)
         .order('created_at', { ascending: false });
 
+      // Mark orders created in last 30 seconds as new
+      const now = new Date().getTime();
+      const newOrderIdsSet = new Set<string>();
+      
       const ordersWithSpec = ordersData?.map(order => {
         const orderSpec = orderSpecialists.find(os => os.order_id === order.id);
+        const createdAt = new Date(order.created_at).getTime();
+        const isNew = (now - createdAt) < 30000; // 30 seconds
+        
+        if (isNew) {
+          newOrderIdsSet.add(order.id);
+        }
+        
         return {
           ...order,
-          order_specialist: orderSpec ? { id: orderSpec.id } : undefined
+          order_specialist: orderSpec ? { id: orderSpec.id } : undefined,
+          isNew
         };
       });
 
+      setNewOrderIds(newOrderIdsSet);
       setOrders(ordersWithSpec || []);
+      
+      // Auto-remove "new" flag after 30 seconds
+      if (newOrderIdsSet.size > 0) {
+        setTimeout(() => {
+          setNewOrderIds(new Set());
+          setOrders(prev => prev.map(order => ({ ...order, isNew: false })));
+        }, 30000);
+      }
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
@@ -566,13 +589,23 @@ export default function SpecialistNewOrders() {
             return (
               <Card 
                 key={order.id}
-                className="overflow-hidden border-primary border-2 shadow-lg animate-fade-in"
+                className={`overflow-hidden border-2 shadow-lg ${
+                  order.isNew 
+                    ? 'border-primary animate-pulse-glow ring-4 ring-primary/20' 
+                    : 'border-primary'
+                }`}
               >
                 {/* New Order Indicator */}
-                <div className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 p-4">
+                <div className={`p-4 ${
+                  order.isNew
+                    ? 'bg-gradient-to-r from-primary via-amber-500 to-primary animate-gradient'
+                    : 'bg-gradient-to-r from-primary via-primary/80 to-primary/60'
+                }`}>
                   <div className="flex items-center gap-2 text-primary-foreground">
-                    <Sparkles className="h-5 w-5 animate-pulse" />
-                    <span className="text-sm font-bold">New Offer - Submit Your Quote</span>
+                    <Sparkles className={`h-5 w-5 ${order.isNew ? 'animate-bounce' : 'animate-pulse'}`} />
+                    <span className="text-sm font-bold">
+                      {order.isNew ? '🔥 عرض جديد وصل الآن!' : 'عرض جديد - قدم سعرك'}
+                    </span>
                   </div>
                 </div>
 

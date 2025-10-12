@@ -59,15 +59,23 @@ export class FirebaseNotificationManager {
         // Step 4: Listen for notification received (foreground)
         await PushNotifications.addListener('pushNotificationReceived', (notification) => {
           console.log('📬 [FOREGROUND] إشعار في المقدمة:', notification);
+          
+          // App is open - just show toast, realtime will handle data update
+          console.log('ℹ️ التطبيق مفتوح - سيتم التحديث عبر Realtime');
         });
 
         // Step 5: Listen for notification action (tap)
         await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
           console.log('👆 [TAP] تم النقر على الإشعار:', notification);
           
-          // Navigate to new orders screen
+          // Navigate to new orders screen when notification is tapped
           const route = notification.notification.data?.route || '/specialist/new-orders';
-          window.location.href = route;
+          console.log('🔀 الانتقال إلى:', route);
+          
+          // Force navigation to new orders page
+          setTimeout(() => {
+            window.location.href = route;
+          }, 100);
         });
 
         // Step 6: Listen for registration errors
