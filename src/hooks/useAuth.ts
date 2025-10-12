@@ -21,12 +21,12 @@ export function useAuth() {
         const { value } = await Preferences.get({ key: SESSION_KEY });
         
         if (value) {
-          console.log('📱 [Auth] Found stored session');
+          console.log('📱 [Auth] Found stored session in Preferences');
           try {
             const stored = JSON.parse(value);
             
             if (stored.access_token && stored.refresh_token) {
-              console.log('🔑 [Auth] Restoring session...');
+              console.log('🔑 [Auth] Restoring session from Preferences...');
               
               const { data, error } = await supabase.auth.setSession({
                 access_token: stored.access_token,
@@ -34,36 +34,38 @@ export function useAuth() {
               });
 
               if (!error && data.session && mounted) {
-                console.log('✅ [Auth] Session restored!');
+                console.log('✅ [Auth] Session restored from Preferences!');
                 setSession(data.session);
                 setUser(data.session.user);
                 setLoading(false);
                 return;
               } else {
-                console.warn('⚠️ [Auth] Invalid session:', error?.message);
+                console.warn('⚠️ [Auth] Stored session invalid:', error?.message);
                 await Preferences.remove({ key: SESSION_KEY });
               }
             }
           } catch (err) {
-            console.error('❌ [Auth] Parse error:', err);
+            console.error('❌ [Auth] Failed to parse stored session:', err);
             await Preferences.remove({ key: SESSION_KEY });
           }
         }
 
-        // 2. Check Supabase session
+        // 2. Check Supabase session (fallback)
+        console.log('🔍 [Auth] Checking Supabase session...');
         const { data: { session: supabaseSession } } = await supabase.auth.getSession();
         
         if (supabaseSession && mounted) {
-          console.log('✅ [Auth] Supabase session active');
+          console.log('✅ [Auth] Supabase session found, saving to Preferences');
           setSession(supabaseSession);
           setUser(supabaseSession.user);
           
+          // Save to Preferences for persistence
           await Preferences.set({
             key: SESSION_KEY,
             value: JSON.stringify(supabaseSession)
           });
         } else {
-          console.log('ℹ️ [Auth] No session');
+          console.log('ℹ️ [Auth] No session found');
         }
       } catch (error) {
         console.error('❌ [Auth] Init error:', error);
@@ -77,32 +79,32 @@ export function useAuth() {
 
     initSession();
 
-    // 3. Listen to auth changes
+    // 3. Listen to ALL auth changes and persist session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
         
-        console.log(`🔔 [Auth] ${event}`);
+        console.log(`🔔 [Auth] Event: ${event}`, session ? 'with session' : 'no session');
         
-        // Only persist on explicit actions
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
+        // Handle ALL events to ensure persistence
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
           if (session) {
+            console.log(`💾 [Auth] Saving session for ${event}`);
+            setSession(session);
+            setUser(session.user);
+            
+            // Always save to Preferences
             await Preferences.set({
               key: SESSION_KEY,
               value: JSON.stringify(session)
             });
           }
         } else if (event === 'SIGNED_OUT') {
-          // Only clear on explicit logout
-          console.log('👋 [Auth] Signed out');
+          console.log('👋 [Auth] Explicit sign out - clearing session');
           setSession(null);
           setUser(null);
           await Preferences.remove({ key: SESSION_KEY });
         }
-        // Ignore INITIAL_SESSION to prevent unwanted clears
       }
     );
 
