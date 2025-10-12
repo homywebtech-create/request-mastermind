@@ -144,6 +144,8 @@ serve(async (req) => {
             },
             data: {
               ...data,
+              title, // CRITICAL: Duplicate in data for background
+              body,  // CRITICAL: Duplicate in data for background
               route: '/specialist/new-orders',
               click_action: 'FLUTTER_NOTIFICATION_CLICK',
             },
@@ -158,6 +160,15 @@ serve(async (req) => {
                 visibility: 'public',
                 notification_priority: 'PRIORITY_MAX',
                 color: '#FF0000',
+                icon: 'ic_stat_icon_config_sample',
+              },
+            },
+            apns: {
+              payload: {
+                aps: {
+                  sound: 'notification_sound.mp3',
+                  badge: 1,
+                },
               },
             },
           },
