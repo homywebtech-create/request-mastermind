@@ -15,11 +15,13 @@ const tCommon = translations.common;
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -47,6 +49,60 @@ export default function Auth() {
     }
   };
 
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: t.error,
+        description: "كلمات المرور غير متطابقة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: t.error,
+        description: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/admin`
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "تم التسجيل بنجاح",
+        description: "تم إنشاء حسابك، يمكنك الآن تسجيل الدخول",
+      });
+      
+      // Switch to login mode after successful signup
+      setIsSignUp(false);
+      setPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast({
+        title: t.error,
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -62,7 +118,7 @@ export default function Auth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">{t.email}</Label>
               <Input
@@ -88,9 +144,38 @@ export default function Auth() {
               />
             </div>
 
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t.loading : t.loginButton}
+              {loading ? t.loading : (isSignUp ? "إنشاء حساب" : t.loginButton)}
             </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setPassword("");
+                  setConfirmPassword("");
+                }}
+                className="text-sm text-primary hover:underline"
+              >
+                {isSignUp ? "لديك حساب بالفعل؟ تسجيل الدخول" : "ليس لديك حساب؟ إنشاء حساب جديد"}
+              </button>
+            </div>
           </form>
         </CardContent>
       </Card>
