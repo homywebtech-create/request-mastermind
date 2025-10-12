@@ -271,9 +271,22 @@ export default function Orders() {
       // Link specialists to the order
       let specialistsToLink: string[] = [];
       
-      if (formData.specialistIds && formData.specialistIds.length > 0) {
-        // Specific specialists selected
-        specialistsToLink = formData.specialistIds;
+      if (formData.sendToAll) {
+        // Fetch ALL active specialists when sending to all
+        console.log('📤 Fetching all active specialists...');
+        const { data: allSpecialists, error: specialistsError } = await supabase
+          .from('specialists')
+          .select('id')
+          .eq('is_active', true);
+
+        if (specialistsError) {
+          console.error('Error fetching all specialists:', specialistsError);
+          throw specialistsError;
+        }
+
+        specialistsToLink = allSpecialists?.map(s => s.id) || [];
+        console.log('Found specialists for send to all:', specialistsToLink.length);
+      } else if (formData.companyId) {
         // Get all specialists from the specific company
         const { data: companySpecialists, error: specialistsError } = await supabase
           .from('specialists')
