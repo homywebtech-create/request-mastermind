@@ -32,21 +32,22 @@ const queryClient = new QueryClient();
 const isCapacitorApp = (() => {
   const protocol = window.location.protocol;
   
-  // Check multiple ways to detect Capacitor
-  const hasCapacitorGlobal = typeof window !== 'undefined' && (window as any).Capacitor !== undefined;
-  const isNativePlatform = hasCapacitorGlobal && (window as any).Capacitor?.isNativePlatform?.() === true;
+  // CRITICAL: Only trust isNativePlatform() or capacitor:// protocol
+  // Do NOT trust just the existence of Capacitor object (can be in web during dev)
   const isCapacitorProtocol = protocol === 'capacitor:' || protocol === 'ionic:';
+  const isNativePlatform = typeof window !== 'undefined' && 
+                           (window as any).Capacitor?.isNativePlatform?.() === true;
   
-  const detected = isCapacitorProtocol || isNativePlatform || hasCapacitorGlobal;
+  // ONLY consider mobile if protocol is capacitor:// OR isNativePlatform returns true
+  const detected = isCapacitorProtocol || isNativePlatform;
   
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('🔍 [CAPACITOR] Environment Detection');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('Protocol:', protocol);
-  console.log('Has Capacitor Global:', hasCapacitorGlobal);
-  console.log('Is Native Platform:', isNativePlatform);
   console.log('Is Capacitor Protocol:', isCapacitorProtocol);
-  console.log('Final Detection:', detected ? '✅ MOBILE APP' : '❌ WEB BROWSER');
+  console.log('Is Native Platform:', isNativePlatform);
+  console.log('Final Detection:', detected ? '✅ MOBILE APP (Capacitor)' : '❌ WEB BROWSER');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   
   return detected;
