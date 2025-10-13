@@ -322,6 +322,7 @@ export type Database = {
           customer_id: string
           customer_rating: number | null
           customer_review_notes: string | null
+          expires_at: string | null
           gps_latitude: number | null
           gps_longitude: number | null
           hours_count: string | null
@@ -352,6 +353,7 @@ export type Database = {
           customer_id: string
           customer_rating?: number | null
           customer_review_notes?: string | null
+          expires_at?: string | null
           gps_latitude?: number | null
           gps_longitude?: number | null
           hours_count?: string | null
@@ -382,6 +384,7 @@ export type Database = {
           customer_id?: string
           customer_rating?: number | null
           customer_review_notes?: string | null
+          expires_at?: string | null
           gps_latitude?: number | null
           gps_longitude?: number | null
           hours_count?: string | null
