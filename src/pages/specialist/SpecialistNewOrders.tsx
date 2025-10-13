@@ -23,6 +23,7 @@ import { firebaseNotifications } from "@/lib/firebaseNotifications";
 interface Order {
   id: string;
   created_at: string;
+  expires_at: string | null;
   service_type: string;
   notes: string | null;
   booking_type: string | null;
@@ -36,6 +37,7 @@ interface Order {
     id: string;
   };
   isNew?: boolean; // Flag for highlighting new orders
+  timeRemaining?: number; // Seconds remaining until expiry
 }
 
 export default function SpecialistNewOrders() {
@@ -46,6 +48,7 @@ export default function SpecialistNewOrders() {
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set()); // Track new orders for animation
+  const [currentTime, setCurrentTime] = useState(Date.now()); // For timer updates
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
@@ -171,6 +174,37 @@ export default function SpecialistNewOrders() {
     
     console.log('🚀 [APP START] تطبيق المحترفين - جاهز');
     console.log(`📱 [PLATFORM] ${platform || 'web'}`);
+  }, []);
+
+  // Timer to update remaining time and auto-remove expired orders
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setCurrentTime(now);
+      
+      // Update orders to recalculate time remaining and filter expired
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.filter(order => {
+          if (order.expires_at) {
+            const expiresAt = new Date(order.expires_at).getTime();
+            if (now > expiresAt) {
+              console.log(`⏰ Order ${order.id} expired - removing from view`);
+              return false; // Remove expired orders
+            }
+          }
+          return true;
+        }).map(order => ({
+          ...order,
+          timeRemaining: order.expires_at 
+            ? Math.max(0, Math.floor((new Date(order.expires_at).getTime() - now) / 1000))
+            : 0
+        }));
+        
+        return updatedOrders;
+      });
+    }, 1000); // Update every second
+    
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -410,6 +444,7 @@ export default function SpecialistNewOrders() {
         .select(`
           id,
           created_at,
+          expires_at,
           service_type,
           notes,
           booking_type,
@@ -423,14 +458,31 @@ export default function SpecialistNewOrders() {
         .in('id', orderIds)
         .order('created_at', { ascending: false });
 
-      // Mark orders created in last 30 seconds as new
+      // Filter out expired orders and calculate time remaining
       const now = new Date().getTime();
       const newOrderIdsSet = new Set<string>();
       
-      const ordersWithSpec = ordersData?.map(order => {
+      const ordersWithSpec = ordersData?.filter(order => {
+        // Filter out expired orders
+        if (order.expires_at) {
+          const expiresAt = new Date(order.expires_at).getTime();
+          if (now > expiresAt) {
+            console.log(`⏰ Order ${order.id} expired - hiding from view`);
+            return false; // Skip expired orders
+          }
+        }
+        return true;
+      }).map(order => {
         const orderSpec = orderSpecialists.find(os => os.order_id === order.id);
         const createdAt = new Date(order.created_at).getTime();
         const isNew = (now - createdAt) < 30000; // 30 seconds
+        
+        // Calculate time remaining in seconds
+        let timeRemaining = 0;
+        if (order.expires_at) {
+          const expiresAt = new Date(order.expires_at).getTime();
+          timeRemaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
+        }
         
         if (isNew) {
           newOrderIdsSet.add(order.id);
@@ -439,7 +491,8 @@ export default function SpecialistNewOrders() {
         return {
           ...order,
           order_specialist: orderSpec ? { id: orderSpec.id } : undefined,
-          isNew
+          isNew,
+          timeRemaining
         };
       });
 
@@ -595,17 +648,33 @@ export default function SpecialistNewOrders() {
                     : 'border-primary'
                 }`}
               >
-                {/* New Order Indicator */}
+                {/* New Order Indicator with Timer */}
                 <div className={`p-4 ${
                   order.isNew
                     ? 'bg-gradient-to-r from-primary via-amber-500 to-primary animate-gradient'
                     : 'bg-gradient-to-r from-primary via-primary/80 to-primary/60'
                 }`}>
-                  <div className="flex items-center gap-2 text-primary-foreground">
-                    <Sparkles className={`h-5 w-5 ${order.isNew ? 'animate-bounce' : 'animate-pulse'}`} />
-                    <span className="text-sm font-bold">
-                      {order.isNew ? '🔥 عرض جديد وصل الآن!' : 'عرض جديد - قدم سعرك'}
-                    </span>
+                  <div className="flex items-center justify-between text-primary-foreground">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className={`h-5 w-5 ${order.isNew ? 'animate-bounce' : 'animate-pulse'}`} />
+                      <span className="text-sm font-bold">
+                        {order.isNew ? '🔥 عرض جديد وصل الآن!' : 'عرض جديد - قدم سعرك'}
+                      </span>
+                    </div>
+                    {order.timeRemaining !== undefined && order.timeRemaining > 0 && (
+                      <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${
+                        order.timeRemaining <= 60 
+                          ? 'bg-red-500 animate-pulse' 
+                          : order.timeRemaining <= 120 
+                            ? 'bg-amber-500' 
+                            : 'bg-white/20'
+                      }`}>
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm font-bold">
+                          {Math.floor(order.timeRemaining / 60)}:{String(order.timeRemaining % 60).padStart(2, '0')}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
