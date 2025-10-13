@@ -212,7 +212,7 @@ export default function SpecialistNewOrders() {
 
     fetchOrders(specialistId);
 
-    // Simplified notification function with GUARANTEED sound
+    // Enhanced notification function with GUARANTEED sound + vibration
     const triggerNotification = async (type: 'new' | 'resend' = 'new') => {
       const notificationId = Date.now();
       const title = type === 'resend' ? '🔁 إعادة إرسال طلب' : '🔔 عرض عمل جديد';
@@ -220,75 +220,106 @@ export default function SpecialistNewOrders() {
         ? 'تم إعادة إرسال طلب لك - راجعه الآن!'
         : 'لديك عرض عمل جديد - اضغط للمشاهدة';
       
-      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log(`🚨🚨🚨 [${type.toUpperCase()} NOTIFICATION] #${notificationId} 🚨🚨🚨`);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📱 العنوان:', title);
+      console.log('📝 الرسالة:', body);
+      console.log('⏰ الوقت:', new Date().toLocaleString('ar-EG'));
       
       try {
         const platform = (window as any).Capacitor?.getPlatform();
+        console.log('🖥️ المنصة:', platform || 'web');
         
-        // 1. Play sound IMMEDIATELY - CRITICAL!
-        console.log('🔊🔊🔊 [STEP 1/4] تشغيل الصوت بأولوية قصوى...');
+        // 1. Play sound IMMEDIATELY - HIGHEST PRIORITY!
+        console.log('\n🔊🔊🔊 [خطوة 1/4] تشغيل الصوت...');
         try {
+          // Ensure audio context is initialized
+          await soundNotification.current.initialize();
           await soundNotification.current.playNewOrderSound();
-          console.log('✅✅✅ تم تشغيل الصوت بنجاح!');
+          console.log('✅✅✅ الصوت: تم التشغيل بنجاح!');
         } catch (soundError) {
-          console.error('❌❌❌ فشل تشغيل الصوت:', soundError);
+          console.error('❌❌❌ الصوت: فشل التشغيل:', soundError);
+          // Try backup sound method
+          try {
+            const audio = new Audio('/notification-sound.mp3');
+            await audio.play();
+            console.log('✅ الصوت الاحتياطي: تم التشغيل');
+          } catch (backupError) {
+            console.error('❌ الصوت الاحتياطي: فشل أيضاً:', backupError);
+          }
         }
         
-        // 2. Vibrate
-        if (platform && platform !== 'web' && navigator.vibrate) {
-          console.log('📳 [STEP 2/4] اهتزاز الجهاز...');
-          navigator.vibrate([500, 200, 500, 200, 500]);
-          console.log('✅ تم الاهتزاز');
-        }
-        
-        // 3. Show local notification with sound
-        console.log('📲 [STEP 3/4] إرسال الإشعار المحلي...');
-        
-        if (platform && platform !== 'web') {
-          await LocalNotifications.schedule({
-            notifications: [{
-              id: notificationId,
-              title,
-              body,
-              schedule: { at: new Date(Date.now() + 100) }, // Immediate
-              sound: 'notification_sound.mp3', // System will play this too
-              channelId: 'new-orders',
-              smallIcon: 'ic_stat_icon_config_sample',
-              iconColor: '#FF0000',
-              autoCancel: true,
-              ongoing: false, // Can be dismissed
-              extra: { 
-                route: '/specialist/new-orders',
-                type: type
-              }
-            }]
-          });
-          console.log('✅ تم جدولة الإشعار المحلي');
+        // 2. Vibrate device - STRONG vibration pattern
+        console.log('\n📳 [خطوة 2/4] اهتزاز الجهاز...');
+        if (navigator.vibrate) {
+          try {
+            // Long vibration pattern: [vibrate, pause, vibrate, pause, vibrate]
+            const vibrationPattern = [800, 200, 800, 200, 800]; // Strong & noticeable
+            navigator.vibrate(vibrationPattern);
+            console.log('✅ الاهتزاز: تم بنجاح -', vibrationPattern.join(','));
+          } catch (vibError) {
+            console.error('❌ الاهتزاز: فشل:', vibError);
+          }
         } else {
-          console.log('ℹ️ تخطي الإشعار المحلي (ويب)');
+          console.log('ℹ️ الاهتزاز: غير مدعوم على هذا الجهاز');
         }
         
-        // 4. Show toast in foreground
-        console.log('📱 [STEP 4/4] عرض Toast...');
-        toast({
-          title,
-          description: body,
-          duration: 5000,
-        });
-        sonnerToast.success(body, {
-          description: title,
-          duration: 5000,
-          position: "top-center",
-        });
-        console.log('✅ تم عرض Toast');
+        // 3. Show local notification with sound (mobile only)
+        console.log('\n📲 [خطوة 3/4] إشعار محلي...');
+        if (platform && platform !== 'web') {
+          try {
+            await LocalNotifications.schedule({
+              notifications: [{
+                id: notificationId,
+                title,
+                body,
+                schedule: { at: new Date(Date.now() + 100) },
+                sound: 'notification_sound.mp3',
+                channelId: 'new-orders',
+                smallIcon: 'ic_stat_icon_config_sample',
+                iconColor: '#FF0000',
+                autoCancel: true,
+                ongoing: false,
+                extra: { 
+                  route: '/specialist-orders/new',
+                  type: type,
+                  timestamp: Date.now()
+                }
+              }]
+            });
+            console.log('✅ الإشعار المحلي: تم الجدولة');
+          } catch (localError) {
+            console.error('❌ الإشعار المحلي: فشل:', localError);
+          }
+        } else {
+          console.log('ℹ️ الإشعار المحلي: تخطي (ويب)');
+        }
         
-        console.log('✅✅✅ [COMPLETE] اكتمل الإشعار بنجاح!');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        // 4. Show in-app toast notification
+        console.log('\n📱 [خطوة 4/4] Toast داخل التطبيق...');
+        try {
+          toast({
+            title,
+            description: body,
+            duration: 8000,
+          });
+          sonnerToast.success(body, {
+            description: title,
+            duration: 8000,
+            position: "top-center",
+          });
+          console.log('✅ Toast: تم العرض');
+        } catch (toastError) {
+          console.error('❌ Toast: فشل:', toastError);
+        }
+        
+        console.log('\n✅✅✅ [اكتمل] تم تنفيذ جميع خطوات الإشعار!');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       } catch (error) {
-        console.error('❌❌❌ [CRITICAL ERROR] خطأ حرج:', error);
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        console.error('\n❌❌❌ [خطأ حرج] فشل الإشعار:', error);
+        console.error('التفاصيل:', JSON.stringify(error, null, 2));
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       }
     };
 
@@ -304,10 +335,18 @@ export default function SpecialistNewOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         async (payload) => {
-          console.log('🆕🆕🆕 INSERT DETECTED! 🆕🆕🆕');
-          console.log('Payload:', payload);
+          console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('🆕🆕🆕 طلب جديد وصل! NEW ORDER DETECTED!');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('Order Specialist ID:', (payload.new as any)?.id);
+          console.log('Order ID:', (payload.new as any)?.order_id);
+          console.log('Full Payload:', JSON.stringify(payload, null, 2));
+          
           await fetchOrders(specialistId);
           await triggerNotification('new');
+          
+          console.log('✅ تم معالجة الطلب الجديد بنجاح');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         }
       )
       // Listen to RESEND (when order.last_sent_at is updated)
@@ -319,39 +358,55 @@ export default function SpecialistNewOrders() {
           table: 'orders'
         },
         async (payload) => {
-          console.log('\n🔄🔄🔄 UPDATE EVENT على orders table');
-          console.log('Order ID:', payload.new.id);
-          console.log('Payload:', payload);
+          console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('🔄🔄🔄 تحديث على جدول الطلبات ORDER UPDATE');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('Order ID:', (payload.new as any)?.id);
           
           // Check if last_sent_at was updated (indicates resend)
           const oldLastSent = (payload.old as any)?.last_sent_at;
           const newLastSent = (payload.new as any)?.last_sent_at;
           
-          console.log('Old last_sent_at:', oldLastSent);
-          console.log('New last_sent_at:', newLastSent);
+          console.log('📅 Old last_sent_at:', oldLastSent);
+          console.log('📅 New last_sent_at:', newLastSent);
+          
+          if (oldLastSent === newLastSent) {
+            console.log('ℹ️ last_sent_at لم يتغير - تجاهل');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            return;
+          }
           
           // Check if this order is assigned to current specialist
-          console.log('🔍 التحقق من تعيين الطلب للمحترف...');
+          console.log('🔍 فحص تعيين الطلب للمحترف الحالي...');
           const { data: assignment, error } = await supabase
             .from('order_specialists')
-            .select('id')
-            .eq('order_id', payload.new.id)
+            .select('id, order_id')
+            .eq('order_id', (payload.new as any)?.id)
             .eq('specialist_id', specialistId)
             .is('quoted_price', null)
             .is('rejected_at', null)
             .single();
           
-          console.log('Assignment result:', assignment);
-          console.log('Assignment error:', error);
-          
-          if (assignment && oldLastSent !== newLastSent) {
-            console.log('🔁🔁🔁 ✅ إعادة إرسال مؤكدة! تشغيل الإشعار...');
-            await fetchOrders(specialistId);
-            await triggerNotification('resend');
-            console.log('🔁🔁🔁 ✅ اكتمل معالج إعادة الإرسال!');
-          } else {
-            console.log('ℹ️ ليس إعادة إرسال أو لم يتم العثور على تعيين');
+          if (error) {
+            console.log('ℹ️ لا يوجد تعيين:', error.message);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            return;
           }
+          
+          if (!assignment) {
+            console.log('ℹ️ الطلب غير مخصص لهذا المحترف');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            return;
+          }
+          
+          console.log('✅ تأكيد: الطلب مخصص لهذا المحترف');
+          console.log('🔁🔁🔁 إعادة إرسال مؤكدة! تشغيل الإشعار...');
+          
+          await fetchOrders(specialistId);
+          await triggerNotification('resend');
+          
+          console.log('✅✅✅ اكتمل معالج إعادة الإرسال بنجاح!');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         }
       )
       // Regular updates to order_specialists
@@ -364,12 +419,16 @@ export default function SpecialistNewOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         async (payload) => {
-          console.log('📝 UPDATE on order_specialists:', payload);
+          console.log('\n📝 تحديث على order_specialists');
+          console.log('Order Specialist ID:', (payload.new as any)?.id);
           await fetchOrders(specialistId);
+          console.log('✅ تم تحديث القائمة\n');
         }
       )
       .subscribe((status) => {
-        console.log('🔌 [REALTIME] حالة الاتصال:', status);
+        console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🔌 [REALTIME] حالة اتصال القناة:', status);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       });
 
     return () => {
