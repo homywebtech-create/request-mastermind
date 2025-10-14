@@ -67,6 +67,9 @@ const translations = {
     specialists: 'محترفات',
     perMonth: 'بالشهر',
     months: 'أشهر',
+    availableMonths: 'الشهور المتاحة',
+    availableFrom: 'متاحة من',
+    selectMonth: 'اختر الشهر المتاح',
   },
   en: {
     completeBooking: 'Complete Booking Information',
@@ -118,6 +121,9 @@ const translations = {
     specialists: 'specialists',
     perMonth: 'per month',
     months: 'months',
+    availableMonths: 'Available Months',
+    availableFrom: 'Available from',
+    selectMonth: 'Select Available Month',
   }
 };
 
@@ -195,6 +201,39 @@ export default function CompanyBooking() {
       slots.push(`${startTime2}-${endTime2}`);
     }
     return slots;
+  };
+
+  // Generate available months for the next 12 months (for monthly contracts)
+  const generateAvailableMonths = (specialist?: Specialist) => {
+    const months = [];
+    const today = new Date();
+    
+    // If specialist is booked, start from when they're available
+    let startMonth = 0;
+    if (specialist?.booked_until) {
+      const bookedDate = new Date(specialist.booked_until);
+      if (bookedDate > today) {
+        const monthsDiff = Math.ceil((bookedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
+        startMonth = monthsDiff;
+      }
+    }
+    
+    for (let i = startMonth; i < startMonth + 12; i++) {
+      const date = new Date(today);
+      date.setMonth(today.getMonth() + i);
+      months.push(date);
+    }
+    
+    return months;
+  };
+
+  // Format month for display
+  const formatMonthDisplay = (date: Date) => {
+    const monthNames = language === 'ar' 
+      ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+      : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   // Generate available dates for the next 15 days
@@ -1032,63 +1071,148 @@ export default function CompanyBooking() {
                                       </Button>
                                     </div>
 
-                                    {/* Available Times Preview - Show only when NOT selected */}
+                                    {/* Available Times/Months Preview - Show only when NOT selected */}
                                     {!isSelected && (
                                       <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                                           <Clock className="h-4 w-4" />
                                           <span>
-                                            {language === 'ar' ? 'الأوقات المتاحة' : 'Available Times'}
+                                            {isMonthlyService 
+                                              ? t.availableMonths
+                                              : (language === 'ar' ? 'الأوقات المتاحة' : 'Available Times')
+                                            }
                                           </span>
                                         </div>
-                                        <div className="flex gap-2 flex-wrap">
-                                          {timeSlots.slice(0, 4).map((slot) => (
-                                            <div
-                                              key={slot}
-                                              className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs font-medium animate-fade-in"
-                                            >
-                                              {slot}
+                                        {isMonthlyService ? (
+                                          // Show available months for monthly service
+                                          <>
+                                            <div className="flex gap-2 flex-wrap">
+                                              {generateAvailableMonths(specialist).slice(0, 3).map((monthDate) => {
+                                                const monthValue = monthDate.toISOString().split('T')[0];
+                                                return (
+                                                  <div
+                                                    key={monthValue}
+                                                    className="px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20 text-xs font-medium animate-fade-in"
+                                                  >
+                                                    {formatMonthDisplay(monthDate)}
+                                                  </div>
+                                                );
+                                              })}
+                                              {generateAvailableMonths(specialist).length > 3 && (
+                                                <div className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
+                                                  +{generateAvailableMonths(specialist).length - 3} {language === 'ar' ? 'المزيد' : 'more'}
+                                                </div>
+                                              )}
                                             </div>
-                                          ))}
-                                          <div className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
-                                            +{timeSlots.length - 4} {language === 'ar' ? 'المزيد' : 'more'}
-                                          </div>
-                                        </div>
-                                        <p className="text-xs text-primary font-medium animate-pulse">
-                                          {language === 'ar' ? '👆 اضغط للمزيد من الأوقات' : '👆 Click for more times'}
-                                        </p>
+                                            {specialist.booked_until && new Date(specialist.booked_until) > new Date() && (
+                                              <p className="text-xs text-orange-600 dark:text-orange-400 font-medium flex items-center gap-1">
+                                                <span>⚠️</span>
+                                                <span>
+                                                  {t.availableFrom}: {formatMonthDisplay(generateAvailableMonths(specialist)[0])}
+                                                </span>
+                                              </p>
+                                            )}
+                                            <p className="text-xs text-primary font-medium animate-pulse">
+                                              {language === 'ar' ? '👆 اضغط لاختيار الشهر' : '👆 Click to select month'}
+                                            </p>
+                                          </>
+                                        ) : (
+                                          // Show time slots for regular service
+                                          <>
+                                            <div className="flex gap-2 flex-wrap">
+                                              {timeSlots.slice(0, 4).map((slot) => (
+                                                <div
+                                                  key={slot}
+                                                  className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs font-medium animate-fade-in"
+                                                >
+                                                  {slot}
+                                                </div>
+                                              ))}
+                                              <div className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
+                                                +{timeSlots.length - 4} {language === 'ar' ? 'المزيد' : 'more'}
+                                              </div>
+                                            </div>
+                                            <p className="text-xs text-primary font-medium animate-pulse">
+                                              {language === 'ar' ? '👆 اضغط للمزيد من الأوقات' : '👆 Click for more times'}
+                                            </p>
+                                          </>
+                                        )}
                                       </div>
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Available Times - Show only for selected specialist */}
+                                {/* Available Times/Months - Show only for selected specialist */}
                                 {isSelected && (
                                   <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-t-2 border-primary/20">
                                     <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
                                       <Clock className="h-4 w-4" />
-                                      {t.selectTime}
+                                      {isMonthlyService ? t.selectMonth : t.selectTime}
                                     </h4>
                                     <RadioGroup value={selectedTime} onValueChange={setSelectedTime}>
-                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                        {timeSlots.map((slot) => (
-                                          <label
-                                            key={slot}
-                                            className={cn(
-                                              'flex items-center justify-center border-2 rounded-lg p-2.5 cursor-pointer transition-all',
-                                              selectedTime === slot
-                                                ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
-                                                : 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
-                                            )}
-                                          >
-                                            <RadioGroupItem value={slot} id={slot} className="sr-only" />
-                                            <div className="flex items-center gap-1.5">
-                                              <Clock className="h-4 w-4" />
-                                              <span className="font-semibold text-xs">{slot}</span>
+                                      {isMonthlyService ? (
+                                        // Show available months for monthly service
+                                        <>
+                                          {specialist.booked_until && new Date(specialist.booked_until) > new Date() && (
+                                            <div className="mb-3 p-3 bg-orange-50 dark:bg-orange-950/20 border border-orange-300 dark:border-orange-800 rounded-lg">
+                                              <p className="text-sm text-orange-700 dark:text-orange-300 font-medium flex items-center gap-2">
+                                                <span>⚠️</span>
+                                                <span>
+                                                  {language === 'ar' ? 'محجوزة حتى' : 'Booked until'}: {new Date(specialist.booked_until).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </span>
+                                              </p>
+                                              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                                {t.availableFrom}: {formatMonthDisplay(generateAvailableMonths(specialist)[0])}
+                                              </p>
                                             </div>
-                                          </label>
-                                        ))}
-                                      </div>
+                                          )}
+                                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                            {generateAvailableMonths(specialist).map((monthDate) => {
+                                              const monthValue = monthDate.toISOString().split('T')[0];
+                                              return (
+                                                <label
+                                                  key={monthValue}
+                                                  className={cn(
+                                                    'flex items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-all',
+                                                    selectedTime === monthValue
+                                                      ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
+                                                      : 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
+                                                  )}
+                                                >
+                                                  <RadioGroupItem value={monthValue} id={monthValue} className="sr-only" />
+                                                  <div className="flex items-center gap-1.5">
+                                                    <Calendar className="h-4 w-4" />
+                                                    <span className="font-semibold text-xs text-center">
+                                                      {formatMonthDisplay(monthDate)}
+                                                    </span>
+                                                  </div>
+                                                </label>
+                                              );
+                                            })}
+                                          </div>
+                                        </>
+                                      ) : (
+                                        // Show time slots for regular service
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                          {timeSlots.map((slot) => (
+                                            <label
+                                              key={slot}
+                                              className={cn(
+                                                'flex items-center justify-center border-2 rounded-lg p-2.5 cursor-pointer transition-all',
+                                                selectedTime === slot
+                                                  ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
+                                                  : 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
+                                              )}
+                                            >
+                                              <RadioGroupItem value={slot} id={slot} className="sr-only" />
+                                              <div className="flex items-center gap-1.5">
+                                                <Clock className="h-4 w-4" />
+                                                <span className="font-semibold text-xs">{slot}</span>
+                                              </div>
+                                            </label>
+                                          ))}
+                                        </div>
+                                      )}
                                     </RadioGroup>
                                   </div>
                                 )}
