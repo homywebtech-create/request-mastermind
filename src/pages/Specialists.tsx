@@ -22,6 +22,9 @@ interface Specialist {
   is_active: boolean;
   notes?: string;
   created_at: string;
+  approval_status?: string;
+  registration_token?: string;
+  registration_completed_at?: string;
   specialist_specialties?: Array<{
     sub_service_id: string;
     sub_services: {

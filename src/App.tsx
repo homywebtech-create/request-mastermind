@@ -17,6 +17,7 @@ import SpecialistHome from "./pages/specialist/SpecialistHome";
 import SpecialistNewOrders from "./pages/specialist/SpecialistNewOrders";
 import SpecialistStats from "./pages/specialist/SpecialistStats";
 import SpecialistProfile from "./pages/specialist/SpecialistProfile";
+import SpecialistRegistration from "./pages/SpecialistRegistration";
 import OrderTracking from "./pages/OrderTracking";
 import CompanyBooking from "./pages/CompanyBooking";
 import NotFound from "./pages/NotFound";
@@ -189,6 +190,9 @@ function AppRouter() {
         <Route path="/company-auth" element={<CompanyAuth />} />
         <Route path="/company-portal" element={<CompanyPortal />} />
         <Route path="/specialists" element={<Specialists />} />
+        
+        {/* Public specialist registration route */}
+        <Route path="/specialist-registration" element={<SpecialistRegistration />} />
         
         {/* Default route */}
         <Route path="/" element={<Navigate to="/auth" replace />} />
