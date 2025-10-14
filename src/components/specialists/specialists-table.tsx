@@ -3,9 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock } from "lucide-react";
+import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock, FileUser } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SpecialistForm } from "./specialist-form";
+import { SpecialistProfileDialog } from "./SpecialistProfileDialog";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +74,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
   const [suspensionType, setSuspensionType] = useState<'temporary' | 'permanent'>('temporary');
   const [suspensionEndDate, setSuspensionEndDate] = useState('');
   const [suspensionReason, setSuspensionReason] = useState('');
+  const [showProfile, setShowProfile] = useState<Specialist | null>(null);
 
   const openWhatsApp = (phoneNumber: string) => {
     const cleanNumber = phoneNumber.replace(/\D/g, "");
@@ -414,6 +416,15 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => setShowProfile(specialist)}
+                          className="flex items-center gap-1"
+                        >
+                          <FileUser className="h-3 w-3" />
+                          السيرة
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => openWhatsApp(specialist.phone)}
                           className="flex items-center gap-1"
                         >
@@ -599,6 +610,26 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
             </div>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Profile Dialog */}
+      {showProfile && (
+        <SpecialistProfileDialog
+          open={!!showProfile}
+          onOpenChange={(open) => !open && setShowProfile(null)}
+          specialist={{
+            id: showProfile.id,
+            name: showProfile.name,
+            phone: showProfile.phone,
+            nationality: showProfile.nationality,
+            image_url: showProfile.image_url,
+            experience_years: showProfile.experience_years,
+            rating: 0,
+            reviews_count: 0,
+            notes: showProfile.notes
+          }}
+          language="ar"
+        />
       )}
     </Card>
   );

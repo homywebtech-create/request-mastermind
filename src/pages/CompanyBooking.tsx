@@ -9,10 +9,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MapLocationPicker } from '@/components/booking/MapLocationPicker';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock } from 'lucide-react';
+import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock, FileUser } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ReviewsDialog } from '@/components/booking/ReviewsDialog';
+import { SpecialistProfileDialog } from '@/components/specialists/SpecialistProfileDialog';
 
 // Translations
 const translations = {
@@ -174,6 +175,7 @@ export default function CompanyBooking() {
   const [selectedSpecialistIds, setSelectedSpecialistIds] = useState<string[]>([]); // Multiple selection
   const [showReviews, setShowReviews] = useState<string | null>(null);
   const [reviews, setReviews] = useState<SpecialistReview[]>([]);
+  const [showProfile, setShowProfile] = useState<string | null>(null); // For profile dialog
 
   const totalSteps = 3;
   const t = translations[language];
@@ -986,7 +988,7 @@ export default function CompanyBooking() {
                                       </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 mb-3">
+                                    <div className="flex items-center gap-3 mb-3 flex-wrap">
                                       {/* Nationality */}
                                       {specialist.nationality && (
                                         <p className="text-sm text-muted-foreground">
@@ -1012,6 +1014,22 @@ export default function CompanyBooking() {
                                           ({specialist.reviews_count || 0})
                                         </span>
                                       </div>
+
+                                      {/* Profile Button */}
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 gap-1.5"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setShowProfile(specialist.id);
+                                        }}
+                                      >
+                                        <FileUser className="h-3.5 w-3.5" />
+                                        <span className="text-xs">
+                                          {language === 'ar' ? 'السيرة الذاتية' : 'Profile'}
+                                        </span>
+                                      </Button>
                                     </div>
 
                                     {/* Available Times Preview - Show only when NOT selected */}
@@ -1162,6 +1180,26 @@ export default function CompanyBooking() {
             onOpenChange={(open) => !open && setShowReviews(null)}
             reviews={reviews}
             specialistName={specialists.find(s => s.id === showReviews)?.name || ''}
+            language={language}
+          />
+        )}
+
+        {/* Profile Dialog */}
+        {showProfile && (
+          <SpecialistProfileDialog
+            open={!!showProfile}
+            onOpenChange={(open) => !open && setShowProfile(null)}
+            specialist={specialists.find(s => s.id === showProfile) || {
+              id: '',
+              name: '',
+              phone: '',
+              nationality: null,
+              image_url: null,
+              quoted_price: '',
+              quoted_at: '',
+              rating: 0,
+              reviews_count: 0
+            }}
             language={language}
           />
         )}
