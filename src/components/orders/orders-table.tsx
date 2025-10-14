@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users } from "lucide-react";
+import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -1071,11 +1071,11 @@ Thank you for contacting us! 🌟`;
                                         </Badge>
                                       </div>
                                     </div>
-                                    <div className="mt-2">
+                                    <div className="mt-2 flex gap-2">
                                       <Button
                                         size="sm"
                                         variant="default"
-                                        className="w-full"
+                                        className="flex-1"
                                         onClick={() => {
                                           const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
                                           window.open(url, '_blank');
@@ -1083,6 +1083,20 @@ Thank you for contacting us! 🌟`;
                                       >
                                         <Building2 className="h-3 w-3 mr-2" />
                                         Enter Company Page
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                                          navigator.clipboard.writeText(url);
+                                          toast({
+                                            title: "✅ تم نسخ الرابط",
+                                            description: "تم نسخ رابط صفحة الحجز بنجاح",
+                                          });
+                                        }}
+                                      >
+                                        <Copy className="h-3 w-3" />
                                       </Button>
                                     </div>
                                   </div>
