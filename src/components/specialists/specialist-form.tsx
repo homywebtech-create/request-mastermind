@@ -19,8 +19,8 @@ const specialistSchema = z.object({
   name: z.string().min(2, "يجب أن يكون الاسم حرفين على الأقل").max(100),
   countryCode: z.string().min(1, "يجب اختيار كود الدولة"),
   phone: z.string().min(7, "رقم الهاتف غير صحيح").max(15),
-  nationality: z.string().min(1, "يجب اختيار الجنسية"),
-  sub_service_ids: z.array(z.string()).min(1, "يجب اختيار تخصص واحد على الأقل"),
+  nationality: z.string().optional(),
+  sub_service_ids: z.array(z.string()).optional(),
   experience_years: z.coerce.number().min(0).max(50).optional(),
   notes: z.string().max(500).optional(),
 });
@@ -223,7 +223,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
 
         if (specialistError) throw specialistError;
 
-        // Delete old specialties and insert new ones
+        // Delete old specialties and insert new ones only if provided
         const { error: deleteError } = await supabase
           .from("specialist_specialties")
           .delete()
@@ -231,16 +231,18 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
 
         if (deleteError) throw deleteError;
 
-        const specialtiesData = data.sub_service_ids.map((subServiceId) => ({
-          specialist_id: specialist.id,
-          sub_service_id: subServiceId,
-        }));
+        if (data.sub_service_ids && data.sub_service_ids.length > 0) {
+          const specialtiesData = data.sub_service_ids.map((subServiceId) => ({
+            specialist_id: specialist.id,
+            sub_service_id: subServiceId,
+          }));
 
-        const { error: specialtiesError } = await supabase
-          .from("specialist_specialties")
-          .insert(specialtiesData);
+          const { error: specialtiesError } = await supabase
+            .from("specialist_specialties")
+            .insert(specialtiesData);
 
-        if (specialtiesError) throw specialtiesError;
+          if (specialtiesError) throw specialtiesError;
+        }
 
         toast({
           title: "Success",
@@ -264,17 +266,19 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
 
         if (specialistError) throw specialistError;
 
-        // Insert the specialties
-        const specialtiesData = data.sub_service_ids.map((subServiceId) => ({
-          specialist_id: specialistData.id,
-          sub_service_id: subServiceId,
-        }));
+        // Insert the specialties only if provided
+        if (data.sub_service_ids && data.sub_service_ids.length > 0) {
+          const specialtiesData = data.sub_service_ids.map((subServiceId) => ({
+            specialist_id: specialistData.id,
+            sub_service_id: subServiceId,
+          }));
 
-        const { error: specialtiesError } = await supabase
-          .from("specialist_specialties")
-          .insert(specialtiesData);
+          const { error: specialtiesError } = await supabase
+            .from("specialist_specialties")
+            .insert(specialtiesData);
 
-        if (specialtiesError) throw specialtiesError;
+          if (specialtiesError) throw specialtiesError;
+        }
 
         toast({
           title: "Success",
@@ -384,7 +388,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
               name="nationality"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nationality *</FormLabel>
+                  <FormLabel>Nationality</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -405,7 +409,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
             />
 
             <FormItem>
-              <FormLabel>الخدمات الرئيسية * (يمكنك اختيار عدة خدمات)</FormLabel>
+              <FormLabel>الخدمات الرئيسية (يمكنك اختيار عدة خدمات)</FormLabel>
               <div className="border rounded-md p-4 space-y-2 max-h-48 overflow-y-auto">
                 {services.map((service) => (
                   <div key={service.id} className="flex items-center space-x-2 space-x-reverse">
@@ -442,7 +446,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
               name="sub_service_ids"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>التخصصات * (يمكنك اختيار عدة تخصصات)</FormLabel>
+                  <FormLabel>التخصصات (يمكنك اختيار عدة تخصصات)</FormLabel>
                   <div className="border rounded-md p-4 space-y-3 max-h-80 overflow-y-auto">
                     {selectedServices.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
@@ -650,7 +654,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
               name="nationality"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nationality *</FormLabel>
+                  <FormLabel>Nationality</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -671,7 +675,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
             />
 
             <FormItem>
-              <FormLabel>الخدمات الرئيسية * (يمكنك اختيار عدة خدمات)</FormLabel>
+              <FormLabel>الخدمات الرئيسية (يمكنك اختيار عدة خدمات)</FormLabel>
               <div className="border rounded-md p-4 space-y-2 max-h-48 overflow-y-auto">
                 {services.map((service) => (
                   <div key={service.id} className="flex items-center space-x-2 space-x-reverse">
@@ -708,7 +712,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
               name="sub_service_ids"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>التخصصات * (يمكنك اختيار عدة تخصصات)</FormLabel>
+                  <FormLabel>التخصصات (يمكنك اختيار عدة تخصصات)</FormLabel>
                   <div className="border rounded-md p-4 space-y-3 max-h-80 overflow-y-auto">
                     {selectedServices.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
