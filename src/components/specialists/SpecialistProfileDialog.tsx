@@ -208,14 +208,6 @@ export function SpecialistProfileDialog({
                 <p className="font-medium">{specialist.name}</p>
               </div>
 
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{translations.phone}</p>
-                <p className="font-medium flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  {specialist.phone}
-                </p>
-              </div>
-
               {specialist.nationality && (
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">{translations.nationality}</p>
