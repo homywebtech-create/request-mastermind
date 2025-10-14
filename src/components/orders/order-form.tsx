@@ -60,6 +60,8 @@ interface SubmittedOrderData {
   companyId?: string;
   specialistIds?: string[];
   notes: string;
+  servicePrice?: number | null;
+  pricingType?: string | null;
 }
 
 interface Company {
@@ -336,6 +338,10 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
     const subService = service?.sub_services.find(ss => ss.id === formData.subServiceId);
     const serviceType = subService ? `${service?.name} - ${subService.name}` : service?.name || "";
     
+    // Get pricing info from sub-service or service
+    const servicePrice = subService?.price || service?.price;
+    const pricingType = subService?.pricing_type || service?.pricing_type;
+    
     const submittedData: SubmittedOrderData = {
       customerName: formData.customerName,
       whatsappNumber: fullWhatsappNumber,
@@ -347,7 +353,9 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
       sendToAll: formData.sendToAll,
       companyId: formData.sendToAll ? undefined : formData.companyId,
       specialistIds: formData.specialistIds.length > 0 ? formData.specialistIds : undefined,
-      notes: formData.notes
+      notes: formData.notes,
+      servicePrice,
+      pricingType
     };
     
     onSubmit(submittedData);

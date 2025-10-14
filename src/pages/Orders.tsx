@@ -21,6 +21,8 @@ interface OrderFormData {
   companyId?: string;
   specialistIds?: string[];
   notes: string;
+  servicePrice?: number | null;
+  pricingType?: string | null;
 }
 
 interface Order {
@@ -306,9 +308,19 @@ export default function Orders() {
       // Insert all specialists at once with proper error handling
       const linkingSkipped = formData.sendToAll;
       if (specialistsToLink.length > 0) {
+        // Check if pricing is fixed (not hourly/daily)
+        const hasFixedPrice = formData.pricingType && 
+                              !['hourly', 'daily'].includes(formData.pricingType) &&
+                              formData.servicePrice;
+        
         const orderSpecialists = specialistsToLink.map(specialistId => ({
           order_id: newOrder.id,
-          specialist_id: specialistId
+          specialist_id: specialistId,
+          // Auto-fill quoted_price for fixed pricing types
+          ...(hasFixedPrice && {
+            quoted_price: formData.servicePrice?.toString(),
+            quoted_at: new Date().toISOString()
+          })
         }));
 
         const { error: linkError } = await supabase

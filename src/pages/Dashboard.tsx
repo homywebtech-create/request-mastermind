@@ -357,9 +357,19 @@ export default function Dashboard() {
 
       // If specific specialists are selected, insert into junction table
       if (formData.specialistIds && formData.specialistIds.length > 0) {
+        // Check if pricing is fixed (not hourly/daily)
+        const hasFixedPrice = formData.pricingType && 
+                              !['hourly', 'daily'].includes(formData.pricingType) &&
+                              formData.servicePrice;
+        
         const orderSpecialists = formData.specialistIds.map(specialistId => ({
           order_id: newOrder.id,
           specialist_id: specialistId,
+          // Auto-fill quoted_price for fixed pricing types
+          ...(hasFixedPrice && {
+            quoted_price: formData.servicePrice?.toString(),
+            quoted_at: new Date().toISOString()
+          })
         }));
 
         const { error: junctionError } = await supabase
@@ -382,9 +392,19 @@ export default function Dashboard() {
         console.log('Found specialists for send to all:', allSpecialists?.length || 0);
 
         if (allSpecialists && allSpecialists.length > 0) {
+          // Check if pricing is fixed (not hourly/daily)
+          const hasFixedPrice = formData.pricingType && 
+                                !['hourly', 'daily'].includes(formData.pricingType) &&
+                                formData.servicePrice;
+          
           const orderSpecialists = allSpecialists.map(specialist => ({
             order_id: newOrder.id,
-            specialist_id: specialist.id
+            specialist_id: specialist.id,
+            // Auto-fill quoted_price for fixed pricing types
+            ...(hasFixedPrice && {
+              quoted_price: formData.servicePrice?.toString(),
+              quoted_at: new Date().toISOString()
+            })
           }));
 
           console.log('Inserting order_specialists:', orderSpecialists);
@@ -418,9 +438,19 @@ export default function Dashboard() {
         console.log('Found company specialists:', companySpecialists?.length || 0);
 
         if (companySpecialists && companySpecialists.length > 0) {
+          // Check if pricing is fixed (not hourly/daily)
+          const hasFixedPrice = formData.pricingType && 
+                                !['hourly', 'daily'].includes(formData.pricingType) &&
+                                formData.servicePrice;
+          
           const orderSpecialists = companySpecialists.map(specialist => ({
             order_id: newOrder.id,
-            specialist_id: specialist.id
+            specialist_id: specialist.id,
+            // Auto-fill quoted_price for fixed pricing types
+            ...(hasFixedPrice && {
+              quoted_price: formData.servicePrice?.toString(),
+              quoted_at: new Date().toISOString()
+            })
           }));
 
           const { error: linkError } = await supabase
