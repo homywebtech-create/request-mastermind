@@ -369,7 +369,8 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       serviceType,
       hoursCount: formData.hoursCount,
       sendToAll: formData.sendToAll,
-      companyId: formData.sendToAll ? undefined : formData.companyId,
+      // For company view, always pass companyId to ensure order is linked to the company
+      companyId: isCompanyView ? companyId : (formData.sendToAll ? undefined : formData.companyId),
       specialistIds: formData.specialistIds.length > 0 ? formData.specialistIds : undefined,
       notes: formData.notes,
       servicePrice,
