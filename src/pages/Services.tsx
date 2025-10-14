@@ -15,6 +15,7 @@ import { translations } from "@/i18n/translations";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 interface Service {
   id: string;
@@ -45,6 +46,7 @@ const tCommon = translations.common;
 
 export default function Services() {
   const { language } = useLanguage();
+  // استخدام الترجمات الحالية مؤقتاً
   const [services, setServices] = useState<Service[]>([]);
   const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
   const [isSubServiceFormOpen, setIsSubServiceFormOpen] = useState(false);

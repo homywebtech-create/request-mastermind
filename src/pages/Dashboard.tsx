@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { getSoundNotification } from "@/lib/soundNotification";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 interface Order {
   id: string;
@@ -65,6 +66,8 @@ interface OrderStats {
 
 export default function Dashboard() {
   const { language } = useLanguage();
+  const tDash = useTranslation(language).dashboard;
+  const tCommon = useTranslation(language).common;
   const [orders, setOrders] = useState<Order[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [filter, setFilter] = useState<string>('pending');
@@ -558,10 +561,10 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Orders Management Dashboard
+                {tDash.title}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Comprehensive management of customer orders and services
+                {tDash.subtitle}
               </p>
             </div>
             
@@ -572,7 +575,7 @@ export default function Dashboard() {
                 variant={soundEnabled ? "default" : "outline"}
                 size="icon"
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                title={soundEnabled ? "تعطيل التنبيهات الصوتية" : "تفعيل التنبيهات الصوتية"}
+                title={tDash.soundNotifications}
               >
                 <Volume2 className={`h-4 w-4 ${soundEnabled ? '' : 'opacity-50'}`} />
               </Button>
@@ -641,7 +644,7 @@ export default function Dashboard() {
                 variant="outline"
                 size="icon"
                 onClick={handleSignOut}
-                title="Logout"
+                title={tCommon.logout}
               >
                 <LogOut className="h-4 w-4" />
               </Button>

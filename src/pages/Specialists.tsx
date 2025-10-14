@@ -8,6 +8,7 @@ import { SpecialistForm } from "@/components/specialists/specialist-form";
 import { SpecialistsTable } from "@/components/specialists/specialists-table";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 interface Company {
   id: string;
@@ -48,6 +49,8 @@ interface Specialist {
 
 export default function Specialists() {
   const { language } = useLanguage();
+  const t = useTranslation(language).specialists;
+  const tCommon = useTranslation(language).common;
   const { toast } = useToast();
   const navigate = useNavigate();
   const [company, setCompany] = useState<Company | null>(null);
@@ -216,7 +219,7 @@ export default function Specialists() {
               <Building2 className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  Specialists Management
+                  {t.title}
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   {company.name}

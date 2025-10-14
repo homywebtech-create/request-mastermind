@@ -19,6 +19,7 @@ import { countries } from "@/data/countries";
 import { translations } from "@/i18n/translations";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 interface Service {
   id: string;
@@ -57,6 +58,7 @@ const tStatus = translations.status;
 
 export default function Companies() {
   const { language } = useLanguage();
+  // استخدام الترجمات الحالية مؤقتاً
   const [companies, setCompanies] = useState<Company[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);

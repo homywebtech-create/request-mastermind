@@ -10,6 +10,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 interface OrderFormData {
   customerName: string;
@@ -63,6 +64,8 @@ interface Order {
 
 export default function Orders() {
   const { language } = useLanguage();
+  const t = useTranslation(language).orders;
+  const tCommon = useTranslation(language).common;
   const { user, loading: authLoading } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user?.id);
   const { toast } = useToast();
@@ -451,9 +454,9 @@ export default function Orders() {
     <div className="container mx-auto py-8 px-4 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">إدارة الطلبات</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t.title}</h1>
           <p className="text-muted-foreground mt-2">
-            إدارة وتتبع جميع طلبات الصيانة والخدمات
+            {t.subtitle}
           </p>
         </div>
         
@@ -463,7 +466,7 @@ export default function Orders() {
           {!showForm && (
             <Button onClick={() => setShowForm(true)} size="lg">
               <Plus className="h-5 w-5 ml-2" />
-              طلب جديد
+              {t.newOrder}
             </Button>
           )}
         </div>
