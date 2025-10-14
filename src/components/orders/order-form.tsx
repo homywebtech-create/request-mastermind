@@ -20,6 +20,7 @@ interface Service {
   name: string;
   name_en: string | null;
   price?: number | null;
+  pricing_type?: string | null;
   sub_services: SubService[];
 }
 
@@ -28,6 +29,7 @@ interface SubService {
   name: string;
   name_en: string | null;
   price?: number | null;
+  pricing_type?: string | null;
 }
 
 interface OrderFormData {
@@ -142,11 +144,13 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
           name,
           name_en,
           price,
+          pricing_type,
           sub_services (
             id,
             name,
             name_en,
-            price
+            price,
+            pricing_type
           )
         `)
         .eq("is_active", true)
@@ -590,7 +594,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Enter number without country code
+                  أدخل الرقم بدون كود الدولة / Enter number without country code
                 </p>
               </div>
               
@@ -702,10 +706,10 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="serviceId">Main Service *</Label>
+                <Label htmlFor="serviceId">الخدمة الرئيسية / Main Service *</Label>
                 <Select value={formData.serviceId} onValueChange={(value) => handleInputChange('serviceId', value)}>
                   <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Choose main service" />
+                    <SelectValue placeholder="اختر الخدمة الرئيسية / Choose main service" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
                     {services.map((service) => (
@@ -731,10 +735,10 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
 
               {selectedService && selectedService.sub_services.length > 0 && (
                 <div className="space-y-2">
-                  <Label htmlFor="subServiceId">Sub-Service *</Label>
+                  <Label htmlFor="subServiceId">الخدمة الفرعية / Sub-Service *</Label>
                   <Select value={formData.subServiceId} onValueChange={(value) => handleInputChange('subServiceId', value)}>
                     <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Choose sub-service" />
+                      <SelectValue placeholder="اختر الخدمة الفرعية / Choose sub-service" />
                     </SelectTrigger>
                     <SelectContent className="bg-background z-50">
                       {selectedService.sub_services.map((subService) => (
@@ -804,19 +808,45 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
               </div>
             )}
 
-            {formData.serviceId && (
-              <div className="space-y-2">
-                <Label htmlFor="hoursCount">عدد الساعات / Hours</Label>
-                <Input
-                  id="hoursCount"
-                  type="number"
-                  min="1"
-                  value={formData.hoursCount}
-                  onChange={(e) => handleInputChange('hoursCount', e.target.value)}
-                  placeholder="مثال: 8"
-                />
-              </div>
-            )}
+            {formData.serviceId && (() => {
+              // Get the pricing type from sub-service or main service
+              let pricingType = 'hourly';
+              if (formData.subServiceId && selectedService) {
+                const subService = selectedService.sub_services.find(ss => ss.id === formData.subServiceId);
+                pricingType = subService?.pricing_type || 'hourly';
+              } else if (selectedService) {
+                pricingType = selectedService.pricing_type || 'hourly';
+              }
+
+              // Don't show input for 'agreement' pricing type
+              if (pricingType === 'agreement') {
+                return null;
+              }
+
+              // Determine label based on pricing type
+              const labels = {
+                hourly: { ar: 'عدد الساعات', en: 'Hours', placeholder: 'مثال: 8' },
+                daily: { ar: 'عدد الأيام', en: 'Days', placeholder: 'مثال: 3' },
+                task: { ar: 'عدد المهام', en: 'Tasks', placeholder: 'مثال: 5' },
+                monthly: { ar: 'عدد الأشهر', en: 'Months', placeholder: 'مثال: 2' }
+              };
+
+              const label = labels[pricingType as keyof typeof labels] || labels.hourly;
+
+              return (
+                <div className="space-y-2">
+                  <Label htmlFor="hoursCount">{label.ar} / {label.en}</Label>
+                  <Input
+                    id="hoursCount"
+                    type="number"
+                    min="1"
+                    value={formData.hoursCount}
+                    onChange={(e) => handleInputChange('hoursCount', e.target.value)}
+                    placeholder={label.placeholder}
+                  />
+                </div>
+              );
+            })()}
             </div>
           )}
 
@@ -840,7 +870,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                     disabled={!formData.serviceId}
                   />
                   <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
-                    All Companies
+                    جميع الشركات / All Companies
                   </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -855,18 +885,18 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                     disabled={!formData.serviceId}
                   />
                   <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
-                    Specific Company {companies.length > 0 && `(${companies.length})`}
+                    شركة محددة / Specific Company {companies.length > 0 && `(${companies.length})`}
                   </span>
                 </label>
               </div>
               {!formData.serviceId && (
                 <p className="text-xs text-muted-foreground">
-                  Choose service first
+                  اختر الخدمة أولاً / Choose service first
                 </p>
               )}
               {formData.serviceId && !formData.sendToAll && companies.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  No companies offer this service currently
+                  لا توجد شركات تقدم هذه الخدمة حالياً / No companies offer this service currently
                 </p>
               )}
             </div>
@@ -874,10 +904,10 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
             {!formData.sendToAll && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="companyId">Choose Company *</Label>
+                  <Label htmlFor="companyId">اختر الشركة / Choose Company *</Label>
                   <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose company" />
+                      <SelectValue placeholder="اختر الشركة / Choose company" />
                     </SelectTrigger>
                     <SelectContent>
                       {companies.map((company) => (
@@ -891,7 +921,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
 
                 {formData.companyId && specialists.length > 0 && (
                   <div className="space-y-3">
-                    <Label>Choose Specialists (Optional)</Label>
+                    <Label>اختيار المتخصصين (اختياري) / Choose Specialists (Optional)</Label>
                     <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto space-y-3">
                       {specialists.map((specialist) => (
                         <label
@@ -933,11 +963,11 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                     </div>
                     {formData.specialistIds.length > 0 && (
                       <p className="text-sm text-muted-foreground">
-                        {formData.specialistIds.length} specialist(s) selected
+                        تم اختيار {formData.specialistIds.length} متخصص / {formData.specialistIds.length} specialist(s) selected
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Leave empty to send to all specialists in this company
+                      اترك فارغاً للإرسال لجميع متخصصي الشركة / Leave empty to send to all specialists in this company
                     </p>
                   </div>
                 )}

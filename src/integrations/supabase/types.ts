@@ -480,6 +480,7 @@ export type Database = {
           name: string
           name_en: string | null
           price: number | null
+          pricing_type: string | null
           updated_at: string
         }
         Insert: {
@@ -490,6 +491,7 @@ export type Database = {
           name: string
           name_en?: string | null
           price?: number | null
+          pricing_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -500,6 +502,7 @@ export type Database = {
           name?: string
           name_en?: string | null
           price?: number | null
+          pricing_type?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -663,6 +666,7 @@ export type Database = {
           name: string
           name_en: string | null
           price: number | null
+          pricing_type: string | null
           service_id: string
           updated_at: string
         }
@@ -674,6 +678,7 @@ export type Database = {
           name: string
           name_en?: string | null
           price?: number | null
+          pricing_type?: string | null
           service_id: string
           updated_at?: string
         }
@@ -685,6 +690,7 @@ export type Database = {
           name?: string
           name_en?: string | null
           price?: number | null
+          pricing_type?: string | null
           service_id?: string
           updated_at?: string
         }

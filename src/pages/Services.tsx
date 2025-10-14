@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Settings, Trash2, ArrowRight, Edit } from "lucide-react";
@@ -19,6 +20,7 @@ interface Service {
   name_en?: string;
   description?: string;
   price?: number;
+  pricing_type?: string;
   is_active: boolean;
   created_at: string;
   sub_services?: SubService[];
@@ -31,6 +33,7 @@ interface SubService {
   name_en?: string;
   description?: string;
   price?: number;
+  pricing_type?: string;
   is_active: boolean;
   created_at: string;
 }
@@ -56,12 +59,14 @@ export default function Services() {
     name_en: "",
     description: "",
     price: "",
+    pricing_type: "hourly",
   });
   const [subServiceFormData, setSubServiceFormData] = useState({
     name: "",
     name_en: "",
     description: "",
     price: "",
+    pricing_type: "hourly",
   });
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -105,7 +110,8 @@ export default function Services() {
 
     const submitData = {
       ...serviceFormData,
-      price: serviceFormData.price ? parseFloat(serviceFormData.price) : null
+      price: serviceFormData.price ? parseFloat(serviceFormData.price) : null,
+      pricing_type: serviceFormData.pricing_type
     };
 
     if (isEditingService && selectedService) {
@@ -124,10 +130,10 @@ export default function Services() {
       } else {
         toast({
           title: tCommon.success,
-          description: "Service updated successfully",
+          description: "تم تحديث الخدمة بنجاح",
         });
         setIsServiceFormOpen(false);
-        setServiceFormData({ name: "", name_en: "", description: "", price: "" });
+        setServiceFormData({ name: "", name_en: "", description: "", price: "", pricing_type: "hourly" });
         setIsEditingService(false);
         setSelectedService(null);
         fetchServices();
@@ -148,7 +154,7 @@ export default function Services() {
           description: t.serviceAdded,
         });
         setIsServiceFormOpen(false);
-        setServiceFormData({ name: "", name_en: "", description: "", price: "" });
+        setServiceFormData({ name: "", name_en: "", description: "", price: "", pricing_type: "hourly" });
         fetchServices();
       }
     }
@@ -160,7 +166,8 @@ export default function Services() {
 
     const submitData = {
       ...subServiceFormData,
-      price: subServiceFormData.price ? parseFloat(subServiceFormData.price) : null
+      price: subServiceFormData.price ? parseFloat(subServiceFormData.price) : null,
+      pricing_type: subServiceFormData.pricing_type
     };
 
     if (isEditingSubService && selectedSubService) {
@@ -179,10 +186,10 @@ export default function Services() {
       } else {
         toast({
           title: tCommon.success,
-          description: "Sub-service updated successfully",
+          description: "تم تحديث الخدمة الفرعية بنجاح",
         });
         setIsSubServiceFormOpen(false);
-        setSubServiceFormData({ name: "", name_en: "", description: "", price: "" });
+        setSubServiceFormData({ name: "", name_en: "", description: "", price: "", pricing_type: "hourly" });
         setIsEditingSubService(false);
         setSelectedSubService(null);
         setSelectedService(null);
@@ -207,7 +214,7 @@ export default function Services() {
           description: t.subServiceAdded,
         });
         setIsSubServiceFormOpen(false);
-        setSubServiceFormData({ name: "", name_en: "", description: "", price: "" });
+        setSubServiceFormData({ name: "", name_en: "", description: "", price: "", pricing_type: "hourly" });
         setSelectedService(null);
         fetchServices();
       }
@@ -231,7 +238,7 @@ export default function Services() {
     } else {
       toast({
         title: tCommon.success,
-        description: "Service deleted successfully",
+        description: "تم حذف الخدمة بنجاح",
       });
       setIsDeleteDialogOpen(false);
       setServiceToDelete(null);
@@ -267,7 +274,7 @@ export default function Services() {
   const openSubServiceDialog = (service: Service) => {
     setSelectedService(service);
     setIsEditingSubService(false);
-    setSubServiceFormData({ name: "", name_en: "", description: "", price: "" });
+    setSubServiceFormData({ name: "", name_en: "", description: "", price: "", pricing_type: "hourly" });
     setIsSubServiceFormOpen(true);
   };
 
@@ -279,6 +286,7 @@ export default function Services() {
       name_en: service.name_en || "",
       description: service.description || "",
       price: service.price?.toString() || "",
+      pricing_type: service.pricing_type || "hourly",
     });
     setIsServiceFormOpen(true);
   };
@@ -292,6 +300,7 @@ export default function Services() {
       name_en: subService.name_en || "",
       description: subService.description || "",
       price: subService.price?.toString() || "",
+      pricing_type: subService.pricing_type || "hourly",
     });
     setIsSubServiceFormOpen(true);
   };
@@ -342,7 +351,7 @@ export default function Services() {
                 setIsServiceFormOpen(open);
                 if (!open) {
                   setIsEditingService(false);
-                  setServiceFormData({ name: "", name_en: "", description: "", price: "" });
+                  setServiceFormData({ name: "", name_en: "", description: "", price: "", pricing_type: "hourly" });
                   setSelectedService(null);
                 }
               }}>
@@ -395,6 +404,50 @@ export default function Services() {
                         placeholder={t.enterDescription}
                         rows={3}
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="pricing_type">نوع التسعير / Pricing Type *</Label>
+                      <Select 
+                        value={serviceFormData.pricing_type} 
+                        onValueChange={(value) => setServiceFormData({ ...serviceFormData, pricing_type: value })}
+                      >
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="اختر نوع التسعير" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                          <SelectItem value="hourly">
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">بالساعة</span>
+                              <span className="text-xs text-muted-foreground">Hourly</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="daily">
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">باليوم</span>
+                              <span className="text-xs text-muted-foreground">Daily</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="task">
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">بالمهمة</span>
+                              <span className="text-xs text-muted-foreground">Per Task</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="agreement">
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">بالاتفاق</span>
+                              <span className="text-xs text-muted-foreground">By Agreement</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="monthly">
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">شهري</span>
+                              <span className="text-xs text-muted-foreground">Monthly</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">
@@ -560,7 +613,7 @@ export default function Services() {
         setIsSubServiceFormOpen(open);
         if (!open) {
           setIsEditingSubService(false);
-          setSubServiceFormData({ name: "", name_en: "", description: "", price: "" });
+          setSubServiceFormData({ name: "", name_en: "", description: "", price: "", pricing_type: "hourly" });
           setSelectedService(null);
           setSelectedSubService(null);
         }
@@ -608,6 +661,50 @@ export default function Services() {
                 placeholder={t.enterSubServiceDescription}
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sub_pricing_type">نوع التسعير / Pricing Type *</Label>
+              <Select 
+                value={subServiceFormData.pricing_type} 
+                onValueChange={(value) => setSubServiceFormData({ ...subServiceFormData, pricing_type: value })}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="اختر نوع التسعير" />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  <SelectItem value="hourly">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">بالساعة</span>
+                      <span className="text-xs text-muted-foreground">Hourly</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="daily">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">باليوم</span>
+                      <span className="text-xs text-muted-foreground">Daily</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="task">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">بالمهمة</span>
+                      <span className="text-xs text-muted-foreground">Per Task</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="agreement">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">بالاتفاق</span>
+                      <span className="text-xs text-muted-foreground">By Agreement</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="monthly">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">شهري</span>
+                      <span className="text-xs text-muted-foreground">Monthly</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
