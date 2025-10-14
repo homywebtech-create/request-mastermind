@@ -596,6 +596,8 @@ export default function CompanyPortal() {
           <OrderForm 
             onSubmit={handleCreateOrder}
             onCancel={() => setShowOrderForm(false)}
+            isCompanyView={true}
+            companyId={company.id}
           />
         </DialogContent>
       </Dialog>

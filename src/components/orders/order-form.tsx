@@ -80,9 +80,11 @@ interface Specialist {
 interface OrderFormProps {
   onSubmit: (data: SubmittedOrderData) => void;
   onCancel?: () => void;
+  isCompanyView?: boolean;
+  companyId?: string;
 }
 
-export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
+export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId }: OrderFormProps) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [services, setServices] = useState<Service[]>([]);
@@ -122,20 +124,24 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
   }, [formData.serviceId, services]);
 
   useEffect(() => {
-    if (formData.serviceId && !formData.sendToAll) {
+    if (isCompanyView && companyId) {
+      // For company view, fetch specialists directly
+      fetchSpecialistsForCompany(companyId);
+    } else if (formData.serviceId && !formData.sendToAll) {
+      // For admin view, fetch companies for service
       fetchCompaniesForService(formData.serviceId, formData.subServiceId);
     } else {
       setCompanies([]);
     }
-  }, [formData.serviceId, formData.subServiceId, formData.sendToAll]);
+  }, [formData.serviceId, formData.subServiceId, formData.sendToAll, isCompanyView, companyId]);
 
   useEffect(() => {
-    if (formData.companyId) {
+    if (!isCompanyView && formData.companyId) {
       fetchSpecialistsForCompany(formData.companyId);
-    } else {
+    } else if (!isCompanyView) {
       setSpecialists([]);
     }
-  }, [formData.companyId]);
+  }, [formData.companyId, isCompanyView]);
 
   const fetchServices = async () => {
     try {
@@ -293,14 +299,26 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
         return true;
 
       case 3:
-        // Verify company selection if not sending to all
-        if (!formData.sendToAll && !formData.companyId) {
-          toast({
-            title: "بيانات ناقصة / Missing Data",
-            description: "يرجى اختيار شركة محددة أو تفعيل الإرسال لجميع الشركات / Please select a specific company or enable send to all companies",
-            variant: "destructive",
-          });
-          return false;
+        // For company view, validate specialist selection if not sending to all
+        if (isCompanyView) {
+          if (!formData.sendToAll && formData.specialistIds.length === 0) {
+            toast({
+              title: "بيانات ناقصة / Missing Data",
+              description: "يرجى اختيار محترف واحد على الأقل / Please select at least one specialist",
+              variant: "destructive",
+            });
+            return false;
+          }
+        } else {
+          // For admin view, verify company selection if not sending to all
+          if (!formData.sendToAll && !formData.companyId) {
+            toast({
+              title: "بيانات ناقصة / Missing Data",
+              description: "يرجى اختيار شركة محددة أو تفعيل الإرسال لجميع الشركات / Please select a specific company or enable send to all companies",
+              variant: "destructive",
+            });
+            return false;
+          }
         }
         return true;
 
@@ -868,129 +886,229 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
             </div>
           )}
 
-          {/* Step 3: Company Selection */}
+          {/* Step 3: Company/Specialist Selection */}
           {currentStep === 3 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">اختيار الشركة / Company Selection</h3>
-              
-              <div className="space-y-2">
-                <Label>إرسال الطلب إلى / Send Order To</Label>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="sendToAll"
-                    checked={formData.sendToAll}
-                    onChange={() => {
-                      setFormData(prev => ({ ...prev, sendToAll: true, companyId: '', specialistIds: [] }));
-                    }}
-                    className="w-4 h-4 text-primary"
-                    disabled={!formData.serviceId}
-                  />
-                  <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
-                    جميع الشركات / All Companies
-                  </span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="sendToAll"
-                    checked={!formData.sendToAll}
-                    onChange={() => {
-                      setFormData(prev => ({ ...prev, sendToAll: false }));
-                    }}
-                    className="w-4 h-4 text-primary"
-                    disabled={!formData.serviceId}
-                  />
-                  <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
-                    شركة محددة / Specific Company {companies.length > 0 && `(${companies.length})`}
-                  </span>
-                </label>
-              </div>
-              {!formData.serviceId && (
-                <p className="text-xs text-muted-foreground">
-                  اختر الخدمة أولاً / Choose service first
-                </p>
-              )}
-              {formData.serviceId && !formData.sendToAll && companies.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  لا توجد شركات تقدم هذه الخدمة حالياً / No companies offer this service currently
-                </p>
-              )}
-            </div>
+              {isCompanyView ? (
+                // Company view - select specialists only
+                <>
+                  <h3 className="text-lg font-semibold text-foreground">اختيار المحترفين / Specialist Selection</h3>
+                  
+                  <div className="space-y-2">
+                    <Label>إرسال الطلب إلى / Send Order To</Label>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="sendToAll"
+                          checked={formData.sendToAll}
+                          onChange={() => {
+                            setFormData(prev => ({ ...prev, sendToAll: true, specialistIds: [] }));
+                          }}
+                          className="w-4 h-4 text-primary"
+                        />
+                        <span className="text-sm">
+                          جميع المحترفين / All Specialists {specialists.length > 0 && `(${specialists.length})`}
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="sendToAll"
+                          checked={!formData.sendToAll}
+                          onChange={() => {
+                            setFormData(prev => ({ ...prev, sendToAll: false }));
+                          }}
+                          className="w-4 h-4 text-primary"
+                        />
+                        <span className="text-sm">
+                          محترفين محددين / Specific Specialists
+                        </span>
+                      </label>
+                    </div>
+                  </div>
 
-            {!formData.sendToAll && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="companyId">اختر الشركة / Choose Company *</Label>
-                  <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر الشركة / Choose company" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {companies.map((company) => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {!formData.sendToAll && specialists.length > 0 && (
+                    <div className="space-y-3">
+                      <Label>اختر المحترفين / Choose Specialists *</Label>
+                      <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto space-y-3">
+                        {specialists.map((specialist) => (
+                          <label
+                            key={specialist.id}
+                            className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.specialistIds.includes(specialist.id)}
+                              onChange={() => toggleSpecialist(specialist.id)}
+                              className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
+                            />
+                            {specialist.image_url ? (
+                              <img 
+                                src={specialist.image_url} 
+                                alt={specialist.name}
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                                <User className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex flex-col flex-1">
+                              <span className="font-medium">{specialist.name}</span>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Phone className="h-3 w-3" />
+                                <span dir="ltr">{specialist.phone}</span>
+                                {specialist.specialty && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{specialist.specialty}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                      {formData.specialistIds.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          تم اختيار {formData.specialistIds.length} محترف / {formData.specialistIds.length} specialist(s) selected
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {specialists.length === 0 && (
+                    <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">
+                      لا يوجد محترفون نشطون حالياً / No active specialists available
+                    </p>
+                  )}
+                </>
+              ) : (
+                // Admin view - select company then specialists
+                <>
+                  <h3 className="text-lg font-semibold text-foreground">اختيار الشركة / Company Selection</h3>
+                  
+                  <div className="space-y-2">
+                    <Label>إرسال الطلب إلى / Send Order To</Label>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="sendToAll"
+                        checked={formData.sendToAll}
+                        onChange={() => {
+                          setFormData(prev => ({ ...prev, sendToAll: true, companyId: '', specialistIds: [] }));
+                        }}
+                        className="w-4 h-4 text-primary"
+                        disabled={!formData.serviceId}
+                      />
+                      <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
+                        جميع الشركات / All Companies
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="sendToAll"
+                        checked={!formData.sendToAll}
+                        onChange={() => {
+                          setFormData(prev => ({ ...prev, sendToAll: false }));
+                        }}
+                        className="w-4 h-4 text-primary"
+                        disabled={!formData.serviceId}
+                      />
+                      <span className={`text-sm ${!formData.serviceId ? 'text-muted-foreground' : ''}`}>
+                        شركة محددة / Specific Company {companies.length > 0 && `(${companies.length})`}
+                      </span>
+                    </label>
+                  </div>
+                  {!formData.serviceId && (
+                    <p className="text-xs text-muted-foreground">
+                      اختر الخدمة أولاً / Choose service first
+                    </p>
+                  )}
+                  {formData.serviceId && !formData.sendToAll && companies.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      لا توجد شركات تقدم هذه الخدمة حالياً / No companies offer this service currently
+                    </p>
+                  )}
                 </div>
 
-                {formData.companyId && specialists.length > 0 && (
-                  <div className="space-y-3">
-                    <Label>اختيار المتخصصين (اختياري) / Choose Specialists (Optional)</Label>
-                    <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto space-y-3">
-                      {specialists.map((specialist) => (
-                        <label
-                          key={specialist.id}
-                          className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={formData.specialistIds.includes(specialist.id)}
-                            onChange={() => toggleSpecialist(specialist.id)}
-                            className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
-                          />
-                          {specialist.image_url ? (
-                            <img 
-                              src={specialist.image_url} 
-                              alt={specialist.name}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                              <User className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="flex flex-col flex-1">
-                            <span className="font-medium">{specialist.name}</span>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Phone className="h-3 w-3" />
-                              <span dir="ltr">{specialist.phone}</span>
-                              {specialist.specialty && (
-                                <>
-                                  <span>•</span>
-                                  <span>{specialist.specialty}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </label>
-                      ))}
+                {!formData.sendToAll && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="companyId">اختر الشركة / Choose Company *</Label>
+                      <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر الشركة / Choose company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    {formData.specialistIds.length > 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        تم اختيار {formData.specialistIds.length} متخصص / {formData.specialistIds.length} specialist(s) selected
-                      </p>
+
+                    {formData.companyId && specialists.length > 0 && (
+                      <div className="space-y-3">
+                        <Label>اختيار المتخصصين (اختياري) / Choose Specialists (Optional)</Label>
+                        <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto space-y-3">
+                          {specialists.map((specialist) => (
+                            <label
+                              key={specialist.id}
+                              className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.specialistIds.includes(specialist.id)}
+                                onChange={() => toggleSpecialist(specialist.id)}
+                                className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
+                              />
+                              {specialist.image_url ? (
+                                <img 
+                                  src={specialist.image_url} 
+                                  alt={specialist.name}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                                  <User className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="flex flex-col flex-1">
+                                <span className="font-medium">{specialist.name}</span>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Phone className="h-3 w-3" />
+                                  <span dir="ltr">{specialist.phone}</span>
+                                  {specialist.specialty && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{specialist.specialty}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                        {formData.specialistIds.length > 0 && (
+                          <p className="text-sm text-muted-foreground">
+                            تم اختيار {formData.specialistIds.length} متخصص / {formData.specialistIds.length} specialist(s) selected
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          اترك فارغاً للإرسال لجميع متخصصي الشركة / Leave empty to send to all specialists in this company
+                        </p>
+                      </div>
                     )}
-                    <p className="text-xs text-muted-foreground">
-                      اترك فارغاً للإرسال لجميع متخصصي الشركة / Leave empty to send to all specialists in this company
-                    </p>
-                  </div>
+                  </>
                 )}
-              </>
-            )}
+                </>
+              )}
             </div>
           )}
 
