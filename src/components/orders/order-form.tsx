@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { countries } from "@/data/countries";
 import { qatarAreas } from "@/data/areas";
 import { Plus, Phone, User, Users, Check, ChevronsUpDown, ArrowRight, ArrowLeft } from "lucide-react";
@@ -18,6 +19,7 @@ interface Service {
   id: string;
   name: string;
   name_en: string | null;
+  price?: number | null;
   sub_services: SubService[];
 }
 
@@ -25,6 +27,7 @@ interface SubService {
   id: string;
   name: string;
   name_en: string | null;
+  price?: number | null;
 }
 
 interface OrderFormData {
@@ -138,10 +141,12 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
           id,
           name,
           name_en,
+          price,
           sub_services (
             id,
             name,
-            name_en
+            name_en,
+            price
           )
         `)
         .eq("is_active", true)
@@ -706,7 +711,14 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                     {services.map((service) => (
                       <SelectItem key={service.id} value={service.id}>
                         <div className="flex flex-col items-start">
-                          <span className="font-medium">{service.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{service.name}</span>
+                            {service.price && (
+                              <Badge variant="secondary" className="text-xs">
+                                {service.price} SAR
+                              </Badge>
+                            )}
+                          </div>
                           {service.name_en && (
                             <span className="text-xs text-muted-foreground">{service.name_en}</span>
                           )}
@@ -728,7 +740,14 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                       {selectedService.sub_services.map((subService) => (
                         <SelectItem key={subService.id} value={subService.id}>
                           <div className="flex flex-col items-start">
-                            <span className="font-medium">{subService.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{subService.name}</span>
+                              {subService.price && (
+                                <Badge variant="outline" className="text-xs">
+                                  {subService.price} SAR
+                                </Badge>
+                              )}
+                            </div>
                             {subService.name_en && (
                               <span className="text-xs text-muted-foreground">{subService.name_en}</span>
                             )}
@@ -740,6 +759,47 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 </div>
               )}
             </div>
+
+            {/* Display price if service has fixed price */}
+            {formData.serviceId && selectedService && (
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">السعر / Price:</span>
+                  <span className="text-lg font-bold text-primary">
+                    {(() => {
+                      // Check if sub-service is selected and has a price
+                      if (formData.subServiceId) {
+                        const subService = selectedService.sub_services.find(
+                          ss => ss.id === formData.subServiceId
+                        );
+                        if (subService?.price) {
+                          return `${subService.price} SAR`;
+                        }
+                      }
+                      // Otherwise, check if main service has a price
+                      if (selectedService.price) {
+                        return `${selectedService.price} SAR`;
+                      }
+                      // No fixed price
+                      return 'سعر غير ثابت / Not Fixed';
+                    })()}
+                  </span>
+                </div>
+                {!(() => {
+                  if (formData.subServiceId) {
+                    const subService = selectedService.sub_services.find(
+                      ss => ss.id === formData.subServiceId
+                    );
+                    return subService?.price;
+                  }
+                  return selectedService.price;
+                })() && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    سيتم تحديد السعر من قبل المختصين / Price will be quoted by specialists
+                  </p>
+                )}
+              </div>
+            )}
 
             {formData.serviceId && (
               <div className="space-y-2">

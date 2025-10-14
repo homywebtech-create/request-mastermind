@@ -18,6 +18,7 @@ interface Service {
   name: string;
   name_en?: string;
   description?: string;
+  price?: number;
   is_active: boolean;
   created_at: string;
   sub_services?: SubService[];
@@ -29,6 +30,7 @@ interface SubService {
   name: string;
   name_en?: string;
   description?: string;
+  price?: number;
   is_active: boolean;
   created_at: string;
 }
@@ -53,11 +55,13 @@ export default function Services() {
     name: "",
     name_en: "",
     description: "",
+    price: "",
   });
   const [subServiceFormData, setSubServiceFormData] = useState({
     name: "",
     name_en: "",
     description: "",
+    price: "",
   });
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -99,11 +103,16 @@ export default function Services() {
   const handleCreateService = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const submitData = {
+      ...serviceFormData,
+      price: serviceFormData.price ? parseFloat(serviceFormData.price) : null
+    };
+
     if (isEditingService && selectedService) {
       // Update existing service
       const { error } = await supabase
         .from("services")
-        .update(serviceFormData)
+        .update(submitData)
         .eq("id", selectedService.id);
 
       if (error) {
@@ -118,14 +127,14 @@ export default function Services() {
           description: "Service updated successfully",
         });
         setIsServiceFormOpen(false);
-        setServiceFormData({ name: "", name_en: "", description: "" });
+        setServiceFormData({ name: "", name_en: "", description: "", price: "" });
         setIsEditingService(false);
         setSelectedService(null);
         fetchServices();
       }
     } else {
       // Create new service
-      const { error } = await supabase.from("services").insert([serviceFormData]);
+      const { error } = await supabase.from("services").insert([submitData]);
 
       if (error) {
         toast({
@@ -139,7 +148,7 @@ export default function Services() {
           description: t.serviceAdded,
         });
         setIsServiceFormOpen(false);
-        setServiceFormData({ name: "", name_en: "", description: "" });
+        setServiceFormData({ name: "", name_en: "", description: "", price: "" });
         fetchServices();
       }
     }
@@ -149,11 +158,16 @@ export default function Services() {
     e.preventDefault();
     if (!selectedService) return;
 
+    const submitData = {
+      ...subServiceFormData,
+      price: subServiceFormData.price ? parseFloat(subServiceFormData.price) : null
+    };
+
     if (isEditingSubService && selectedSubService) {
       // Update existing sub-service
       const { error } = await supabase
         .from("sub_services")
-        .update(subServiceFormData)
+        .update(submitData)
         .eq("id", selectedSubService.id);
 
       if (error) {
@@ -168,7 +182,7 @@ export default function Services() {
           description: "Sub-service updated successfully",
         });
         setIsSubServiceFormOpen(false);
-        setSubServiceFormData({ name: "", name_en: "", description: "" });
+        setSubServiceFormData({ name: "", name_en: "", description: "", price: "" });
         setIsEditingSubService(false);
         setSelectedSubService(null);
         setSelectedService(null);
@@ -177,7 +191,7 @@ export default function Services() {
     } else {
       // Create new sub-service
       const { error } = await supabase.from("sub_services").insert([{
-        ...subServiceFormData,
+        ...submitData,
         service_id: selectedService.id
       }]);
 
@@ -193,7 +207,7 @@ export default function Services() {
           description: t.subServiceAdded,
         });
         setIsSubServiceFormOpen(false);
-        setSubServiceFormData({ name: "", name_en: "", description: "" });
+        setSubServiceFormData({ name: "", name_en: "", description: "", price: "" });
         setSelectedService(null);
         fetchServices();
       }
@@ -253,7 +267,7 @@ export default function Services() {
   const openSubServiceDialog = (service: Service) => {
     setSelectedService(service);
     setIsEditingSubService(false);
-    setSubServiceFormData({ name: "", name_en: "", description: "" });
+    setSubServiceFormData({ name: "", name_en: "", description: "", price: "" });
     setIsSubServiceFormOpen(true);
   };
 
@@ -264,6 +278,7 @@ export default function Services() {
       name: service.name,
       name_en: service.name_en || "",
       description: service.description || "",
+      price: service.price?.toString() || "",
     });
     setIsServiceFormOpen(true);
   };
@@ -276,6 +291,7 @@ export default function Services() {
       name: subService.name,
       name_en: subService.name_en || "",
       description: subService.description || "",
+      price: subService.price?.toString() || "",
     });
     setIsSubServiceFormOpen(true);
   };
@@ -326,7 +342,7 @@ export default function Services() {
                 setIsServiceFormOpen(open);
                 if (!open) {
                   setIsEditingService(false);
-                  setServiceFormData({ name: "", name_en: "", description: "" });
+                  setServiceFormData({ name: "", name_en: "", description: "", price: "" });
                   setSelectedService(null);
                 }
               }}>
@@ -381,6 +397,21 @@ export default function Services() {
                       />
                     </div>
 
+                    <div className="space-y-2">
+                      <Label htmlFor="price">السعر الثابت / Fixed Price (SAR)</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={serviceFormData.price}
+                        onChange={(e) =>
+                          setServiceFormData({ ...serviceFormData, price: e.target.value })
+                        }
+                        placeholder="اترك فارغاً إذا كان السعر غير ثابت / Leave empty if not fixed"
+                      />
+                    </div>
+
                     <div className="flex gap-2 justify-end">
                       <Button
                         type="button"
@@ -409,6 +440,11 @@ export default function Services() {
                     <CardTitle className="font-cairo">{service.name_en || service.name}</CardTitle>
                     {service.name_en && service.name !== service.name_en && (
                       <p className="text-sm text-muted-foreground mt-1">{service.name}</p>
+                    )}
+                    {service.price && (
+                      <Badge variant="secondary" className="mt-2">
+                        {service.price} SAR
+                      </Badge>
                     )}
                     <CardDescription>
                       {service.description || t.noDescription}
@@ -459,6 +495,11 @@ export default function Services() {
                             <p className="text-sm font-medium">{subService.name_en || subService.name}</p>
                             {subService.name_en && subService.name !== subService.name_en && (
                               <p className="text-xs text-muted-foreground">{subService.name}</p>
+                            )}
+                            {subService.price && (
+                              <Badge variant="outline" className="mt-1 text-xs">
+                                {subService.price} SAR
+                              </Badge>
                             )}
                             {subService.description && (
                               <p className="text-xs text-muted-foreground">
@@ -516,7 +557,7 @@ export default function Services() {
         setIsSubServiceFormOpen(open);
         if (!open) {
           setIsEditingSubService(false);
-          setSubServiceFormData({ name: "", name_en: "", description: "" });
+          setSubServiceFormData({ name: "", name_en: "", description: "", price: "" });
           setSelectedService(null);
           setSelectedSubService(null);
         }
@@ -563,6 +604,21 @@ export default function Services() {
                 }
                 placeholder={t.enterSubServiceDescription}
                 rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sub-price">السعر الثابت / Fixed Price (SAR)</Label>
+              <Input
+                id="sub-price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={subServiceFormData.price}
+                onChange={(e) =>
+                  setSubServiceFormData({ ...subServiceFormData, price: e.target.value })
+                }
+                placeholder="اترك فارغاً إذا كان السعر غير ثابت / Leave empty if not fixed"
               />
             </div>
 
