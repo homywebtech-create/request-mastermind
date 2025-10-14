@@ -69,7 +69,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
   const [imagePreview, setImagePreview] = useState<string>("");
   const [services, setServices] = useState<Service[]>([]);
   const [subServices, setSubServices] = useState<SubService[]>([]);
-  const [selectedService, setSelectedService] = useState<string>("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
   // Extract country code and phone number from specialist if editing
   const extractPhoneData = (fullPhone: string) => {
@@ -106,21 +106,23 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
   useEffect(() => {
     if (specialist) {
       setImagePreview(specialist.image_url || "");
-      // Set the service if editing
+      // Set the services if editing - extract all unique service IDs from specialties
       if (specialist.specialist_specialties && specialist.specialist_specialties.length > 0) {
-        const firstServiceId = specialist.specialist_specialties[0].sub_services.service_id;
-        setSelectedService(firstServiceId);
+        const serviceIds = Array.from(new Set(
+          specialist.specialist_specialties.map(s => s.sub_services.service_id)
+        ));
+        setSelectedServices(serviceIds);
       }
     }
   }, []);
 
   useEffect(() => {
-    if (selectedService) {
-      fetchSubServices(selectedService);
+    if (selectedServices.length > 0) {
+      fetchSubServicesForMultipleServices(selectedServices);
     } else {
       setSubServices([]);
     }
-  }, [selectedService]);
+  }, [selectedServices]);
 
   const fetchServices = async () => {
     try {
@@ -137,12 +139,12 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
     }
   };
 
-  const fetchSubServices = async (serviceId: string) => {
+  const fetchSubServicesForMultipleServices = async (serviceIds: string[]) => {
     try {
       const { data, error } = await supabase
         .from("sub_services")
         .select("id, name, name_en, service_id")
-        .eq("service_id", serviceId)
+        .in("service_id", serviceIds)
         .eq("is_active", true)
         .order("name");
 
@@ -283,7 +285,7 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
       form.reset();
       setImageFile(null);
       setImagePreview("");
-      setSelectedService("");
+      setSelectedServices([]);
       setOpen(false);
       onSuccess();
     } catch (error: any) {
@@ -403,19 +405,36 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
             />
 
             <FormItem>
-              <FormLabel>Main Service</FormLabel>
-              <Select onValueChange={setSelectedService} value={selectedService}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select service to filter specialties" />
-                </SelectTrigger>
-                <SelectContent>
-                  {services.map((service) => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name_en || service.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>الخدمات الرئيسية * (يمكنك اختيار عدة خدمات)</FormLabel>
+              <div className="border rounded-md p-4 space-y-2 max-h-48 overflow-y-auto">
+                {services.map((service) => (
+                  <div key={service.id} className="flex items-center space-x-2 space-x-reverse">
+                    <input
+                      type="checkbox"
+                      id={`service-${service.id}`}
+                      checked={selectedServices.includes(service.id)}
+                      onChange={(e) => {
+                        const newValue = e.target.checked
+                          ? [...selectedServices, service.id]
+                          : selectedServices.filter((id) => id !== service.id);
+                        setSelectedServices(newValue);
+                      }}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <label
+                      htmlFor={`service-${service.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {service.name} {service.name_en ? `/ ${service.name_en}` : ''}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {selectedServices.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  تم اختيار {selectedServices.length} خدمة رئيسية
+                </p>
+              )}
             </FormItem>
 
             <FormField
@@ -423,41 +442,61 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
               name="sub_service_ids"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Specialties * (You can select multiple)</FormLabel>
-                  <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
-                    {(selectedService ? subServices : []).length === 0 ? (
+                  <FormLabel>التخصصات * (يمكنك اختيار عدة تخصصات)</FormLabel>
+                  <div className="border rounded-md p-4 space-y-3 max-h-80 overflow-y-auto">
+                    {selectedServices.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        {selectedService ? "No specialties available" : "Select the main service first"}
+                        الرجاء اختيار خدمة رئيسية واحدة على الأقل أولاً
+                      </p>
+                    ) : subServices.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        لا توجد تخصصات متاحة للخدمات المختارة
                       </p>
                     ) : (
-                      subServices.map((subService) => (
-                        <div key={subService.id} className="flex items-center space-x-2 space-x-reverse">
-                          <input
-                            type="checkbox"
-                            id={subService.id}
-                            checked={field.value?.includes(subService.id) || false}
-                            onChange={(e) => {
-                              const newValue = e.target.checked
-                                ? [...(field.value || []), subService.id]
-                                : (field.value || []).filter((id) => id !== subService.id);
-                              field.onChange(newValue);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                          <label
-                            htmlFor={subService.id}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                          >
-                            {subService.name_en || subService.name}
-                          </label>
-                        </div>
-                      ))
+                      selectedServices.map((serviceId) => {
+                        const service = services.find(s => s.id === serviceId);
+                        const serviceSubServices = subServices.filter(ss => ss.service_id === serviceId);
+                        
+                        if (serviceSubServices.length === 0) return null;
+                        
+                        return (
+                          <div key={serviceId} className="space-y-2">
+                            <div className="font-semibold text-sm text-primary border-b pb-1">
+                              {service?.name} {service?.name_en ? `/ ${service.name_en}` : ''}
+                            </div>
+                            <div className="space-y-2 pr-4">
+                              {serviceSubServices.map((subService) => (
+                                <div key={subService.id} className="flex items-center space-x-2 space-x-reverse">
+                                  <input
+                                    type="checkbox"
+                                    id={subService.id}
+                                    checked={field.value?.includes(subService.id) || false}
+                                    onChange={(e) => {
+                                      const newValue = e.target.checked
+                                        ? [...(field.value || []), subService.id]
+                                        : (field.value || []).filter((id) => id !== subService.id);
+                                      field.onChange(newValue);
+                                    }}
+                                    className="h-4 w-4 rounded border-gray-300"
+                                  />
+                                  <label
+                                    htmlFor={subService.id}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                  >
+                                    {subService.name} {subService.name_en ? `/ ${subService.name_en}` : ''}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                   <FormMessage />
                   {field.value && field.value.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      {field.value.length} specialties selected
+                      تم اختيار {field.value.length} تخصص
                     </p>
                   )}
                 </FormItem>
@@ -632,19 +671,36 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
             />
 
             <FormItem>
-              <FormLabel>Main Service</FormLabel>
-              <Select onValueChange={setSelectedService} value={selectedService}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select service to filter specialties" />
-                </SelectTrigger>
-                <SelectContent>
-                  {services.map((service) => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name_en || service.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>الخدمات الرئيسية * (يمكنك اختيار عدة خدمات)</FormLabel>
+              <div className="border rounded-md p-4 space-y-2 max-h-48 overflow-y-auto">
+                {services.map((service) => (
+                  <div key={service.id} className="flex items-center space-x-2 space-x-reverse">
+                    <input
+                      type="checkbox"
+                      id={`service-${service.id}`}
+                      checked={selectedServices.includes(service.id)}
+                      onChange={(e) => {
+                        const newValue = e.target.checked
+                          ? [...selectedServices, service.id]
+                          : selectedServices.filter((id) => id !== service.id);
+                        setSelectedServices(newValue);
+                      }}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <label
+                      htmlFor={`service-${service.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {service.name} {service.name_en ? `/ ${service.name_en}` : ''}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {selectedServices.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  تم اختيار {selectedServices.length} خدمة رئيسية
+                </p>
+              )}
             </FormItem>
 
             <FormField
@@ -652,41 +708,61 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
               name="sub_service_ids"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Specialties * (You can select multiple)</FormLabel>
-                  <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
-                    {(selectedService ? subServices : []).length === 0 ? (
+                  <FormLabel>التخصصات * (يمكنك اختيار عدة تخصصات)</FormLabel>
+                  <div className="border rounded-md p-4 space-y-3 max-h-80 overflow-y-auto">
+                    {selectedServices.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        {selectedService ? "No specialties available" : "Select the main service first"}
+                        الرجاء اختيار خدمة رئيسية واحدة على الأقل أولاً
+                      </p>
+                    ) : subServices.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        لا توجد تخصصات متاحة للخدمات المختارة
                       </p>
                     ) : (
-                      subServices.map((subService) => (
-                        <div key={subService.id} className="flex items-center space-x-2 space-x-reverse">
-                          <input
-                            type="checkbox"
-                            id={subService.id}
-                            checked={field.value?.includes(subService.id) || false}
-                            onChange={(e) => {
-                              const newValue = e.target.checked
-                                ? [...(field.value || []), subService.id]
-                                : (field.value || []).filter((id) => id !== subService.id);
-                              field.onChange(newValue);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                          <label
-                            htmlFor={subService.id}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                          >
-                            {subService.name_en || subService.name}
-                          </label>
-                        </div>
-                      ))
+                      selectedServices.map((serviceId) => {
+                        const service = services.find(s => s.id === serviceId);
+                        const serviceSubServices = subServices.filter(ss => ss.service_id === serviceId);
+                        
+                        if (serviceSubServices.length === 0) return null;
+                        
+                        return (
+                          <div key={serviceId} className="space-y-2">
+                            <div className="font-semibold text-sm text-primary border-b pb-1">
+                              {service?.name} {service?.name_en ? `/ ${service.name_en}` : ''}
+                            </div>
+                            <div className="space-y-2 pr-4">
+                              {serviceSubServices.map((subService) => (
+                                <div key={subService.id} className="flex items-center space-x-2 space-x-reverse">
+                                  <input
+                                    type="checkbox"
+                                    id={subService.id}
+                                    checked={field.value?.includes(subService.id) || false}
+                                    onChange={(e) => {
+                                      const newValue = e.target.checked
+                                        ? [...(field.value || []), subService.id]
+                                        : (field.value || []).filter((id) => id !== subService.id);
+                                      field.onChange(newValue);
+                                    }}
+                                    className="h-4 w-4 rounded border-gray-300"
+                                  />
+                                  <label
+                                    htmlFor={subService.id}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                  >
+                                    {subService.name} {subService.name_en ? `/ ${subService.name_en}` : ''}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                   <FormMessage />
                   {field.value && field.value.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      {field.value.length} specialties selected
+                      تم اختيار {field.value.length} تخصص
                     </p>
                   )}
                 </FormItem>
