@@ -652,66 +652,67 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                 </Popover>
               </div>
               
-              {/* Show budget only if service is selected and pricing type is hourly or daily */}
-              {formData.serviceId && selectedService && (selectedService.pricing_type === 'hourly' || selectedService.pricing_type === 'daily') && (
-                <div className="space-y-2">
-                  <Label htmlFor="budget">الميزانية / Budget</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Select value={formData.budgetType} onValueChange={(value) => handleInputChange('budgetType', value)}>
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="نوع السعر / Price Type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background z-50">
-                        <SelectItem value="hourly">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">بالساعة</span>
-                            <span className="text-xs text-muted-foreground">Hourly</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="daily">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">يومي</span>
-                            <span className="text-xs text-muted-foreground">Daily</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="task">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">بالمهمة</span>
-                            <span className="text-xs text-muted-foreground">Per Task</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="weekly">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">أسبوعي</span>
-                            <span className="text-xs text-muted-foreground">Weekly</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="monthly">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">شهري</span>
-                            <span className="text-xs text-muted-foreground">Monthly</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="service">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">للخدمة</span>
-                            <span className="text-xs text-muted-foreground">Per Service</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      id="budget"
-                      type="number"
-                      min="0"
-                      value={formData.budget}
-                      onChange={(e) => handleInputChange('budget', e.target.value)}
-                      placeholder="المبلغ / Amount"
-                      dir="ltr"
-                    />
-                  </div>
+              {/* Budget field - always shown */}
+              <div className="space-y-2">
+                <Label htmlFor="budget">الميزانية / Budget (Optional)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={formData.budgetType} onValueChange={(value) => handleInputChange('budgetType', value)}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="نوع السعر / Price Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="hourly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">بالساعة</span>
+                          <span className="text-xs text-muted-foreground">Hourly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="daily">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">يومي</span>
+                          <span className="text-xs text-muted-foreground">Daily</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="task">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">بالمهمة</span>
+                          <span className="text-xs text-muted-foreground">Per Task</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="weekly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">أسبوعي</span>
+                          <span className="text-xs text-muted-foreground">Weekly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="monthly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">شهري</span>
+                          <span className="text-xs text-muted-foreground">Monthly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="service">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">للخدمة</span>
+                          <span className="text-xs text-muted-foreground">Per Service</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="budget"
+                    type="number"
+                    min="0"
+                    value={formData.budget}
+                    onChange={(e) => handleInputChange('budget', e.target.value)}
+                    placeholder="المبلغ / Amount"
+                    dir="ltr"
+                  />
                 </div>
-              )}
+                <p className="text-xs text-muted-foreground">
+                  يمكنك ترك هذا الحقل فارغاً إذا لم تحدد الميزانية / You can leave this empty if budget is not specified
+                </p>
+              </div>
             </div>
             </div>
           )}
