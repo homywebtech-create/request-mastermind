@@ -20,12 +20,17 @@ const translations = {
     completeBooking: 'أكمل معلومات الحجز',
     location: 'الموقع',
     bookingType: 'نوع الحجز',
+    contractDuration: 'مدة العقد',
     date: 'التاريخ',
     prices: 'الأسعار',
     selectLocation: 'حدد موقع الخدمة',
     buildingInfo: 'معلومات المبنى والعنوان *',
     buildingPlaceholder: 'مثال: الطابق الثالث، شقة 305، بجانب مدخل المصعد...',
     selectBookingType: 'اختر نوع الحجز',
+    selectContractDuration: 'اختر مدة العقد',
+    oneMonth: 'شهر واحد',
+    twoMonths: 'شهرين',
+    threeMonths: '3 أشهر',
     oneTime: 'مرة واحدة',
     weekly: 'أسبوعي',
     biWeekly: 'نصف شهري',
@@ -47,23 +52,34 @@ const translations = {
     selectLocationError: 'يرجى تحديد الموقع على الخريطة',
     enterBuildingInfo: 'يرجى إدخال معلومات المبنى',
     selectBookingTypeError: 'يرجى اختيار نوع الحجز',
+    selectContractDurationError: 'يرجى اختيار مدة العقد',
     selectDateError: 'يرجى اختيار تاريخ الحجز',
     selectCustomDateError: 'يرجى اختيار التاريخ',
+    selectSpecialistError: 'يرجى اختيار محترفة واحدة على الأقل',
     saved: 'تم الحفظ',
     bookingSaved: 'تم حفظ معلومات الحجز بنجاح',
     error: 'خطأ',
     loadError: 'حدث خطأ في تحميل البيانات',
+    bookedUntil: 'محجوزة حتى',
+    available: 'متاحة',
+    selectedCount: 'تم اختيار',
+    specialists: 'محترفات',
   },
   en: {
     completeBooking: 'Complete Booking Information',
     location: 'Location',
     bookingType: 'Booking Type',
+    contractDuration: 'Contract Duration',
     date: 'Date',
     prices: 'Prices',
     selectLocation: 'Select Service Location',
     buildingInfo: 'Building and Address Information *',
     buildingPlaceholder: 'Example: 3rd floor, Apartment 305, next to elevator entrance...',
     selectBookingType: 'Choose Booking Type',
+    selectContractDuration: 'Choose Contract Duration',
+    oneMonth: '1 Month',
+    twoMonths: '2 Months',
+    threeMonths: '3 Months',
     oneTime: 'One Time',
     weekly: 'Weekly',
     biWeekly: 'Bi-Weekly',
@@ -85,12 +101,18 @@ const translations = {
     selectLocationError: 'Please select location on the map',
     enterBuildingInfo: 'Please enter building information',
     selectBookingTypeError: 'Please select booking type',
+    selectContractDurationError: 'Please select contract duration',
     selectDateError: 'Please select booking date',
     selectCustomDateError: 'Please select date',
+    selectSpecialistError: 'Please select at least one specialist',
     saved: 'Saved',
     bookingSaved: 'Booking information saved successfully',
     error: 'Error',
     loadError: 'An error occurred while loading data',
+    bookedUntil: 'Booked until',
+    available: 'Available',
+    selectedCount: 'Selected',
+    specialists: 'specialists',
   }
 };
 
@@ -111,6 +133,7 @@ interface Specialist {
   quoted_at: string;
   rating?: number;
   reviews_count?: number;
+  booked_until?: string | null; // Track when specialist is booked until
 }
 
 interface SpecialistReview {
@@ -133,15 +156,18 @@ export default function CompanyBooking() {
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const [hoursCount, setHoursCount] = useState<number>(1);
+  const [serviceType, setServiceType] = useState<string>(''); // To determine if it's monthly or general
+  const [isMonthlyService, setIsMonthlyService] = useState(false);
   
   // Form data
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [buildingInfo, setBuildingInfo] = useState('');
-  const [bookingType, setBookingType] = useState('');
+  const [bookingType, setBookingType] = useState(''); // For general cleaning
+  const [contractDuration, setContractDuration] = useState(''); // For monthly contracts
   const [bookingDateType, setBookingDateType] = useState('');
   const [customDate, setCustomDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const [selectedSpecialistId, setSelectedSpecialistId] = useState<string | null>(null);
+  const [selectedSpecialistIds, setSelectedSpecialistIds] = useState<string[]>([]); // Multiple selection
   const [showReviews, setShowReviews] = useState<string | null>(null);
   const [reviews, setReviews] = useState<SpecialistReview[]>([]);
 
@@ -214,10 +240,10 @@ export default function CompanyBooking() {
     try {
       setLoading(true);
 
-      // Fetch order info to get hours_count
+      // Fetch order info to get hours_count and service_type
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('hours_count')
+        .select('hours_count, service_type')
         .eq('id', orderId)
         .single();
 
@@ -226,6 +252,15 @@ export default function CompanyBooking() {
       // Parse hours_count (it's stored as text in DB)
       const hours = orderData?.hours_count ? parseInt(orderData.hours_count) : 1;
       setHoursCount(hours);
+      
+      // Determine if it's a monthly service
+      const svcType = orderData?.service_type || '';
+      setServiceType(svcType);
+      // Check if service type contains keywords for monthly contracts
+      const isMonthly = svcType.toLowerCase().includes('شهري') || 
+                        svcType.toLowerCase().includes('monthly') ||
+                        svcType.toLowerCase().includes('عقود');
+      setIsMonthlyService(isMonthly);
 
       // Fetch company info
       const { data: companyData, error: companyError } = await supabase
@@ -309,7 +344,17 @@ export default function CompanyBooking() {
       });
       return;
     }
-    if (currentStep === 2 && !bookingType) {
+    // For monthly service, check contract duration instead of booking type
+    if (currentStep === 2 && isMonthlyService && !contractDuration) {
+      toast({
+        title: t.missingData,
+        description: t.selectContractDurationError,
+        variant: 'destructive',
+      });
+      return;
+    }
+    // For general cleaning, check booking type
+    if (currentStep === 2 && !isMonthlyService && !bookingType) {
       toast({
         title: t.missingData,
         description: t.selectBookingTypeError,
@@ -333,10 +378,10 @@ export default function CompanyBooking() {
       });
       return;
     }
-    if (currentStep === 3 && !selectedSpecialistId) {
+    if (currentStep === 3 && selectedSpecialistIds.length === 0) {
       toast({
         title: t.missingData,
-        description: language === 'ar' ? 'يرجى اختيار المحترفة' : 'Please select a specialist',
+        description: t.selectSpecialistError,
         variant: 'destructive',
       });
       return;
@@ -359,10 +404,10 @@ export default function CompanyBooking() {
 
   const handleSubmit = async () => {
     try {
-      if (!selectedSpecialistId) {
+      if (selectedSpecialistIds.length === 0) {
         toast({
           title: t.missingData,
-          description: 'الرجاء اختيار محترفة',
+          description: t.selectSpecialistError,
           variant: 'destructive',
         });
         return;
@@ -395,17 +440,17 @@ export default function CompanyBooking() {
           gps_latitude: location?.lat,
           gps_longitude: location?.lng,
           building_info: buildingInfo,
-          selected_booking_type: bookingType,
+          selected_booking_type: isMonthlyService ? contractDuration : bookingType,
           booking_date: bookingDate,
-          booking_date_type: 'custom', // Fixed: use 'custom' instead of the actual date
-          booking_time: selectedTime, // Save the selected time slot
+          booking_date_type: 'custom',
+          booking_time: selectedTime,
           status: 'in-progress',
         })
         .eq('id', orderId);
 
       if (orderError) throw orderError;
 
-      // First, reject all other specialists for this order
+      // First, reject all unselected specialists for this order
       const { error: rejectError } = await supabase
         .from('order_specialists')
         .update({ 
@@ -414,29 +459,30 @@ export default function CompanyBooking() {
           rejection_reason: 'تم اختيار عرض آخر'
         })
         .eq('order_id', orderId)
-        .neq('specialist_id', selectedSpecialistId);
+        .not('specialist_id', 'in', `(${selectedSpecialistIds.join(',')})`);
 
       if (rejectError) {
         console.error('Error rejecting other specialists:', rejectError);
       }
 
-      // Accept the selected specialist
-      const { error: acceptError } = await supabase
-        .from('order_specialists')
-        .update({ 
-          is_accepted: true,
-          rejected_at: null,
-          rejection_reason: null
-        })
-        .eq('order_id', orderId)
-        .eq('specialist_id', selectedSpecialistId);
+      // Accept all selected specialists
+      for (const specialistId of selectedSpecialistIds) {
+        const { error: acceptError } = await supabase
+          .from('order_specialists')
+          .update({ 
+            is_accepted: true,
+            rejected_at: null,
+            rejection_reason: null
+          })
+          .eq('order_id', orderId)
+          .eq('specialist_id', specialistId);
 
-      if (acceptError) {
-        console.error('Error accepting specialist:', acceptError);
-        throw acceptError;
+        if (acceptError) {
+          console.error('Error accepting specialist:', specialistId, acceptError);
+        }
       }
 
-      console.log('Successfully accepted specialist:', selectedSpecialistId);
+      console.log('Successfully accepted specialists:', selectedSpecialistIds);
 
       // Get company data for WhatsApp
       const { data: orderData } = await supabase
@@ -445,17 +491,17 @@ export default function CompanyBooking() {
         .eq('id', orderId)
         .single();
 
-      const selectedSpec = specialists.find(s => s.id === selectedSpecialistId);
+      const selectedSpecs = specialists.filter(s => selectedSpecialistIds.includes(s.id));
+      const specialistNames = selectedSpecs.map(s => s.name).join('، ');
       
       // Prepare WhatsApp message
-      const totalPrice = calculateTotalPrice(selectedSpec);
       const message = encodeURIComponent(
         `تم تأكيد الحجز ✅\n\n` +
-        `المحترفة: ${selectedSpec?.name}\n` +
+        `المحترفات: ${specialistNames}\n` +
         `التاريخ: ${bookingDate}\n` +
         `الوقت: ${selectedTime}\n` +
-        `نوع الحجز: ${bookingType}\n` +
-        `السعر الإجمالي: ${totalPrice} (${hoursCount} ${hoursCount === 1 ? 'ساعة' : 'ساعات'})\n\n` +
+        `نوع الحجز: ${isMonthlyService ? contractDuration : bookingType}\n` +
+        `عدد المحترفات: ${selectedSpecialistIds.length}\n\n` +
         `سيتم التواصل معك قريباً لتأكيد التفاصيل.`
       );
 
@@ -557,7 +603,7 @@ export default function CompanyBooking() {
   const renderStepIndicator = () => {
     const steps = [
       { number: 1, title: t.location },
-      { number: 2, title: t.bookingType },
+      { number: 2, title: isMonthlyService ? t.contractDuration : t.bookingType },
       { number: 3, title: language === 'ar' ? 'التاريخ والمحترفة' : 'Date & Specialist' }
     ];
 
@@ -686,36 +732,67 @@ export default function CompanyBooking() {
               </div>
             )}
 
-            {/* Step 2: Booking Type */}
+            {/* Step 2: Booking Type or Contract Duration */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">{t.selectBookingType}</h3>
+                <h3 className="text-lg font-semibold">
+                  {isMonthlyService ? t.selectContractDuration : t.selectBookingType}
+                </h3>
                 
-                <RadioGroup value={bookingType} onValueChange={setBookingType}>
-                  <div className="space-y-3">
-                    {[
-                      { value: 'once', label: t.oneTime },
-                      { value: 'weekly', label: t.weekly },
-                      { value: 'bi-weekly', label: t.biWeekly },
-                      { value: 'monthly', label: t.monthly }
-                    ].map((option) => (
-                      <label
-                        key={option.value}
-                        className={cn(
-                          'flex items-center space-x-3 space-x-reverse border-2 rounded-lg p-4 cursor-pointer transition-all',
-                          bookingType === option.value
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        )}
-                      >
-                        <RadioGroupItem value={option.value} id={option.value} />
-                        <div className="flex-1">
-                          <span className="font-medium">{option.label}</span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </RadioGroup>
+                {isMonthlyService ? (
+                  // Monthly Service - Contract Duration Options
+                  <RadioGroup value={contractDuration} onValueChange={setContractDuration}>
+                    <div className="space-y-3">
+                      {[
+                        { value: '1-month', label: t.oneMonth },
+                        { value: '2-months', label: t.twoMonths },
+                        { value: '3-months', label: t.threeMonths }
+                      ].map((option) => (
+                        <label
+                          key={option.value}
+                          className={cn(
+                            'flex items-center space-x-3 space-x-reverse border-2 rounded-lg p-4 cursor-pointer transition-all',
+                            contractDuration === option.value
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                          )}
+                        >
+                          <RadioGroupItem value={option.value} id={option.value} />
+                          <div className="flex-1">
+                            <span className="font-medium">{option.label}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                ) : (
+                  // General Cleaning - Booking Type Options
+                  <RadioGroup value={bookingType} onValueChange={setBookingType}>
+                    <div className="space-y-3">
+                      {[
+                        { value: 'once', label: t.oneTime },
+                        { value: 'weekly', label: t.weekly },
+                        { value: 'bi-weekly', label: t.biWeekly },
+                        { value: 'monthly', label: t.monthly }
+                      ].map((option) => (
+                        <label
+                          key={option.value}
+                          className={cn(
+                            'flex items-center space-x-3 space-x-reverse border-2 rounded-lg p-4 cursor-pointer transition-all',
+                            bookingType === option.value
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                          )}
+                        >
+                          <RadioGroupItem value={option.value} id={option.value} />
+                          <div className="flex-1">
+                            <span className="font-medium">{option.label}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                )}
               </div>
             )}
 
@@ -731,7 +808,7 @@ export default function CompanyBooking() {
                   
                   <RadioGroup value={bookingDateType} onValueChange={(value) => {
                     setBookingDateType(value);
-                    setSelectedSpecialistId(null);
+                    setSelectedSpecialistIds([]);
                     setSelectedTime('');
                   }}>
                     <div className="relative">
@@ -782,10 +859,17 @@ export default function CompanyBooking() {
                 {/* Show Specialists after date selection */}
                 {bookingDateType && (
                   <div className="space-y-4 pt-6 border-t-2">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      {language === 'ar' ? 'اختر المحترفة والوقت المناسب' : 'Choose Specialist & Time'}
-                    </h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        {language === 'ar' ? 'اختر المحترفة والوقت المناسب' : 'Choose Specialist & Time'}
+                      </h3>
+                      {isMonthlyService && selectedSpecialistIds.length > 0 && (
+                        <Badge variant="default" className="text-sm px-3 py-1">
+                          {t.selectedCount}: {selectedSpecialistIds.length} {t.specialists}
+                        </Badge>
+                      )}
+                    </div>
 
                     {specialists.length > 0 ? (
                       <div className="space-y-4">
@@ -799,7 +883,8 @@ export default function CompanyBooking() {
                             const pricePerHour = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
                             const totalPrice = pricePerHour * hoursCount;
                             const isLowest = totalPrice === lowestPrice;
-                            const isSelected = selectedSpecialistId === specialist.id;
+                            const isSelected = selectedSpecialistIds.includes(specialist.id);
+                            const isBooked = specialist.booked_until && new Date(specialist.booked_until) > new Date();
 
                             return (
                               <div
@@ -810,6 +895,8 @@ export default function CompanyBooking() {
                                     ? 'border-primary shadow-lg'
                                     : isLowest 
                                     ? 'border-green-500 shadow-md' 
+                                    : isBooked
+                                    ? 'border-orange-400 opacity-75'
                                     : 'border-border hover:shadow-md'
                                 )}
                               >
@@ -818,9 +905,21 @@ export default function CompanyBooking() {
                                   className={cn(
                                     'flex gap-4 p-4 cursor-pointer transition-colors',
                                     isSelected && 'bg-primary/5',
-                                    isLowest && !isSelected && 'bg-green-50 dark:bg-green-950/20'
+                                    isLowest && !isSelected && 'bg-green-50 dark:bg-green-950/20',
+                                    isBooked && 'bg-orange-50 dark:bg-orange-950/20'
                                   )}
-                                  onClick={() => setSelectedSpecialistId(specialist.id)}
+                                  onClick={() => {
+                                    // Toggle selection for monthly service, single for general
+                                    if (isMonthlyService) {
+                                      if (isSelected) {
+                                        setSelectedSpecialistIds(selectedSpecialistIds.filter(id => id !== specialist.id));
+                                      } else {
+                                        setSelectedSpecialistIds([...selectedSpecialistIds, specialist.id]);
+                                      }
+                                    } else {
+                                      setSelectedSpecialistIds([specialist.id]);
+                                    }
+                                  }}
                                 >
                                   {specialist.image_url ? (
                                     <img 
@@ -845,6 +944,12 @@ export default function CompanyBooking() {
                                           <p className="text-sm text-muted-foreground truncate">
                                             {specialist.nationality}
                                           </p>
+                                        )}
+                                        {/* Booking Status Badge */}
+                                        {isBooked && specialist.booked_until && (
+                                          <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600 dark:text-orange-400">
+                                            {language === 'ar' ? 'محجوزة حتى' : 'Booked until'}: {new Date(specialist.booked_until).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}
+                                          </Badge>
                                         )}
                                       </div>
                                       <div className="text-right flex-shrink-0">
@@ -1015,18 +1120,17 @@ export default function CompanyBooking() {
                 <Button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={!bookingDateType || !selectedSpecialistId || !selectedTime}
+                  disabled={!bookingDateType || selectedSpecialistIds.length === 0 || !selectedTime}
                   className="flex-1 flex items-center justify-center gap-2 text-base h-12"
                 >
                   <Check className="h-5 w-5" />
                   <span className="flex items-center gap-2">
                     <span>{t.submit}</span>
-                    {selectedSpecialistId && specialists.find(s => s.id === selectedSpecialistId) && (
+                    {selectedSpecialistIds.length > 0 && (
                       <span className="font-bold flex items-center gap-1">
                         <span>-</span>
-                        <span>{calculateTotalPrice(specialists.find(s => s.id === selectedSpecialistId)!)}</span>
-                        <span className="text-sm opacity-80">
-                          ({hoursCount} {language === 'ar' ? (hoursCount === 1 ? 'ساعة' : 'ساعات') : (hoursCount === 1 ? 'hour' : 'hours')})
+                        <span>
+                          {selectedSpecialistIds.length} {t.specialists}
                         </span>
                       </span>
                     )}
