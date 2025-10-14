@@ -227,13 +227,21 @@ export default function CompanyBooking() {
     return months;
   };
 
-  // Format month for display
+  // Format month for display with day
   const formatMonthDisplay = (date: Date) => {
     const monthNames = language === 'ar' 
       ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
       : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
-    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  // Check if a month is booked for a specific specialist
+  const isMonthBooked = (monthDate: Date, specialist: Specialist) => {
+    if (!specialist.booked_until) return false;
+    const bookedUntilDate = new Date(specialist.booked_until);
+    // If the month is before or equal to the booked until date, it's booked
+    return monthDate <= bookedUntilDate;
   };
 
   // Generate available dates for the next 15 days
@@ -1089,12 +1097,19 @@ export default function CompanyBooking() {
                                             <div className="flex gap-2 flex-wrap">
                                               {generateAvailableMonths(specialist).slice(0, 3).map((monthDate) => {
                                                 const monthValue = monthDate.toISOString().split('T')[0];
+                                                const isBooked = isMonthBooked(monthDate, specialist);
                                                 return (
                                                   <div
                                                     key={monthValue}
-                                                    className="px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20 text-xs font-medium animate-fade-in"
+                                                    className={cn(
+                                                      "px-3 py-1.5 rounded-md text-xs font-medium animate-fade-in",
+                                                      isBooked 
+                                                        ? "bg-muted/30 border border-muted text-muted-foreground/50 opacity-50 cursor-not-allowed"
+                                                        : "bg-primary/10 border border-primary/20"
+                                                    )}
                                                   >
                                                     {formatMonthDisplay(monthDate)}
+                                                    {isBooked && <span className="ml-1">🔒</span>}
                                                   </div>
                                                 );
                                               })}
@@ -1169,22 +1184,37 @@ export default function CompanyBooking() {
                                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                             {generateAvailableMonths(specialist).map((monthDate) => {
                                               const monthValue = monthDate.toISOString().split('T')[0];
+                                              const isBooked = isMonthBooked(monthDate, specialist);
                                               return (
                                                 <label
                                                   key={monthValue}
                                                   className={cn(
-                                                    'flex items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-all',
-                                                    selectedTime === monthValue
-                                                      ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
-                                                      : 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
+                                                    'flex items-center justify-center border-2 rounded-lg p-3 transition-all',
+                                                    isBooked
+                                                      ? 'border-muted bg-muted/30 cursor-not-allowed opacity-50'
+                                                      : selectedTime === monthValue
+                                                      ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105 cursor-pointer'
+                                                      : 'border-border bg-background hover:border-primary/50 hover:shadow-sm cursor-pointer'
                                                   )}
                                                 >
-                                                  <RadioGroupItem value={monthValue} id={monthValue} className="sr-only" />
-                                                  <div className="flex items-center gap-1.5">
-                                                    <Calendar className="h-4 w-4" />
-                                                    <span className="font-semibold text-xs text-center">
-                                                      {formatMonthDisplay(monthDate)}
-                                                    </span>
+                                                  <RadioGroupItem 
+                                                    value={monthValue} 
+                                                    id={monthValue} 
+                                                    className="sr-only" 
+                                                    disabled={isBooked}
+                                                  />
+                                                  <div className="flex flex-col items-center gap-1">
+                                                    <div className="flex items-center gap-1.5">
+                                                      <Calendar className="h-4 w-4" />
+                                                      <span className="font-semibold text-xs text-center">
+                                                        {formatMonthDisplay(monthDate)}
+                                                      </span>
+                                                    </div>
+                                                    {isBooked && (
+                                                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        🔒 {language === 'ar' ? 'محجوز' : 'Booked'}
+                                                      </span>
+                                                    )}
                                                   </div>
                                                 </label>
                                               );
