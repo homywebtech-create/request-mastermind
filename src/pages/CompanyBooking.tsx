@@ -64,6 +64,8 @@ const translations = {
     available: 'متاحة',
     selectedCount: 'تم اختيار',
     specialists: 'محترفات',
+    perMonth: 'بالشهر',
+    months: 'أشهر',
   },
   en: {
     completeBooking: 'Complete Booking Information',
@@ -113,6 +115,8 @@ const translations = {
     available: 'Available',
     selectedCount: 'Selected',
     specialists: 'specialists',
+    perMonth: 'per month',
+    months: 'months',
   }
 };
 
@@ -945,12 +949,22 @@ export default function CompanyBooking() {
                                             {specialist.nationality}
                                           </p>
                                         )}
-                                        {/* Booking Status Badge */}
-                                        {isBooked && specialist.booked_until && (
-                                          <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600 dark:text-orange-400">
-                                            {language === 'ar' ? 'محجوزة حتى' : 'Booked until'}: {new Date(specialist.booked_until).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}
-                                          </Badge>
-                                        )}
+                                         {/* Booking Status Badge */}
+                                         {isBooked && specialist.booked_until && (
+                                           <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600 dark:text-orange-400">
+                                             {isMonthlyService ? (
+                                               <>
+                                                 {language === 'ar' ? 'محجوزة لمدة' : 'Booked for'}: {
+                                                   Math.ceil((new Date(specialist.booked_until).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30))
+                                                 } {language === 'ar' ? 'شهر' : t.months}
+                                               </>
+                                             ) : (
+                                               <>
+                                                 {language === 'ar' ? 'محجوزة حتى' : 'Booked until'}: {new Date(specialist.booked_until).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}
+                                               </>
+                                             )}
+                                           </Badge>
+                                         )}
                                       </div>
                                       <div className="text-right flex-shrink-0">
                                         <Badge 
@@ -962,7 +976,7 @@ export default function CompanyBooking() {
                                           {calculateTotalPrice(specialist)}
                                         </Badge>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                          {hoursCount} {language === 'ar' ? 'ساعات' : 'hours'}
+                                          {isMonthlyService ? t.perMonth : `${hoursCount} ${language === 'ar' ? 'ساعات' : 'hours'}`}
                                         </p>
                                         {isLowest && (
                                           <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-bold">
