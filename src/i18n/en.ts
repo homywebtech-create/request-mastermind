@@ -23,6 +23,10 @@ export const en = {
     email: "Email",
     name: "Name",
     notes: "Notes",
+    close: "Close",
+    confirm: "Confirm",
+    view: "View",
+    update: "Update",
   },
   
   dashboard: {

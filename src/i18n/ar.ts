@@ -23,6 +23,10 @@ export const ar = {
     email: "البريد الإلكتروني",
     name: "الاسم",
     notes: "ملاحظات",
+    close: "إغلاق",
+    confirm: "تأكيد",
+    view: "عرض",
+    update: "تحديث",
   },
   
   dashboard: {
