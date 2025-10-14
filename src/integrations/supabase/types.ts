@@ -600,6 +600,7 @@ export type Database = {
       }
       specialists: {
         Row: {
+          approval_status: string | null
           company_id: string
           created_at: string
           experience_years: number | null
@@ -611,11 +612,14 @@ export type Database = {
           notes: string | null
           phone: string
           rating: number | null
+          registration_completed_at: string | null
+          registration_token: string | null
           reviews_count: number | null
           specialty: string | null
           updated_at: string
         }
         Insert: {
+          approval_status?: string | null
           company_id: string
           created_at?: string
           experience_years?: number | null
@@ -627,11 +631,14 @@ export type Database = {
           notes?: string | null
           phone: string
           rating?: number | null
+          registration_completed_at?: string | null
+          registration_token?: string | null
           reviews_count?: number | null
           specialty?: string | null
           updated_at?: string
         }
         Update: {
+          approval_status?: string | null
           company_id?: string
           created_at?: string
           experience_years?: number | null
@@ -643,6 +650,8 @@ export type Database = {
           notes?: string | null
           phone?: string
           rating?: number | null
+          registration_completed_at?: string | null
+          registration_token?: string | null
           reviews_count?: number | null
           specialty?: string | null
           updated_at?: string
@@ -766,6 +775,10 @@ export type Database = {
         Returns: undefined
       }
       generate_order_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_specialist_registration_token: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
