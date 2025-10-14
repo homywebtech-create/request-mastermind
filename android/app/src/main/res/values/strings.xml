@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">request-mastermind</string>
+    <string name="title_activity_main">request-mastermind</string>
+    <string name="package_name">app.lovable.c9213afe1e6545938c572cfda087384c</string>
+    <string name="custom_url_scheme">app.lovable.c9213afe1e6545938c572cfda087384c</string>
+</resources>
