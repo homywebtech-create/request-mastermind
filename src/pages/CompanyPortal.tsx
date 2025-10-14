@@ -8,6 +8,8 @@ import { StatsCard } from "@/components/dashboard/stats-card";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { OrderForm } from "@/components/orders/order-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface Company {
   id: string;
@@ -77,6 +79,7 @@ interface OrderStats {
 export default function CompanyPortal() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [company, setCompany] = useState<Company | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<string>('new');
@@ -498,6 +501,7 @@ export default function CompanyPortal() {
             </div>
             
             <div className="flex items-center gap-2">
+              <LanguageSwitcher />
               <Button
                 onClick={() => setShowOrderForm(true)}
                 className="flex items-center gap-2"

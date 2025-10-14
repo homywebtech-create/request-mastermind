@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getSoundNotification } from "@/lib/soundNotification";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface Order {
   id: string;
@@ -62,6 +64,7 @@ interface OrderStats {
 }
 
 export default function Dashboard() {
+  const { language } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [filter, setFilter] = useState<string>('pending');
@@ -563,6 +566,8 @@ export default function Dashboard() {
             </div>
             
             <div className="flex gap-2">
+              <LanguageSwitcher />
+              
               <Button
                 variant={soundEnabled ? "default" : "outline"}
                 size="icon"

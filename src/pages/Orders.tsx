@@ -8,6 +8,8 @@ import { OrderForm } from "@/components/orders/order-form";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface OrderFormData {
   customerName: string;
@@ -60,6 +62,7 @@ interface Order {
 }
 
 export default function Orders() {
+  const { language } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user?.id);
   const { toast } = useToast();
@@ -454,12 +457,16 @@ export default function Orders() {
           </p>
         </div>
         
-        {!showForm && (
-          <Button onClick={() => setShowForm(true)} size="lg">
-            <Plus className="h-5 w-5 ml-2" />
-            طلب جديد
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          
+          {!showForm && (
+            <Button onClick={() => setShowForm(true)} size="lg">
+              <Plus className="h-5 w-5 ml-2" />
+              طلب جديد
+            </Button>
+          )}
+        </div>
       </div>
 
       {showForm && (

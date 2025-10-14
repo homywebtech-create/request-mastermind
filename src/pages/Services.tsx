@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { translations } from "@/i18n/translations";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface Service {
   id: string;
@@ -42,6 +44,7 @@ const t = translations.services;
 const tCommon = translations.common;
 
 export default function Services() {
+  const { language } = useLanguage();
   const [services, setServices] = useState<Service[]>([]);
   const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
   const [isSubServiceFormOpen, setIsSubServiceFormOpen] = useState(false);
@@ -338,6 +341,8 @@ export default function Services() {
             </div>
 
             <div className="flex gap-2">
+              <LanguageSwitcher />
+              
               <Button
                 variant="outline"
                 onClick={() => navigate("/admin")}

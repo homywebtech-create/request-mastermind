@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Building2, LogOut, ArrowLeft } from "lucide-react";
 import { SpecialistForm } from "@/components/specialists/specialist-form";
 import { SpecialistsTable } from "@/components/specialists/specialists-table";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface Company {
   id: string;
@@ -45,6 +47,7 @@ interface Specialist {
 }
 
 export default function Specialists() {
+  const { language } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [company, setCompany] = useState<Company | null>(null);
@@ -221,14 +224,18 @@ export default function Specialists() {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleLogout}
-              title="Logout"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleLogout}
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>

@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ReviewsDialog } from '@/components/booking/ReviewsDialog';
 import { SpecialistProfileDialog } from '@/components/specialists/SpecialistProfileDialog';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { useLanguage } from '@/hooks/useLanguage';
 
 // Translations
 const translations = {
@@ -161,11 +163,11 @@ export default function CompanyBooking() {
   const { orderId, companyId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   const [company, setCompany] = useState<Company | null>(null);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
-  const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const [hoursCount, setHoursCount] = useState<number>(1);
   const [serviceType, setServiceType] = useState<string>(''); // To determine if it's monthly or general
   const [isMonthlyService, setIsMonthlyService] = useState(false);
@@ -717,15 +719,7 @@ export default function CompanyBooking() {
       <div className="container mx-auto max-w-4xl">
         {/* Language Toggle */}
         <div className="flex justify-end mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-            className="gap-2"
-          >
-            <Languages className="h-4 w-4" />
-            {language === 'ar' ? 'English' : 'العربية'}
-          </Button>
+          <LanguageSwitcher />
         </div>
 
         {/* Company Header */}
