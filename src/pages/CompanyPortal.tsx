@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar } from "lucide-react";
+import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { OrdersTable } from "@/components/orders/orders-table";
+import { OrderForm } from "@/components/orders/order-form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Company {
   id: string;
@@ -79,6 +81,7 @@ export default function CompanyPortal() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<string>('new');
   const [isLoading, setIsLoading] = useState(true);
+  const [showOrderForm, setShowOrderForm] = useState(false);
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
@@ -343,6 +346,112 @@ export default function CompanyPortal() {
     }
   };
 
+  const handleCreateOrder = async (orderData: any) => {
+    try {
+      // First, check if customer exists or create new one
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('whatsapp_number', orderData.whatsappNumber)
+        .maybeSingle();
+
+      let customerId = existingCustomer?.id;
+
+      if (!customerId) {
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert({
+            name: orderData.customerName,
+            whatsapp_number: orderData.whatsappNumber,
+            area: orderData.area,
+            budget: orderData.budget,
+            budget_type: orderData.budgetType,
+            company_id: company?.id,
+          })
+          .select()
+          .single();
+
+        if (customerError) throw customerError;
+        customerId = newCustomer.id;
+      } else {
+        await supabase
+          .from('customers')
+          .update({
+            name: orderData.customerName,
+            area: orderData.area,
+            budget: orderData.budget,
+            budget_type: orderData.budgetType,
+          })
+          .eq('id', customerId);
+      }
+
+      // Create the order with company_id and send_to_all_companies = false
+      const orderLink = `${window.location.origin}/order/${Date.now()}`;
+      
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          customer_id: customerId,
+          company_id: company?.id, // Set company_id
+          service_type: orderData.serviceType,
+          status: 'pending',
+          notes: orderData.notes,
+          order_link: orderLink,
+          hours_count: orderData.hoursCount,
+          send_to_all_companies: false, // Always false for company orders
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Get specialists from the company only
+      let specialistsToLink: string[] = [];
+      
+      if (orderData.specialistIds && orderData.specialistIds.length > 0) {
+        specialistsToLink = orderData.specialistIds;
+      } else {
+        // Get all active specialists from this company
+        const { data: companySpecialists } = await supabase
+          .from('specialists')
+          .select('id')
+          .eq('company_id', company?.id)
+          .eq('is_active', true);
+
+        specialistsToLink = companySpecialists?.map(s => s.id) || [];
+      }
+
+      // Link specialists to order
+      if (specialistsToLink.length > 0) {
+        const orderSpecialists = specialistsToLink.map(specialistId => ({
+          order_id: order.id,
+          specialist_id: specialistId,
+        }));
+
+        const { error: linkError } = await supabase
+          .from('order_specialists')
+          .insert(orderSpecialists);
+
+        if (linkError) throw linkError;
+      }
+
+      toast({
+        title: "تم إنشاء الطلب بنجاح / Order Created Successfully",
+        description: `رقم الطلب: ${order.order_number}`,
+      });
+
+      setShowOrderForm(false);
+      fetchOrders(company!.id);
+    } catch (error: any) {
+      console.error('Error creating order:', error);
+      toast({
+        title: "خطأ / Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/company-auth");
@@ -389,6 +498,13 @@ export default function CompanyPortal() {
             </div>
             
             <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowOrderForm(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>طلب جديد / New Order</span>
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => navigate("/specialists")}
@@ -469,6 +585,20 @@ export default function CompanyPortal() {
           companyId={company.id}
         />
       </main>
+
+      <Dialog open={showOrderForm} onOpenChange={setShowOrderForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              طلب جديد / New Order
+            </DialogTitle>
+          </DialogHeader>
+          <OrderForm 
+            onSubmit={handleCreateOrder}
+            onCancel={() => setShowOrderForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
