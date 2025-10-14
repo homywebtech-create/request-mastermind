@@ -715,7 +715,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                             <span className="font-medium">{service.name}</span>
                             {service.price && (
                               <Badge variant="secondary" className="text-xs">
-                                {service.price} SAR
+                                {service.price} {countries.find(c => c.code === formData.countryCode)?.currencySymbol || 'SAR'}
                               </Badge>
                             )}
                           </div>
@@ -744,7 +744,7 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                               <span className="font-medium">{subService.name}</span>
                               {subService.price && (
                                 <Badge variant="outline" className="text-xs">
-                                  {subService.price} SAR
+                                  {subService.price} {countries.find(c => c.code === formData.countryCode)?.currencySymbol || 'SAR'}
                                 </Badge>
                               )}
                             </div>
@@ -767,18 +767,21 @@ export function OrderForm({ onSubmit, onCancel }: OrderFormProps) {
                   <span className="text-sm font-medium">السعر / Price:</span>
                   <span className="text-lg font-bold text-primary">
                     {(() => {
+                      const country = countries.find(c => c.code === formData.countryCode);
+                      const currencySymbol = country?.currencySymbol || 'SAR';
+                      
                       // Check if sub-service is selected and has a price
                       if (formData.subServiceId) {
                         const subService = selectedService.sub_services.find(
                           ss => ss.id === formData.subServiceId
                         );
                         if (subService?.price) {
-                          return `${subService.price} SAR`;
+                          return `${subService.price} ${currencySymbol}`;
                         }
                       }
                       // Otherwise, check if main service has a price
                       if (selectedService.price) {
-                        return `${selectedService.price} SAR`;
+                        return `${selectedService.price} ${currencySymbol}`;
                       }
                       // No fixed price
                       return 'سعر غير ثابت / Not Fixed';

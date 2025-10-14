@@ -398,7 +398,7 @@ export default function Services() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="price">السعر الثابت / Fixed Price (SAR)</Label>
+                      <Label htmlFor="price">السعر الثابت / Fixed Price</Label>
                       <Input
                         id="price"
                         type="number"
@@ -410,6 +410,9 @@ export default function Services() {
                         }
                         placeholder="اترك فارغاً إذا كان السعر غير ثابت / Leave empty if not fixed"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        السعر سيظهر بعملة الدولة المختارة / Price will display in selected country's currency
+                      </p>
                     </div>
 
                     <div className="flex gap-2 justify-end">
@@ -443,7 +446,7 @@ export default function Services() {
                     )}
                     {service.price && (
                       <Badge variant="secondary" className="mt-2">
-                        {service.price} SAR
+                        {service.price} (متعدد العملات / Multi-currency)
                       </Badge>
                     )}
                     <CardDescription>
@@ -498,7 +501,7 @@ export default function Services() {
                             )}
                             {subService.price && (
                               <Badge variant="outline" className="mt-1 text-xs">
-                                {subService.price} SAR
+                                {subService.price} (متعدد العملات)
                               </Badge>
                             )}
                             {subService.description && (
@@ -608,7 +611,7 @@ export default function Services() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sub-price">السعر الثابت / Fixed Price (SAR)</Label>
+              <Label htmlFor="sub-price">السعر الثابت / Fixed Price</Label>
               <Input
                 id="sub-price"
                 type="number"
@@ -620,6 +623,9 @@ export default function Services() {
                 }
                 placeholder="اترك فارغاً إذا كان السعر غير ثابت / Leave empty if not fixed"
               />
+              <p className="text-xs text-muted-foreground">
+                السعر سيظهر بعملة الدولة المختارة / Price will display in selected country's currency
+              </p>
             </div>
 
             <div className="flex gap-2 justify-end">
