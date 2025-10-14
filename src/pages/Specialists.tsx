@@ -25,6 +25,9 @@ interface Specialist {
   approval_status?: string;
   registration_token?: string;
   registration_completed_at?: string;
+  suspension_type?: string;
+  suspension_end_date?: string;
+  suspension_reason?: string;
   specialist_specialties?: Array<{
     sub_service_id: string;
     sub_services: {

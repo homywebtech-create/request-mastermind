@@ -53,15 +53,48 @@ export default function SpecialistAuth() {
 
       const { data: specialist, error: specialistError } = await supabase
         .from('specialists')
-        .select('id, name, is_active')
+        .select('id, name, is_active, suspension_type, suspension_end_date')
         .eq('phone', fullPhone)
-        .eq('is_active', true)
         .maybeSingle();
 
       if (specialistError || !specialist) {
         toast({
           title: t.error,
           description: t.specialistNotFound,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if specialist is suspended
+      if (specialist.suspension_type === 'permanent') {
+        toast({
+          title: "حساب موقوف / Account Suspended",
+          description: "تم إيقاف حسابك نهائياً. يرجى التواصل مع الإدارة / Your account has been permanently suspended. Please contact administration",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (specialist.suspension_type === 'temporary' && specialist.suspension_end_date) {
+        const endDate = new Date(specialist.suspension_end_date);
+        if (endDate > new Date()) {
+          toast({
+            title: "حساب موقوف مؤقتاً / Account Temporarily Suspended",
+            description: `حسابك موقوف حتى ${endDate.toLocaleDateString('ar')} / Your account is suspended until ${endDate.toLocaleDateString()}`,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      if (!specialist.is_active) {
+        toast({
+          title: t.error,
+          description: "حسابك غير نشط. يرجى التواصل مع الإدارة / Your account is inactive. Please contact administration",
           variant: "destructive",
         });
         setIsLoading(false);

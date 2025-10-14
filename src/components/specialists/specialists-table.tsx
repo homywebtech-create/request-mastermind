@@ -3,12 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Copy } from "lucide-react";
+import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SpecialistForm } from "./specialist-form";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +38,9 @@ interface Specialist {
   approval_status?: string;
   registration_token?: string;
   registration_completed_at?: string;
+  suspension_type?: string;
+  suspension_end_date?: string;
+  suspension_reason?: string;
   specialist_specialties?: Array<{
     sub_service_id: string;
     sub_services: {
@@ -62,6 +69,10 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
   const [editingSpecialist, setEditingSpecialist] = useState<Specialist | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [generatingToken, setGeneratingToken] = useState<string | null>(null);
+  const [suspendingSpecialist, setSuspendingSpecialist] = useState<Specialist | null>(null);
+  const [suspensionType, setSuspensionType] = useState<'temporary' | 'permanent'>('temporary');
+  const [suspensionEndDate, setSuspensionEndDate] = useState('');
+  const [suspensionReason, setSuspensionReason] = useState('');
 
   const openWhatsApp = (phoneNumber: string) => {
     const cleanNumber = phoneNumber.replace(/\D/g, "");
@@ -169,6 +180,104 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     setEditingSpecialist(null);
   };
 
+  const handleSuspension = async () => {
+    if (!suspendingSpecialist) return;
+
+    try {
+      const updateData: any = {
+        suspension_type: suspensionType,
+        suspension_reason: suspensionReason,
+        is_active: false,
+      };
+
+      if (suspensionType === 'temporary' && suspensionEndDate) {
+        updateData.suspension_end_date = new Date(suspensionEndDate).toISOString();
+      } else {
+        updateData.suspension_end_date = null;
+      }
+
+      const { error } = await supabase
+        .from("specialists")
+        .update(updateData)
+        .eq("id", suspendingSpecialist.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الإيقاف بنجاح / Suspended Successfully",
+        description: suspensionType === 'temporary' 
+          ? "تم إيقاف المحترفة مؤقتاً / Specialist suspended temporarily"
+          : "تم إيقاف المحترفة نهائياً / Specialist suspended permanently",
+      });
+
+      setSuspendingSpecialist(null);
+      setSuspensionType('temporary');
+      setSuspensionEndDate('');
+      setSuspensionReason('');
+      onUpdate();
+    } catch (error: any) {
+      console.error("Error suspending specialist:", error);
+      toast({
+        title: "خطأ / Error",
+        description: error.message || "فشل إيقاف المحترفة / Failed to suspend specialist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnsuspend = async (specialistId: string) => {
+    try {
+      const { error } = await supabase
+        .from("specialists")
+        .update({
+          suspension_type: null,
+          suspension_end_date: null,
+          suspension_reason: null,
+          is_active: true,
+        })
+        .eq("id", specialistId);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم إلغاء الإيقاف / Unsuspended",
+        description: "تم تفعيل المحترفة بنجاح / Specialist activated successfully",
+      });
+
+      onUpdate();
+    } catch (error: any) {
+      console.error("Error unsuspending specialist:", error);
+      toast({
+        title: "خطأ / Error",
+        description: error.message || "فشل إلغاء الإيقاف / Failed to unsuspend specialist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getSuspensionBadge = (specialist: Specialist) => {
+    if (!specialist.suspension_type) return null;
+    
+    if (specialist.suspension_type === 'permanent') {
+      return <Badge variant="destructive" className="flex items-center gap-1">
+        <Ban className="h-3 w-3" />
+        إيقاف دائم / Permanent
+      </Badge>;
+    }
+    
+    if (specialist.suspension_type === 'temporary') {
+      const endDate = specialist.suspension_end_date ? new Date(specialist.suspension_end_date) : null;
+      const isExpired = endDate && endDate < new Date();
+      
+      return <Badge variant="secondary" className="flex items-center gap-1">
+        <Clock className="h-3 w-3" />
+        {isExpired ? 'منتهي / Expired' : `مؤقت / Until ${endDate?.toLocaleDateString()}`}
+      </Badge>;
+    }
+    
+    return null;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -188,6 +297,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                 <TableHead className="text-left">Experience</TableHead>
                 <TableHead className="text-left">Phone Number</TableHead>
                 <TableHead className="text-left">Approval Status</TableHead>
+                <TableHead className="text-left">Suspension</TableHead>
                 <TableHead className="text-left">Status</TableHead>
                 <TableHead className="text-left">Actions</TableHead>
               </TableRow>
@@ -195,7 +305,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
             <TableBody>
               {specialists.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No specialists registered
                   </TableCell>
                 </TableRow>
@@ -258,6 +368,9 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                       {getApprovalStatusBadge(specialist.approval_status, specialist.registration_completed_at)}
                     </TableCell>
                     <TableCell>
+                      {getSuspensionBadge(specialist)}
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={specialist.is_active ? "default" : "secondary"}>
                         {specialist.is_active ? "Active" : "Inactive"}
                       </Badge>
@@ -307,14 +420,35 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                           <Phone className="h-3 w-3" />
                           WhatsApp
                         </Button>
-                        {specialist.approval_status === 'approved' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(specialist)}
+                          className="flex items-center gap-1"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        {specialist.suspension_type ? (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => handleUnsuspend(specialist.id)}
+                            className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                            تفعيل
+                          </Button>
+                        ) : (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleEdit(specialist)}
+                            onClick={() => {
+                              setSuspendingSpecialist(specialist);
+                            }}
                             className="flex items-center gap-1"
                           >
-                            <Pencil className="h-3 w-3" />
+                            <Ban className="h-3 w-3" />
+                            إيقاف
                           </Button>
                         )}
                         <AlertDialog>
@@ -384,6 +518,85 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
               onSuccess={handleEditSuccess}
               onCancel={handleEditCancel}
             />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {suspendingSpecialist && (
+        <Dialog open={!!suspendingSpecialist} onOpenChange={() => {
+          setSuspendingSpecialist(null);
+          setSuspensionType('temporary');
+          setSuspensionEndDate('');
+          setSuspensionReason('');
+        }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>إيقاف المحترفة / Suspend Specialist</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>نوع الإيقاف / Suspension Type</Label>
+                <RadioGroup value={suspensionType} onValueChange={(value) => setSuspensionType(value as 'temporary' | 'permanent')}>
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <RadioGroupItem value="temporary" id="temporary" />
+                    <Label htmlFor="temporary" className="cursor-pointer">
+                      إيقاف مؤقت / Temporary Suspension
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <RadioGroupItem value="permanent" id="permanent" />
+                    <Label htmlFor="permanent" className="cursor-pointer">
+                      إيقاف دائم / Permanent Suspension
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {suspensionType === 'temporary' && (
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">تاريخ انتهاء الإيقاف / End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="datetime-local"
+                    value={suspensionEndDate}
+                    onChange={(e) => setSuspensionEndDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="reason">سبب الإيقاف (اختياري) / Reason (Optional)</Label>
+                <Textarea
+                  id="reason"
+                  value={suspensionReason}
+                  onChange={(e) => setSuspensionReason(e.target.value)}
+                  placeholder="أدخل سبب الإيقاف..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSuspendingSpecialist(null);
+                    setSuspensionType('temporary');
+                    setSuspensionEndDate('');
+                    setSuspensionReason('');
+                  }}
+                >
+                  إلغاء / Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleSuspension}
+                  disabled={suspensionType === 'temporary' && !suspensionEndDate}
+                >
+                  تأكيد الإيقاف / Confirm Suspension
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       )}

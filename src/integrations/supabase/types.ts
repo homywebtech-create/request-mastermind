@@ -616,6 +616,9 @@ export type Database = {
           registration_token: string | null
           reviews_count: number | null
           specialty: string | null
+          suspension_end_date: string | null
+          suspension_reason: string | null
+          suspension_type: string | null
           updated_at: string
         }
         Insert: {
@@ -635,6 +638,9 @@ export type Database = {
           registration_token?: string | null
           reviews_count?: number | null
           specialty?: string | null
+          suspension_end_date?: string | null
+          suspension_reason?: string | null
+          suspension_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -654,6 +660,9 @@ export type Database = {
           registration_token?: string | null
           reviews_count?: number | null
           specialty?: string | null
+          suspension_end_date?: string | null
+          suspension_reason?: string | null
+          suspension_type?: string | null
           updated_at?: string
         }
         Relationships: [
