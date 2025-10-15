@@ -866,8 +866,8 @@ export default function CompanyBooking() {
                     setSelectedSpecialistIds([]);
                     setSelectedTime('');
                   }}>
-                    <div className="relative">
-                      <div className="flex gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:bg-primary/50 [&::-webkit-scrollbar-thumb]:rounded-full">
+                    <div className="relative overflow-hidden">
+                      <div className="flex gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:bg-primary/50 [&::-webkit-scrollbar-thumb]:rounded-full -mx-1 px-1">
                         {availableDates.map((date) => {
                           const dateValue = date.toISOString().split('T')[0];
                           const isSelected = bookingDateType === dateValue;
