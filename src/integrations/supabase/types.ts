@@ -602,11 +602,20 @@ export type Database = {
         Row: {
           approval_status: string | null
           company_id: string
+          countries_worked_in: string[] | null
           created_at: string
           experience_years: number | null
+          face_photo_url: string | null
+          full_body_photo_url: string | null
+          has_cleaning_allergy: boolean | null
+          has_pet_allergy: boolean | null
           id: string
+          id_card_back_url: string | null
+          id_card_expiry_date: string | null
+          id_card_front_url: string | null
           image_url: string | null
           is_active: boolean
+          languages_spoken: string[] | null
           name: string
           nationality: string | null
           notes: string | null
@@ -624,11 +633,20 @@ export type Database = {
         Insert: {
           approval_status?: string | null
           company_id: string
+          countries_worked_in?: string[] | null
           created_at?: string
           experience_years?: number | null
+          face_photo_url?: string | null
+          full_body_photo_url?: string | null
+          has_cleaning_allergy?: boolean | null
+          has_pet_allergy?: boolean | null
           id?: string
+          id_card_back_url?: string | null
+          id_card_expiry_date?: string | null
+          id_card_front_url?: string | null
           image_url?: string | null
           is_active?: boolean
+          languages_spoken?: string[] | null
           name: string
           nationality?: string | null
           notes?: string | null
@@ -646,11 +664,20 @@ export type Database = {
         Update: {
           approval_status?: string | null
           company_id?: string
+          countries_worked_in?: string[] | null
           created_at?: string
           experience_years?: number | null
+          face_photo_url?: string | null
+          full_body_photo_url?: string | null
+          has_cleaning_allergy?: boolean | null
+          has_pet_allergy?: boolean | null
           id?: string
+          id_card_back_url?: string | null
+          id_card_expiry_date?: string | null
+          id_card_front_url?: string | null
           image_url?: string | null
           is_active?: boolean
+          languages_spoken?: string[] | null
           name?: string
           nationality?: string | null
           notes?: string | null
@@ -775,6 +802,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_expired_id_cards: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       check_verification_rate_limit: {
         Args: { phone_number: string }
         Returns: boolean

@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.verify-specialist-code]
 verify_jwt = false
+
+[functions.check-expired-cards]
+verify_jwt = false
