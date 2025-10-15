@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Phone, Building2, Briefcase, Star, FileText } from "lucide-react";
+import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,12 +27,23 @@ interface Profile {
 }
 
 interface Specialist {
+  id: string;
   name: string;
   phone: string;
   specialty: string | null;
   experience_years: number | null;
   rating: number | null;
   reviews_count: number | null;
+  face_photo_url: string | null;
+  full_body_photo_url: string | null;
+  id_card_front_url: string | null;
+  id_card_back_url: string | null;
+  id_card_expiry_date: string | null;
+  countries_worked_in: string[] | null;
+  languages_spoken: string[] | null;
+  has_pet_allergy: boolean | null;
+  has_cleaning_allergy: boolean | null;
+  notes: string | null;
 }
 
 interface Company {
@@ -207,8 +220,130 @@ export default function SpecialistProfile() {
                 </div>
               )}
             </div>
+
+            {/* Additional Details */}
+            <div className="mt-6 space-y-4">
+              {specialist?.countries_worked_in && specialist.countries_worked_in.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    الدول التي عملت فيها
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {specialist.countries_worked_in.map((country, idx) => (
+                      <Badge key={idx} variant="outline">{country}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {specialist?.languages_spoken && specialist.languages_spoken.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Languages className="h-4 w-4" />
+                    اللغات المتحدث بها
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {specialist.languages_spoken.map((lang, idx) => (
+                      <Badge key={idx} variant="outline">{lang}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {specialist?.id_card_expiry_date && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    تاريخ انتهاء البطاقة
+                  </p>
+                  <p className="font-medium">{new Date(specialist.id_card_expiry_date).toLocaleDateString('ar-SA')}</p>
+                </div>
+              )}
+
+              {(specialist?.has_pet_allergy || specialist?.has_cleaning_allergy) && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    الحساسية
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {specialist.has_pet_allergy && (
+                      <Badge variant="secondary">حساسية من الحيوانات</Badge>
+                    )}
+                    {specialist.has_cleaning_allergy && (
+                      <Badge variant="secondary">حساسية من مواد التنظيف</Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {specialist?.notes && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    ملاحظات
+                  </p>
+                  <p className="text-sm bg-muted/50 p-3 rounded-lg whitespace-pre-wrap">
+                    {specialist.notes}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </Card>
+
+        {/* Photos Section */}
+        {(specialist?.face_photo_url || specialist?.full_body_photo_url || specialist?.id_card_front_url || specialist?.id_card_back_url) && (
+          <Card className="p-4">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              الصور والوثائق
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              {specialist.face_photo_url && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">صورة الوجه</p>
+                  <img 
+                    src={specialist.face_photo_url} 
+                    alt="Face" 
+                    className="w-full h-40 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+              {specialist.full_body_photo_url && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">صورة كاملة</p>
+                  <img 
+                    src={specialist.full_body_photo_url} 
+                    alt="Full body" 
+                    className="w-full h-40 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+              {specialist.id_card_front_url && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">البطاقة الأمامية</p>
+                  <img 
+                    src={specialist.id_card_front_url} 
+                    alt="ID front" 
+                    className="w-full h-40 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+              {specialist.id_card_back_url && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">البطاقة الخلفية</p>
+                  <img 
+                    src={specialist.id_card_back_url} 
+                    alt="ID back" 
+                    className="w-full h-40 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Quick Actions */}
         <Card className="p-4">

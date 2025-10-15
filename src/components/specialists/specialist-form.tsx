@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { nationalities } from "@/data/nationalities";
 import { countries } from "@/data/countries";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const specialistSchema = z.object({
   name: z.string().min(2, "يجب أن يكون الاسم حرفين على الأقل").max(100),
@@ -23,6 +25,11 @@ const specialistSchema = z.object({
   sub_service_ids: z.array(z.string()).optional(),
   experience_years: z.coerce.number().min(0).max(50).optional(),
   notes: z.string().max(500).optional(),
+  countries_worked_in: z.array(z.string()).optional(),
+  languages_spoken: z.array(z.string()).optional(),
+  has_pet_allergy: z.boolean().optional(),
+  has_cleaning_allergy: z.boolean().optional(),
+  id_card_expiry_date: z.string().optional(),
 });
 
 type SpecialistFormValues = z.infer<typeof specialistSchema>;
@@ -39,6 +46,11 @@ interface SpecialistFormProps {
     experience_years?: number;
     notes?: string;
     image_url?: string;
+    countries_worked_in?: string[];
+    languages_spoken?: string[];
+    has_pet_allergy?: boolean;
+    has_cleaning_allergy?: boolean;
+    id_card_expiry_date?: string;
     specialist_specialties?: Array<{
       sub_service_id: string;
       sub_services: {
@@ -95,6 +107,11 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
       sub_service_ids: specialist?.specialist_specialties?.map(s => s.sub_service_id) || [],
       experience_years: specialist?.experience_years || 0,
       notes: specialist?.notes || "",
+      countries_worked_in: specialist?.countries_worked_in || [],
+      languages_spoken: specialist?.languages_spoken || [],
+      has_pet_allergy: specialist?.has_pet_allergy || false,
+      has_cleaning_allergy: specialist?.has_cleaning_allergy || false,
+      id_card_expiry_date: specialist?.id_card_expiry_date || "",
     },
   });
 
@@ -218,6 +235,11 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
             experience_years: data.experience_years || null,
             notes: data.notes || null,
             image_url: imageUrl || specialist.image_url,
+            countries_worked_in: data.countries_worked_in || [],
+            languages_spoken: data.languages_spoken || [],
+            has_pet_allergy: data.has_pet_allergy || false,
+            has_cleaning_allergy: data.has_cleaning_allergy || false,
+            id_card_expiry_date: data.id_card_expiry_date || null,
           })
           .eq("id", specialist.id);
 
@@ -539,6 +561,99 @@ export function SpecialistForm({ companyId, onSuccess, onCancel, specialist }: S
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="countries_worked_in"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Countries Worked In</FormLabel>
+                  <MultiSelect
+                    options={countries.map(c => ({ label: c.name, value: c.name }))}
+                    selected={field.value || []}
+                    onChange={field.onChange}
+                    placeholder="Select countries..."
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="languages_spoken"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Languages Spoken</FormLabel>
+                  <MultiSelect
+                    options={[
+                      { label: "العربية / Arabic", value: "العربية" },
+                      { label: "English / الإنجليزية", value: "English" },
+                      { label: "Filipino / الفلبينية", value: "Filipino" },
+                      { label: "Hindi / الهندية", value: "Hindi" },
+                      { label: "Urdu / الأوردو", value: "Urdu" },
+                      { label: "Bengali / البنغالية", value: "Bengali" }
+                    ]}
+                    selected={field.value || []}
+                    onChange={field.onChange}
+                    placeholder="Select languages..."
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="id_card_expiry_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ID Card Expiry Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="space-y-4 border rounded-lg p-4">
+              <h4 className="font-semibold">Allergies</h4>
+              <FormField
+                control={form.control}
+                name="has_pet_allergy"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Has Pet Allergy</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="has_cleaning_allergy"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Has Cleaning Materials Allergy</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
 
           <div className="flex gap-2 justify-end pt-4">
             <Button

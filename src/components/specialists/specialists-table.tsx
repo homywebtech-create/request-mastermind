@@ -32,6 +32,11 @@ interface Specialist {
   phone: string;
   nationality?: string;
   image_url?: string;
+  face_photo_url?: string;
+  full_body_photo_url?: string;
+  id_card_front_url?: string;
+  id_card_back_url?: string;
+  id_card_expiry_date?: string;
   experience_years?: number;
   is_active: boolean;
   notes?: string;
@@ -42,6 +47,10 @@ interface Specialist {
   suspension_type?: string;
   suspension_end_date?: string;
   suspension_reason?: string;
+  countries_worked_in?: string[];
+  languages_spoken?: string[];
+  has_pet_allergy?: boolean;
+  has_cleaning_allergy?: boolean;
   specialist_specialties?: Array<{
     sub_service_id: string;
     sub_services: {
@@ -401,18 +410,16 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                             </Button>
                           </>
                         )}
-                        {(!specialist.registration_completed_at || !specialist.registration_token) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleGenerateRegistrationLink(specialist.id)}
-                            disabled={generatingToken === specialist.id}
-                            className="flex items-center gap-1"
-                          >
-                            <Link2 className="h-3 w-3" />
-                            {generatingToken === specialist.id ? "جاري..." : "إنشاء رابط"}
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleGenerateRegistrationLink(specialist.id)}
+                          disabled={generatingToken === specialist.id}
+                          className="flex items-center gap-1"
+                        >
+                          <Link2 className="h-3 w-3" />
+                          {generatingToken === specialist.id ? "جاري..." : "رابط السيرة"}
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
