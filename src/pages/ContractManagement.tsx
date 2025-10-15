@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Upload, X } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { translations } from '@/i18n';
@@ -21,6 +21,7 @@ interface ContractTemplate {
   terms_ar: string[];
   terms_en: string[];
   is_active: boolean;
+  company_logo_url?: string;
 }
 
 export default function ContractManagement() {
@@ -30,6 +31,7 @@ export default function ContractManagement() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [template, setTemplate] = useState<ContractTemplate | null>(null);
+  const [uploading, setUploading] = useState(false);
   
   const t = translations[language].contracts;
   const tCommon = translations[language].common;
@@ -64,6 +66,63 @@ export default function ContractManagement() {
     }
   };
 
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !template) return;
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: tCommon.error,
+        description: language === 'ar' ? 'حجم الملف يجب أن لا يتجاوز 2 ميجا' : 'File size must not exceed 2MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // Upload to company-logos bucket
+      const fileExt = file.name.split('.').pop();
+      const fileName = `contract-logo-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      // Update template with logo URL
+      setTemplate({ ...template, company_logo_url: publicUrl });
+
+      toast({
+        title: tCommon.success,
+        description: language === 'ar' ? 'تم رفع الشعار بنجاح' : 'Logo uploaded successfully',
+      });
+    } catch (error: any) {
+      console.error('Error uploading logo:', error);
+      toast({
+        title: tCommon.error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    if (!template) return;
+    setTemplate({ ...template, company_logo_url: undefined });
+  };
+
   const handleSave = async () => {
     if (!template) return;
 
@@ -79,6 +138,7 @@ export default function ContractManagement() {
           terms_ar: template.terms_ar,
           terms_en: template.terms_en,
           is_active: template.is_active,
+          company_logo_url: template.company_logo_url,
         })
         .eq('id', template.id);
 
@@ -193,6 +253,55 @@ export default function ContractManagement() {
           </CardHeader>
           
           <CardContent className="space-y-8">
+            {/* Company Logo */}
+            <div className="space-y-3">
+              <Label>{language === 'ar' ? 'شعار الشركة' : 'Company Logo'}</Label>
+              
+              {template.company_logo_url ? (
+                <div className="flex items-center gap-4">
+                  <img
+                    src={template.company_logo_url}
+                    alt="Company Logo"
+                    className="h-20 w-20 object-contain border rounded-lg p-2"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleRemoveLogo}
+                  >
+                    <X className="h-4 w-4 me-2" />
+                    {language === 'ar' ? 'إزالة الشعار' : 'Remove Logo'}
+                  </Button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <Label
+                      htmlFor="logo-upload"
+                      className="cursor-pointer text-sm text-primary hover:underline"
+                    >
+                      {uploading
+                        ? (language === 'ar' ? 'جاري الرفع...' : 'Uploading...')
+                        : (language === 'ar' ? 'اضغط لرفع الشعار' : 'Click to upload logo')}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar' ? 'PNG, JPG أو WEBP (حد أقصى 2MB)' : 'PNG, JPG or WEBP (max 2MB)'}
+                    </p>
+                    <Input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">{t.contractTitle}</Label>

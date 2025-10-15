@@ -595,7 +595,7 @@ export default function Dashboard() {
                 className="flex items-center gap-2"
               >
                 <Settings className="h-4 w-4" />
-                Services
+                {tDash.services}
               </Button>
 
               <Button
@@ -604,7 +604,16 @@ export default function Dashboard() {
                 className="flex items-center gap-2"
               >
                 <FileText className="h-4 w-4" />
-                Contracts
+                {language === 'ar' ? 'العقود' : 'Contracts'}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => navigate('/specialists')}
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                {tDash.specialists}
               </Button>
 
               <Button
@@ -613,7 +622,7 @@ export default function Dashboard() {
                 className="flex items-center gap-2"
               >
                 <Settings className="h-4 w-4" />
-                Deletion Requests
+                {language === 'ar' ? 'طلبات الحذف' : 'Deletion Requests'}
               </Button>
 
               <Button
@@ -622,7 +631,7 @@ export default function Dashboard() {
                 className="flex items-center gap-2"
               >
                 <Users className="h-4 w-4" />
-                Admin Users
+                {tDash.users}
               </Button>
 
               <Button
@@ -631,7 +640,7 @@ export default function Dashboard() {
                 className="flex items-center gap-2"
               >
                 <FileText className="h-4 w-4" />
-                Activity Logs
+                {tDash.activityLogs}
               </Button>
 
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
