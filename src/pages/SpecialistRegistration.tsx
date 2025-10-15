@@ -86,17 +86,10 @@ export default function SpecialistRegistration() {
   });
 
   useEffect(() => {
-    if (token) {
-      validateToken();
-      fetchServices();
-    } else {
-      toast({
-        title: "خطأ / Error",
-        description: "رابط التسجيل غير صحيح / Invalid registration link",
-        variant: "destructive",
-      });
-    }
-  }, [token]);
+    // Initialize without token requirement
+    initializeRegistration();
+    fetchServices();
+  }, []);
 
   useEffect(() => {
     if (selectedServices.length > 0) {
@@ -106,33 +99,19 @@ export default function SpecialistRegistration() {
     }
   }, [selectedServices]);
 
-  const validateToken = async () => {
+  const initializeRegistration = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("specialists")
-        .select("*")
-        .eq("registration_token", token)
-        .eq("approval_status", "pending")
-        .is("registration_completed_at", null)
-        .single();
-
-      if (error || !data) {
-        toast({
-          title: "خطأ / Error",
-          description: "رابط التسجيل غير صحيح أو منتهي الصلاحية / Invalid or expired registration link",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setSpecialist(data);
-      if (data.face_photo_url) setFacePhotoPreview(data.face_photo_url);
-      if (data.full_body_photo_url) setFullBodyPhotoPreview(data.full_body_photo_url);
-      if (data.id_card_front_url) setIdCardFrontPreview(data.id_card_front_url);
-      if (data.id_card_back_url) setIdCardBackPreview(data.id_card_back_url);
+      // Create a temporary specialist for registration
+      const tempSpecialist = {
+        id: 'temp-' + Date.now(),
+        name: 'New Registration',
+        approval_status: 'pending',
+        registration_completed_at: null
+      };
+      setSpecialist(tempSpecialist);
     } catch (error) {
-      console.error("Error validating token:", error);
+      console.error("Error initializing registration:", error);
     } finally {
       setIsLoading(false);
     }
@@ -394,12 +373,12 @@ export default function SpecialistRegistration() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl text-center">
-              إكمال التسجيل - Complete Registration
+              تسجيل عامل جديد - New Worker Registration
             </CardTitle>
             <CardDescription className="text-center">
-              مرحباً {specialist.name}، يرجى إكمال البيانات التالية
+              يرجى إكمال البيانات التالية لإنهاء التسجيل
               <br />
-              Welcome {specialist.name}, please complete the following information
+              Please complete the following information to finish registration
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -428,7 +407,7 @@ export default function SpecialistRegistration() {
                       <Avatar className="h-32 w-32">
                         <AvatarImage src={facePhotoPreview} />
                         <AvatarFallback className="text-2xl">
-                          {specialist.name.charAt(0)}
+                          📷
                         </AvatarFallback>
                       </Avatar>
                       <label htmlFor="face-photo-upload" className="cursor-pointer">
