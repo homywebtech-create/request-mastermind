@@ -335,7 +335,7 @@ export default function CompanyBooking() {
         .select(`
           quoted_price,
           quoted_at,
-          specialists (
+          specialists!inner (
             id,
             name,
             phone,
@@ -343,12 +343,20 @@ export default function CompanyBooking() {
             nationality,
             company_id,
             rating,
-            reviews_count
+            reviews_count,
+            approval_status,
+            registration_completed_at,
+            is_active,
+            suspension_end_date
           )
         `)
         .eq('order_id', orderId)
         .not('quoted_price', 'is', null)
-        .is('is_accepted', null);
+        .is('is_accepted', null)
+        .eq('specialists.approval_status', 'approved')
+        .eq('specialists.is_active', true)
+        .not('specialists.registration_completed_at', 'is', null)
+        .or('suspension_end_date.is.null,suspension_end_date.lt.' + new Date().toISOString(), { foreignTable: 'specialists' });
 
       if (specialistsError) {
         console.error('❌ Error fetching specialists:', specialistsError);
