@@ -90,7 +90,7 @@ export function SpecialistProfileDialog({
       noNotes: 'لا توجد ملاحظات'
     },
     en: {
-      profile: 'Profile',
+      profile: 'CV',
       personalInfo: 'Personal Information',
       name: 'Name',
       phone: 'Phone',

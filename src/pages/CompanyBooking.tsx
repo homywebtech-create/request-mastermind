@@ -1130,7 +1130,7 @@ export default function CompanyBooking() {
                                       >
                                         <FileUser className="h-3.5 w-3.5" />
                                         <span className="text-xs">
-                                          {language === 'ar' ? 'السيرة الذاتية' : 'Profile'}
+                                          {language === 'ar' ? 'السيرة الذاتية' : 'CV'}
                                         </span>
                                       </Button>
                                     </div>
