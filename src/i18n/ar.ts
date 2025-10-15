@@ -29,6 +29,8 @@ export const ar = {
     update: "تحديث",
     home: "الرئيسية",
     resend: "إعادة إرسال",
+    term: "البند",
+    saving: "جاري الحفظ...",
   },
   
   dashboard: {
@@ -161,7 +163,25 @@ export const ar = {
     pending: "قيد الانتظار",
     approved: "موافق عليه",
     rejected: "مرفوض",
-    suspended: "موقوف",
+    suspended: "الحسابات الموقوفة",
+    active: "الحسابات النشطة",
+    all: "الكل",
+  },
+  
+  contracts: {
+    title: "إدارة العقود",
+    subtitle: "تعديل قوالب العقود الشهرية",
+    contractTitle: "عنوان العقد",
+    arabicContent: "المحتوى العربي",
+    englishContent: "المحتوى الإنجليزي",
+    arabicTerms: "الشروط والأحكام بالعربية",
+    englishTerms: "الشروط والأحكام بالإنجليزية",
+    addTerm: "إضافة بند",
+    removeTerm: "حذف البند",
+    saveChanges: "حفظ التغييرات",
+    changesSaved: "تم حفظ التغييرات بنجاح",
+    isActive: "العقد نشط",
+    templateInfo: "سيتم استخدام هذا القالب في جميع العقود الشهرية الجديدة",
   },
   
   adminUsers: {

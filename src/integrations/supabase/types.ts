@@ -132,6 +132,42 @@ export type Database = {
           },
         ]
       }
+      contract_templates: {
+        Row: {
+          content_ar: string
+          content_en: string
+          created_at: string
+          id: string
+          is_active: boolean
+          terms_ar: string[]
+          terms_en: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_ar: string
+          content_en: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          terms_ar?: string[]
+          terms_en?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_ar?: string
+          content_en?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          terms_ar?: string[]
+          terms_en?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           area: string | null

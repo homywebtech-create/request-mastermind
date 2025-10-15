@@ -29,6 +29,8 @@ export const en = {
     update: "Update",
     home: "Home",
     resend: "Resend",
+    term: "Term",
+    saving: "Saving...",
   },
   
   dashboard: {
@@ -161,7 +163,25 @@ export const en = {
     pending: "Pending",
     approved: "Approved",
     rejected: "Rejected",
-    suspended: "Suspended",
+    suspended: "Suspended Accounts",
+    active: "Active Accounts",
+    all: "All",
+  },
+  
+  contracts: {
+    title: "Contract Management",
+    subtitle: "Edit monthly contract templates",
+    contractTitle: "Contract Title",
+    arabicContent: "Arabic Content",
+    englishContent: "English Content",
+    arabicTerms: "Arabic Terms & Conditions",
+    englishTerms: "English Terms & Conditions",
+    addTerm: "Add Term",
+    removeTerm: "Remove Term",
+    saveChanges: "Save Changes",
+    changesSaved: "Changes saved successfully",
+    isActive: "Contract Active",
+    templateInfo: "This template will be used for all new monthly contracts",
   },
   
   adminUsers: {

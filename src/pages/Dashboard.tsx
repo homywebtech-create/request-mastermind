@@ -600,6 +600,15 @@ export default function Dashboard() {
 
               <Button
                 variant="outline"
+                onClick={() => navigate('/contracts')}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Contracts
+              </Button>
+
+              <Button
+                variant="outline"
                 onClick={() => navigate('/deletion-requests')}
                 className="flex items-center gap-2"
               >

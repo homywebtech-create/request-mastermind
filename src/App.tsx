@@ -26,6 +26,7 @@ import DeletionRequests from "./pages/DeletionRequests";
 import AdminUsers from "./pages/AdminUsers";
 import ActivityLogs from "./pages/ActivityLogs";
 import SetPassword from "./pages/SetPassword";
+import ContractManagement from "./pages/ContractManagement";
 
 const queryClient = new QueryClient();
 
@@ -146,6 +147,14 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <Services />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contracts"
+          element={
+            <ProtectedRoute>
+              <ContractManagement />
             </ProtectedRoute>
           }
         />

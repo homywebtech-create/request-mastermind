@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, LogOut, ArrowLeft } from "lucide-react";
 import { SpecialistForm } from "@/components/specialists/specialist-form";
 import { SpecialistsTable } from "@/components/specialists/specialists-table";
@@ -56,6 +57,7 @@ export default function Specialists() {
   const [company, setCompany] = useState<Company | null>(null);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filterType, setFilterType] = useState<'all' | 'active' | 'suspended'>('all');
 
   useEffect(() => {
     checkAuth();
@@ -202,6 +204,13 @@ export default function Specialists() {
 
   if (!company) return null;
 
+  const filteredSpecialists = specialists.filter(specialist => {
+    if (filterType === 'all') return true;
+    if (filterType === 'active') return specialist.is_active && !specialist.suspension_type;
+    if (filterType === 'suspended') return !specialist.is_active || !!specialist.suspension_type;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -259,12 +268,22 @@ export default function Specialists() {
           )}
         </div>
 
-        <SpecialistsTable
-          specialists={specialists}
-          companyId={company?.id || ""}
-          onDelete={handleDelete}
-          onUpdate={() => company && fetchSpecialists(company.id)}
-        />
+        <Tabs value={filterType} onValueChange={(v) => setFilterType(v as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="all">{t.all}</TabsTrigger>
+            <TabsTrigger value="active">{t.active}</TabsTrigger>
+            <TabsTrigger value="suspended">{t.suspended}</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value={filterType} className="mt-6">
+            <SpecialistsTable
+              specialists={filteredSpecialists}
+              companyId={company?.id || ""}
+              onDelete={handleDelete}
+              onUpdate={() => company && fetchSpecialists(company.id)}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
