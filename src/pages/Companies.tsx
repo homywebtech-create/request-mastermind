@@ -56,6 +56,7 @@ export default function Companies() {
   const translations = useTranslation(language);
   const t = translations.companies;
   const tCommon = translations.common;
+  const tStatus = translations.status;
   const [companies, setCompanies] = useState<Company[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
