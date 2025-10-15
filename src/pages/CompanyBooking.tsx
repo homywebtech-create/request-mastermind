@@ -867,7 +867,7 @@ export default function CompanyBooking() {
                     setSelectedTime('');
                   }}>
                     <div className="relative">
-                      <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:bg-primary/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary">
+                      <div className="flex gap-2 md:gap-3 overflow-x-auto pb-3 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:bg-primary/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary px-1">
                         {availableDates.map((date) => {
                           const dateValue = date.toISOString().split('T')[0];
                           const isSelected = bookingDateType === dateValue;
@@ -877,7 +877,7 @@ export default function CompanyBooking() {
                             <label
                               key={dateValue}
                               className={cn(
-                                'flex flex-col items-center justify-center border-2 rounded-xl p-4 cursor-pointer transition-all flex-shrink-0 w-32 min-h-[100px] snap-start',
+                                'flex flex-col items-center justify-center border-2 rounded-lg md:rounded-xl p-2 md:p-4 cursor-pointer transition-all flex-shrink-0 w-20 md:w-32 min-h-[80px] md:min-h-[100px] snap-start',
                                 isSelected
                                   ? 'border-primary bg-primary text-primary-foreground shadow-lg scale-105'
                                   : isToday
@@ -886,15 +886,15 @@ export default function CompanyBooking() {
                               )}
                             >
                               <RadioGroupItem value={dateValue} id={dateValue} className="sr-only" />
-                              <div className="text-center space-y-1">
+                              <div className="text-center space-y-0.5 md:space-y-1">
                                 <div className={cn(
-                                  "text-xs font-medium",
+                                  "text-[10px] md:text-xs font-medium leading-tight",
                                   isSelected ? "text-primary-foreground" : "text-muted-foreground"
                                 )}>
                                   {formatDateDisplay(date)}
                                 </div>
                                 <div className={cn(
-                                  "text-2xl font-bold",
+                                  "text-xl md:text-2xl font-bold",
                                   isSelected && "text-primary-foreground"
                                 )}>
                                   {date.getDate()}
