@@ -867,7 +867,7 @@ export default function CompanyBooking() {
                     setSelectedTime('');
                   }}>
                     <div className="relative">
-                      <div className="flex gap-2 md:gap-3 overflow-x-auto pb-3 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:bg-primary/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary px-1">
+                      <div className="flex gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:bg-primary/50 [&::-webkit-scrollbar-thumb]:rounded-full">
                         {availableDates.map((date) => {
                           const dateValue = date.toISOString().split('T')[0];
                           const isSelected = bookingDateType === dateValue;
@@ -877,24 +877,24 @@ export default function CompanyBooking() {
                             <label
                               key={dateValue}
                               className={cn(
-                                'flex flex-col items-center justify-center border-2 rounded-lg md:rounded-xl p-2 md:p-4 cursor-pointer transition-all flex-shrink-0 w-20 md:w-32 min-h-[80px] md:min-h-[100px] snap-start',
+                                'flex flex-col items-center justify-center border rounded-md sm:rounded-lg cursor-pointer transition-colors flex-shrink-0 w-[68px] sm:w-20 md:w-28 min-h-[68px] sm:min-h-[80px] md:min-h-[90px] snap-start p-1.5 sm:p-2',
                                 isSelected
-                                  ? 'border-primary bg-primary text-primary-foreground shadow-lg scale-105'
+                                  ? 'border-primary bg-primary text-primary-foreground shadow-md'
                                   : isToday
-                                  ? 'border-green-500 bg-green-50 dark:bg-green-950/20 hover:border-green-600'
-                                  : 'border-border bg-card hover:border-primary/50 hover:shadow-md'
+                                  ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+                                  : 'border-border bg-card hover:border-primary/40'
                               )}
                             >
                               <RadioGroupItem value={dateValue} id={dateValue} className="sr-only" />
-                              <div className="text-center space-y-0.5 md:space-y-1">
+                              <div className="text-center space-y-0.5">
                                 <div className={cn(
-                                  "text-[10px] md:text-xs font-medium leading-tight",
+                                  "text-[9px] sm:text-[10px] md:text-xs font-medium leading-tight",
                                   isSelected ? "text-primary-foreground" : "text-muted-foreground"
                                 )}>
                                   {formatDateDisplay(date)}
                                 </div>
                                 <div className={cn(
-                                  "text-xl md:text-2xl font-bold",
+                                  "text-lg sm:text-xl md:text-2xl font-bold leading-none",
                                   isSelected && "text-primary-foreground"
                                 )}>
                                   {date.getDate()}
@@ -904,7 +904,7 @@ export default function CompanyBooking() {
                           );
                         })}
                       </div>
-                      <div className="text-center mt-3 text-xs text-muted-foreground">
+                      <div className="text-center mt-2 text-[10px] sm:text-xs text-muted-foreground">
                         {language === 'ar' ? '← اسحب لرؤية المزيد من التواريخ →' : '← Scroll for more dates →'}
                       </div>
                     </div>
