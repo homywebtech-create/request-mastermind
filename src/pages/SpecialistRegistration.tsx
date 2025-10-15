@@ -361,20 +361,63 @@ export default function SpecialistRegistration() {
   }
 
   if (!specialist) {
+    const generateTestRegistration = async () => {
+      try {
+        // Create test specialist
+        const testPhone = `+966${Math.floor(Math.random() * 1000000000)}`;
+        const { data: specialist, error: specError } = await supabase
+          .from('specialists')
+          .insert({
+            name: 'Test Specialist',
+            phone: testPhone,
+            approval_status: 'pending',
+            company_id: '00000000-0000-0000-0000-000000000000'
+          } as any)
+          .select()
+          .single();
+
+        if (specError) throw specError;
+
+        // Generate token
+        const newToken = `test_${specialist.id}_${Date.now()}`;
+        
+        // Update specialist with token
+        const { error: updateError } = await supabase
+          .from('specialists')
+          .update({ registration_token: newToken } as any)
+          .eq('id', specialist.id);
+
+        if (updateError) throw updateError;
+
+        // Reload with token
+        window.location.href = `/specialist-registration?token=${newToken}`;
+      } catch (error) {
+        console.error('Error generating test registration:', error);
+        toast({
+          title: "خطأ / Error",
+          description: "فشل في إنشاء تسجيل تجريبي / Failed to generate test registration",
+          variant: "destructive",
+        });
+      }
+    };
+
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-center text-destructive">
-              رابط غير صحيح / Invalid Link
+            <CardTitle className="text-center">
+              تسجيل تجريبي / Test Registration
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <p className="text-center text-muted-foreground">
-              رابط التسجيل غير صحيح أو منتهي الصلاحية
+              لم يتم العثور على رمز تسجيل. قم بإنشاء تسجيل تجريبي للمتابعة.
               <br />
-              Invalid or expired registration link
+              No registration token found. Generate a test registration to continue.
             </p>
+            <Button onClick={generateTestRegistration} className="w-full">
+              إنشاء تسجيل تجريبي / Generate Test Registration
+            </Button>
           </CardContent>
         </Card>
       </div>
