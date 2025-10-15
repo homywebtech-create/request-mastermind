@@ -171,6 +171,15 @@ export const countries: Country[] = [
     currency: 'SDG',
     currencySymbol: 'ج.س'
   },
+  {
+    code: 'PK',
+    name: 'Pakistan',
+    nameAr: 'باكستان',
+    dialCode: '+92',
+    flag: '🇵🇰',
+    currency: 'PKR',
+    currencySymbol: 'Rs'
+  },
 ];
 
 export const getCountryByDialCode = (dialCode: string): Country | undefined => {
