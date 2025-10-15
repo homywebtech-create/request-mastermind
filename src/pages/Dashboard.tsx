@@ -8,7 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { getSoundNotification } from "@/lib/soundNotification";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -81,6 +82,7 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [suspendedSpecialistsCount, setSuspendedSpecialistsCount] = useState(0);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -100,6 +102,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchOrders();
+    fetchSuspendedSpecialistsCount();
     
     // Subscribe to realtime changes for orders
     const ordersChannel = supabase
@@ -184,6 +187,18 @@ export default function Dashboard() {
       supabase.removeChannel(quotesChannel);
     };
   }, [soundEnabled]);
+
+  const fetchSuspendedSpecialistsCount = async () => {
+    const { data, error } = await supabase
+      .from('specialists')
+      .select('id', { count: 'exact', head: true })
+      .or('suspension_type.eq.temporary,suspension_type.eq.permanent')
+      .eq('is_active', false);
+
+    if (!error && data) {
+      setSuspendedSpecialistsCount(data.length || 0);
+    }
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -610,10 +625,18 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 onClick={() => navigate('/admin/specialists')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 relative"
               >
                 <Users className="h-4 w-4" />
                 {tDash.specialists}
+                {suspendedSpecialistsCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 min-w-[20px] flex items-center justify-center px-1 text-xs"
+                  >
+                    {suspendedSpecialistsCount}
+                  </Badge>
+                )}
               </Button>
 
               <Button
