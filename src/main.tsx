@@ -7,16 +7,16 @@ const storedLanguage = localStorage.getItem('language-storage');
 if (storedLanguage) {
   try {
     const { state } = JSON.parse(storedLanguage);
-    const lang = state?.language || 'ar';
+    const lang = state?.language || 'en';
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   } catch (e) {
-    document.documentElement.dir = 'rtl';
-    document.documentElement.lang = 'ar';
+    document.documentElement.dir = 'ltr';
+    document.documentElement.lang = 'en';
   }
 } else {
-  document.documentElement.dir = 'rtl';
-  document.documentElement.lang = 'ar';
+  document.documentElement.dir = 'ltr';
+  document.documentElement.lang = 'en';
 }
 
 // Clean any hash from URL before React loads

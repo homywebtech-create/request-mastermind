@@ -12,7 +12,7 @@ interface LanguageState {
 export const useLanguage = create<LanguageState>()(
   persist(
     (set) => ({
-      language: 'ar',
+      language: 'en',
       setLanguage: (lang: Language) => {
         set({ language: lang });
         // Update HTML dir and lang attributes
