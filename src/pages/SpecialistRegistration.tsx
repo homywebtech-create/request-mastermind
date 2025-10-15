@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import { countries } from "@/data/countries";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const registrationSchema = z.object({
   experience_years: z.coerce.number().min(0, "يجب أن تكون سنوات الخبرة 0 أو أكثر").max(50, "سنوات الخبرة غير صحيحة"),
@@ -712,29 +713,19 @@ export default function SpecialistRegistration() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>الدول التي عملت فيها من قبل / Countries Worked In *</FormLabel>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
-                        {countries.map((country) => (
-                          <div key={country.code} className="flex items-center space-x-2 space-x-reverse">
-                            <Checkbox
-                              id={`country-${country.code}`}
-                              checked={field.value.includes(country.nameAr)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange([...field.value, country.nameAr]);
-                                } else {
-                                  field.onChange(field.value.filter((c) => c !== country.nameAr));
-                                }
-                              }}
-                            />
-                            <label
-                              htmlFor={`country-${country.code}`}
-                              className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              {country.flag} {country.nameAr}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
+                      <FormControl>
+                        <MultiSelect
+                          options={countries.map((country) => ({
+                            label: `${country.flag} ${country.nameAr}`,
+                            value: country.nameAr,
+                          }))}
+                          selected={field.value}
+                          onChange={field.onChange}
+                          placeholder="اختر الدول..."
+                          emptyMessage="لا توجد دول"
+                          searchPlaceholder="بحث عن دولة..."
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -747,29 +738,19 @@ export default function SpecialistRegistration() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>اللغات التي تتحدثها / Languages Spoken *</FormLabel>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
-                        {['العربية', 'الإنجليزية', 'الهندية', 'الأوردو', 'التاغالوغ', 'الإندونيسية', 'البنغالية', 'الفرنسية', 'أخرى'].map((lang) => (
-                          <div key={lang} className="flex items-center space-x-2 space-x-reverse">
-                            <Checkbox
-                              id={`lang-${lang}`}
-                              checked={field.value.includes(lang)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange([...field.value, lang]);
-                                } else {
-                                  field.onChange(field.value.filter((l) => l !== lang));
-                                }
-                              }}
-                            />
-                            <label
-                              htmlFor={`lang-${lang}`}
-                              className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              {lang}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
+                      <FormControl>
+                        <MultiSelect
+                          options={['العربية', 'الإنجليزية', 'الهندية', 'الأوردو', 'التاغالوغ', 'الإندونيسية', 'البنغالية', 'الفرنسية', 'أخرى'].map((lang) => ({
+                            label: lang,
+                            value: lang,
+                          }))}
+                          selected={field.value}
+                          onChange={field.onChange}
+                          placeholder="اختر اللغات..."
+                          emptyMessage="لا توجد لغات"
+                          searchPlaceholder="بحث عن لغة..."
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
