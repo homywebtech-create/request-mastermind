@@ -716,14 +716,14 @@ export default function SpecialistRegistration() {
                       <FormControl>
                         <MultiSelect
                           options={countries.map((country) => ({
-                            label: `${country.flag} ${country.nameAr}`,
-                            value: country.nameAr,
+                            label: `${country.flag} ${country.name}`,
+                            value: country.name,
                           }))}
                           selected={field.value}
                           onChange={field.onChange}
-                          placeholder="اختر الدول..."
-                          emptyMessage="لا توجد دول"
-                          searchPlaceholder="بحث عن دولة..."
+                          placeholder="Select countries..."
+                          emptyMessage="No countries found"
+                          searchPlaceholder="Search country..."
                         />
                       </FormControl>
                       <FormMessage />
@@ -740,15 +740,15 @@ export default function SpecialistRegistration() {
                       <FormLabel>اللغات التي تتحدثها / Languages Spoken *</FormLabel>
                       <FormControl>
                         <MultiSelect
-                          options={['العربية', 'الإنجليزية', 'الهندية', 'الأوردو', 'التاغالوغ', 'الإندونيسية', 'البنغالية', 'الفرنسية', 'أخرى'].map((lang) => ({
+                          options={['Arabic', 'English', 'Hindi', 'Urdu', 'Tagalog', 'Indonesian', 'Bengali', 'French', 'Other'].map((lang) => ({
                             label: lang,
                             value: lang,
                           }))}
                           selected={field.value}
                           onChange={field.onChange}
-                          placeholder="اختر اللغات..."
-                          emptyMessage="لا توجد لغات"
-                          searchPlaceholder="بحث عن لغة..."
+                          placeholder="Select languages..."
+                          emptyMessage="No languages found"
+                          searchPlaceholder="Search language..."
                         />
                       </FormControl>
                       <FormMessage />
