@@ -108,8 +108,9 @@ function AppRouter() {
               <OrderTracking />
             </ProtectedRoute>
           } />
-          <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
-          <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
+          <Route path="/specialist-registration" element={<SpecialistRegistration />} />
+          <Route path="/" element={<Navigate to="/specialist-registration" replace />} />
+          <Route path="*" element={<Navigate to="/specialist-registration" replace />} />
         </Routes>
       </BrowserRouter>
     );
