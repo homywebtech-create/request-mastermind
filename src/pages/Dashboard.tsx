@@ -198,25 +198,25 @@ export default function Dashboard() {
   }, [soundEnabled]);
 
   const fetchSuspendedSpecialistsCount = async () => {
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('specialists')
-      .select('id', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .or('suspension_type.eq.temporary,suspension_type.eq.permanent')
       .eq('is_active', false);
 
-    if (!error && data) {
-      setSuspendedSpecialistsCount(data.length || 0);
+    if (!error && count !== null) {
+      setSuspendedSpecialistsCount(count);
     }
   };
 
   const fetchPendingDeletionRequestsCount = async () => {
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('deletion_requests')
-      .select('id', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
-    if (!error && data) {
-      setPendingDeletionRequestsCount(data.length || 0);
+    if (!error && count !== null) {
+      setPendingDeletionRequestsCount(count);
     }
   };
 
