@@ -182,6 +182,11 @@ export default function CompanyBooking() {
   const [serviceType, setServiceType] = useState<string>(''); // To determine if it's monthly or general
   const [isMonthlyService, setIsMonthlyService] = useState(false);
   
+  // Customer data
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  
   // Form data
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [buildingInfo, setBuildingInfo] = useState('');
@@ -310,11 +315,26 @@ export default function CompanyBooking() {
       // Fetch order info to get hours_count and service_type
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('hours_count, service_type')
+        .select(`
+          hours_count, 
+          service_type,
+          customers (
+            name,
+            whatsapp_number,
+            area
+          )
+        `)
         .eq('id', orderId)
         .single();
 
       if (orderError) throw orderError;
+      
+      // Set customer data
+      if (orderData?.customers) {
+        setCustomerName(orderData.customers.name || '');
+        setCustomerPhone(orderData.customers.whatsapp_number || '');
+        setCustomerAddress(orderData.customers.area || '');
+      }
       
       // Parse hours_count (it's stored as text in DB)
       const hours = orderData?.hours_count ? parseInt(orderData.hours_count) : 1;
@@ -1312,6 +1332,9 @@ export default function CompanyBooking() {
                     }
                     startDate={bookingDateType === 'custom' ? customDate : new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     language={language}
+                    customerName={customerName}
+                    customerPhone={customerPhone}
+                    customerAddress={customerAddress || buildingInfo}
                   />
                 ) : (
                   <TermsAndConditions
