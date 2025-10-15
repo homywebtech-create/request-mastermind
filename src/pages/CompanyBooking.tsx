@@ -1486,6 +1486,7 @@ export default function CompanyBooking() {
               has_cleaning_allergy: false
             }}
             language={language}
+            hideIdCards={true}
           />
         )}
       </div>

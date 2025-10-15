@@ -30,6 +30,7 @@ interface SpecialistProfileDialogProps {
     has_cleaning_allergy?: boolean;
   };
   language?: 'ar' | 'en';
+  hideIdCards?: boolean; // New prop to hide ID cards for customers
 }
 
 interface Specialty {
@@ -41,7 +42,8 @@ export function SpecialistProfileDialog({
   open,
   onOpenChange,
   specialist,
-  language = 'ar'
+  language = 'ar',
+  hideIdCards = false // Default to showing ID cards (for admin/company)
 }: SpecialistProfileDialogProps) {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(false);
@@ -293,7 +295,7 @@ export function SpecialistProfileDialog({
           </div>
 
           {/* Photos Section */}
-          {(specialist.full_body_photo_url || specialist.id_card_front_url || specialist.id_card_back_url) && (
+          {(specialist.full_body_photo_url || (!hideIdCards && (specialist.id_card_front_url || specialist.id_card_back_url))) && (
             <>
               <Separator />
               <div className="space-y-4">
@@ -314,7 +316,7 @@ export function SpecialistProfileDialog({
                     </div>
                   )}
                   
-                  {specialist.id_card_front_url && (
+                  {!hideIdCards && specialist.id_card_front_url && (
                     <div className="space-y-2">
                       <p className="text-sm font-medium">{translations.idCardFront}</p>
                       <img 
@@ -325,7 +327,7 @@ export function SpecialistProfileDialog({
                     </div>
                   )}
                   
-                  {specialist.id_card_back_url && (
+                  {!hideIdCards && specialist.id_card_back_url && (
                     <div className="space-y-2">
                       <p className="text-sm font-medium">{translations.idCardBack}</p>
                       <img 
@@ -337,7 +339,7 @@ export function SpecialistProfileDialog({
                   )}
                 </div>
 
-                {specialist.id_card_expiry_date && (
+                {!hideIdCards && specialist.id_card_expiry_date && (
                   <div className="space-y-1 mt-4">
                     <p className="text-sm text-muted-foreground">{translations.idCardExpiry}</p>
                     <p className="font-medium">{new Date(specialist.id_card_expiry_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</p>
