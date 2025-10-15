@@ -12,6 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircle, Mail, ArrowLeft } from "lucide-react";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +46,9 @@ interface AdminUser {
 
 export default function AdminUsers() {
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = useTranslation(language).adminUsers;
+  const tCommon = useTranslation(language).common;
   const { user, loading: authLoading } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user?.id);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -327,10 +333,10 @@ export default function AdminUsers() {
 
   const getRoleBadge = (role: string) => {
     const roleConfig = {
-      admin: { label: "Super Admin", icon: Shield, variant: "destructive" as const },
-      admin_full: { label: "Full Admin", icon: Shield, variant: "default" as const },
-      admin_manager: { label: "Manager", icon: Settings, variant: "secondary" as const },
-      admin_viewer: { label: "Viewer", icon: Eye, variant: "outline" as const }
+      admin: { labelKey: "superAdmin" as const, icon: Shield, variant: "destructive" as const },
+      admin_full: { labelKey: "fullAdmin" as const, icon: Shield, variant: "default" as const },
+      admin_manager: { labelKey: "manager" as const, icon: Settings, variant: "secondary" as const },
+      admin_viewer: { labelKey: "viewer" as const, icon: Eye, variant: "outline" as const }
     };
 
     const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.admin_viewer;
@@ -339,7 +345,7 @@ export default function AdminUsers() {
     return (
       <Badge variant={config.variant} className="gap-1">
         <Icon className="h-3 w-3" />
-        {config.label}
+        {t[config.labelKey]}
       </Badge>
     );
   };
@@ -363,17 +369,20 @@ export default function AdminUsers() {
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Home
+            {tCommon.home}
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">User Management</h1>
-            <p className="text-muted-foreground">Manage admin accounts and permissions</p>
+            <h1 className="text-3xl font-bold">{t.title}</h1>
+            <p className="text-muted-foreground">{t.subtitle}</p>
           </div>
         </div>
-        <Button onClick={() => setShowAddForm(!showAddForm)} className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Add Admin
-        </Button>
+        <div className="flex gap-2">
+          <LanguageSwitcher />
+          <Button onClick={() => setShowAddForm(!showAddForm)} className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            {t.addAdmin}
+          </Button>
+        </div>
       </div>
 
       {showAddForm && (
@@ -382,13 +391,13 @@ export default function AdminUsers() {
             <div className="space-y-4">
               <div className="bg-muted/50 p-4 rounded-lg border">
                 <p className="text-sm text-muted-foreground">
-                  A password setup link will be sent to the new member's email
+                  {t.passwordSetupInfo}
                 </p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{tCommon.email}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -399,17 +408,17 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="full_name">Full Name</Label>
+                  <Label htmlFor="full_name">{t.fullName}</Label>
                   <Input
                     id="full_name"
                     value={newAdmin.full_name}
                     onChange={(e) => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
                     required
-                    placeholder="Enter full name"
+                    placeholder={t.fullName}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{tCommon.phone}</Label>
                   <Input
                     id="phone"
                     value={newAdmin.phone}
@@ -418,15 +427,15 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="role">Role</Label>
+                  <Label htmlFor="role">{t.role}</Label>
                   <Select value={newAdmin.role} onValueChange={(value) => setNewAdmin({ ...newAdmin, role: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin_viewer">Viewer (View Only)</SelectItem>
-                      <SelectItem value="admin_manager">Manager (View & Edit)</SelectItem>
-                      <SelectItem value="admin_full">Full Admin (All Permissions)</SelectItem>
+                      <SelectItem value="admin_viewer">{t.viewer} (View Only)</SelectItem>
+                      <SelectItem value="admin_manager">{t.manager} (View & Edit)</SelectItem>
+                      <SelectItem value="admin_full">{t.fullAdmin} (All Permissions)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -434,10 +443,10 @@ export default function AdminUsers() {
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account & Send Link"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.createAccount}
               </Button>
               <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
-                Cancel
+                {tCommon.cancel}
               </Button>
             </div>
           </form>
@@ -448,12 +457,12 @@ export default function AdminUsers() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Created Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
+              <TableHead>{tCommon.name}</TableHead>
+              <TableHead>{tCommon.phone}</TableHead>
+              <TableHead>{t.role}</TableHead>
+              <TableHead>{t.createdDate}</TableHead>
+              <TableHead>{tCommon.status}</TableHead>
+              <TableHead className="text-center">{tCommon.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

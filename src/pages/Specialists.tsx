@@ -246,9 +246,9 @@ export default function Specialists() {
       <main className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold">Specialists and Experts</h2>
+            <h2 className="text-2xl font-bold">{t.title}</h2>
             <p className="text-muted-foreground mt-1">
-              Manage your company's list of working specialists
+              {t.subtitle}
             </p>
           </div>
           {company && (

@@ -16,6 +16,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import { countries } from "@/data/countries";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 const registrationSchema = z.object({
   experience_years: z.coerce.number().min(0, "يجب أن تكون سنوات الخبرة 0 أو أكثر").max(50, "سنوات الخبرة غير صحيحة"),
