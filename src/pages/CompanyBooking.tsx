@@ -9,13 +9,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MapLocationPicker } from '@/components/booking/MapLocationPicker';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock, FileUser } from 'lucide-react';
+import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock, FileUser, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ReviewsDialog } from '@/components/booking/ReviewsDialog';
 import { SpecialistProfileDialog } from '@/components/specialists/SpecialistProfileDialog';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { useLanguage } from '@/hooks/useLanguage';
+import { TermsAndConditions } from '@/components/booking/TermsAndConditions';
+import { MonthlyContract } from '@/components/booking/MonthlyContract';
 
 // Translations
 const translations = {
@@ -72,6 +74,10 @@ const translations = {
     availableMonths: 'الشهور المتاحة',
     availableFrom: 'متاحة من',
     selectMonth: 'اختر الشهر المتاح',
+    termsAndConditions: 'الشروط والأحكام',
+    contract: 'العقد',
+    pleaseAcceptTerms: 'يرجى الموافقة على الشروط والأحكام',
+    pleaseSelectContractType: 'يرجى اختيار نوع العقد',
   },
   en: {
     completeBooking: 'Complete Booking Information',
@@ -126,6 +132,10 @@ const translations = {
     availableMonths: 'Available Months',
     availableFrom: 'Available from',
     selectMonth: 'Select Available Month',
+    termsAndConditions: 'Terms & Conditions',
+    contract: 'Contract',
+    pleaseAcceptTerms: 'Please accept the terms and conditions',
+    pleaseSelectContractType: 'Please select contract type',
   }
 };
 
@@ -184,8 +194,10 @@ export default function CompanyBooking() {
   const [showReviews, setShowReviews] = useState<string | null>(null);
   const [reviews, setReviews] = useState<SpecialistReview[]>([]);
   const [showProfile, setShowProfile] = useState<string | null>(null); // For profile dialog
+  const [termsAccepted, setTermsAccepted] = useState(true); // Auto-checked by default
+  const [contractType, setContractType] = useState<'electronic' | 'physical' | ''>('');
 
-  const totalSteps = 3;
+  const totalSteps = 4;
   const t = translations[language];
 
   // Generate available time slots from 8:00 AM to 4:00 PM
@@ -457,6 +469,23 @@ export default function CompanyBooking() {
       });
       return;
     }
+    // Step 4 validation - Terms or Contract
+    if (currentStep === 4 && !isMonthlyService && !termsAccepted) {
+      toast({
+        title: t.missingData,
+        description: t.pleaseAcceptTerms,
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (currentStep === 4 && isMonthlyService && !contractType) {
+      toast({
+        title: t.missingData,
+        description: t.pleaseSelectContractType,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
   };
@@ -508,6 +537,9 @@ export default function CompanyBooking() {
           booking_date_type: 'custom',
           booking_time: selectedTime,
           status: 'in-progress',
+          notes: isMonthlyService 
+            ? `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}`
+            : `تم الموافقة على الشروط والأحكام: ${termsAccepted ? 'نعم' : 'لا'}`,
         })
         .eq('id', orderId);
 
@@ -667,7 +699,8 @@ export default function CompanyBooking() {
     const steps = [
       { number: 1, title: t.location },
       { number: 2, title: isMonthlyService ? t.contractDuration : t.bookingType },
-      { number: 3, title: language === 'ar' ? 'التاريخ والمحترفة' : 'Date & Specialist' }
+      { number: 3, title: language === 'ar' ? 'التاريخ والمحترفة' : 'Date & Specialist' },
+      { number: 4, title: isMonthlyService ? t.contract : t.termsAndConditions }
     ];
 
     return (
@@ -1263,6 +1296,33 @@ export default function CompanyBooking() {
               </div>
             )}
 
+            {/* Step 4: Terms & Conditions or Contract */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                {isMonthlyService ? (
+                  <MonthlyContract
+                    companyName={company?.name || ''}
+                    companyLogo={company?.logo_url || null}
+                    contractType={contractType}
+                    onContractTypeChange={setContractType}
+                    contractDuration={contractDuration}
+                    specialistNames={specialists
+                      .filter(s => selectedSpecialistIds.includes(s.id))
+                      .map(s => s.name)
+                    }
+                    startDate={bookingDateType === 'custom' ? customDate : new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    language={language}
+                  />
+                ) : (
+                  <TermsAndConditions
+                    accepted={termsAccepted}
+                    onAcceptChange={setTermsAccepted}
+                    language={language}
+                  />
+                )}
+              </div>
+            )}
+
             {/* Navigation Buttons */}
             <div className="flex gap-3 pt-6 border-t">
               {currentStep > 1 && (
@@ -1308,7 +1368,12 @@ export default function CompanyBooking() {
                 <Button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={!bookingDateType || selectedSpecialistIds.length === 0 || !selectedTime}
+                  disabled={
+                    !bookingDateType || 
+                    selectedSpecialistIds.length === 0 || 
+                    !selectedTime ||
+                    (isMonthlyService ? !contractType : !termsAccepted)
+                  }
                   className="flex-1 flex items-center justify-center gap-2 text-base h-12"
                 >
                   <Check className="h-5 w-5" />
