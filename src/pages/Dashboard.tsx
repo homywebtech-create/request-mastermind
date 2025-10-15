@@ -609,7 +609,7 @@ export default function Dashboard() {
 
               <Button
                 variant="outline"
-                onClick={() => navigate('/specialists')}
+                onClick={() => navigate('/admin/specialists')}
                 className="flex items-center gap-2"
               >
                 <Users className="h-4 w-4" />

@@ -27,6 +27,7 @@ import AdminUsers from "./pages/AdminUsers";
 import ActivityLogs from "./pages/ActivityLogs";
 import SetPassword from "./pages/SetPassword";
 import ContractManagement from "./pages/ContractManagement";
+import AdminSpecialists from "./pages/AdminSpecialists";
 
 const queryClient = new QueryClient();
 
@@ -155,6 +156,14 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <ContractManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/specialists"
+          element={
+            <ProtectedRoute>
+              <AdminSpecialists />
             </ProtectedRoute>
           }
         />
