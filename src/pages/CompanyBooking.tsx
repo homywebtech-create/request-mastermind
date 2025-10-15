@@ -545,7 +545,7 @@ export default function CompanyBooking() {
 
       const bookingDate = bookingDateType; // This is already in ISO format (YYYY-MM-DD)
 
-      // Update order details
+      // Update order details - set status to upcoming when contract is approved
       const { error: orderError } = await supabase
         .from('orders')
         .update({
@@ -556,7 +556,8 @@ export default function CompanyBooking() {
           booking_date: bookingDate,
           booking_date_type: 'custom',
           booking_time: selectedTime,
-          status: 'in-progress',
+          status: 'upcoming',
+          tracking_stage: 'upcoming',
           notes: isMonthlyService 
             ? `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}`
             : `تم الموافقة على الشروط والأحكام: ${termsAccepted ? 'نعم' : 'لا'}`,
@@ -1329,6 +1330,13 @@ export default function CompanyBooking() {
                     specialistNames={specialists
                       .filter(s => selectedSpecialistIds.includes(s.id))
                       .map(s => s.name)
+                    }
+                    specialists={specialists
+                      .filter(s => selectedSpecialistIds.includes(s.id))
+                      .map(s => ({
+                        name: s.name,
+                        nationality: s.nationality || ''
+                      }))
                     }
                     startDate={bookingDateType === 'custom' ? customDate : new Date().toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     language={language}

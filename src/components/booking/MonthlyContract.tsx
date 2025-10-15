@@ -8,6 +8,11 @@ import { FileText, Download, Share2, FileSignature, User, Check } from 'lucide-r
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+interface SpecialistInfo {
+  name: string;
+  nationality: string;
+}
+
 interface MonthlyContractProps {
   companyName: string;
   companyLogo: string | null;
@@ -15,6 +20,7 @@ interface MonthlyContractProps {
   onContractTypeChange: (type: 'electronic' | 'physical') => void;
   contractDuration: string;
   specialistNames: string[];
+  specialists: SpecialistInfo[];
   startDate: string;
   language: 'ar' | 'en';
   customerName: string;
@@ -35,7 +41,7 @@ const translations = {
     englishVersion: 'النسخة الإنجليزية',
     contractTypes: 'نوع العقد',
     electronic: 'عقد إلكتروني',
-    electronicDesc: 'الموافقة الإلكترونية على العقد',
+    electronicDesc: 'الموافقة الإلكترونية على العقد - سيتم مشاركته عبر واتساب',
     physical: 'عقد أصلي',
     physicalDesc: 'سيتم إرسال مندوب لتوقيع العقد الورقي معك',
     download: 'تنزيل PDF',
@@ -61,6 +67,9 @@ const translations = {
       financialValue: 'القيمة المالية للاتفاق',
       paymentTerms: 'شروط الدفع',
       specialists: 'العاملات المخصصات',
+      specialistInfo: 'معلومات المحترفة',
+      name: 'الاسم',
+      nationality: 'الجنسية',
       terms: 'الأحكام والشروط',
       termsList: [
         'يمكن للطرف الأول طلب البديل في حال كانت العاملة غير مناسبة أو لا ترغب في العمل، ويجب إخطار المكتب فورية بصورة لإرسال السائق لأخذ العاملة حتى لا يتم احتساب أي قيمة إضافية.',
@@ -88,7 +97,7 @@ const translations = {
     englishVersion: 'English Version',
     contractTypes: 'Contract Type',
     electronic: 'Electronic Contract',
-    electronicDesc: 'Electronic approval of the contract',
+    electronicDesc: 'Electronic approval of the contract - Will be shared via WhatsApp',
     physical: 'Physical Contract',
     physicalDesc: 'A representative will be sent to sign the paper contract with you',
     download: 'Download PDF',
@@ -114,6 +123,9 @@ const translations = {
       financialValue: 'Financial Value of Agreement',
       paymentTerms: 'Payment Terms',
       specialists: 'Assigned Workers',
+      specialistInfo: 'Specialist Information',
+      name: 'Name',
+      nationality: 'Nationality',
       terms: 'Terms and Conditions',
       termsList: [
         'The first party may request a replacement if the worker is not suitable or unwilling to work, and must immediately notify the office to send a driver to pick up the worker to avoid additional charges.',
@@ -142,6 +154,7 @@ export function MonthlyContract({
   onContractTypeChange,
   contractDuration,
   specialistNames,
+  specialists,
   startDate,
   language,
   customerName,
@@ -239,14 +252,17 @@ export function MonthlyContract({
             </div>
           )}
 
-          {specialistNames.length > 0 && (
+          {specialists.length > 0 && (
             <div className="border-t pt-4">
-              <p className="font-semibold mb-2">{ct.specialists}:</p>
-              <ul className="list-disc list-inside ps-4">
-                {specialistNames.map((name, index) => (
-                  <li key={index}>{name}</li>
+              <p className="font-semibold mb-3">{ct.specialists}:</p>
+              <div className="space-y-3 ps-4">
+                {specialists.map((specialist, index) => (
+                  <div key={index} className="bg-muted/50 p-3 rounded-lg">
+                    <p className="font-medium mb-1">{ct.name}: {specialist.name}</p>
+                    <p className="text-sm text-muted-foreground">{ct.nationality}: {specialist.nationality}</p>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 
