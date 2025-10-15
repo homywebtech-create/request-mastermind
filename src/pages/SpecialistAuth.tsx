@@ -34,7 +34,10 @@ export default function SpecialistAuth() {
   const navigate = useNavigate();
 
   const getFullPhoneNumber = () => {
-    return `${countryCode}${phoneNumber}`;
+    // Normalize to E.164: ensure +CC and strip leading 0s from national number (e.g., PK 03xx -> +923xx)
+    const cc = countryCode.startsWith('+') ? countryCode : `+${countryCode}`;
+    const nn = phoneNumber.replace(/\D/g, '').replace(/^0+/, '');
+    return `${cc}${nn}`;
   };
 
   const handleSendCode = async () => {
