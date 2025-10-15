@@ -134,6 +134,7 @@ export type Database = {
       }
       contract_templates: {
         Row: {
+          company_logo_url: string | null
           content_ar: string
           content_en: string
           created_at: string
@@ -145,6 +146,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          company_logo_url?: string | null
           content_ar: string
           content_en: string
           created_at?: string
@@ -156,6 +158,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          company_logo_url?: string | null
           content_ar?: string
           content_en?: string
           created_at?: string
