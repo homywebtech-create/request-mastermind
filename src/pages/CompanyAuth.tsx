@@ -9,14 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { countries } from "@/data/countries";
 import { useNavigate } from "react-router-dom";
 import { Building2, Phone, Shield } from "lucide-react";
-import { translations } from "@/i18n/translations";
-
-const t = translations.auth;
-const tCommon = translations.common;
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 export default function CompanyAuth() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = useTranslation(language);
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [countryCode, setCountryCode] = useState("QA");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -70,12 +70,12 @@ export default function CompanyAuth() {
 
       if (!company) {
         toast({
-          title: t.loginError,
+          title: "Login Error",
           description: (
             <div className="space-y-2">
-              <p>{t.phoneNotRegistered}</p>
-              <p className="text-xs">{t.enteredNumber} {cleanPhone}</p>
-              <p className="text-xs">{t.checkCountryAndNumber}</p>
+              <p>Phone number is not registered for any company</p>
+              <p className="text-xs">Entered number: {cleanPhone}</p>
+              <p className="text-xs">Make sure to select the correct country and enter the number as registered</p>
             </div>
           ),
           variant: "destructive",
@@ -103,15 +103,15 @@ export default function CompanyAuth() {
             <div className="space-y-2">
               <p className="text-2xl font-bold text-center">{data.code}</p>
               <p className="text-xs">✅ تم ملء الكود تلقائياً. اضغط تحقق وتسجيل الدخول</p>
-              <p className="text-xs text-muted-foreground">{t.validFor10Min}</p>
+              <p className="text-xs text-muted-foreground">Valid for 10 minutes</p>
             </div>
           ),
           duration: 5000,
         });
       } else {
         toast({
-          title: t.codeSentTitle,
-          description: `${t.codeSentTo} ${company.name}`,
+          title: "Code Sent",
+          description: `Verification code sent to company ${company.name}`,
         });
       }
 
@@ -119,7 +119,7 @@ export default function CompanyAuth() {
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
-        title: t.error,
+        title: t.common.error,
         description: error.message || "Error sending verification code",
         variant: "destructive",
       });
@@ -150,11 +150,11 @@ export default function CompanyAuth() {
       console.log("4. Verification error:", error);
 
       if (error) {
-        throw new Error(error.message || t.verificationFailed);
+        throw new Error(error.message || "Verification failed");
       }
 
       if (!data || !data.success) {
-        throw new Error(data?.error || t.invalidCode);
+        throw new Error(data?.error || "Verification code is incorrect");
       }
 
       console.log("5. Verification successful, logging in...");
@@ -166,19 +166,19 @@ export default function CompanyAuth() {
 
       if (signInError) {
         console.error("Login error:", signInError);
-        throw new Error(t.loginFailed);
+        throw new Error("Login failed");
       }
 
       toast({
-        title: t.verificationSuccess,
-        description: `${t.welcomeToCompany} ${data.company.name}`,
+        title: "Login successful",
+        description: `Welcome to ${data.company.name}`,
       });
 
       navigate("/company-portal");
     } catch (error: any) {
       console.error("Error verifying code:", error);
       toast({
-        title: t.error,
+        title: t.common.error,
         description: error.message || "Error verifying code",
         variant: "destructive",
       });
@@ -194,18 +194,18 @@ export default function CompanyAuth() {
           <div className="flex justify-center mb-4">
             <Building2 className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">{t.companyLoginTitle}</CardTitle>
+          <CardTitle className="text-2xl">Company Login</CardTitle>
           <CardDescription>
             {step === "phone"
-              ? t.enterRegisteredPhone
-              : t.enterCodeSent}
+              ? "Enter your registered company phone number"
+              : "Enter the verification code sent to WhatsApp"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {step === "phone" ? (
             <form onSubmit={handleSendCode} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="countryCode">{t.country}</Label>
+                <Label htmlFor="countryCode">Country</Label>
                 <Select value={countryCode} onValueChange={setCountryCode}>
                   <SelectTrigger>
                     <SelectValue>
@@ -216,7 +216,7 @@ export default function CompanyAuth() {
                             <span className="text-xl">{country.flag}</span>
                             <span className="text-sm">{country.dialCode}</span>
                           </span>
-                        ) : t.selectCountry;
+                        ) : "Select";
                       })()}
                     </SelectValue>
                   </SelectTrigger>
@@ -235,7 +235,7 @@ export default function CompanyAuth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">{t.phoneLabel}</Label>
+                <Label htmlFor="phoneNumber">Phone Number</Label>
                 <div className="flex items-center gap-2">
                   <Phone className="h-5 w-5 text-muted-foreground" />
                   <Input
@@ -251,13 +251,13 @@ export default function CompanyAuth() {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? t.sendingCode : t.sendVerificationCode}
+                {isLoading ? "Sending..." : "Send Verification Code"}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleVerifyCode} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="verificationCode">{t.verificationCode}</Label>
+                <Label htmlFor="verificationCode">Verification Code</Label>
                 <div className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-muted-foreground" />
                   <Input
@@ -275,16 +275,16 @@ export default function CompanyAuth() {
 
               <div className="space-y-2">
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? t.verifying : t.verifyAndLogin}
+                  {isLoading ? "Verifying..." : "Verify and Login"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setStep("phone")}
-                >
-                  {t.back}
-                </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => setStep("phone")}
+            >
+              Back
+            </Button>
               </div>
             </form>
           )}

@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { countries } from "@/data/countries";
-import { translations } from "@/i18n/translations";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
@@ -52,13 +51,11 @@ interface Company {
   company_services?: CompanyService[];
 }
 
-const t = translations.companies;
-const tCommon = translations.common;
-const tStatus = translations.status;
-
 export default function Companies() {
   const { language } = useLanguage();
-  // استخدام الترجمات الحالية مؤقتاً
+  const translations = useTranslation(language);
+  const t = translations.companies;
+  const tCommon = translations.common;
   const [companies, setCompanies] = useState<Company[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);

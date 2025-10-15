@@ -7,8 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { translations } from "@/i18n/translations";
 import { format } from "date-fns";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -40,10 +41,11 @@ interface DeletionRequest {
   };
 }
 
-const t = translations.companies;
-const tCommon = translations.common;
-
 export default function DeletionRequests() {
+  const { language } = useLanguage();
+  const translations = useTranslation(language);
+  const t = translations.companies;
+  const tCommon = translations.common;
   const [requests, setRequests] = useState<DeletionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<DeletionRequest | null>(null);

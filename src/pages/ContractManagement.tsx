@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Plus, Trash2, Save, Upload, X } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
-import { translations } from '@/i18n';
+import { useTranslation } from '@/i18n';
 
 interface ContractTemplate {
   id: string;
@@ -33,8 +33,9 @@ export default function ContractManagement() {
   const [template, setTemplate] = useState<ContractTemplate | null>(null);
   const [uploading, setUploading] = useState(false);
   
-  const t = translations[language].contracts;
-  const tCommon = translations[language].common;
+  const translations = useTranslation(language);
+  const t = translations.contracts;
+  const tCommon = translations.common;
 
   useEffect(() => {
     fetchTemplate();

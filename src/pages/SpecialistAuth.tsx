@@ -20,9 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { countries } from "@/data/countries";
-import { translations } from "@/i18n/translations";
-
-const t = translations.auth;
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 export default function SpecialistAuth() {
   const [step, setStep] = useState<'phone' | 'code'>('phone');
@@ -32,6 +31,8 @@ export default function SpecialistAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = useTranslation(language);
 
   const getFullPhoneNumber = () => {
     // Normalize to E.164: ensure +CC and strip leading 0s from national number (e.g., PK 03xx -> +923xx)
@@ -43,8 +44,8 @@ export default function SpecialistAuth() {
   const handleSendCode = async () => {
     if (!phoneNumber) {
       toast({
-        title: t.error,
-        description: t.pleaseEnterPhone,
+        title: t.common.error,
+        description: "Please enter phone number",
         variant: "destructive",
       });
       return;
@@ -62,8 +63,8 @@ export default function SpecialistAuth() {
 
       if (specialistError || !specialist) {
         toast({
-          title: t.error,
-          description: t.specialistNotFound,
+          title: t.common.error,
+          description: "No registered worker found with this number or account is inactive",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -96,7 +97,7 @@ export default function SpecialistAuth() {
 
       if (!specialist.is_active) {
         toast({
-          title: t.error,
+          title: t.common.error,
           description: "حسابك غير نشط. يرجى التواصل مع الإدارة / Your account is inactive. Please contact administration",
           variant: "destructive",
         });
@@ -112,7 +113,7 @@ export default function SpecialistAuth() {
 
       if (data?.error) {
         toast({
-          title: t.error,
+          title: t.common.error,
           description: data.error,
           variant: "destructive",
         });
@@ -121,8 +122,8 @@ export default function SpecialistAuth() {
       }
 
       toast({
-        title: t.codeSent,
-        description: `${t.verificationCodeSent} ${fullPhone}`,
+        title: "Code Sent",
+        description: `Verification code sent to ${fullPhone}`,
       });
 
       // AUTO-FILL في بيئة التطوير
@@ -146,7 +147,7 @@ export default function SpecialistAuth() {
     } catch (error: any) {
       console.error('Error sending code:', error);
       toast({
-        title: t.error,
+        title: t.common.error,
         description: error.message || "Failed to send verification code",
         variant: "destructive",
       });
@@ -158,8 +159,8 @@ export default function SpecialistAuth() {
   const handleVerifyCode = async () => {
     if (verificationCode.length !== 6) {
       toast({
-        title: t.error,
-        description: t.pleaseEnter6Digits,
+        title: t.common.error,
+        description: "Please enter the 6-digit verification code",
         variant: "destructive",
       });
       return;
@@ -180,7 +181,7 @@ export default function SpecialistAuth() {
 
       if (data?.error) {
         toast({
-          title: t.error,
+          title: t.common.error,
           description: data.error,
           variant: "destructive",
         });
@@ -190,8 +191,8 @@ export default function SpecialistAuth() {
 
       if (!data?.credentials) {
         toast({
-          title: t.error,
-          description: t.failedToGetCredentials,
+          title: t.common.error,
+          description: "Failed to get login credentials",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -206,8 +207,8 @@ export default function SpecialistAuth() {
       if (signInError) {
         console.error('Sign in error:', signInError);
         toast({
-          title: t.error,
-          description: t.loginFailed,
+          title: t.common.error,
+          description: "Login failed",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -215,8 +216,8 @@ export default function SpecialistAuth() {
       }
 
       toast({
-        title: t.loggedIn,
-        description: `${t.welcome} ${data.specialist.name}`,
+        title: "Logged in",
+        description: `Welcome ${data.specialist.name}`,
       });
 
       // Initialize Firebase Push Notifications
@@ -234,7 +235,7 @@ export default function SpecialistAuth() {
     } catch (error: any) {
       console.error('Error verifying code:', error);
       toast({
-        title: t.error,
+        title: t.common.error,
         description: error.message || "Failed to verify code",
         variant: "destructive",
       });
@@ -250,11 +251,11 @@ export default function SpecialistAuth() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
             <User className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold">{t.specialistLoginTitle}</h1>
+          <h1 className="text-3xl font-bold">Specialist Login</h1>
           <p className="text-muted-foreground">
             {step === 'phone' 
-              ? t.enterRegisteredPhoneSpecialist
-              : t.enterCodeSentSpecialist
+              ? "Enter your registered phone number"
+              : "Enter the verification code sent to your phone"
             }
           </p>
         </div>
@@ -262,7 +263,7 @@ export default function SpecialistAuth() {
         {step === 'phone' ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="country">{t.countryLabel}</Label>
+              <Label htmlFor="country">Country</Label>
               <Select value={countryCode} onValueChange={setCountryCode}>
                 <SelectTrigger id="country">
                   <SelectValue />
@@ -278,7 +279,7 @@ export default function SpecialistAuth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">{t.phoneNumberLabel}</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <div className="flex gap-2">
                 <Input
                   id="phone"
@@ -300,10 +301,10 @@ export default function SpecialistAuth() {
               size="lg"
             >
               {isLoading ? (
-                t.sendingVerification
+                "Sending..."
               ) : (
                 <>
-                  {t.sendVerificationCodeButton}
+                  Send Verification Code
                   <ArrowRight className="mr-2 h-5 w-5" />
                 </>
               )}
@@ -313,7 +314,7 @@ export default function SpecialistAuth() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="code" className="text-center block">
-                {t.verificationCodeLabel}
+                Verification Code
               </Label>
               <div className="flex justify-center" dir="ltr">
                 <InputOTP
@@ -341,10 +342,10 @@ export default function SpecialistAuth() {
               size="lg"
             >
               {isLoading ? (
-                t.verifyingCode
+                "Verifying..."
               ) : (
                 <>
-                  {t.loginButtonSpecialist}
+                  Login
                   <CheckCircle className="mr-2 h-5 w-5" />
                 </>
               )}
@@ -359,7 +360,7 @@ export default function SpecialistAuth() {
               className="w-full"
               disabled={isLoading}
             >
-              {t.backButton}
+              {t.common.back}
             </Button>
           </div>
         )}

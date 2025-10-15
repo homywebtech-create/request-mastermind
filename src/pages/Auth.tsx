@@ -7,10 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn } from "lucide-react";
-import { translations } from "@/i18n/translations";
-
-const t = translations.auth;
-const tCommon = translations.common;
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -18,6 +16,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = useTranslation(language);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,13 +32,13 @@ export default function Auth() {
       if (error) throw error;
 
       toast({
-        title: t.loginSuccess,
-        description: t.welcomeAdmin,
+        title: "Login successful",
+        description: "Welcome to the admin panel",
       });
       navigate("/admin");
     } catch (error: any) {
       toast({
-        title: t.error,
+        title: t.common.error,
         description: error.message,
         variant: "destructive",
       });
@@ -55,16 +55,16 @@ export default function Auth() {
             <LogIn className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl font-cairo">
-            {t.loginTitle}
+            Admin Login
           </CardTitle>
           <CardDescription>
-            {t.enterCredentials}
+            Enter your credentials to access the admin panel
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{t.email}</Label>
+          <div className="space-y-2">
+            <Label htmlFor="email">{t.common.email}</Label>
               <Input
                 id="email"
                 type="email"
@@ -75,8 +75,8 @@ export default function Auth() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">{t.password}</Label>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -89,7 +89,7 @@ export default function Auth() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t.loading : t.loginButton}
+              {loading ? t.common.loading : t.common.login}
             </Button>
           </form>
         </CardContent>
