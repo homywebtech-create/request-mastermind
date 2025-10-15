@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Users, Star, Award, Calendar, Phone, MapPin, FileText } from 'lucide-react';
+import { Users, Star, Award, Calendar, Phone, MapPin, FileText, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,11 +14,20 @@ interface SpecialistProfileDialogProps {
     phone: string;
     nationality?: string;
     image_url?: string;
+    face_photo_url?: string;
+    full_body_photo_url?: string;
+    id_card_front_url?: string;
+    id_card_back_url?: string;
+    id_card_expiry_date?: string;
     experience_years?: number;
     rating?: number;
     reviews_count?: number;
     notes?: string;
     specialty?: string;
+    countries_worked_in?: string[];
+    languages_spoken?: string[];
+    has_pet_allergy?: boolean;
+    has_cleaning_allergy?: boolean;
   };
   language?: 'ar' | 'en';
 }
@@ -87,7 +96,23 @@ export function SpecialistProfileDialog({
       reviews: 'تقييمات',
       notes: 'ملاحظات',
       noSpecialties: 'لا توجد تخصصات',
-      noNotes: 'لا توجد ملاحظات'
+      noNotes: 'لا توجد ملاحظات',
+      photos: 'الصور',
+      facePhoto: 'صورة الوجه',
+      fullBodyPhoto: 'صورة كاملة',
+      idCards: 'بطاقة الهوية',
+      idCardFront: 'البطاقة الأمامية',
+      idCardBack: 'البطاقة الخلفية',
+      idCardExpiry: 'تاريخ انتهاء البطاقة',
+      countriesWorked: 'الدول التي عملت فيها',
+      languages: 'اللغات المتحدث بها',
+      allergies: 'الحساسية',
+      petAllergy: 'حساسية من الحيوانات الأليفة',
+      cleaningAllergy: 'حساسية من مواد التنظيف',
+      yes: 'نعم',
+      no: 'لا',
+      noLanguages: 'لا توجد لغات',
+      noCountries: 'لا توجد دول'
     },
     en: {
       profile: 'CV',
@@ -103,7 +128,23 @@ export function SpecialistProfileDialog({
       reviews: 'reviews',
       notes: 'Notes',
       noSpecialties: 'No specialties',
-      noNotes: 'No notes'
+      noNotes: 'No notes',
+      photos: 'Photos',
+      facePhoto: 'Face Photo',
+      fullBodyPhoto: 'Full Body Photo',
+      idCards: 'ID Card',
+      idCardFront: 'Front Side',
+      idCardBack: 'Back Side',
+      idCardExpiry: 'ID Card Expiry Date',
+      countriesWorked: 'Countries Worked In',
+      languages: 'Languages Spoken',
+      allergies: 'Allergies',
+      petAllergy: 'Pet Allergy',
+      cleaningAllergy: 'Cleaning Materials Allergy',
+      yes: 'Yes',
+      no: 'No',
+      noLanguages: 'No languages',
+      noCountries: 'No countries'
     }
   };
 
@@ -145,9 +186,9 @@ export function SpecialistProfileDialog({
         <div className="space-y-6 pt-4">
           {/* Profile Header with Image */}
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-            {specialist.image_url ? (
+            {specialist.face_photo_url || specialist.image_url ? (
               <img
-                src={specialist.image_url}
+                src={specialist.face_photo_url || specialist.image_url}
                 alt={specialist.name}
                 className="w-32 h-32 rounded-xl object-cover border-4 border-primary/20 shadow-lg"
               />
@@ -250,6 +291,128 @@ export function SpecialistProfileDialog({
               <p className="text-sm text-muted-foreground">{translations.noSpecialties}</p>
             )}
           </div>
+
+          {/* Photos Section */}
+          {(specialist.full_body_photo_url || specialist.id_card_front_url || specialist.id_card_back_url) && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  {translations.photos}
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {specialist.full_body_photo_url && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">{translations.fullBodyPhoto}</p>
+                      <img 
+                        src={specialist.full_body_photo_url} 
+                        alt="Full body" 
+                        className="w-full h-64 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                  
+                  {specialist.id_card_front_url && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">{translations.idCardFront}</p>
+                      <img 
+                        src={specialist.id_card_front_url} 
+                        alt="ID card front" 
+                        className="w-full h-64 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                  
+                  {specialist.id_card_back_url && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">{translations.idCardBack}</p>
+                      <img 
+                        src={specialist.id_card_back_url} 
+                        alt="ID card back" 
+                        className="w-full h-64 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {specialist.id_card_expiry_date && (
+                  <div className="space-y-1 mt-4">
+                    <p className="text-sm text-muted-foreground">{translations.idCardExpiry}</p>
+                    <p className="font-medium">{new Date(specialist.id_card_expiry_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Countries Worked In */}
+          {specialist.countries_worked_in && specialist.countries_worked_in.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  {translations.countriesWorked}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {specialist.countries_worked_in.map((country, index) => (
+                    <Badge key={index} variant="outline" className="text-sm px-3 py-1">
+                      {country}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Languages Spoken */}
+          {specialist.languages_spoken && specialist.languages_spoken.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  {translations.languages}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {specialist.languages_spoken.map((language, index) => (
+                    <Badge key={index} variant="outline" className="text-sm px-3 py-1">
+                      {language}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Allergies */}
+          {(specialist.has_pet_allergy || specialist.has_cleaning_allergy) && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  {translations.allergies}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">{translations.petAllergy}</p>
+                    <p className="font-medium">
+                      {specialist.has_pet_allergy ? translations.yes : translations.no}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">{translations.cleaningAllergy}</p>
+                    <p className="font-medium">
+                      {specialist.has_cleaning_allergy ? translations.yes : translations.no}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Notes */}
           {specialist.notes && (
