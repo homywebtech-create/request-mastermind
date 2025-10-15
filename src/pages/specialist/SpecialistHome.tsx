@@ -7,8 +7,9 @@ import { Clock, MapPin, Navigation, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import { parseISO, format, isToday, isFuture } from "date-fns";
-import { ar } from "date-fns/locale";
+import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface Order {
   id: string;
@@ -35,6 +36,8 @@ export default function SpecialistHome() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
 
   useEffect(() => {
     checkAuth();
@@ -254,7 +257,7 @@ export default function SpecialistHome() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
+          <p className="text-muted-foreground">{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
     );
@@ -268,8 +271,8 @@ export default function SpecialistHome() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <h1 className="text-2xl font-bold mb-1">مرحباً {specialistName}</h1>
-          <p className="text-sm opacity-90">طلباتك المقبولة</p>
+          <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
+          <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
         </div>
       </div>
 
@@ -277,7 +280,7 @@ export default function SpecialistHome() {
       <div className="max-w-screen-lg mx-auto p-4 space-y-4">
         {displayOrders.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground">لا توجد طلبات مقبولة حالياً</p>
+            <p className="text-muted-foreground">{isAr ? 'لا توجد طلبات مقبولة حالياً' : 'No accepted orders yet'}</p>
           </Card>
         ) : (
           displayOrders.map((order) => {
@@ -312,12 +315,15 @@ export default function SpecialistHome() {
                       isTodayOrder && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
                       isFutureOrder && "bg-destructive/10 text-destructive"
                     )}>
-                      {isTodayOrder ? "⭐ طلب اليوم" : "📅 طلب قادم"}
+                      {isTodayOrder 
+                        ? (isAr ? "⭐ طلب اليوم" : "⭐ Today's Order")
+                        : (isAr ? "📅 طلب قادم" : "📅 Upcoming Order")
+                      }
                     </div>
                     {order.booking_date && (
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {format(parseISO(order.booking_date), "d MMMM yyyy - h:mm a", { locale: ar })}
+                        {format(parseISO(order.booking_date), "d MMMM yyyy - h:mm a", { locale: isAr ? ar : enUS })}
                       </div>
                     )}
                   </div>
@@ -329,18 +335,18 @@ export default function SpecialistHome() {
                     </h3>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <MapPin className="h-4 w-4" />
-                      <span>{order.customer?.area || 'غير محدد'}</span>
+                      <span>{order.customer?.area || (isAr ? 'غير محدد' : 'Not specified')}</span>
                     </div>
                   </div>
 
                   {/* Service and Price */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-primary/10 p-3 rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-1">الخدمة</p>
+                      <p className="text-xs text-muted-foreground mb-1">{isAr ? 'الخدمة' : 'Service'}</p>
                       <p className="font-bold text-sm">{order.service_type}</p>
                     </div>
                     <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                      <p className="text-xs text-muted-foreground mb-1">السعر المتفق عليه</p>
+                      <p className="text-xs text-muted-foreground mb-1">{isAr ? 'السعر المتفق عليه' : 'Agreed price'}</p>
                       <p className="font-bold text-sm text-green-700 dark:text-green-300">
                         {order.order_specialist?.quoted_price}
                       </p>
@@ -358,10 +364,10 @@ export default function SpecialistHome() {
                       )}
                     >
                       <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <Navigation className="h-5 w-5" />
-                          <span>{canMove ? "انطلق الآن" : "انتظر الموعد"}</span>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <Navigation className="h-5 w-5" />
+                        <span>{canMove ? (isAr ? "انطلق الآن" : "Start now") : (isAr ? "انتظر الموعد" : "Wait for time")}</span>
+                      </div>
                         {timeUntil && (
                           <div className={cn(
                             "flex items-center gap-2 px-3 py-1 rounded-full font-mono text-sm",
@@ -369,7 +375,7 @@ export default function SpecialistHome() {
                           )}>
                             <Clock className="h-4 w-4" />
                             <span>
-                              {timeUntil.days > 0 && `${timeUntil.days}ي `}
+                              {timeUntil.days > 0 && `${timeUntil.days}${isAr ? 'ي ' : 'd '}`}
                               {String(timeUntil.hours).padStart(2, '0')}:
                               {String(timeUntil.minutes).padStart(2, '0')}:
                               {String(timeUntil.seconds).padStart(2, '0')}
@@ -383,19 +389,19 @@ export default function SpecialistHome() {
                   {isFutureOrder && timeUntil && (
                     <div className="text-center p-4 bg-destructive/10 rounded-lg space-y-2">
                       <p className="text-sm text-destructive font-bold">
-                        ⏳ سيفتح الطلب قبل الموعد بساعة
+                        {isAr ? '⏳ سيفتح الطلب قبل الموعد بساعة' : '⏳ Order opens one hour before appointment'}
                       </p>
                       <div className="flex items-center justify-center gap-2 text-destructive font-mono text-lg">
                         <Clock className="h-5 w-5" />
                         <span>
-                          {timeUntil.days > 0 && `${timeUntil.days} يوم و `}
+                          {timeUntil.days > 0 && (isAr ? `${timeUntil.days} يوم و ` : `${timeUntil.days} day and `)}
                           {String(timeUntil.hours).padStart(2, '0')}:
                           {String(timeUntil.minutes).padStart(2, '0')}:
                           {String(timeUntil.seconds).padStart(2, '0')}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        الوقت المتبقي حتى فتح الطلب
+                        {isAr ? 'الوقت المتبقي حتى فتح الطلب' : 'Time remaining until opening'}
                       </p>
                     </div>
                   )}
@@ -408,7 +414,7 @@ export default function SpecialistHome() {
         {orders.length > 3 && (
           <div className="text-center pt-4">
             <p className="text-sm text-muted-foreground">
-              عرض 3 من {orders.length} طلب • للمزيد انتقل للإحصائيات
+              {isAr ? 'عرض 3 من' : 'Showing 3 of'} {orders.length} {isAr ? 'طلب • للمزيد انتقل للإحصائيات' : 'orders • See Stats for more'}
             </p>
           </div>
         )}

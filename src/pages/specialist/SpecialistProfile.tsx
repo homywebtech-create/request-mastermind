@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface Profile {
   full_name: string;
@@ -58,6 +59,8 @@ export default function SpecialistProfile() {
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
 
   useEffect(() => {
     checkAuth();

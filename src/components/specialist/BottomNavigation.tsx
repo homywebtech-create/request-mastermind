@@ -1,6 +1,7 @@
 import { Home, Package, BarChart3, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface BottomNavigationProps {
   newOrdersCount?: number;
@@ -9,30 +10,32 @@ interface BottomNavigationProps {
 export default function BottomNavigation({ newOrdersCount = 0 }: BottomNavigationProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
 
   const navItems = [
     {
       icon: Home,
-      label: "الرئيسية",
+      label: isAr ? "الرئيسية" : "Home",
       path: "/specialist-orders",
       isActive: location.pathname === "/specialist-orders"
     },
     {
       icon: Package,
-      label: "عروض جديدة",
+      label: isAr ? "عروض جديدة" : "New Orders",
       path: "/specialist-orders/new",
       isActive: location.pathname === "/specialist-orders/new",
       badge: newOrdersCount
     },
     {
       icon: BarChart3,
-      label: "الإحصائيات",
+      label: isAr ? "الإحصائيات" : "Stats",
       path: "/specialist-orders/stats",
       isActive: location.pathname === "/specialist-orders/stats"
     },
     {
       icon: User,
-      label: "الحساب",
+      label: isAr ? "الحساب" : "Profile",
       path: "/specialist-orders/profile",
       isActive: location.pathname === "/specialist-orders/profile"
     }
