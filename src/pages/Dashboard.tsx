@@ -8,8 +8,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { getSoundNotification } from "@/lib/soundNotification";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -83,6 +90,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [suspendedSpecialistsCount, setSuspendedSpecialistsCount] = useState(0);
+  const [pendingDeletionRequestsCount, setPendingDeletionRequestsCount] = useState(0);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -103,6 +111,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchOrders();
     fetchSuspendedSpecialistsCount();
+    fetchPendingDeletionRequestsCount();
     
     // Subscribe to realtime changes for orders
     const ordersChannel = supabase
@@ -197,6 +206,17 @@ export default function Dashboard() {
 
     if (!error && data) {
       setSuspendedSpecialistsCount(data.length || 0);
+    }
+  };
+
+  const fetchPendingDeletionRequestsCount = async () => {
+    const { data, error } = await supabase
+      .from('deletion_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
+    if (!error && data) {
+      setPendingDeletionRequestsCount(data.length || 0);
     }
   };
 
@@ -583,7 +603,7 @@ export default function Dashboard() {
               </p>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               <LanguageSwitcher />
               
               <Button
@@ -595,33 +615,7 @@ export default function Dashboard() {
                 <Volume2 className={`h-4 w-4 ${soundEnabled ? '' : 'opacity-50'}`} />
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={() => navigate('/companies')}
-                className="flex items-center gap-2"
-              >
-                <Building2 className="h-4 w-4" />
-                Companies
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => navigate('/services')}
-                className="flex items-center gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                {tDash.services}
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => navigate('/contracts')}
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                {language === 'ar' ? 'العقود' : 'Contracts'}
-              </Button>
-
+              {/* Priority Actions - Always Visible with Alerts */}
               <Button
                 variant="outline"
                 onClick={() => navigate('/admin/specialists')}
@@ -642,29 +636,60 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 onClick={() => navigate('/deletion-requests')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 relative"
               >
-                <Settings className="h-4 w-4" />
+                <AlertCircle className="h-4 w-4" />
                 {language === 'ar' ? 'طلبات الحذف' : 'Deletion Requests'}
+                {pendingDeletionRequestsCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 min-w-[20px] flex items-center justify-center px-1 text-xs"
+                  >
+                    {pendingDeletionRequestsCount}
+                  </Badge>
+                )}
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/users')}
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                {tDash.users}
-              </Button>
+              {/* Separator */}
+              <div className="h-8 w-px bg-border mx-2" />
 
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/activity')}
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                {tDash.activityLogs}
-              </Button>
+              {/* Other Options - Dropdown Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <MoreVertical className="h-4 w-4" />
+                    {language === 'ar' ? "خيارات أخرى" : "More Options"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={language === 'ar' ? "end" : "start"} className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/admin/activity')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    {tDash.activityLogs}
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem onClick={() => navigate('/admin/users')}>
+                    <UserCog className="h-4 w-4 mr-2" />
+                    {tDash.users}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={() => navigate('/contracts')}>
+                    <FileCheck className="h-4 w-4 mr-2" />
+                    {language === 'ar' ? 'العقود' : 'Contracts'}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => navigate('/services')}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    {tDash.services}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => navigate('/companies')}>
+                    <Building2 className="h-4 w-4 mr-2" />
+                    {language === 'ar' ? 'الشركات' : 'Companies'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
