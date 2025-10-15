@@ -151,11 +151,22 @@ interface Specialist {
   name: string;
   phone: string;
   image_url: string | null;
+  face_photo_url?: string | null;
+  full_body_photo_url?: string | null;
+  id_card_front_url?: string | null;
+  id_card_back_url?: string | null;
+  id_card_expiry_date?: string | null;
   nationality: string | null;
   quoted_price: string;
   quoted_at: string;
   rating?: number;
   reviews_count?: number;
+  experience_years?: number;
+  notes?: string;
+  countries_worked_in?: string[];
+  languages_spoken?: string[];
+  has_pet_allergy?: boolean;
+  has_cleaning_allergy?: boolean;
   booked_until?: string | null; // Track when specialist is booked until
 }
 
@@ -372,10 +383,21 @@ export default function CompanyBooking() {
             name,
             phone,
             image_url,
+            face_photo_url,
+            full_body_photo_url,
+            id_card_front_url,
+            id_card_back_url,
+            id_card_expiry_date,
             nationality,
             company_id,
             rating,
             reviews_count,
+            experience_years,
+            notes,
+            countries_worked_in,
+            languages_spoken,
+            has_pet_allergy,
+            has_cleaning_allergy,
             approval_status,
             registration_completed_at,
             is_active,
@@ -1447,10 +1469,21 @@ export default function CompanyBooking() {
               phone: '',
               nationality: null,
               image_url: null,
+              face_photo_url: null,
+              full_body_photo_url: null,
+              id_card_front_url: null,
+              id_card_back_url: null,
+              id_card_expiry_date: null,
               quoted_price: '',
               quoted_at: '',
               rating: 0,
-              reviews_count: 0
+              reviews_count: 0,
+              experience_years: 0,
+              notes: null,
+              countries_worked_in: [],
+              languages_spoken: [],
+              has_pet_allergy: false,
+              has_cleaning_allergy: false
             }}
             language={language}
           />
