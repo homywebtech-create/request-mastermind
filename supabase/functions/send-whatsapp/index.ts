@@ -22,9 +22,13 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting WhatsApp message send request');
+    console.log('🚀 [Twilio WhatsApp] Edge function invoked');
+    console.log('🚀 [Twilio WhatsApp] Request method:', req.method);
     
-    const { to, message, customerName }: WhatsAppMessageRequest = await req.json();
+    const requestBody = await req.json();
+    console.log('🚀 [Twilio WhatsApp] Request body:', JSON.stringify(requestBody));
+    
+    const { to, message, customerName }: WhatsAppMessageRequest = requestBody;
     
     if (!to || !message) {
       console.error('Missing required fields: to or message');
@@ -38,10 +42,22 @@ serve(async (req) => {
     }
 
     // Validate Twilio credentials
+    console.log('🔑 [Twilio WhatsApp] Checking credentials...');
+    console.log('🔑 [Twilio WhatsApp] Account SID exists:', !!TWILIO_ACCOUNT_SID);
+    console.log('🔑 [Twilio WhatsApp] Auth Token exists:', !!TWILIO_AUTH_TOKEN);
+    console.log('🔑 [Twilio WhatsApp] WhatsApp Number exists:', !!TWILIO_WHATSAPP_NUMBER);
+    
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_NUMBER) {
-      console.error('Twilio credentials not configured');
+      console.error('❌ [Twilio WhatsApp] Twilio credentials not configured properly');
       return new Response(
-        JSON.stringify({ error: 'Twilio credentials not configured' }),
+        JSON.stringify({ 
+          error: 'Twilio credentials not configured',
+          details: {
+            hasAccountSid: !!TWILIO_ACCOUNT_SID,
+            hasAuthToken: !!TWILIO_AUTH_TOKEN,
+            hasWhatsAppNumber: !!TWILIO_WHATSAPP_NUMBER
+          }
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -55,7 +71,10 @@ serve(async (req) => {
       ? TWILIO_WHATSAPP_NUMBER 
       : `whatsapp:${TWILIO_WHATSAPP_NUMBER}`;
 
-    console.log(`Sending WhatsApp message to ${toNumber}`);
+    console.log(`📱 [Twilio WhatsApp] Sending WhatsApp message...`);
+    console.log(`📱 [Twilio WhatsApp] From: ${fromNumber}`);
+    console.log(`📱 [Twilio WhatsApp] To: ${toNumber}`);
+    console.log(`📱 [Twilio WhatsApp] Message length: ${message.length} chars`);
 
     // Prepare Twilio API request
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
@@ -78,11 +97,13 @@ serve(async (req) => {
     const responseData = await response.json();
     
     if (!response.ok) {
-      console.error('Twilio API error:', responseData);
+      console.error('❌ [Twilio WhatsApp] API error:', JSON.stringify(responseData));
+      console.error('❌ [Twilio WhatsApp] Status:', response.status);
       return new Response(
         JSON.stringify({ 
           error: 'Failed to send WhatsApp message', 
-          details: responseData 
+          details: responseData,
+          status: response.status 
         }),
         {
           status: response.status,
@@ -91,7 +112,9 @@ serve(async (req) => {
       );
     }
 
-    console.log('WhatsApp message sent successfully:', responseData.sid);
+    console.log('✅ [Twilio WhatsApp] Message sent successfully!');
+    console.log('✅ [Twilio WhatsApp] Message SID:', responseData.sid);
+    console.log('✅ [Twilio WhatsApp] Status:', responseData.status);
 
     return new Response(
       JSON.stringify({ 
@@ -105,12 +128,15 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
-    console.error('Error in send-whatsapp function:', error);
+  } catch (error: any) {
+    console.error('❌ [Twilio WhatsApp] Unexpected error:', error);
+    console.error('❌ [Twilio WhatsApp] Error message:', error?.message);
+    console.error('❌ [Twilio WhatsApp] Error stack:', error?.stack);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        details: 'Internal server error' 
+        error: error?.message || 'Unknown error',
+        details: 'Internal server error',
+        errorType: error?.constructor?.name 
       }),
       {
         status: 500,
