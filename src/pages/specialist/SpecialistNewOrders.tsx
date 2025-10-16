@@ -568,8 +568,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
-        title: "Error",
-        description: "Failed to load offers",
+        title: "خطأ",
+        description: "فشل تحميل العروض",
         variant: "destructive",
       });
     } finally {
@@ -598,8 +598,8 @@ export default function SpecialistNewOrders() {
       if (error) throw error;
 
       toast({
-        title: "Quote Submitted",
-        description: "Your price quote has been submitted successfully",
+        title: "تم تقديم العرض",
+        description: "تم إرسال عرض السعر الخاص بك بنجاح",
       });
 
       await fetchOrders(specialistId);
@@ -607,8 +607,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error submitting quote:', error);
       toast({
-        title: "Error",
-        description: "Failed to submit quote",
+        title: "خطأ",
+        description: "فشل تقديم العرض",
         variant: "destructive",
       });
     } finally {
@@ -638,8 +638,8 @@ export default function SpecialistNewOrders() {
       if (error) throw error;
 
       toast({
-        title: "Skipped",
-        description: "This offer has been skipped",
+        title: "تم التجاوز",
+        description: "تم تجاوز هذا العرض",
       });
 
       await fetchOrders(specialistId);
@@ -647,8 +647,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error skipping order:', error);
       toast({
-        title: "Error",
-        description: "Failed to skip offer",
+        title: "خطأ",
+        description: "فشل تجاوز العرض",
         variant: "destructive",
       });
     } finally {
@@ -661,7 +661,7 @@ export default function SpecialistNewOrders() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -672,8 +672,8 @@ export default function SpecialistNewOrders() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <h1 className="text-2xl font-bold mb-1">New Offers</h1>
-          <p className="text-sm opacity-90">{orders.length} available offer{orders.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-2xl font-bold mb-1">عروض جديدة</h1>
+          <p className="text-sm opacity-90">{orders.length} عرض متاح{orders.length !== 1 ? '' : ''}</p>
         </div>
       </div>
 
@@ -682,8 +682,8 @@ export default function SpecialistNewOrders() {
         {orders.length === 0 ? (
           <Card className="p-8 text-center">
             <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-lg font-medium text-muted-foreground">No new offers</p>
-            <p className="text-sm text-muted-foreground mt-2">We'll notify you when new offers are available</p>
+            <p className="text-lg font-medium text-muted-foreground">لا توجد عروض جديدة</p>
+            <p className="text-sm text-muted-foreground mt-2">سنخطرك عندما تتوفر عروض جديدة</p>
           </Card>
         ) : (
           orders.map((order) => {
@@ -762,7 +762,7 @@ export default function SpecialistNewOrders() {
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
                       <Package className="h-5 w-5 text-primary" />
                       <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">Service</p>
+                        <p className="text-xs text-muted-foreground">الخدمة</p>
                         <p className="font-bold text-sm">{order.service_type}</p>
                       </div>
                     </div>
@@ -771,7 +771,7 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
                         <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">Area</p>
+                          <p className="text-xs text-muted-foreground">المنطقة</p>
                           <p className="font-bold text-sm">{order.customer.area}</p>
                         </div>
                       </div>
@@ -781,7 +781,7 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
                         <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">Booking Type</p>
+                          <p className="text-xs text-muted-foreground">نوع الحجز</p>
                           <p className="font-bold text-sm">{order.booking_type}</p>
                         </div>
                       </div>
@@ -791,8 +791,8 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
                         <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">Duration</p>
-                          <p className="font-bold text-sm">{order.hours_count} hours</p>
+                          <p className="text-xs text-muted-foreground">المدة</p>
+                          <p className="font-bold text-sm">{order.hours_count} ساعات</p>
                         </div>
                       </div>
                     )}
@@ -802,7 +802,7 @@ export default function SpecialistNewOrders() {
                     <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                       <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-xs text-amber-700 dark:text-amber-300 mb-1 font-bold">Notes</p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mb-1 font-bold">ملاحظات</p>
                         <p className="text-sm leading-relaxed">{order.notes}</p>
                       </div>
                     </div>
@@ -821,16 +821,16 @@ export default function SpecialistNewOrders() {
                         className="w-full h-14 text-base font-bold shadow-lg"
                       >
                         <Tag className="h-5 w-5 ml-2" />
-                        Submit Quote
+                        قدم عرضك
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
                       <DialogHeader>
-                        <DialogTitle>Choose the Right Price</DialogTitle>
+                        <DialogTitle>اختر السعر المناسب</DialogTitle>
                         <DialogDescription>
                           {baseBudget > 0 
-                            ? `Customer budget: ${baseBudget} QAR - Choose the right price`
-                            : "Choose the price that works for you"}
+                            ? `ميزانية العميل: ${baseBudget} ريال قطري - اختر السعر المناسب`
+                            : "اختر السعر الذي يناسبك"}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-3 py-4">
@@ -843,7 +843,7 @@ export default function SpecialistNewOrders() {
                               className="w-full h-auto py-4 flex flex-col gap-1"
                             >
                               <span className="text-lg font-bold">{priceOptions[0].label}</span>
-                              <span className="text-xs opacity-80">Customer price</span>
+                              <span className="text-xs opacity-80">سعر العميل</span>
                             </Button>
                             
                             <div className="grid grid-cols-3 gap-2">
@@ -867,20 +867,20 @@ export default function SpecialistNewOrders() {
                                 variant="ghost"
                                 className="w-full"
                               >
-                                Skip this offer
+                                تجاوز هذا العرض
                               </Button>
                             </div>
                           </>
                         ) : (
                           <div className="text-center py-8">
-                            <p className="text-muted-foreground mb-4">Customer has not set a budget</p>
+                            <p className="text-muted-foreground mb-4">لم يحدد العميل ميزانية</p>
                             <Button
                               onClick={handleSkipOrder}
                               disabled={isSubmitting}
                               variant="outline"
                               className="w-full"
                             >
-                              Skip this offer
+                              تجاوز هذا العرض
                             </Button>
                           </div>
                         )}
