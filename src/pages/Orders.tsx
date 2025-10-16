@@ -376,6 +376,9 @@ export default function Orders() {
         }
       }
 
+      console.log('📱 [WhatsApp] Starting WhatsApp send process...');
+      console.log('📱 [WhatsApp] Customer WhatsApp:', whatsapp);
+      
       // Send WhatsApp message to customer
       try {
         console.log('📱 [WhatsApp] إرسال رسالة واتساب للعميل...');
@@ -385,6 +388,8 @@ export default function Orders() {
         const whatsappMessage = language === 'ar' 
           ? `مرحباً ${customerName}! 🎉\n\nلقد قمنا باستلام طلبك بنجاح وسوف نرد عليك في أقرب وقت ممكن.\n\nشكراً لثقتك بنا! 🙏`
           : `Hello ${customerName}! 🎉\n\nWe have successfully received your request and will respond to you as soon as possible.\n\nThank you for your trust! 🙏`;
+        
+        console.log('📱 [WhatsApp] Invoking send-whatsapp function...');
         
         const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
           body: {
@@ -396,13 +401,25 @@ export default function Orders() {
         
         if (whatsappError) {
           console.error('⚠️ [WhatsApp] خطأ في إرسال رسالة واتساب:', whatsappError);
+          toast({
+            title: 'تحذير',
+            description: 'تم إنشاء الطلب ولكن فشل إرسال رسالة واتساب',
+            variant: "default",
+          });
         } else {
           console.log('✅ [WhatsApp] تم إرسال رسالة واتساب بنجاح:', whatsappResult);
         }
-      } catch (whatsappError) {
+      } catch (whatsappError: any) {
         console.error('⚠️ [WhatsApp] استثناء في إرسال رسالة واتساب:', whatsappError);
+        console.error('⚠️ [WhatsApp] Error details:', {
+          message: whatsappError?.message,
+          name: whatsappError?.name,
+          stack: whatsappError?.stack
+        });
         // Continue even if WhatsApp message fails
       }
+      
+      console.log('📱 [WhatsApp] WhatsApp send process completed');
 
       toast({
         title: t.orderCreatedSuccess,
