@@ -1,0 +1,4 @@
+// Short 1-second notification sound placeholder
+// After running 'npx cap sync', replace this file with an actual 1-second MP3 audio file
+// Recommended: A short beep or chime (exactly 1 second duration)
+// Place your actual short_notification.mp3 file in: android/app/src/main/res/raw/

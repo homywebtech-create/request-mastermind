@@ -144,19 +144,19 @@ serve(async (req) => {
             },
             data: {
               ...data,
-              title, // CRITICAL: Duplicate in data for background
-              body,  // CRITICAL: Duplicate in data for background
+              title,
+              body,
               route: '/specialist/new-orders',
               click_action: 'FLUTTER_NOTIFICATION_CLICK',
             },
             android: {
               priority: 'high',
               notification: {
-                sound: 'notification_sound',
+                sound: 'short_notification', // 1-second sound
                 channel_id: 'new-orders',
-                default_sound: true,
+                default_sound: false,
                 default_vibrate_timings: false,
-                vibrate_timings: ['0.5s', '0.2s', '0.5s'],
+                vibrate_timings: ['0.3s', '0.1s', '0.3s'], // Shorter vibration
                 visibility: 'public',
                 notification_priority: 'PRIORITY_MAX',
                 color: '#FF0000',
@@ -166,8 +166,9 @@ serve(async (req) => {
             apns: {
               payload: {
                 aps: {
-                  sound: 'notification_sound.mp3',
+                  sound: 'short_notification.mp3', // 1-second sound
                   badge: 1,
+                  'content-available': 1, // Enable background delivery
                 },
               },
             },
