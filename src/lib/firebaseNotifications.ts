@@ -1,6 +1,7 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
+import { requestFullScreenPermission, checkFullScreenPermission } from './notificationPermissions';
 
 export class FirebaseNotificationManager {
   private static instance: FirebaseNotificationManager;
@@ -43,6 +44,16 @@ export class FirebaseNotificationManager {
       
       if (permResult.receive === 'granted') {
         console.log('✅ تم منح الأذونات');
+        
+        // Step 1.5: Request full-screen intent permission (Android 12+)
+        if (platform === 'android') {
+          const hasFullScreenPermission = await checkFullScreenPermission();
+          if (!hasFullScreenPermission) {
+            console.log('⚠️ Full-screen intent permission not granted, requesting...');
+            await requestFullScreenPermission();
+            console.log('ℹ️ Please enable "Display over other apps" in system settings for notifications to appear on lock screen');
+          }
+        }
         
         // Step 2: Register with FCM
         console.log('📝 [STEP 2] التسجيل في FCM...');
