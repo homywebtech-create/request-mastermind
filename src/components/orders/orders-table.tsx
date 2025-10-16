@@ -1173,10 +1173,8 @@ Thank you for contacting us! 🌟`;
                           {isPending && (
                             <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : isRecentlySent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                               {isDelayed 
-                                ? `⚠️ لا يوجد رد منذ ${minutesSinceSent} دقيقة`
-                                : isRecentlySent 
-                                  ? `✓ تم الإرسال، بانتظار الرد (${minutesSinceSent} دقيقة)`
-                                  : `✓ تم الإرسال، بانتظار الرد (${minutesSinceSent} دقيقة)`
+                                ? t.noResponseSince.replace('{minutes}', minutesSinceSent.toString())
+                                : t.sentWaiting.replace('{minutes}', minutesSinceSent.toString())
                               }
                             </div>
                           )}
@@ -1197,12 +1195,12 @@ Thank you for contacting us! 🌟`;
                                 {isOrderProcessing ? (
                                   <>
                                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                    جاري الإرسال...
+                                    {t.sending}
                                   </>
                                 ) : (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {isRecentlySent ? `إعادة إرسال (${3 - minutesSinceSent} د)` : 'إعادة إرسال'}
+                                    {isRecentlySent ? t.resendIn.replace('{minutes}', (3 - minutesSinceSent).toString()) : t.resend}
                                   </>
                                 )}
                               </Button>
@@ -1215,7 +1213,7 @@ Thank you for contacting us! 🌟`;
                                 className="flex items-center gap-1"
                               >
                                 <Building2 className="h-3 w-3" />
-                                تغيير
+                                {t.change}
                               </Button>
                             </>
                           )}
@@ -1241,7 +1239,7 @@ Thank you for contacting us! 🌟`;
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Choose how you want to resend this order:
+              {t.resendOrderQuestion}
             </p>
 
             {selectedOrder && (
@@ -1254,10 +1252,10 @@ Thank you for contacting us! 🌟`;
                   <div className="flex flex-col items-start gap-1 text-left">
                     <div className="flex items-center gap-2 font-medium">
                       <Users className="h-4 w-4" />
-                      Send to All Companies
+                      {t.sendToAllCompanies}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      Broadcast this order to all available companies
+                      {t.broadcastDesc}
                     </span>
                   </div>
                 </Button>
@@ -1272,10 +1270,10 @@ Thank you for contacting us! 🌟`;
                       <div className="flex flex-col items-start gap-1 text-left">
                         <div className="flex items-center gap-2 font-medium">
                           <Building2 className="h-4 w-4" />
-                          Resend to Same Company
+                          {t.resendToSameCompany}
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {selectedOrder.companies?.name ? `Send again to ${selectedOrder.companies.name}` : 'Send again to the same company'}
+                          {selectedOrder.companies?.name ? t.sendAgainToCompany.replace('{company}', selectedOrder.companies.name) : t.sendAgainToSameCompany}
                         </span>
                       </div>
                     </Button>
@@ -1288,10 +1286,10 @@ Thank you for contacting us! 🌟`;
                       <div className="flex flex-col items-start gap-1 text-left">
                         <div className="flex items-center gap-2 font-medium">
                           <User className="h-4 w-4" />
-                          Resend to Same Specialists
+                          {t.resendToSameSpecialists}
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          Send again to the same specialists in the company
+                          {t.sendAgainToSpecialists}
                         </span>
                       </div>
                     </Button>
