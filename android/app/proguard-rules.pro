@@ -41,3 +41,6 @@
 # Keep push notification plugin
 -keep class com.capacitor.pushnotifications.** { *; }
 -dontwarn com.capacitor.pushnotifications.**
+
+# Keep custom Capacitor plugin for permissions
+-keep class app.lovable.c9213afe1e6545938c572cfda087384c.MainActivity$NotificationPermissionPlugin { *; }

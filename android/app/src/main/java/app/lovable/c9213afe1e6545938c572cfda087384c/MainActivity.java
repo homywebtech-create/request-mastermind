@@ -67,29 +67,40 @@ public class MainActivity extends BridgeActivity {
     public static class NotificationPermissionPlugin extends Plugin {
         @PluginMethod
         public void requestFullScreenPermission(PluginCall call) {
+            // 1) Full-screen intent setting (Android 12+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 NotificationManager notificationManager = getContext().getSystemService(NotificationManager.class);
                 if (notificationManager != null && !notificationManager.canUseFullScreenIntent()) {
-                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT);
-                    intent.setData(Uri.parse("package:" + getContext().getPackageName()));
-                    getActivity().startActivity(intent);
-                    call.resolve();
-                } else {
-                    call.resolve();
+                    Intent fsIntent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT);
+                    fsIntent.setData(Uri.parse("package:" + getContext().getPackageName()));
+                    getActivity().startActivity(fsIntent);
                 }
-            } else {
-                call.resolve();
             }
+
+            // 2) Overlay (Display over other apps)
+            boolean needsOverlay = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && !Settings.canDrawOverlays(getContext());
+            if (needsOverlay) {
+                Intent overlayIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getContext().getPackageName()));
+                getActivity().startActivity(overlayIntent);
+            }
+
+            call.resolve();
         }
         
         @PluginMethod
         public void checkFullScreenPermission(PluginCall call) {
-            boolean hasPermission = true;
+            boolean fullScreenAllowed = true;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 NotificationManager notificationManager = getContext().getSystemService(NotificationManager.class);
-                hasPermission = notificationManager != null && notificationManager.canUseFullScreenIntent();
+                fullScreenAllowed = notificationManager != null && notificationManager.canUseFullScreenIntent();
             }
-            call.resolve(new com.getcapacitor.JSObject().put("hasPermission", hasPermission));
+            boolean overlayAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(getContext());
+
+            com.getcapacitor.JSObject ret = new com.getcapacitor.JSObject();
+            ret.put("hasPermission", fullScreenAllowed && overlayAllowed);
+            ret.put("fullScreenAllowed", fullScreenAllowed);
+            ret.put("overlayAllowed", overlayAllowed);
+            call.resolve(ret);
         }
     }
 }
