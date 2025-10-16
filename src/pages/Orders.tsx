@@ -376,6 +376,34 @@ export default function Orders() {
         }
       }
 
+      // Send WhatsApp message to customer
+      try {
+        console.log('📱 [WhatsApp] إرسال رسالة واتساب للعميل...');
+        
+        // Prepare WhatsApp message
+        const customerName = formData.customerName?.trim() || 'عزيزنا العميل';
+        const whatsappMessage = language === 'ar' 
+          ? `مرحباً ${customerName}! 🎉\n\nلقد قمنا باستلام طلبك بنجاح وسوف نرد عليك في أقرب وقت ممكن.\n\nشكراً لثقتك بنا! 🙏`
+          : `Hello ${customerName}! 🎉\n\nWe have successfully received your request and will respond to you as soon as possible.\n\nThank you for your trust! 🙏`;
+        
+        const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
+          body: {
+            to: whatsapp,
+            message: whatsappMessage,
+            customerName: formData.customerName?.trim()
+          }
+        });
+        
+        if (whatsappError) {
+          console.error('⚠️ [WhatsApp] خطأ في إرسال رسالة واتساب:', whatsappError);
+        } else {
+          console.log('✅ [WhatsApp] تم إرسال رسالة واتساب بنجاح:', whatsappResult);
+        }
+      } catch (whatsappError) {
+        console.error('⚠️ [WhatsApp] استثناء في إرسال رسالة واتساب:', whatsappError);
+        // Continue even if WhatsApp message fails
+      }
+
       toast({
         title: t.orderCreatedSuccess,
         description: formData.sendToAll 
