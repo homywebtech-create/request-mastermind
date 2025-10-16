@@ -95,62 +95,55 @@ export default function SpecialistAuth() {
     setIsLoading(true);
     try {
       const fullPhone = getFullPhoneNumber();
-      console.log('🔍 Login attempt with phone:', fullPhone);
 
-      // Soft pre-check: try to find specialist, but don't block on network/RLS errors
-      let specialist: { id: string; name: string; is_active: boolean; suspension_type?: string | null; suspension_end_date?: string | null } | null = null;
-      try {
-        const { data: spec, error: specialistError } = await supabase
-          .from('specialists')
-          .select('id, name, is_active, suspension_type, suspension_end_date')
-          .eq('phone', fullPhone)
-          .maybeSingle();
+      const { data: specialist, error: specialistError } = await supabase
+        .from('specialists')
+        .select('id, name, is_active, suspension_type, suspension_end_date')
+        .eq('phone', fullPhone)
+        .maybeSingle();
 
-        console.log('👤 Specialist query result:', { spec, error: specialistError });
-
-        if (specialistError) {
-          console.warn('⚠️ Specialist pre-check failed (will continue):', specialistError);
-        } else {
-          specialist = spec;
-        }
-      } catch (e) {
-        console.warn('⚠️ Specialist pre-check threw (will continue):', e);
+      if (specialistError || !specialist) {
+        toast({
+          title: t.common.error,
+          description: "No registered worker found with this number or account is inactive",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
 
-      // If we could fetch and the account is suspended/inactive, stop here
-      if (specialist) {
-        if (specialist.suspension_type === 'permanent') {
+      // Check if specialist is suspended
+      if (specialist.suspension_type === 'permanent') {
+        toast({
+          title: "حساب موقوف / Account Suspended",
+          description: "تم إيقاف حسابك نهائياً. يرجى التواصل مع الإدارة / Your account has been permanently suspended. Please contact administration",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (specialist.suspension_type === 'temporary' && specialist.suspension_end_date) {
+        const endDate = new Date(specialist.suspension_end_date);
+        if (endDate > new Date()) {
           toast({
-            title: "حساب موقوف / Account Suspended",
-            description: "تم إيقاف حسابك نهائياً. يرجى التواصل مع الإدارة / Your account has been permanently suspended. Please contact administration",
+            title: "حساب موقوف مؤقتاً / Account Temporarily Suspended",
+            description: `حسابك موقوف حتى ${endDate.toLocaleDateString('ar')} / Your account is suspended until ${endDate.toLocaleDateString()}`,
             variant: "destructive",
           });
           setIsLoading(false);
           return;
         }
+      }
 
-        if (specialist.suspension_type === 'temporary' && specialist.suspension_end_date) {
-          const endDate = new Date(specialist.suspension_end_date);
-          if (endDate > new Date()) {
-            toast({
-              title: "حساب موقوف مؤقتاً / Account Temporarily Suspended",
-              description: `حسابك موقوف حتى ${endDate.toLocaleDateString('ar')} / Your account is suspended until ${endDate.toLocaleDateString()}`,
-              variant: "destructive",
-            });
-            setIsLoading(false);
-            return;
-          }
-        }
-
-        if (!specialist.is_active) {
-          toast({
-            title: t.common.error,
-            description: "حسابك غير نشط. يرجى التواصل مع الإدارة / Your account is inactive. Please contact administration",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
+      if (!specialist.is_active) {
+        toast({
+          title: t.common.error,
+          description: "حسابك غير نشط. يرجى التواصل مع الإدارة / Your account is inactive. Please contact administration",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
 
       const { data, error } = await supabase.functions.invoke('request-verification-code', {
@@ -367,13 +360,10 @@ export default function SpecialistAuth() {
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="flex gap-2">
-                <div className="flex items-center px-3 py-2 bg-muted rounded-md border">
-                  <span className="text-sm font-medium">{countryCode}</span>
-                </div>
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder={countryCode === '+92' ? '3XXXXXXXXX' : '5XXXXXXXX'}
+                  placeholder="5xxxxxxxx"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                   className="flex-1 text-left"
@@ -381,9 +371,6 @@ export default function SpecialistAuth() {
                   disabled={isLoading}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Full number: {getFullPhoneNumber() || `${countryCode}...`}
-              </p>
             </div>
 
             <Button
