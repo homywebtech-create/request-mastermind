@@ -135,40 +135,33 @@ serve(async (req) => {
     
     const results = await Promise.allSettled(
       tokens.map(async (deviceToken) => {
+        // ✅ DATA-ONLY MESSAGE: No notification field, so onMessageReceived() is ALWAYS called
         const message = {
           message: {
             token: deviceToken.token,
-            notification: {
-              title,
-              body,
-            },
+            // ✅ NO notification field - ONLY data (ensures MyFirebaseMessagingService.java always runs)
             data: {
-              ...data,
-              title,
-              body,
+              type: 'new_order',
+              title: title || 'طلب جديد',
+              body: body || 'لديك طلب جديد',
               route: '/specialist/new-orders',
               click_action: 'FLUTTER_NOTIFICATION_CLICK',
+              // Convert all data values to strings (FCM requirement)
+              ...Object.fromEntries(
+                Object.entries(data).map(([k, v]) => [k, String(v)])
+              ),
             },
             android: {
               priority: 'high',
-              notification: {
-                sound: 'short_notification', // 1-second sound
-                channel_id: 'new-orders-v2',
-                default_sound: false,
-                default_vibrate_timings: false,
-                vibrate_timings: ['0.3s', '0.1s', '0.3s'], // Shorter vibration
-                visibility: 'public',
-                notification_priority: 'PRIORITY_MAX',
-                color: '#FF0000',
-                icon: 'ic_stat_icon_config_sample',
-              },
+              // ✅ NO notification block - let MyFirebaseMessagingService.java handle everything
             },
             apns: {
+              // For iOS, still need aps for background delivery
               payload: {
                 aps: {
-                  sound: 'short_notification.mp3', // 1-second sound
+                  'content-available': 1,
+                  sound: 'short_notification.mp3',
                   badge: 1,
-                  'content-available': 1, // Enable background delivery
                 },
               },
             },

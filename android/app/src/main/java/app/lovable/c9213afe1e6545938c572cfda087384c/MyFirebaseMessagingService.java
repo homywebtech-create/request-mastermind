@@ -21,20 +21,37 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         Log.d(TAG, "📬 Message received from: " + remoteMessage.getFrom());
 
-        // Check if message contains a notification payload
-        if (remoteMessage.getNotification() != null) {
+        // ✅ PRIORITY 1: Check for data payload (this is what we're sending now)
+        if (remoteMessage.getData().size() > 0) {
+            Log.d(TAG, "📦 Message data payload: " + remoteMessage.getData());
+            
+            // Extract data fields
+            String title = remoteMessage.getData().get("title");
+            String body = remoteMessage.getData().get("body");
+            String type = remoteMessage.getData().get("type");
+            String orderId = remoteMessage.getData().get("orderId");
+            
+            Log.d(TAG, "🔔 Data Message - Title: " + title);
+            Log.d(TAG, "🔔 Data Message - Body: " + body);
+            Log.d(TAG, "🔔 Data Message - Type: " + type);
+            Log.d(TAG, "🔔 Data Message - OrderID: " + orderId);
+            
+            // ✅ Show notification with full-screen intent (works when app is closed!)
+            sendHighPriorityNotification(
+                title != null ? title : "طلب جديد",
+                body != null ? body : "لديك طلب جديد"
+            );
+        }
+        // Fallback: Check if message contains a notification payload (backward compatibility)
+        else if (remoteMessage.getNotification() != null) {
+            Log.d(TAG, "📧 Notification payload received (fallback)");
             String title = remoteMessage.getNotification().getTitle();
             String body = remoteMessage.getNotification().getBody();
             
-            Log.d(TAG, "📧 Notification Title: " + title);
-            Log.d(TAG, "📧 Notification Body: " + body);
-            
             sendHighPriorityNotification(title, body);
         }
-
-        // Check if message contains data payload
-        if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "📦 Message data payload: " + remoteMessage.getData());
+        else {
+            Log.w(TAG, "⚠️ Message received but no data or notification payload");
         }
     }
 
