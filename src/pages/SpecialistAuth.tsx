@@ -215,6 +215,20 @@ export default function SpecialistAuth() {
         return;
       }
 
+      // Wait for session to be fully established
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('No session after login');
+        toast({
+          title: t.common.error,
+          description: "Session initialization failed",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       toast({
         title: "Logged in",
         description: `Welcome ${data.specialist.name}`,
