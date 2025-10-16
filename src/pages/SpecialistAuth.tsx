@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,51 @@ export default function SpecialistAuth() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
   const t = useTranslation(language);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          console.log('✅ Existing session found, redirecting to dashboard');
+          
+          // Verify the user is a specialist
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('phone')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (profile?.phone) {
+            const { data: specialist } = await supabase
+              .from('specialists')
+              .select('id, is_active')
+              .eq('phone', profile.phone)
+              .single();
+
+            if (specialist?.is_active) {
+              // Redirect to specialist dashboard
+              navigate('/specialist-orders', { replace: true });
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+
+    checkExistingSession();
+  }, [navigate]);
 
   const getFullPhoneNumber = () => {
     // Normalize to E.164: ensure +CC and strip leading 0s from national number (e.g., PK 03xx -> +923xx)
@@ -257,6 +298,18 @@ export default function SpecialistAuth() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">جاري التحقق من الجلسة...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
