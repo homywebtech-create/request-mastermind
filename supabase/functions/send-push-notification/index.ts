@@ -13,93 +13,19 @@ interface NotificationPayload {
   data?: Record<string, any>;
 }
 
-// Helper function to get OAuth2 access token from service account
-async function getAccessToken(serviceAccount: any): Promise<string> {
-  const jwtHeader = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  
-  const now = Math.floor(Date.now() / 1000);
-  const jwtClaimSet = {
-    iss: serviceAccount.client_email,
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
-    aud: "https://oauth2.googleapis.com/token",
-    exp: now + 3600,
-    iat: now,
-  };
-  
-  const jwtClaimSetEncoded = btoa(JSON.stringify(jwtClaimSet))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-  
-  const signatureInput = `${jwtHeader}.${jwtClaimSetEncoded}`;
-  
-  // Import private key
-  const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
-    pemToBinary(serviceAccount.private_key),
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  
-  // Sign JWT
-  const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    privateKey,
-    new TextEncoder().encode(signatureInput)
-  );
-  
-  const jwtSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-  
-  const jwt = `${signatureInput}.${jwtSignature}`;
-  
-  // Exchange JWT for access token
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-  });
-  
-  const data = await response.json();
-  return data.access_token;
-}
-
-function pemToBinary(pem: string): ArrayBuffer {
-  const base64 = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\s/g, '');
-  
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('🔔 [FCM] Starting push notification process (HTTP v1 API)...');
+    console.log('🔔 [FCM] Starting push notification with server key...');
 
-    const firebaseServiceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
-    if (!firebaseServiceAccountJson) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT not configured. Please add your Firebase service account JSON.');
+    const serverKey = Deno.env.get('FIREBASE_SERVER_KEY');
+    if (!serverKey) {
+      throw new Error('FIREBASE_SERVER_KEY not configured');
     }
-
-    const serviceAccount = JSON.parse(firebaseServiceAccountJson);
-    const projectId = serviceAccount.project_id;
-
-    console.log(`🔑 [FCM] Getting OAuth2 access token for project: ${projectId}...`);
-    const accessToken = await getAccessToken(serviceAccount);
-    console.log('✅ [FCM] Access token obtained');
+    console.log('✅ [FCM] Server key loaded');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -130,53 +56,33 @@ serve(async (req) => {
 
     console.log(`✅ [FCM] Found ${tokens.length} device tokens`);
 
-    // Send FCM notifications using HTTP v1 API
-    const fcmV1Url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
-    
+    // Send FCM notifications using legacy API (works with server key)
     const results = await Promise.allSettled(
       tokens.map(async (deviceToken) => {
-        // ✅ DATA-ONLY MESSAGE: Ensure onMessageReceived() is ALWAYS called (even background/locked)
+        // Data-only message to ensure onMessageReceived() is called
         const message = {
-          message: {
-            token: deviceToken.token,
-            // Do NOT include a top-level `notification` block to avoid system-handling in background
-            data: {
-              type: 'new_order',
-              title: title || 'طلب جديد',
-              body: body || 'لديك طلب جديد',
-              route: '/specialist/new-orders',
-              click_action: 'FLUTTER_NOTIFICATION_CLICK',
-              // Convert all data values to strings (FCM requirement)
-              ...Object.fromEntries(
-                Object.entries(data).map(([k, v]) => [k, String(v)])
-              ),
-            },
-            android: {
-              priority: 'high',
-              notification: {
-                channel_id: 'new-orders-v2',
-                visibility: 'PUBLIC',
-                click_action: 'FLUTTER_NOTIFICATION_CLICK',
-              },
-            },
-            apns: {
-              payload: {
-                aps: {
-                  'content-available': 1,
-                  sound: 'short_notification.mp3',
-                  badge: 1,
-                },
-              },
-            },
+          to: deviceToken.token,
+          priority: 'high',
+          data: {
+            type: 'new_order',
+            title: title || 'طلب جديد',
+            body: body || 'لديك طلب جديد',
+            route: '/specialist/new-orders',
+            click_action: 'FLUTTER_NOTIFICATION_CLICK',
+            timestamp: new Date().toISOString(),
+            // Convert all data values to strings (FCM requirement)
+            ...Object.fromEntries(
+              Object.entries(data).map(([k, v]) => [k, String(v)])
+            ),
           },
         };
 
-        console.log(`📤 [FCM v1] Sending to specialist ${deviceToken.specialist_id}...`);
+        console.log(`📤 [FCM] Sending to specialist ${deviceToken.specialist_id}...`);
 
-        const response = await fetch(fcmV1Url, {
+        const response = await fetch('https://fcm.googleapis.com/fcm/send', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            'Authorization': `key=${serverKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(message),
@@ -184,22 +90,23 @@ serve(async (req) => {
 
         const result = await response.json();
         
-        if (!response.ok) {
-          console.error(`❌ [FCM v1] Failed for ${deviceToken.specialist_id}:`, result);
+        if (!response.ok || result.failure === 1) {
+          console.error(`❌ [FCM] Failed for ${deviceToken.specialist_id}:`, result);
           
           // If token is invalid, delete it from database
-          if (result.error?.status === 'NOT_FOUND' || result.error?.status === 'INVALID_ARGUMENT') {
+          if (result.results?.[0]?.error === 'NotRegistered' || 
+              result.results?.[0]?.error === 'InvalidRegistration') {
             await supabase
               .from('device_tokens')
               .delete()
               .eq('token', deviceToken.token);
-            console.log(`🗑️ [FCM v1] Removed invalid token for specialist ${deviceToken.specialist_id}`);
+            console.log(`🗑️ [FCM] Removed invalid token for specialist ${deviceToken.specialist_id}`);
           }
           
-          throw new Error(result.error?.message || 'FCM v1 error');
+          throw new Error(result.results?.[0]?.error || 'FCM send error');
         }
 
-        console.log(`✅ [FCM v1] Sent to specialist ${deviceToken.specialist_id}`);
+        console.log(`✅ [FCM] Sent to specialist ${deviceToken.specialist_id}`);
         
         // Update last_used_at
         await supabase
