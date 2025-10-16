@@ -135,15 +135,11 @@ serve(async (req) => {
     
     const results = await Promise.allSettled(
       tokens.map(async (deviceToken) => {
-        // ✅ DATA-ONLY MESSAGE: No notification field, so onMessageReceived() is ALWAYS called
+        // ✅ DATA-ONLY MESSAGE: Ensure onMessageReceived() is ALWAYS called (even background/locked)
         const message = {
           message: {
             token: deviceToken.token,
-            // Include both notification and data for maximum reliability on Android background/locked states
-            notification: {
-              title: title || 'طلب جديد',
-              body: body || 'لديك طلب جديد',
-            },
+            // Do NOT include a top-level `notification` block to avoid system-handling in background
             data: {
               type: 'new_order',
               title: title || 'طلب جديد',
@@ -160,8 +156,6 @@ serve(async (req) => {
               notification: {
                 channel_id: 'new-orders-v2',
                 visibility: 'PUBLIC',
-                // We rely on the channel's custom sound; no need to set here
-                // sound: 'short_notification',
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
               },
             },
