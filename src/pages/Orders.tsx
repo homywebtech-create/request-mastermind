@@ -339,11 +339,13 @@ export default function Orders() {
           throw linkError;
         }
         
-        console.log('Successfully linked specialists to order');
+        console.log('✅ Successfully linked specialists to order');
+        console.log('🔍 [DEBUG] About to enter FCM try block');
+        console.log('🔍 [DEBUG] specialistsToLink:', specialistsToLink);
         
         // Send push notifications via Firebase
         try {
-          console.log('📤 [FCM] Starting push notification send...');
+          console.log('📤 [FCM] INSIDE TRY BLOCK - Starting push notification send...');
           console.log('📤 [FCM] Specialist IDs:', specialistsToLink);
           
           const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
