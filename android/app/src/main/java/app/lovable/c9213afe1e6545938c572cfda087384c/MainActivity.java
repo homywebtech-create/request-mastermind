@@ -39,7 +39,7 @@ public class MainActivity extends BridgeActivity {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                "new-orders",
+                "new-orders-v2",
                 "New Orders",
                 NotificationManager.IMPORTANCE_MAX  // ✅ CHANGED: Maximum priority
             );

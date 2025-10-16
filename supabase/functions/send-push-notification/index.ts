@@ -153,7 +153,7 @@ serve(async (req) => {
               priority: 'high',
               notification: {
                 sound: 'short_notification', // 1-second sound
-                channel_id: 'new-orders',
+                channel_id: 'new-orders-v2',
                 default_sound: false,
                 default_vibrate_timings: false,
                 vibrate_timings: ['0.3s', '0.1s', '0.3s'], // Shorter vibration
