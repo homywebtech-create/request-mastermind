@@ -95,6 +95,7 @@ export default function SpecialistAuth() {
     setIsLoading(true);
     try {
       const fullPhone = getFullPhoneNumber();
+      console.log('🔍 Login attempt with phone:', fullPhone);
 
       const { data: specialist, error: specialistError } = await supabase
         .from('specialists')
@@ -102,10 +103,24 @@ export default function SpecialistAuth() {
         .eq('phone', fullPhone)
         .maybeSingle();
 
-      if (specialistError || !specialist) {
+      console.log('👤 Specialist query result:', { specialist, error: specialistError });
+
+      if (specialistError) {
+        console.error('❌ Specialist query error:', specialistError);
         toast({
           title: t.common.error,
-          description: "No registered worker found with this number or account is inactive",
+          description: `Database error: ${specialistError.message}`,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!specialist) {
+        console.warn('⚠️ No specialist found for phone:', fullPhone);
+        toast({
+          title: t.common.error,
+          description: `No registered worker found with number: ${fullPhone}`,
           variant: "destructive",
         });
         setIsLoading(false);
@@ -360,10 +375,13 @@ export default function SpecialistAuth() {
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="flex gap-2">
+                <div className="flex items-center px-3 py-2 bg-muted rounded-md border">
+                  <span className="text-sm font-medium">{countryCode}</span>
+                </div>
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="5xxxxxxxx"
+                  placeholder={countryCode === '+92' ? '3XXXXXXXXX' : '5XXXXXXXX'}
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                   className="flex-1 text-left"
@@ -371,6 +389,9 @@ export default function SpecialistAuth() {
                   disabled={isLoading}
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                Full number: {getFullPhoneNumber() || `${countryCode}...`}
+              </p>
             </div>
 
             <Button
