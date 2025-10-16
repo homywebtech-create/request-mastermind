@@ -343,7 +343,9 @@ export default function Orders() {
         
         // Send push notifications via Firebase
         try {
-          console.log('📤 [FCM] إرسال إشعارات Firebase...');
+          console.log('📤 [FCM] Starting push notification send...');
+          console.log('📤 [FCM] Specialist IDs:', specialistsToLink);
+          
           const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
             body: {
               specialistIds: specialistsToLink,
@@ -356,13 +358,16 @@ export default function Orders() {
             }
           });
           
+          console.log('📤 [FCM] Edge function response:', fcmResult);
+          console.log('📤 [FCM] Edge function error:', fcmError);
+          
           if (fcmError) {
-            console.error('⚠️ [FCM] خطأ في إرسال الإشعارات:', fcmError);
+            console.error('❌ [FCM] Error sending push notifications:', fcmError);
           } else {
-            console.log('✅ [FCM] تم إرسال الإشعارات:', fcmResult);
+            console.log('✅ [FCM] Push notifications sent successfully:', fcmResult);
           }
         } catch (fcmError) {
-          console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
+          console.error('⚠️ [FCM] Exception sending push notifications:', fcmError);
           // Continue even if push notifications fail
         }
       } else {
