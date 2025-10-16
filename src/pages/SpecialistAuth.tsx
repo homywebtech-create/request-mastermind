@@ -97,68 +97,60 @@ export default function SpecialistAuth() {
       const fullPhone = getFullPhoneNumber();
       console.log('🔍 Login attempt with phone:', fullPhone);
 
-      const { data: specialist, error: specialistError } = await supabase
-        .from('specialists')
-        .select('id, name, is_active, suspension_type, suspension_end_date')
-        .eq('phone', fullPhone)
-        .maybeSingle();
+      // Soft pre-check: try to find specialist, but don't block on network/RLS errors
+      let specialist: { id: string; name: string; is_active: boolean; suspension_type?: string | null; suspension_end_date?: string | null } | null = null;
+      try {
+        const { data: spec, error: specialistError } = await supabase
+          .from('specialists')
+          .select('id, name, is_active, suspension_type, suspension_end_date')
+          .eq('phone', fullPhone)
+          .maybeSingle();
 
-      console.log('👤 Specialist query result:', { specialist, error: specialistError });
+        console.log('👤 Specialist query result:', { spec, error: specialistError });
 
-      if (specialistError) {
-        console.error('❌ Specialist query error:', specialistError);
-        toast({
-          title: t.common.error,
-          description: `Database error: ${specialistError.message}`,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
+        if (specialistError) {
+          console.warn('⚠️ Specialist pre-check failed (will continue):', specialistError);
+        } else {
+          specialist = spec;
+        }
+      } catch (e) {
+        console.warn('⚠️ Specialist pre-check threw (will continue):', e);
       }
 
-      if (!specialist) {
-        console.warn('⚠️ No specialist found for phone:', fullPhone);
-        toast({
-          title: t.common.error,
-          description: `No registered worker found with number: ${fullPhone}`,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if specialist is suspended
-      if (specialist.suspension_type === 'permanent') {
-        toast({
-          title: "حساب موقوف / Account Suspended",
-          description: "تم إيقاف حسابك نهائياً. يرجى التواصل مع الإدارة / Your account has been permanently suspended. Please contact administration",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (specialist.suspension_type === 'temporary' && specialist.suspension_end_date) {
-        const endDate = new Date(specialist.suspension_end_date);
-        if (endDate > new Date()) {
+      // If we could fetch and the account is suspended/inactive, stop here
+      if (specialist) {
+        if (specialist.suspension_type === 'permanent') {
           toast({
-            title: "حساب موقوف مؤقتاً / Account Temporarily Suspended",
-            description: `حسابك موقوف حتى ${endDate.toLocaleDateString('ar')} / Your account is suspended until ${endDate.toLocaleDateString()}`,
+            title: "حساب موقوف / Account Suspended",
+            description: "تم إيقاف حسابك نهائياً. يرجى التواصل مع الإدارة / Your account has been permanently suspended. Please contact administration",
             variant: "destructive",
           });
           setIsLoading(false);
           return;
         }
-      }
 
-      if (!specialist.is_active) {
-        toast({
-          title: t.common.error,
-          description: "حسابك غير نشط. يرجى التواصل مع الإدارة / Your account is inactive. Please contact administration",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
+        if (specialist.suspension_type === 'temporary' && specialist.suspension_end_date) {
+          const endDate = new Date(specialist.suspension_end_date);
+          if (endDate > new Date()) {
+            toast({
+              title: "حساب موقوف مؤقتاً / Account Temporarily Suspended",
+              description: `حسابك موقوف حتى ${endDate.toLocaleDateString('ar')} / Your account is suspended until ${endDate.toLocaleDateString()}`,
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        if (!specialist.is_active) {
+          toast({
+            title: t.common.error,
+            description: "حسابك غير نشط. يرجى التواصل مع الإدارة / Your account is inactive. Please contact administration",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
       }
 
       const { data, error } = await supabase.functions.invoke('request-verification-code', {
