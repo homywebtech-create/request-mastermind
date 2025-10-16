@@ -154,7 +154,7 @@ export default function Orders() {
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
-        title: "خطأ في تحميل الطلبات",
+        title: t.errorLoading,
         description: error.message,
         variant: "destructive",
       });
@@ -369,18 +369,18 @@ export default function Orders() {
         if (!linkingSkipped) {
           console.warn('No active specialists found!');
           toast({
-            title: "تحذير",
-            description: "لم يتم العثور على محترفين نشطين للشركة المحددة",
+            title: t.warning,
+            description: t.noActiveSpecialists,
             variant: "default",
           });
         }
       }
 
       toast({
-        title: "تم إنشاء الطلب بنجاح",
+        title: t.orderCreatedSuccess,
         description: formData.sendToAll 
-          ? "تم إرسال الطلب لجميع المحترفين"
-          : "تم إرسال الطلب للمحترفين المختارين",
+          ? t.sentToAll
+          : t.sentToSelected,
       });
 
       setShowForm(false);
@@ -388,7 +388,7 @@ export default function Orders() {
     } catch (error: any) {
       console.error('Error creating order:', error);
       toast({
-        title: "خطأ في إنشاء الطلب",
+        title: t.errorCreating,
         description: error.message,
         variant: "destructive",
       });
@@ -405,15 +405,15 @@ export default function Orders() {
       if (error) throw error;
 
       toast({
-        title: "تم تحديث الحالة",
-        description: "تم تحديث حالة الطلب بنجاح",
+        title: t.statusUpdated,
+        description: t.statusUpdatedSuccess,
       });
 
       fetchOrders();
     } catch (error: any) {
       console.error('Error updating status:', error);
       toast({
-        title: "خطأ في التحديث",
+        title: t.errorUpdating,
         description: error.message,
         variant: "destructive",
       });

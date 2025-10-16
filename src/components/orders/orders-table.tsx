@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 
 interface Order {
   id: string;
@@ -107,6 +109,9 @@ interface OrdersTableProps {
 export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = useTranslation(language).orders;
+  const tCommon = useTranslation(language).common;
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [resendDialogOpen, setResendDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -335,13 +340,13 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
       onLinkCopied(order.id);
       
       toast({
-        title: "Link Copied",
-        description: "Order link copied and shared with the team",
+        title: t.linkCopied,
+        description: t.linkCopiedDesc,
       });
     } catch (error) {
       toast({
-        title: "Copy Error",
-        description: "Error copying link",
+        title: t.copyError,
+        description: t.errorCopyingLink,
         variant: "destructive",
       });
     }
@@ -350,8 +355,8 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const sendOrderLinkViaWhatsApp = (order: Order) => {
     if (!order.customers?.whatsapp_number) {
       toast({
-        title: "Error",
-        description: "WhatsApp number not available",
+        title: t.error,
+        description: t.errorCopyingLink,
         variant: "destructive",
       });
       return;
@@ -411,14 +416,14 @@ Thank you for contacting us! 🌟`;
         .eq('id', orderId);
 
       toast({
-        title: "عرض مقبول",
-        description: "تم قبول عرض السعر بنجاح",
+        title: t.quoteAccepted,
+        description: t.quoteAcceptedDesc,
       });
 
       // No need to reload, realtime subscription will handle the update
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: t.error,
         description: error.message,
         variant: "destructive",
       });
@@ -439,14 +444,14 @@ Thank you for contacting us! 🌟`;
       if (error) throw error;
 
       toast({
-        title: "عرض مرفوض",
-        description: "تم رفض عرض السعر",
+        title: t.quoteRejected,
+        description: t.quoteRejectedDesc,
       });
 
       // No need to reload, realtime subscription will handle the update
     } catch (error: any) {
       toast({
-        title: "خطأ",
+        title: t.error,
         description: error.message,
         variant: "destructive",
       });
@@ -466,8 +471,8 @@ Thank you for contacting us! 🌟`;
     } catch (error) {
       console.error("Error fetching companies:", error);
       toast({
-        title: "Error",
-        description: "Failed to load companies",
+        title: t.error,
+        description: t.errorLoadingCompanies,
         variant: "destructive",
       });
     }
@@ -577,15 +582,15 @@ Thank you for contacting us! 🌟`;
       markOrderAsSent(orderId);
 
       toast({
-        title: '✅ نجح الإرسال',
-        description: `تم إرسال الطلب إلى ${allSpecialists?.length || 0} محترف نشط`,
+        title: t.sendSuccessful,
+        description: t.sentToSpecialists.replace('{count}', (allSpecialists?.length || 0).toString()),
       });
 
       setResendDialogOpen(false);
       setSelectedOrder(null);
     } catch (error: any) {
       toast({
-        title: '❌ خطأ',
+        title: t.error,
         description: error.message,
         variant: 'destructive',
       });
@@ -599,8 +604,8 @@ Thank you for contacting us! 🌟`;
     try {
       if (!order.company_id) {
         toast({
-          title: '❌ خطأ',
-          description: 'لا توجد شركة مخصصة لهذا الطلب',
+          title: t.error,
+          description: t.noCompanyAssigned,
           variant: 'destructive',
         });
         return;
@@ -672,15 +677,15 @@ Thank you for contacting us! 🌟`;
       markOrderAsSent(order.id);
 
       toast({
-        title: '✅ نجح الإرسال',
-        description: `تم إرسال الطلب إلى ${companySpecialists?.length || 0} محترف في الشركة`,
+        title: t.sendSuccessful,
+        description: t.sentToSpecialists.replace('{count}', (companySpecialists?.length || 0).toString()),
       });
 
       setResendDialogOpen(false);
       setSelectedOrder(null);
     } catch (error: any) {
       toast({
-        title: '❌ خطأ',
+        title: t.error,
         description: error.message,
         variant: 'destructive',
       });
@@ -702,8 +707,8 @@ Thank you for contacting us! 🌟`;
 
       if (!currentSpecialists || currentSpecialists.length === 0) {
         toast({
-          title: '❌ خطأ',
-          description: 'لا يوجد محترفين مخصصين لهذا الطلب',
+          title: t.error,
+          description: t.noActiveSpecialists,
           variant: 'destructive',
         });
         return;
@@ -746,15 +751,15 @@ Thank you for contacting us! 🌟`;
       markOrderAsSent(order.id);
 
       toast({
-        title: '✅ نجح الإرسال',
-        description: `تم إرسال الطلب إلى ${currentSpecialists.length} محترف`,
+        title: t.sendSuccessful,
+        description: t.sentToSpecialists.replace('{count}', currentSpecialists.length.toString()),
       });
 
       setResendDialogOpen(false);
       setSelectedOrder(null);
     } catch (error: any) {
       toast({
-        title: '❌ خطأ',
+        title: t.error,
         description: error.message,
         variant: 'destructive',
       });
@@ -864,15 +869,15 @@ Thank you for contacting us! 🌟`;
         console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
       }
 
-      let description = "تم إرسال الطلب للشركة";
+      let description = t.sentToCompany;
       if (selectedSpecialistIds.length > 0) {
-        description = `تم إرسال الطلب إلى ${selectedSpecialistIds.length} محترف`;
+        description = t.sentToSpecialists.replace('{count}', selectedSpecialistIds.length.toString());
       } else {
-        description = "تم إرسال الطلب لجميع محترفي الشركة";
+        description = t.sentToCompanySpecialists;
       }
 
       toast({
-        title: '✅ نجح الإرسال',
+        title: t.sendSuccessful,
         description,
       });
 
@@ -882,7 +887,7 @@ Thank you for contacting us! 🌟`;
       setSelectedSpecialistIds([]);
     } catch (error: any) {
       toast({
-        title: "❌ خطأ",
+        title: t.error,
         description: error.message,
         variant: "destructive",
       });
@@ -934,7 +939,7 @@ Thank you for contacting us! 🌟`;
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <CardTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            Orders List
+            {t.ordersList}
           </CardTitle>
           
           <div className="flex items-center gap-2">
@@ -943,17 +948,17 @@ Thank you for contacting us! 🌟`;
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Orders</SelectItem>
-                <SelectItem value="new">New Requests</SelectItem>
-                <SelectItem value="awaiting-response">Awaiting Response</SelectItem>
-                <SelectItem value="upcoming">Upcoming</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="all">{t.allOrders}</SelectItem>
+                <SelectItem value="new">{t.newRequests}</SelectItem>
+                <SelectItem value="awaiting-response">{t.awaitingResponse}</SelectItem>
+                <SelectItem value="upcoming">{t.upcoming}</SelectItem>
+                <SelectItem value="in-progress">{t.inProgress}</SelectItem>
+                <SelectItem value="completed">{t.completed}</SelectItem>
+                <SelectItem value="cancelled">{t.cancelled}</SelectItem>
               </SelectContent>
             </Select>
             <Badge variant="secondary">
-              {filteredOrders.length} orders
+              {filteredOrders.length} {t.ordersCount.replace('{count}', '')}
             </Badge>
           </div>
         </div>
@@ -964,29 +969,29 @@ Thank you for contacting us! 🌟`;
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-left">Order #</TableHead>
-                <TableHead className="text-left">Customer</TableHead>
-                <TableHead className="text-left">Area</TableHead>
-                <TableHead className="text-left">Customer Budget</TableHead>
-                <TableHead className="text-left">Service</TableHead>
+                <TableHead className="text-left">{t.orderNumber}</TableHead>
+                <TableHead className="text-left">{t.customer}</TableHead>
+                <TableHead className="text-left">{t.area}</TableHead>
+                <TableHead className="text-left">{t.customerBudget}</TableHead>
+                <TableHead className="text-left">{t.service}</TableHead>
                 <TableHead className="text-left">
-                  {filter === 'awaiting-response' ? 'Company Quotes' : 'Notes'}
+                  {filter === 'awaiting-response' ? t.companyQuotes : t.notes}
                 </TableHead>
-                <TableHead className="text-left">Date & Status</TableHead>
-                <TableHead className="text-left">Actions</TableHead>
+                <TableHead className="text-left">{t.dateAndStatus}</TableHead>
+                <TableHead className="text-left">{t.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No orders available
+                    {t.noOrders}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredOrders.map((order) => {
-                  const customerName = order.customers?.name || 'غير متوفر';
-                  const customerPhone = order.customers?.whatsapp_number || 'غير متوفر';
+                  const customerName = order.customers?.name || t.customerNA;
+                  const customerPhone = order.customers?.whatsapp_number || t.customerNA;
                   const customerArea = order.customers?.area || '-';
                   const customerBudget = order.customers?.budget || '-';
                   const isPending = order.status === 'pending' && (order.company_id || order.send_to_all_companies);
@@ -1018,7 +1023,7 @@ Thank you for contacting us! 🌟`;
                               <span dir="ltr">{customerPhone}</span>
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground italic">Hidden until quote accepted</span>
+                            <span className="text-xs text-muted-foreground italic">{t.hiddenUntilAccepted}</span>
                           )}
                         </div>
                       </TableCell>
@@ -1063,8 +1068,8 @@ Thank you for contacting us! 🌟`;
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2 flex-shrink-0">
-                                        <Badge variant="secondary" className="whitespace-nowrap text-xs">
-                                          {company.quotesCount} {company.quotesCount === 1 ? 'quote' : 'quotes'}
+                                       <Badge variant="secondary" className="whitespace-nowrap text-xs">
+                                          {company.quotesCount} {company.quotesCount === 1 ? t.quote : t.quotePlural}
                                         </Badge>
                                         <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 whitespace-nowrap text-xs">
                                           {company.lowestPriceFormatted}
@@ -1082,7 +1087,7 @@ Thank you for contacting us! 🌟`;
                                         }}
                                       >
                                         <Building2 className="h-3 w-3 mr-2" />
-                                        Enter Company Page
+                                        {t.enterCompanyPage}
                                       </Button>
                                       <Button
                                         size="sm"
@@ -1091,8 +1096,8 @@ Thank you for contacting us! 🌟`;
                                           const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
                                           navigator.clipboard.writeText(url);
                                           toast({
-                                            title: "✅ تم نسخ الرابط",
-                                            description: "تم نسخ رابط صفحة الحجز بنجاح",
+                                            title: t.linkCopiedSuccess,
+                                            description: t.linkCopiedSuccessDesc,
                                           });
                                         }}
                                       >
@@ -1103,7 +1108,7 @@ Thank you for contacting us! 🌟`;
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-sm">No quotes available</span>
+                              <span className="text-muted-foreground text-sm">{t.noQuotes}</span>
                             );
                           })()
                         ) : (filter === 'upcoming' || filter === 'in-progress' || filter === 'completed') ? (
@@ -1229,9 +1234,9 @@ Thank you for contacting us! 🌟`;
       <Dialog open={resendDialogOpen} onOpenChange={setResendDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Resend Order</DialogTitle>
+            <DialogTitle>{t.resendOrderTitle}</DialogTitle>
             <DialogDescription>
-              Choose how you want to resend this order to specialists
+              {t.resendOrderDesc}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -1302,17 +1307,17 @@ Thank you for contacting us! 🌟`;
       <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Send Order to Company</DialogTitle>
+            <DialogTitle>{t.sendOrderToCompany}</DialogTitle>
             <DialogDescription>
-              Select a company and optionally choose specific specialists
+              {t.selectCompanyDesc}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="company">Select Company *</Label>
+              <Label htmlFor="company">{t.selectCompanyRequired}</Label>
               <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose company" />
+                  <SelectValue placeholder={t.chooseCompany} />
                 </SelectTrigger>
                 <SelectContent>
                   {companies.map((company) => (
@@ -1326,7 +1331,7 @@ Thank you for contacting us! 🌟`;
 
             {selectedCompanyId && specialists.length > 0 && (
               <div className="space-y-3">
-                <Label>Select Specialists (Optional)</Label>
+                <Label>{t.selectSpecialistsOptional}</Label>
                 <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto space-y-3">
                   {specialists.map((specialist) => (
                     <label
@@ -1368,18 +1373,18 @@ Thank you for contacting us! 🌟`;
                 </div>
                 {selectedSpecialistIds.length > 0 && (
                   <p className="text-sm text-muted-foreground">
-                    {selectedSpecialistIds.length} specialist(s) selected
+                    {t.specialistsSelected.replace('{count}', selectedSpecialistIds.length.toString())}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Leave empty to send to all specialists in this company
+                  {t.leaveEmpty}
                 </p>
               </div>
             )}
 
             {selectedCompanyId && specialists.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                No specialists available for this company
+                {t.noSpecialists}
               </p>
             )}
 
@@ -1389,13 +1394,13 @@ Thank you for contacting us! 🌟`;
                 disabled={!selectedCompanyId}
                 className="flex-1"
               >
-                Send Order
+                {t.sendOrder}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setSendDialogOpen(false)}
               >
-                Cancel
+                {tCommon.cancel}
               </Button>
             </div>
           </div>
