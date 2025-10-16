@@ -38,7 +38,6 @@ export default function SpecialistHome() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const isAr = language === 'ar';
-  const [isSendingTest, setIsSendingTest] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -253,39 +252,6 @@ export default function SpecialistHome() {
     }
   };
 
-  const sendTestNotification = async () => {
-    setIsSendingTest(true);
-    try {
-      const { error } = await supabase.functions.invoke('send-push-notification', {
-        body: {
-          specialistIds: [specialistId],
-          title: '🧪 اختبار الإشعار',
-          body: 'هذا إشعار تجريبي - إذا وصلك خارج التطبيق فالنظام يعمل بنجاح!',
-          data: {
-            type: 'test',
-            orderId: 'test-123',
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: isAr ? "✅ تم الإرسال" : "✅ Sent",
-        description: isAr ? "تم إرسال إشعار تجريبي - تحقق من شريط الإشعارات" : "Test notification sent - check system tray",
-      });
-    } catch (error) {
-      console.error('Test notification error:', error);
-      toast({
-        title: isAr ? "❌ خطأ" : "❌ Error",
-        description: isAr ? "فشل إرسال الإشعار التجريبي" : "Failed to send test notification",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSendingTest(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
@@ -305,21 +271,8 @@ export default function SpecialistHome() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
-              <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
-            </div>
-            <Button
-              onClick={sendTestNotification}
-              disabled={isSendingTest || !specialistId}
-              variant="secondary"
-              size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border border-white/40"
-            >
-              {isSendingTest ? '⏳' : '🧪'} {isAr ? 'اختبار' : 'Test'}
-            </Button>
-          </div>
+          <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
+          <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
         </div>
       </div>
 
