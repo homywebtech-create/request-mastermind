@@ -75,6 +75,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 // Single Router for ALL environments (Web + Mobile)
+function MobileLanding() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  return user ? <Navigate to="/specialist-orders" replace /> : <Navigate to="/specialist-auth" replace />;
+}
+
 function AppRouter() {
   // Render different routes based on environment
   if (isCapacitorApp) {
@@ -109,8 +121,8 @@ function AppRouter() {
             </ProtectedRoute>
           } />
           <Route path="/specialist-registration" element={<SpecialistRegistration />} />
-          <Route path="/" element={<Navigate to="/specialist-auth" replace />} />
-          <Route path="*" element={<Navigate to="/specialist-auth" replace />} />
+          <Route path="/" element={<MobileLanding />} />
+          <Route path="*" element={<MobileLanding />} />
         </Routes>
       </BrowserRouter>
     );
