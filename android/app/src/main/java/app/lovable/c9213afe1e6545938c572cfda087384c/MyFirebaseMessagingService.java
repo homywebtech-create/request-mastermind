@@ -102,13 +102,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
                 "New Orders",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_MAX  // ✅ CHANGED: Maximum priority for Uber-style popup
             );
             
             channel.setDescription("Notifications for new orders");
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
             channel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            channel.setShowBadge(true);  // ✅ ADDED: Show badge on app icon
+            channel.setBypassDnd(true);  // ✅ ADDED: Bypass Do Not Disturb mode
             
             // Set custom sound
             AudioAttributes audioAttributes = new AudioAttributes.Builder()

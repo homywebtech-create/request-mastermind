@@ -41,11 +41,13 @@ public class MainActivity extends BridgeActivity {
             NotificationChannel channel = new NotificationChannel(
                 "new-orders",
                 "New Orders",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_MAX  // ✅ CHANGED: Maximum priority
             );
             channel.setDescription("Notifications for new orders");
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[]{0, 300, 100, 300});
+            channel.setShowBadge(true);  // ✅ ADDED
+            channel.setBypassDnd(true);  // ✅ ADDED
             
             // Set custom sound
             AudioAttributes audioAttributes = new AudioAttributes.Builder()

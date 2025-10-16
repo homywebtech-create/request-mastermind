@@ -19,3 +19,25 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ============= FIREBASE & NOTIFICATIONS =============
+# Keep Firebase classes (CRITICAL for notifications in release builds)
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
+# Keep FCM messaging service
+-keep class app.lovable.c9213afe1e6545938c572cfda087384c.MyFirebaseMessagingService { *; }
+
+# Keep notification classes
+-keep class androidx.core.app.NotificationCompat** { *; }
+-keep class android.app.Notification** { *; }
+
+# Keep Capacitor plugins
+-keep class com.getcapacitor.** { *; }
+-dontwarn com.getcapacitor.**
+
+# Keep push notification plugin
+-keep class com.capacitor.pushnotifications.** { *; }
+-dontwarn com.capacitor.pushnotifications.**
