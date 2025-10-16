@@ -139,7 +139,11 @@ serve(async (req) => {
         const message = {
           message: {
             token: deviceToken.token,
-            // ✅ NO notification field - ONLY data (ensures MyFirebaseMessagingService.java always runs)
+            // Include both notification and data for maximum reliability on Android background/locked states
+            notification: {
+              title: title || 'طلب جديد',
+              body: body || 'لديك طلب جديد',
+            },
             data: {
               type: 'new_order',
               title: title || 'طلب جديد',
@@ -153,10 +157,15 @@ serve(async (req) => {
             },
             android: {
               priority: 'high',
-              // ✅ NO notification block - let MyFirebaseMessagingService.java handle everything
+              notification: {
+                channel_id: 'new-orders-v2',
+                visibility: 'PUBLIC',
+                // We rely on the channel's custom sound; no need to set here
+                // sound: 'short_notification',
+                click_action: 'FLUTTER_NOTIFICATION_CLICK',
+              },
             },
             apns: {
-              // For iOS, still need aps for background delivery
               payload: {
                 aps: {
                   'content-available': 1,
