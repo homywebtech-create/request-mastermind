@@ -285,8 +285,20 @@ export default function SpecialistAuth() {
         // Continue anyway - non-critical
       }
 
-      // Use replace instead of push to prevent back button from returning to auth
-      navigate('/specialist-orders', { replace: true });
+      // Check if there's a pending route from notification
+      console.log("✅ Login successful - checking for pending route");
+      
+      const { Preferences } = await import('@capacitor/preferences');
+      const { value: postLoginRoute } = await Preferences.get({ key: 'postLoginRoute' });
+      
+      if (postLoginRoute) {
+        console.log("📍 Navigating to pending route:", postLoginRoute);
+        await Preferences.remove({ key: 'postLoginRoute' });
+        navigate(postLoginRoute, { replace: true });
+      } else {
+        console.log("📍 Navigating to default orders page");
+        navigate('/specialist-orders', { replace: true });
+      }
     } catch (error: any) {
       console.error('Error verifying code:', error);
       toast({

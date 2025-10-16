@@ -95,17 +95,20 @@ export class FirebaseNotificationManager {
         });
 
         // Step 5: Listen for notification action (tap)
-        await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+        await PushNotifications.addListener('pushNotificationActionPerformed', async (notification) => {
           console.log('👆 [TAP] تم النقر على الإشعار:', notification);
           
-          // Navigate to new orders screen when notification is tapped
+          // Store pending navigation in preferences
           const route = notification.notification.data?.route || '/specialist/new-orders';
-          console.log('🔀 الانتقال إلى:', route);
+          console.log('🔀 حفظ وجهة التنقل:', route);
           
-          // Force navigation to new orders page
-          setTimeout(() => {
-            window.location.href = route;
-          }, 100);
+          const { Preferences } = await import('@capacitor/preferences');
+          await Preferences.set({
+            key: 'pendingNavigation',
+            value: route,
+          });
+          
+          console.log('✅ تم حفظ وجهة التنقل - سيتم التوجيه بعد استعادة الجلسة');
         });
 
         // Step 6: Listen for registration errors

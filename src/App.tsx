@@ -2,8 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Companies from "./pages/Companies";
@@ -77,14 +77,64 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Single Router for ALL environments (Web + Mobile)
 function MobileLanding() {
   const { user, loading } = useAuth();
-  if (loading) {
+  const navigate = useNavigate();
+  const [navigationHandled, setNavigationHandled] = useState(false);
+
+  useEffect(() => {
+    const handleNavigation = async () => {
+      if (loading || navigationHandled) return;
+
+      try {
+        // Check for pending navigation from notification tap
+        const { Preferences } = await import('@capacitor/preferences');
+        const { value: pendingRoute } = await Preferences.get({ key: 'pendingNavigation' });
+        
+        if (pendingRoute) {
+          console.log('📍 [PENDING NAV] Found pending navigation:', pendingRoute);
+          // Clear the pending navigation
+          await Preferences.remove({ key: 'pendingNavigation' });
+          
+          if (user) {
+            console.log('✅ [AUTH] User authenticated - navigating to:', pendingRoute);
+            setNavigationHandled(true);
+            navigate(pendingRoute, { replace: true });
+            return;
+          } else {
+            console.log('⚠️ [AUTH] No user - storing route and redirecting to auth');
+            // Store the route to navigate after login
+            await Preferences.set({ key: 'postLoginRoute', value: pendingRoute });
+          }
+        }
+
+        setNavigationHandled(true);
+        if (user) {
+          navigate('/specialist-orders', { replace: true });
+        } else {
+          navigate('/specialist-auth', { replace: true });
+        }
+      } catch (error) {
+        console.error('Error handling navigation:', error);
+        setNavigationHandled(true);
+        if (user) {
+          navigate('/specialist-orders', { replace: true });
+        } else {
+          navigate('/specialist-auth', { replace: true });
+        }
+      }
+    };
+
+    handleNavigation();
+  }, [user, loading, navigate, navigationHandled]);
+
+  if (loading || !navigationHandled) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
-  return user ? <Navigate to="/specialist-orders" replace /> : <Navigate to="/specialist-auth" replace />;
+
+  return null;
 }
 
 function AppRouter() {
