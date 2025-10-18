@@ -65,6 +65,16 @@ serve(async (req) => {
         const message = {
           to: deviceToken.token,
           priority: 'high',
+          // Include a notification payload to ensure OEMs (e.g., Xiaomi/MIUI) display it even if
+          // the app is killed or aggressively battery-optimized. The channel maps to our Android
+          // channel "new-orders-v2" configured in MainActivity/MyFirebaseMessagingService.
+          notification: {
+            title: title || 'طلب جديد',
+            body: body || 'لديك طلب جديد',
+            android_channel_id: 'new-orders-v2',
+            // For pre-Android O devices; Android O+ will use the channel sound
+            sound: 'short_notification'
+          },
           // ✅ All values must be strings (FCM requirement for data messages)
           data: {
             type: 'new_order',
@@ -83,8 +93,6 @@ serve(async (req) => {
               Object.entries(data).map(([k, v]) => [k, String(v)])
             ),
           },
-          // ✅ NO notification field - this ensures your Java code handles everything
-          // ✅ NO android.notification block - let your code create the notification
           // For iOS background delivery
           content_available: true,
         };
