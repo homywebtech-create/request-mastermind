@@ -473,6 +473,27 @@ export default function Dashboard() {
           }
           
           console.log('Successfully linked specialists to order');
+
+          // Send Firebase push notifications to all specialists
+          try {
+            console.log('📤 [FCM] Sending push notifications to all specialists...');
+            const specialistIds = allSpecialists.map(s => s.id);
+            const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
+              body: {
+                specialistIds,
+                title: '🔔 عرض عمل جديد',
+                body: 'لديك عرض عمل جديد - افتح التطبيق الآن',
+                data: { orderId: newOrder.id, type: 'new_order' }
+              }
+            });
+            if (fcmError) {
+              console.error('⚠️ [FCM] Error sending notifications:', fcmError);
+            } else {
+              console.log('✅ [FCM] Notifications sent:', fcmResult);
+            }
+          } catch (fcmErr) {
+            console.error('⚠️ [FCM] Exception during notifications send:', fcmErr);
+          }
         } else {
           console.warn('No active specialists found!');
         }
@@ -514,6 +535,27 @@ export default function Dashboard() {
           if (linkError) {
             console.error('Error linking company specialists:', linkError);
             throw linkError;
+          }
+
+          // Send Firebase push notifications to company specialists
+          try {
+            console.log('📤 [FCM] Sending push notifications to company specialists...');
+            const specialistIds = companySpecialists.map(s => s.id);
+            const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
+              body: {
+                specialistIds,
+                title: '🔔 عرض عمل جديد',
+                body: 'لديك عرض عمل جديد - افتح التطبيق الآن',
+                data: { orderId: newOrder.id, type: 'new_order' }
+              }
+            });
+            if (fcmError) {
+              console.error('⚠️ [FCM] Error sending notifications:', fcmError);
+            } else {
+              console.log('✅ [FCM] Notifications sent:', fcmResult);
+            }
+          } catch (fcmErr) {
+            console.error('⚠️ [FCM] Exception during notifications send:', fcmErr);
           }
         }
       }
