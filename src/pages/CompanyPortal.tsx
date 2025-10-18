@@ -435,7 +435,20 @@ export default function CompanyPortal() {
           .from('order_specialists')
           .insert(orderSpecialists);
 
-        if (linkError) throw linkError;
+      if (linkError) throw linkError;
+      }
+
+      // Send WhatsApp notification to customer
+      try {
+        const { sendWhatsAppMessage } = await import('@/lib/whatsappHelper');
+        await sendWhatsAppMessage({
+          to: orderData.whatsappNumber,
+          message: `تم إنشاء طلبك بنجاح\n\nرقم الطلب: ${order.order_number}\n\nيمكنك متابعة طلبك من خلال الرابط:\n${orderLink}`,
+          customerName: orderData.customerName
+        });
+      } catch (whatsappError) {
+        console.error('Failed to send WhatsApp notification:', whatsappError);
+        // Don't fail the order creation if WhatsApp fails
       }
 
       toast({

@@ -396,6 +396,19 @@ export default function Dashboard() {
 
       if (orderError) throw orderError;
 
+      // Send WhatsApp notification to customer
+      try {
+        const { sendWhatsAppMessage } = await import('@/lib/whatsappHelper');
+        await sendWhatsAppMessage({
+          to: whatsapp,
+          message: `تم إنشاء طلبك بنجاح\n\nرقم الطلب: ${newOrder.id}\n\nيمكنك متابعة طلبك من خلال الرابط:\n${orderLink}`,
+          customerName: formData.customerName
+        });
+      } catch (whatsappError) {
+        console.error('Failed to send WhatsApp notification:', whatsappError);
+        // Don't fail the order creation if WhatsApp fails
+      }
+
       // If specific specialists are selected, insert into junction table
       if (formData.specialistIds && formData.specialistIds.length > 0) {
         // Check if pricing is fixed (not hourly/daily)
