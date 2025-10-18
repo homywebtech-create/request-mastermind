@@ -98,6 +98,26 @@ public class MainActivity extends BridgeActivity {
                 getActivity().startActivity(overlayIntent);
             }
 
+            // 3) Xiaomi/MIUI specific settings to ensure background delivery
+            try {
+                String manufacturer = android.os.Build.MANUFACTURER;
+                if (manufacturer != null && manufacturer.equalsIgnoreCase("Xiaomi")) {
+                    // Autostart manager
+                    try {
+                        Intent intent = new Intent();
+                        intent.setComponent(new android.content.ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"));
+                        getActivity().startActivity(intent);
+                    } catch (Exception ignored) {}
+
+                    // Battery optimization list (No restrictions)
+                    try {
+                        Intent intent = new Intent("miui.intent.action.POWER_HIDE_MODE_APP_LIST");
+                        intent.addCategory(Intent.CATEGORY_DEFAULT);
+                        getActivity().startActivity(intent);
+                    } catch (Exception ignored) {}
+                }
+            } catch (Exception ignored) {}
+
             call.resolve();
         }
         
