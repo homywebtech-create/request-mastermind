@@ -59,22 +59,34 @@ serve(async (req) => {
     // Send FCM notifications using legacy API (works with server key)
     const results = await Promise.allSettled(
       tokens.map(async (deviceToken) => {
-        // Data-only message to ensure onMessageReceived() is called
+        // ✅ DATA-ONLY message to ensure MyFirebaseMessagingService.java is called ALWAYS
+        // When notification field is present, Android system handles it and bypasses your code
+        // When ONLY data field is present, your MyFirebaseMessagingService always runs
         const message = {
           to: deviceToken.token,
           priority: 'high',
+          // ✅ All values must be strings (FCM requirement for data messages)
           data: {
             type: 'new_order',
             title: title || 'طلب جديد',
             body: body || 'لديك طلب جديد',
             route: '/specialist/new-orders',
             click_action: 'FLUTTER_NOTIFICATION_CLICK',
+            // Convert all custom data to strings
+            orderId: data.orderId?.toString() || '',
+            customerId: data.customerId?.toString() || '',
+            serviceType: data.serviceType?.toString() || '',
+            price: data.price?.toString() || '',
             timestamp: new Date().toISOString(),
-            // Convert all data values to strings (FCM requirement)
+            // Add any other data fields (all as strings)
             ...Object.fromEntries(
               Object.entries(data).map(([k, v]) => [k, String(v)])
             ),
           },
+          // ✅ NO notification field - this ensures your Java code handles everything
+          // ✅ NO android.notification block - let your code create the notification
+          // For iOS background delivery
+          content_available: true,
         };
 
         console.log(`📤 [FCM] Sending to specialist ${deviceToken.specialist_id}...`);
