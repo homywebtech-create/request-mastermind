@@ -10,6 +10,7 @@ import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { useLanguage } from "@/hooks/useLanguage";
+import NotificationFix from "@/components/settings/NotificationFix";
 
 interface Order {
   id: string;
@@ -276,8 +277,16 @@ export default function SpecialistHome() {
         </div>
       </div>
 
-      {/* Orders List */}
+      {/* Tools + Orders List */}
       <div className="max-w-screen-lg mx-auto p-4 space-y-4">
+        <Card className="p-4">
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              {isAr ? 'إذا لم تصلك الإشعارات على أجهزة شاومي/ريدمي، اضغط لإصلاح الإعدادات ثم أرسل إشعار تجريبي.' : "If notifications don’t show on Xiaomi/Redmi, fix settings then send a test push."}
+            </p>
+            <NotificationFix specialistId={specialistId} />
+          </div>
+        </Card>
         {displayOrders.length === 0 ? (
           <Card className="p-8 text-center">
             <p className="text-muted-foreground">{isAr ? 'لا توجد طلبات مقبولة حالياً' : 'No accepted orders yet'}</p>
