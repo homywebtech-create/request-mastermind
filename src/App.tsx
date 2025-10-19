@@ -11,6 +11,8 @@ import Services from "./pages/Services";
 import Orders from "./pages/Orders";
 import CompanyAuth from "./pages/CompanyAuth";
 import CompanyPortal from "./pages/CompanyPortal";
+import CustomerAuth from "./pages/CustomerAuth";
+import CustomerPortal from "./pages/CustomerPortal";
 import Specialists from "./pages/Specialists";
 import SpecialistAuth from "./pages/SpecialistAuth";
 import SpecialistHome from "./pages/specialist/SpecialistHome";
@@ -272,11 +274,15 @@ function AppRouter() {
         <Route path="/company-portal" element={<CompanyPortal />} />
         <Route path="/specialists" element={<Specialists />} />
         
+        {/* Customer routes */}
+        <Route path="/customer-auth" element={<CustomerAuth />} />
+        <Route path="/customer-portal" element={<CustomerPortal />} />
+        
         {/* Public specialist registration route */}
         <Route path="/specialist-registration" element={<SpecialistRegistration />} />
         
         {/* Default route */}
-        <Route path="/" element={<Navigate to="/auth" replace />} />
+        <Route path="/" element={<Navigate to="/customer-auth" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
