@@ -28,6 +28,7 @@ import ActivityLogs from "./pages/ActivityLogs";
 import SetPassword from "./pages/SetPassword";
 import ContractManagement from "./pages/ContractManagement";
 import AdminSpecialists from "./pages/AdminSpecialists";
+import PushNotificationTest from "./pages/PushNotificationTest";
 
 const queryClient = new QueryClient();
 
@@ -171,6 +172,11 @@ function AppRouter() {
             </ProtectedRoute>
           } />
           <Route path="/specialist-registration" element={<SpecialistRegistration />} />
+          <Route path="/push-test" element={
+            <ProtectedRoute>
+              <PushNotificationTest />
+            </ProtectedRoute>
+          } />
           <Route path="/" element={<MobileLanding />} />
           <Route path="*" element={<MobileLanding />} />
         </Routes>
@@ -274,6 +280,13 @@ function AppRouter() {
         
         {/* Public specialist registration route */}
         <Route path="/specialist-registration" element={<SpecialistRegistration />} />
+        
+        {/* Push notification test (admin only) */}
+        <Route path="/push-test" element={
+          <ProtectedRoute>
+            <PushNotificationTest />
+          </ProtectedRoute>
+        } />
         
         {/* Default route */}
         <Route path="/" element={<Navigate to="/auth" replace />} />
