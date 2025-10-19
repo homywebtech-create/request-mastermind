@@ -142,6 +142,8 @@ export default function CustomerPortal() {
     try {
       setLoading(true);
 
+      let orderDataTemp: OrderData | null = null;
+
       // Fetch order data if orderId exists
       if (orderId) {
         const { data: order, error: orderError } = await supabase
@@ -160,6 +162,7 @@ export default function CustomerPortal() {
 
         if (orderError) throw orderError;
         setOrderData(order);
+        orderDataTemp = order;
         
         // Pre-fill form with existing data
         if (order.hours_count) setHoursCount(order.hours_count);
@@ -187,6 +190,29 @@ export default function CustomerPortal() {
 
       if (subServicesError) throw subServicesError;
       setSubServices(subServicesData || []);
+
+      // Auto-select service and sub-service if order exists
+      if (orderDataTemp && orderDataTemp.service_type) {
+        // Find matching sub-service
+        const matchingSubService = subServicesData?.find(
+          (sub) => 
+            sub.name === orderDataTemp.service_type || 
+            sub.name_en === orderDataTemp.service_type
+        );
+
+        if (matchingSubService) {
+          // Find parent service
+          const parentService = servicesData?.find(
+            (service) => service.id === matchingSubService.service_id
+          );
+
+          if (parentService) {
+            setSelectedService(parentService);
+            setSelectedSubService(matchingSubService);
+            setCurrentStep(3); // Go directly to details step
+          }
+        }
+      }
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -338,33 +364,47 @@ ${notes ? `${t.notes}: ${notes}` : ''}
   return (
     <div className="min-h-screen bg-background pb-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary/10 to-primary/5 px-6 py-6 border-b sticky top-0 z-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">
-            {orderData ? t.editOrder : t.welcome}
-          </h1>
-          {orderData && (
-            <div className="text-sm text-muted-foreground">
-              {orderData.customers.name}
+      <div className="bg-gradient-to-br from-primary/10 to-primary/5 px-6 py-6 border-b sticky top-0 z-10 shadow-sm">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                {orderData ? t.editOrder : t.welcome}
+              </h1>
+              {orderData && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  {orderData.customers.name}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        {/* Progress indicator */}
-        <div className="flex gap-2 mt-4">
-          {[1, 2, 3].map((step) => (
-            <div
-              key={step}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                step <= currentStep ? 'bg-primary' : 'bg-muted'
-              }`}
-            />
-          ))}
+            {selectedService && (
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground">
+                  {language === 'ar' ? 'الخدمة' : 'Service'}
+                </div>
+                <div className="text-sm font-semibold">
+                  {language === 'ar' ? selectedService.name : (selectedService.name_en || selectedService.name)}
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Progress indicator */}
+          <div className="flex gap-2">
+            {[1, 2, 3].map((step) => (
+              <div
+                key={step}
+                className={`h-1.5 flex-1 rounded-full transition-all ${
+                  step <= currentStep ? 'bg-primary shadow-sm' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <Card>
-          <CardContent className="p-6">
+        <Card className="shadow-lg">
+          <CardContent className="p-6 md:p-8">
             {/* Step 1: Select Main Service */}
             {currentStep === 1 && (
               <div className="space-y-4">
