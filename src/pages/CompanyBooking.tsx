@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapLocationPicker } from '@/components/booking/MapLocationPicker';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock, FileUser, FileText } from 'lucide-react';
+import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock, FileUser, FileText, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ReviewsDialog } from '@/components/booking/ReviewsDialog';
@@ -19,6 +19,16 @@ import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { useLanguage } from '@/hooks/useLanguage';
 import { TermsAndConditions } from '@/components/booking/TermsAndConditions';
 import { MonthlyContract } from '@/components/booking/MonthlyContract';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Translations
 const translations = {
@@ -219,6 +229,7 @@ export default function CompanyBooking() {
   const [editedCustomerAddress, setEditedCustomerAddress] = useState('');
   const [editedMainService, setEditedMainService] = useState<string>('');
   const [editedSubService, setEditedSubService] = useState<string>('');
+  const [showEditWarningDialog, setShowEditWarningDialog] = useState(false);
   
   // Services and sub-services
   const [services, setServices] = useState<Array<{
@@ -916,17 +927,11 @@ export default function CompanyBooking() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowEditOrderInfo(!showEditOrderInfo)}
+                onClick={() => setShowEditWarningDialog(true)}
                 className="gap-2"
               >
-                {showEditOrderInfo ? (
-                  language === 'ar' ? 'إلغاء' : 'Cancel'
-                ) : (
-                  <>
-                    <FileText className="h-4 w-4" />
-                    {language === 'ar' ? 'طلب تعديل' : 'Request Edit'}
-                  </>
-                )}
+                <FileText className="h-4 w-4" />
+                {language === 'ar' ? 'طلب تعديل' : 'Request Edit'}
               </Button>
             </div>
           </CardHeader>
@@ -1116,6 +1121,48 @@ export default function CompanyBooking() {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Warning Dialog */}
+        <AlertDialog open={showEditWarningDialog} onOpenChange={setShowEditWarningDialog}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-right">
+                <AlertCircle className="h-5 w-5 text-amber-500" />
+                {language === 'ar' ? 'تنبيه هام' : 'Important Notice'}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-right text-base leading-relaxed">
+                {language === 'ar' 
+                  ? 'في حال تعديل الحجز سيتم إرسال الحجز مرة أخرى للشركات وسيتم الرد عليك عبر رسالة واتساب لتأكيد السعر الجديد'
+                  : 'If you modify the booking, it will be sent again to companies and you will receive a WhatsApp message to confirm the new price'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row-reverse gap-2">
+              <AlertDialogAction
+                onClick={() => {
+                  setShowEditWarningDialog(false);
+                  // Open WhatsApp with company
+                  if (company?.phone) {
+                    const message = encodeURIComponent(
+                      `مرحباً، أود تعديل الحجز رقم: ${orderId}\n\n` +
+                      `المعلومات الحالية:\n` +
+                      `المنطقة: ${customerAddress}\n` +
+                      `نوع الخدمة: ${serviceType}\n` +
+                      `عدد الساعات: ${hoursCount}\n\n` +
+                      `أرجو التواصل معي لتأكيد السعر الجديد.`
+                    );
+                    window.open(`https://wa.me/${company.phone}?text=${message}`, '_blank');
+                  }
+                }}
+                className="flex-1"
+              >
+                {language === 'ar' ? 'متابعة عبر واتساب' : 'Continue via WhatsApp'}
+              </AlertDialogAction>
+              <AlertDialogCancel className="flex-1">
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+              </AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Steps */}
         <Card>
