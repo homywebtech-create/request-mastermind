@@ -6,6 +6,76 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to get OAuth2 access token from service account
+async function getAccessToken(serviceAccount: any): Promise<string> {
+  const jwtHeader = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  
+  const now = Math.floor(Date.now() / 1000);
+  const jwtClaimSet = {
+    iss: serviceAccount.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: "https://oauth2.googleapis.com/token",
+    exp: now + 3600,
+    iat: now,
+  };
+  
+  const jwtClaimSetEncoded = btoa(JSON.stringify(jwtClaimSet))
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+  
+  const signatureInput = `${jwtHeader}.${jwtClaimSetEncoded}`;
+  
+  // Import the private key
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemContents = serviceAccount.private_key
+    .replace(pemHeader, "")
+    .replace(pemFooter, "")
+    .replace(/\s/g, "");
+  
+  const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+  
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"]
+  );
+  
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(signatureInput)
+  );
+  
+  const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+  
+  const jwt = `${signatureInput}.${signatureBase64}`;
+  
+  // Exchange JWT for access token
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+  
+  const data = await response.json();
+  return data.access_token;
+}
+
 interface NotificationPayload {
   specialistIds: string[];
   title: string;
@@ -19,13 +89,20 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🔔 [FCM] Starting push notification with server key...');
+    console.log('🔔 [FCM] Starting push notification with FCM HTTP v1 API...');
 
-    const serverKey = Deno.env.get('FIREBASE_SERVER_KEY');
-    if (!serverKey) {
-      throw new Error('FIREBASE_SERVER_KEY not configured');
+    const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
+    if (!serviceAccountJson) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT not configured');
     }
-    console.log('✅ [FCM] Server key loaded');
+    
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    const projectId = serviceAccount.project_id;
+    console.log('✅ [FCM] Service account loaded for project:', projectId);
+    
+    // Get OAuth2 access token
+    const accessToken = await getAccessToken(serviceAccount);
+    console.log('✅ [FCM] Access token obtained');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -56,66 +133,73 @@ serve(async (req) => {
 
     console.log(`✅ [FCM] Found ${tokens.length} device tokens`);
 
-    // Send FCM notifications using legacy API (works with server key)
+    // Send FCM notifications using HTTP v1 API
     const results = await Promise.allSettled(
       tokens.map(async (deviceToken) => {
-        // ✅ DATA-ONLY message to ensure MyFirebaseMessagingService.java is called ALWAYS
-        // When notification field is present, Android system handles it and bypasses your code
-        // When ONLY data field is present, your MyFirebaseMessagingService always runs
+        // FCM HTTP v1 API message format
         const message = {
-          to: deviceToken.token,
-          priority: 'high',
-          // Include a notification payload to ensure OEMs (e.g., Xiaomi/MIUI) display it even if
-          // the app is killed or aggressively battery-optimized. The channel maps to our Android
-          // channel "new-orders-v2" configured in MainActivity/MyFirebaseMessagingService.
-          notification: {
-            title: title || 'طلب جديد',
-            body: body || 'لديك طلب جديد',
-            android_channel_id: 'new-orders-v2',
-            // For pre-Android O devices; Android O+ will use the channel sound
-            sound: 'short_notification'
+          message: {
+            token: deviceToken.token,
+            notification: {
+              title: title || 'طلب جديد',
+              body: body || 'لديك طلب جديد',
+            },
+            android: {
+              priority: 'high',
+              notification: {
+                channel_id: 'new-orders-v2',
+                sound: 'short_notification',
+              },
+            },
+            apns: {
+              payload: {
+                aps: {
+                  'content-available': 1,
+                  sound: 'default',
+                },
+              },
+            },
+            data: {
+              type: 'new_order',
+              title: title || 'طلب جديد',
+              body: body || 'لديك طلب جديد',
+              route: '/specialist/new-orders',
+              click_action: 'FLUTTER_NOTIFICATION_CLICK',
+              orderId: data.orderId?.toString() || '',
+              customerId: data.customerId?.toString() || '',
+              serviceType: data.serviceType?.toString() || '',
+              price: data.price?.toString() || '',
+              timestamp: new Date().toISOString(),
+              ...Object.fromEntries(
+                Object.entries(data).map(([k, v]) => [k, String(v)])
+              ),
+            },
           },
-          // ✅ All values must be strings (FCM requirement for data messages)
-          data: {
-            type: 'new_order',
-            title: title || 'طلب جديد',
-            body: body || 'لديك طلب جديد',
-            route: '/specialist/new-orders',
-            click_action: 'FLUTTER_NOTIFICATION_CLICK',
-            // Convert all custom data to strings
-            orderId: data.orderId?.toString() || '',
-            customerId: data.customerId?.toString() || '',
-            serviceType: data.serviceType?.toString() || '',
-            price: data.price?.toString() || '',
-            timestamp: new Date().toISOString(),
-            // Add any other data fields (all as strings)
-            ...Object.fromEntries(
-              Object.entries(data).map(([k, v]) => [k, String(v)])
-            ),
-          },
-          // For iOS background delivery
-          content_available: true,
         };
 
         console.log(`📤 [FCM] Sending to specialist ${deviceToken.specialist_id}...`);
 
-        const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-          method: 'POST',
-          headers: {
-            'Authorization': `key=${serverKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(message),
-        });
+        const response = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(message),
+          }
+        );
 
         const result = await response.json();
         
-        if (!response.ok || result.failure === 1) {
+        if (!response.ok) {
           console.error(`❌ [FCM] Failed for ${deviceToken.specialist_id}:`, result);
           
           // If token is invalid, delete it from database
-          if (result.results?.[0]?.error === 'NotRegistered' || 
-              result.results?.[0]?.error === 'InvalidRegistration') {
+          if (result.error?.code === 'NOT_FOUND' || 
+              result.error?.code === 'INVALID_ARGUMENT' ||
+              result.error?.message?.includes('not a valid FCM registration token')) {
             await supabase
               .from('device_tokens')
               .delete()
@@ -123,7 +207,7 @@ serve(async (req) => {
             console.log(`🗑️ [FCM] Removed invalid token for specialist ${deviceToken.specialist_id}`);
           }
           
-          throw new Error(result.results?.[0]?.error || 'FCM send error');
+          throw new Error(result.error?.message || 'FCM send error');
         }
 
         console.log(`✅ [FCM] Sent to specialist ${deviceToken.specialist_id}`);
