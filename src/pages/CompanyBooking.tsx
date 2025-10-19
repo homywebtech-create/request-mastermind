@@ -215,8 +215,6 @@ export default function CompanyBooking() {
   const [showEditOrderInfo, setShowEditOrderInfo] = useState(false);
   const [editedHoursCount, setEditedHoursCount] = useState<number>(1);
   const [editedServiceType, setEditedServiceType] = useState<string>('');
-  const [editedCustomerName, setEditedCustomerName] = useState('');
-  const [editedCustomerPhone, setEditedCustomerPhone] = useState('');
   const [editedCustomerAddress, setEditedCustomerAddress] = useState('');
 
   const totalSteps = 4;
@@ -351,8 +349,6 @@ export default function CompanyBooking() {
         setCustomerName(orderData.customers.name || '');
         setCustomerPhone(orderData.customers.whatsapp_number || '');
         setCustomerAddress(orderData.customers.area || '');
-        setEditedCustomerName(orderData.customers.name || '');
-        setEditedCustomerPhone(orderData.customers.whatsapp_number || '');
         setEditedCustomerAddress(orderData.customers.area || '');
       }
       
@@ -849,19 +845,7 @@ export default function CompanyBooking() {
           <CardContent className="space-y-3">
             {!showEditOrderInfo ? (
               /* Display Current Info */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-muted-foreground mb-1 text-xs">
-                    {language === 'ar' ? 'اسم العميل' : 'Customer Name'}
-                  </p>
-                  <p className="font-semibold">{customerName || '-'}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-muted-foreground mb-1 text-xs">
-                    {language === 'ar' ? 'رقم الواتساب' : 'WhatsApp Number'}
-                  </p>
-                  <p className="font-semibold">{customerPhone || '-'}</p>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                 <div className="p-3 rounded-lg bg-muted/50 border">
                   <p className="text-muted-foreground mb-1 text-xs">
                     {language === 'ar' ? 'المنطقة' : 'Area'}
@@ -886,29 +870,7 @@ export default function CompanyBooking() {
             ) : (
               /* Edit Form */
               <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-name">
-                      {language === 'ar' ? 'اسم العميل' : 'Customer Name'}
-                    </Label>
-                    <Input
-                      id="edit-name"
-                      value={editedCustomerName}
-                      onChange={(e) => setEditedCustomerName(e.target.value)}
-                      placeholder={language === 'ar' ? 'أدخل الاسم' : 'Enter name'}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-phone">
-                      {language === 'ar' ? 'رقم الواتساب' : 'WhatsApp Number'}
-                    </Label>
-                    <Input
-                      id="edit-phone"
-                      value={editedCustomerPhone}
-                      onChange={(e) => setEditedCustomerPhone(e.target.value)}
-                      placeholder={language === 'ar' ? 'أدخل رقم الواتساب' : 'Enter WhatsApp number'}
-                    />
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-area">
                       {language === 'ar' ? 'المنطقة' : 'Area'}
@@ -950,8 +912,6 @@ export default function CompanyBooking() {
                     variant="outline"
                     onClick={() => {
                       setShowEditOrderInfo(false);
-                      setEditedCustomerName(customerName);
-                      setEditedCustomerPhone(customerPhone);
                       setEditedCustomerAddress(customerAddress);
                       setEditedServiceType(serviceType);
                       setEditedHoursCount(hoursCount);
@@ -973,12 +933,10 @@ export default function CompanyBooking() {
 
                         if (orderError) throw orderError;
 
-                        // Update customer info
+                        // Update customer area only
                         const { error: customerError } = await supabase
                           .from('customers')
                           .update({
-                            name: editedCustomerName,
-                            whatsapp_number: editedCustomerPhone,
                             area: editedCustomerAddress,
                           })
                           .eq('whatsapp_number', customerPhone);
@@ -986,8 +944,6 @@ export default function CompanyBooking() {
                         if (customerError) throw customerError;
 
                         // Update local state
-                        setCustomerName(editedCustomerName);
-                        setCustomerPhone(editedCustomerPhone);
                         setCustomerAddress(editedCustomerAddress);
                         setServiceType(editedServiceType);
                         setHoursCount(editedHoursCount);
