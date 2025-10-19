@@ -810,31 +810,6 @@ export default function CompanyBooking() {
           <LanguageSwitcher />
         </div>
 
-        {/* Company Header */}
-        {company && (
-          <Card className="mb-8">
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                {company.logo_url ? (
-                  <img 
-                    src={company.logo_url} 
-                    alt={company.name}
-                    className="w-20 h-20 rounded-lg object-cover border-2 border-border"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
-                    <Building2 className="h-10 w-10 text-muted-foreground" />
-                  </div>
-                )}
-                <div>
-                  <CardTitle className="text-2xl">{company.name}</CardTitle>
-                  <p className="text-muted-foreground mt-1">{t.completeBooking}</p>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        )}
-
         {/* Steps */}
         <Card>
           <CardHeader className="pb-4">
@@ -844,44 +819,33 @@ export default function CompanyBooking() {
             {/* Step 1: Booking Type or Contract Duration */}
             {currentStep === 1 && (
               <div className="space-y-6">
-                {/* Welcome Section with Company Logo */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-6 sm:p-8 border-2 border-primary/20 shadow-lg">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl" />
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/10 rounded-full -ml-12 -mb-12 blur-2xl" />
-                  
-                  <div className="relative flex flex-col items-center text-center space-y-4">
+                {/* Welcome Section with Company Logo - Compact */}
+                {company && (
+                  <div className="flex items-center gap-3 sm:gap-4 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-transparent border border-primary/20">
                     {/* Company Logo */}
-                    {company?.logo_url ? (
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
-                        <img 
-                          src={company.logo_url} 
-                          alt={company.name}
-                          className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-4 border-white dark:border-gray-800 shadow-xl"
-                        />
-                      </div>
+                    {company.logo_url ? (
+                      <img 
+                        src={company.logo_url} 
+                        alt={company.name}
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border-2 border-primary/30 shadow-md flex-shrink-0"
+                      />
                     ) : (
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/20 flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-xl">
-                        <Building2 className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-primary/10 flex items-center justify-center border-2 border-primary/30 shadow-md flex-shrink-0">
+                        <Building2 className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
                       </div>
                     )}
                     
                     {/* Welcome Text */}
-                    <div className="space-y-2">
-                      <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-base sm:text-lg font-bold text-foreground truncate">
                         {language === 'ar' ? 'مرحباً بك!' : 'Welcome!'}
                       </h2>
-                      <p className="text-base sm:text-lg text-muted-foreground font-medium">
-                        {company?.name}
-                      </p>
-                      <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
-                        {language === 'ar' 
-                          ? 'نحن سعداء بخدمتك. يرجى اختيار نوع الحجز المناسب لك'
-                          : 'We are happy to serve you. Please choose your preferred booking type'}
+                      <p className="text-sm sm:text-base text-muted-foreground font-medium truncate">
+                        {company.name}
                       </p>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Booking Type Selection */}
                 <div className="space-y-4">
