@@ -1057,64 +1057,34 @@ export default function CompanyBooking() {
                     {language === 'ar' ? 'إلغاء' : 'Cancel'}
                   </Button>
                   <Button
-                    onClick={async () => {
-                      try {
-                        // Validate that service type is selected
-                        if (!editedServiceType) {
-                          toast({
-                            title: t.missingData,
-                            description: language === 'ar' ? 'يرجى اختيار نوع الخدمة' : 'Please select service type',
-                            variant: 'destructive',
-                          });
-                          return;
-                        }
-
-                        // Update order with new info
-                        const { error: orderError } = await supabase
-                          .from('orders')
-                          .update({
-                            hours_count: editedHoursCount.toString(),
-                            service_type: editedServiceType,
-                          })
-                          .eq('id', orderId);
-
-                        if (orderError) throw orderError;
-
-                        // Update customer area only
-                        const { error: customerError } = await supabase
-                          .from('customers')
-                          .update({
-                            area: editedCustomerAddress,
-                          })
-                          .eq('whatsapp_number', customerPhone);
-
-                        if (customerError) throw customerError;
-
-                        // Update local state
-                        setCustomerAddress(editedCustomerAddress);
-                        setServiceType(editedServiceType);
-                        setHoursCount(editedHoursCount);
-                        setShowEditOrderInfo(false);
-                        setEditedMainService('');
-                        setEditedSubService('');
-
+                    onClick={() => {
+                      // Validate that service type is selected
+                      if (!editedServiceType) {
                         toast({
-                          title: language === 'ar' ? 'تم التحديث' : 'Updated',
-                          description: language === 'ar' 
-                            ? 'تم تحديث معلومات الطلب بنجاح. يمكنك الآن المتابعة.'
-                            : 'Order information updated successfully. You can now proceed.',
-                        });
-                      } catch (error: any) {
-                        console.error('Error updating order info:', error);
-                        toast({
-                          title: t.error,
-                          description: error.message,
+                          title: t.missingData,
+                          description: language === 'ar' ? 'يرجى اختيار نوع الخدمة' : 'Please select service type',
                           variant: 'destructive',
                         });
+                        return;
+                      }
+
+                      setShowEditOrderInfo(false);
+                      
+                      // Open WhatsApp with company
+                      if (company?.phone) {
+                        const message = encodeURIComponent(
+                          `مرحباً، أود تعديل الحجز رقم: ${orderId}\n\n` +
+                          `المعلومات الجديدة:\n` +
+                          `المنطقة: ${editedCustomerAddress}\n` +
+                          `نوع الخدمة: ${editedServiceType}\n` +
+                          `عدد الساعات: ${editedHoursCount}\n\n` +
+                          `أرجو التواصل معي لتأكيد السعر الجديد.`
+                        );
+                        window.open(`https://wa.me/${company.phone}?text=${message}`, '_blank');
                       }
                     }}
                   >
-                    {language === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}
+                    {language === 'ar' ? 'تأكيد التعديل' : 'Confirm Edit'}
                   </Button>
                 </div>
               </div>
@@ -1140,18 +1110,7 @@ export default function CompanyBooking() {
               <AlertDialogAction
                 onClick={() => {
                   setShowEditWarningDialog(false);
-                  // Open WhatsApp with company
-                  if (company?.phone) {
-                    const message = encodeURIComponent(
-                      `مرحباً، أود تعديل الحجز رقم: ${orderId}\n\n` +
-                      `المعلومات الحالية:\n` +
-                      `المنطقة: ${customerAddress}\n` +
-                      `نوع الخدمة: ${serviceType}\n` +
-                      `عدد الساعات: ${hoursCount}\n\n` +
-                      `أرجو التواصل معي لتأكيد السعر الجديد.`
-                    );
-                    window.open(`https://wa.me/${company.phone}?text=${message}`, '_blank');
-                  }
+                  setShowEditOrderInfo(true);
                 }}
                 className="flex-1"
               >
