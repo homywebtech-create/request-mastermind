@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { Clock, MapPin, Navigation, Calendar } from "lucide-react";
+import { Clock, MapPin, Navigation, Calendar, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import { parseISO, format, isToday, isFuture } from "date-fns";
@@ -280,11 +280,19 @@ export default function SpecialistHome() {
       {/* Tools + Orders List */}
       <div className="max-w-screen-lg mx-auto p-4 space-y-4">
         <Card className="p-4">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              {isAr ? 'إذا لم تصلك الإشعارات على أجهزة شاومي/ريدمي، اضغط لإصلاح الإعدادات ثم أرسل إشعار تجريبي.' : "If notifications don’t show on Xiaomi/Redmi, fix settings then send a test push."}
+              {isAr ? 'إذا لم تصلك الإشعارات على أجهزة شاومي/ريدمي، اضغط لإصلاح الإعدادات ثم أرسل إشعار تجريبي.' : "If notifications don't show on Xiaomi/Redmi, fix settings then send a test push."}
             </p>
             <NotificationFix specialistId={specialistId} />
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/push-test')}
+            >
+              <TestTube className="h-4 w-4 mr-2" />
+              {isAr ? 'اختبار الإشعارات (Push Test)' : 'Test Push Notifications'}
+            </Button>
           </div>
         </Card>
         {displayOrders.length === 0 ? (
