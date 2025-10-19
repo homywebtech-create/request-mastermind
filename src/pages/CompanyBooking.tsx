@@ -217,6 +217,8 @@ export default function CompanyBooking() {
   const [editedHoursCount, setEditedHoursCount] = useState<number>(1);
   const [editedServiceType, setEditedServiceType] = useState<string>('');
   const [editedCustomerAddress, setEditedCustomerAddress] = useState('');
+  const [editedMainService, setEditedMainService] = useState<string>('');
+  const [editedSubService, setEditedSubService] = useState<string>('');
   
   // Services and sub-services
   const [services, setServices] = useState<Array<{
@@ -956,7 +958,7 @@ export default function CompanyBooking() {
             ) : (
               /* Edit Form */
               <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-area">
                       {language === 'ar' ? 'المنطقة' : 'Area'}
@@ -969,40 +971,54 @@ export default function CompanyBooking() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-service">
-                      {language === 'ar' ? 'نوع الخدمة' : 'Service Type'}
+                    <Label htmlFor="edit-main-service">
+                      {language === 'ar' ? 'الخدمة الرئيسية' : 'Main Service'}
                     </Label>
                     <Select
-                      value={editedServiceType}
-                      onValueChange={setEditedServiceType}
+                      value={editedMainService}
+                      onValueChange={(value) => {
+                        setEditedMainService(value);
+                        setEditedSubService('');
+                        setEditedServiceType('');
+                      }}
                     >
                       <SelectTrigger className="w-full bg-background">
-                        <SelectValue placeholder={language === 'ar' ? 'اختر نوع الخدمة' : 'Select service type'} />
+                        <SelectValue placeholder={language === 'ar' ? 'اختر الخدمة الرئيسية' : 'Select main service'} />
                       </SelectTrigger>
                       <SelectContent className="bg-background z-50">
                         {services.map((service) => (
-                          <React.Fragment key={service.id}>
-                            {/* Main Service Header */}
-                            <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted/50">
-                              {language === 'ar' ? service.name : (service.name_en || service.name)}
-                            </div>
-                            {/* Sub Services */}
-                            {service.sub_services && service.sub_services.length > 0 ? (
-                              service.sub_services.map((subService) => (
-                                <SelectItem
-                                  key={subService.id}
-                                  value={language === 'ar' ? subService.name : (subService.name_en || subService.name)}
-                                  className="pl-6"
-                                >
-                                  {language === 'ar' ? subService.name : (subService.name_en || subService.name)}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem value={language === 'ar' ? service.name : (service.name_en || service.name)}>
-                                {language === 'ar' ? service.name : (service.name_en || service.name)}
-                              </SelectItem>
-                            )}
-                          </React.Fragment>
+                          <SelectItem key={service.id} value={service.id}>
+                            {language === 'ar' ? service.name : (service.name_en || service.name)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-sub-service">
+                      {language === 'ar' ? 'الخدمة الفرعية' : 'Sub Service'}
+                    </Label>
+                    <Select
+                      value={editedSubService}
+                      onValueChange={(value) => {
+                        setEditedSubService(value);
+                        // Find the sub-service name and set it as the service type
+                        const selectedMainService = services.find(s => s.id === editedMainService);
+                        const selectedSubService = selectedMainService?.sub_services?.find(ss => ss.id === value);
+                        if (selectedSubService) {
+                          setEditedServiceType(language === 'ar' ? selectedSubService.name : (selectedSubService.name_en || selectedSubService.name));
+                        }
+                      }}
+                      disabled={!editedMainService}
+                    >
+                      <SelectTrigger className="w-full bg-background">
+                        <SelectValue placeholder={language === 'ar' ? 'اختر الخدمة الفرعية' : 'Select sub service'} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {editedMainService && services.find(s => s.id === editedMainService)?.sub_services?.map((subService) => (
+                          <SelectItem key={subService.id} value={subService.id}>
+                            {language === 'ar' ? subService.name : (subService.name_en || subService.name)}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -1029,6 +1045,8 @@ export default function CompanyBooking() {
                       setEditedCustomerAddress(customerAddress);
                       setEditedServiceType(serviceType);
                       setEditedHoursCount(hoursCount);
+                      setEditedMainService('');
+                      setEditedSubService('');
                     }}
                   >
                     {language === 'ar' ? 'إلغاء' : 'Cancel'}
@@ -1036,6 +1054,16 @@ export default function CompanyBooking() {
                   <Button
                     onClick={async () => {
                       try {
+                        // Validate that service type is selected
+                        if (!editedServiceType) {
+                          toast({
+                            title: t.missingData,
+                            description: language === 'ar' ? 'يرجى اختيار نوع الخدمة' : 'Please select service type',
+                            variant: 'destructive',
+                          });
+                          return;
+                        }
+
                         // Update order with new info
                         const { error: orderError } = await supabase
                           .from('orders')
@@ -1062,6 +1090,8 @@ export default function CompanyBooking() {
                         setServiceType(editedServiceType);
                         setHoursCount(editedHoursCount);
                         setShowEditOrderInfo(false);
+                        setEditedMainService('');
+                        setEditedSubService('');
 
                         toast({
                           title: language === 'ar' ? 'تم التحديث' : 'Updated',
