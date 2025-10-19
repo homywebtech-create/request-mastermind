@@ -149,7 +149,8 @@ serve(async (req) => {
               ),
             },
             android: {
-              priority: 'high'
+              priority: 'high',
+              direct_boot_ok: true
             },
           }
         };
@@ -201,6 +202,20 @@ serve(async (req) => {
 
     const successCount = results.filter(r => r.status === 'fulfilled').length;
     const failedCount = results.filter(r => r.status === 'rejected').length;
+
+    // 🧹 Clean up invalid device tokens (UNREGISTERED/NotFound)
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i] as PromiseRejectedResult | PromiseFulfilledResult<any>;
+      if ((r as PromiseRejectedResult).status === 'rejected') {
+        const reason: any = (r as PromiseRejectedResult).reason || {};
+        const msg = typeof reason === 'string' ? reason : (reason.message || '');
+        const tokenToDelete = tokens[i].token;
+        if (/UNREGISTERED|NOT_FOUND|requested entity was not found|Invalid registration token/i.test(msg)) {
+          console.log(`🗑️ [FCM] Deleting invalid token: ${tokenToDelete.slice(0, 12)}...`);
+          await supabase.from('device_tokens').delete().eq('token', tokenToDelete);
+        }
+      }
+    }
 
     console.log(`📊 [FCM] Results: ${successCount} sent, ${failedCount} failed`);
 
