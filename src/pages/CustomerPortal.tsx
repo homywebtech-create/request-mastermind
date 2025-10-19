@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Home, FileText, MapPinned, User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { sendWhatsAppMessage } from '@/lib/whatsappHelper';
+import { qatarAreas } from '@/data/areas';
 
 // Service icons mapping
 const serviceIcons: Record<string, string> = {
@@ -23,13 +29,6 @@ const serviceIcons: Record<string, string> = {
   'تعليم': '👨‍🏫',
 };
 
-interface CustomerData {
-  id: string;
-  name: string;
-  whatsapp_number: string;
-  area: string | null;
-}
-
 interface Service {
   id: string;
   name: string;
@@ -37,95 +36,293 @@ interface Service {
   description: string | null;
 }
 
+interface SubService {
+  id: string;
+  service_id: string;
+  name: string;
+  name_en: string | null;
+  description: string | null;
+}
+
+interface OrderData {
+  id: string;
+  customer_id: string;
+  service_type: string;
+  notes: string | null;
+  hours_count: string | null;
+  customers: {
+    name: string;
+    whatsapp_number: string;
+    area: string | null;
+    budget: string | null;
+  };
+}
+
 export default function CustomerPortal() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get('orderId');
   const { language } = useLanguage();
   const { toast } = useToast();
-  const [customer, setCustomer] = useState<CustomerData | null>(null);
-  const [services, setServices] = useState<Service[]>([]);
+  
   const [loading, setLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [orderData, setOrderData] = useState<OrderData | null>(null);
+  
+  // Services data
+  const [services, setServices] = useState<Service[]>([]);
+  const [subServices, setSubServices] = useState<SubService[]>([]);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedSubService, setSelectedSubService] = useState<SubService | null>(null);
+  
+  // Form data
+  const [hoursCount, setHoursCount] = useState('');
+  const [area, setArea] = useState('');
+  const [notes, setNotes] = useState('');
+  const [budget, setBudget] = useState('');
 
   const translations = {
     ar: {
+      editOrder: 'تعديل الطلب',
       welcome: 'مرحباً',
-      howCanWeServe: 'كيف يمكننا خدمتك؟',
-      offers: 'العروض',
-      bookNow: 'احجز الآن',
-      payLater: 'ادفع لاحقاً',
-      home: 'الرئيسية',
-      orders: 'طلباتي',
-      location: 'الموقع',
-      profile: 'الحساب',
-      perMonth: 'شهرياً',
+      selectMainService: 'اختر الخدمة الرئيسية',
+      selectSubService: 'اختر الخدمة الفرعية',
+      orderDetails: 'تفاصيل الطلب',
+      hoursCount: 'عدد الساعات',
+      area: 'المنطقة',
+      selectArea: 'اختر المنطقة',
+      notes: 'ملاحظات',
+      notesPlaceholder: 'أضف أي ملاحظات إضافية...',
+      budget: 'الميزانية المتوقعة',
+      budgetPlaceholder: 'مثال: 500 ريال',
+      previous: 'السابق',
+      next: 'التالي',
+      sendOrder: 'إرسال الطلب',
+      orderSent: 'تم إرسال الطلب',
+      orderSentSuccess: 'تم إرسال طلبك بنجاح عبر واتساب',
+      errorTitle: 'خطأ',
+      loadError: 'حدث خطأ في تحميل البيانات',
+      fillAllFields: 'يرجى ملء جميع الحقول',
+      selectServiceError: 'يرجى اختيار الخدمة',
+      selectSubServiceError: 'يرجى اختيار الخدمة الفرعية',
     },
     en: {
+      editOrder: 'Edit Order',
       welcome: 'Welcome',
-      howCanWeServe: 'How can we serve you?',
-      offers: 'Offers',
-      bookNow: 'Book now',
-      payLater: 'Pay later',
-      home: 'Home',
-      orders: 'My Orders',
-      location: 'Location',
-      profile: 'Profile',
-      perMonth: 'Per Month',
+      selectMainService: 'Select Main Service',
+      selectSubService: 'Select Sub Service',
+      orderDetails: 'Order Details',
+      hoursCount: 'Hours Count',
+      area: 'Area',
+      selectArea: 'Select Area',
+      notes: 'Notes',
+      notesPlaceholder: 'Add any additional notes...',
+      budget: 'Expected Budget',
+      budgetPlaceholder: 'Example: 500 QR',
+      previous: 'Previous',
+      next: 'Next',
+      sendOrder: 'Send Order',
+      orderSent: 'Order Sent',
+      orderSentSuccess: 'Your order has been sent successfully via WhatsApp',
+      errorTitle: 'Error',
+      loadError: 'An error occurred while loading data',
+      fillAllFields: 'Please fill all fields',
+      selectServiceError: 'Please select a service',
+      selectSubServiceError: 'Please select a sub service',
     },
   };
 
   const t = translations[language];
 
   useEffect(() => {
-    fetchCustomerData();
-    fetchServices();
-  }, []);
+    fetchData();
+  }, [orderId]);
 
-  const fetchCustomerData = async () => {
+  const fetchData = async () => {
     try {
-      // For now, we'll use a placeholder. In production, this would come from authentication
-      const phoneNumber = localStorage.getItem('customer_phone');
-      
-      if (!phoneNumber) {
-        // Redirect to login or get phone number
-        return;
+      setLoading(true);
+
+      // Fetch order data if orderId exists
+      if (orderId) {
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            customers (
+              name,
+              whatsapp_number,
+              area,
+              budget
+            )
+          `)
+          .eq('id', orderId)
+          .single();
+
+        if (orderError) throw orderError;
+        setOrderData(order);
+        
+        // Pre-fill form with existing data
+        if (order.hours_count) setHoursCount(order.hours_count);
+        if (order.customers.area) setArea(order.customers.area);
+        if (order.notes) setNotes(order.notes);
+        if (order.customers.budget) setBudget(order.customers.budget);
       }
 
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('whatsapp_number', phoneNumber)
-        .single();
-
-      if (error) throw error;
-      setCustomer(data);
-    } catch (error) {
-      console.error('Error fetching customer:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchServices = async () => {
-    try {
-      const { data, error } = await supabase
+      // Fetch services
+      const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select('id, name, name_en, description')
         .eq('is_active', true)
         .order('name', { ascending: true });
 
-      if (error) throw error;
-      setServices(data || []);
+      if (servicesError) throw servicesError;
+      setServices(servicesData || []);
+
+      // Fetch sub-services
+      const { data: subServicesData, error: subServicesError } = await supabase
+        .from('sub_services')
+        .select('id, service_id, name, name_en, description')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (subServicesError) throw subServicesError;
+      setSubServices(subServicesData || []);
+
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error('Error fetching data:', error);
+      toast({
+        title: t.errorTitle,
+        description: t.loadError,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleServiceClick = (service: Service) => {
-    // Navigate to booking page or show service details
-    toast({
-      title: language === 'ar' ? service.name : (service.name_en || service.name),
-      description: language === 'ar' ? 'سيتم إضافة صفحة الحجز قريباً' : 'Booking page coming soon',
-    });
+  const handleServiceSelect = (service: Service) => {
+    setSelectedService(service);
+    setSelectedSubService(null);
+    setCurrentStep(2);
   };
+
+  const handleSubServiceSelect = (subService: SubService) => {
+    setSelectedSubService(subService);
+    setCurrentStep(3);
+  };
+
+  const handleNext = () => {
+    if (currentStep === 1 && !selectedService) {
+      toast({
+        title: t.errorTitle,
+        description: t.selectServiceError,
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (currentStep === 2 && !selectedSubService) {
+      toast({
+        title: t.errorTitle,
+        description: t.selectSubServiceError,
+        variant: 'destructive',
+      });
+      return;
+    }
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(currentStep - 1);
+  };
+
+  const handleSubmit = async () => {
+    if (!hoursCount || !area || !budget) {
+      toast({
+        title: t.errorTitle,
+        description: t.fillAllFields,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const serviceTypeName = language === 'ar' 
+        ? selectedSubService?.name 
+        : (selectedSubService?.name_en || selectedSubService?.name);
+
+      // Update order
+      if (orderId) {
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            service_type: serviceTypeName || '',
+            hours_count: hoursCount,
+            notes: notes,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId);
+
+        if (updateError) throw updateError;
+
+        // Update customer
+        if (orderData?.customer_id) {
+          const { error: customerError } = await supabase
+            .from('customers')
+            .update({
+              area: area,
+              budget: budget,
+            })
+            .eq('id', orderData.customer_id);
+
+          if (customerError) throw customerError;
+        }
+      }
+
+      // Send WhatsApp message
+      const message = `
+${t.editOrder}
+
+${t.selectMainService}: ${language === 'ar' ? selectedService?.name : (selectedService?.name_en || selectedService?.name)}
+${t.selectSubService}: ${serviceTypeName}
+${t.hoursCount}: ${hoursCount}
+${t.area}: ${area}
+${t.budget}: ${budget}
+${notes ? `${t.notes}: ${notes}` : ''}
+      `.trim();
+
+      if (orderData?.customers?.whatsapp_number) {
+        await sendWhatsAppMessage({
+          to: orderData.customers.whatsapp_number,
+          message: message,
+          customerName: orderData.customers.name,
+        });
+      }
+
+      toast({
+        title: t.orderSent,
+        description: t.orderSentSuccess,
+      });
+
+      // Redirect back or to order tracking
+      setTimeout(() => {
+        if (orderId) {
+          navigate(`/order-tracking/${orderId}`);
+        }
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      toast({
+        title: t.errorTitle,
+        description: t.loadError,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const filteredSubServices = subServices.filter(
+    (sub) => sub.service_id === selectedService?.id
+  );
 
   if (loading) {
     return (
@@ -139,149 +336,243 @@ export default function CustomerPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary/10 to-primary/5 px-6 py-8 border-b">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">
-              {t.welcome} {customer?.name || ''}
-            </h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span>{customer?.area || 'doha qatar'}</span>
+      <div className="bg-gradient-to-br from-primary/10 to-primary/5 px-6 py-6 border-b sticky top-0 z-10">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">
+            {orderData ? t.editOrder : t.welcome}
+          </h1>
+          {orderData && (
+            <div className="text-sm text-muted-foreground">
+              {orderData.customers.name}
             </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="text-lg font-semibold"
-            onClick={() => {/* Language toggle */}}
-          >
-            {language === 'ar' ? 'English' : 'عربي'}
-          </Button>
+          )}
+        </div>
+        {/* Progress indicator */}
+        <div className="flex gap-2 mt-4">
+          {[1, 2, 3].map((step) => (
+            <div
+              key={step}
+              className={`h-1 flex-1 rounded-full transition-colors ${
+                step <= currentStep ? 'bg-primary' : 'bg-muted'
+              }`}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Services Section */}
-      <div className="px-6 py-6">
-        <h2 className="text-xl font-bold text-foreground mb-4">
-          {t.howCanWeServe}
-        </h2>
-        
-        <div className="grid grid-cols-2 gap-3">
-          {services.slice(0, 6).map((service) => {
-            const serviceName = language === 'ar' ? service.name : (service.name_en || service.name);
-            const icon = serviceIcons[serviceName] || serviceIcons[service.name] || '🔧';
-            
-            return (
-              <Card 
-                key={service.id}
-                className="cursor-pointer hover:shadow-md transition-all hover:scale-105 border-2"
-                onClick={() => handleServiceClick(service)}
-              >
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="text-4xl">{icon}</div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {serviceName}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <Card>
+          <CardContent className="p-6">
+            {/* Step 1: Select Main Service */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-bold text-foreground mb-4">
+                  {t.selectMainService}
+                </h2>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {services.map((service) => {
+                    const serviceName = language === 'ar' ? service.name : (service.name_en || service.name);
+                    const icon = serviceIcons[serviceName] || serviceIcons[service.name] || '🔧';
+                    
+                    return (
+                      <Card 
+                        key={service.id}
+                        className={`cursor-pointer hover:shadow-md transition-all hover:scale-105 border-2 ${
+                          selectedService?.id === service.id ? 'border-primary bg-primary/5' : ''
+                        }`}
+                        onClick={() => handleServiceSelect(service)}
+                      >
+                        <CardContent className="p-6 flex flex-col items-center gap-3 text-center">
+                          <div className="text-5xl">{icon}</div>
+                          <div className="text-sm font-semibold text-foreground">
+                            {serviceName}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Select Sub Service */}
+            {currentStep === 2 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentStep(1)}
+                  >
+                    <ArrowRight className={`h-4 w-4 ${language === 'en' ? 'rotate-180' : ''}`} />
+                  </Button>
+                  <h2 className="text-xl font-bold text-foreground">
+                    {t.selectSubService}
+                  </h2>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {filteredSubServices.map((subService) => {
+                    const subServiceName = language === 'ar' ? subService.name : (subService.name_en || subService.name);
+                    
+                    return (
+                      <Card 
+                        key={subService.id}
+                        className={`cursor-pointer hover:shadow-md transition-all border-2 ${
+                          selectedSubService?.id === subService.id ? 'border-primary bg-primary/5' : ''
+                        }`}
+                        onClick={() => handleSubServiceSelect(subService)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="font-semibold text-foreground">
+                            {subServiceName}
+                          </div>
+                          {subService.description && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {subService.description}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Order Details */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentStep(2)}
+                  >
+                    <ArrowRight className={`h-4 w-4 ${language === 'en' ? 'rotate-180' : ''}`} />
+                  </Button>
+                  <h2 className="text-xl font-bold text-foreground">
+                    {t.orderDetails}
+                  </h2>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Hours Count */}
+                  <div className="space-y-2">
+                    <Label htmlFor="hoursCount">{t.hoursCount}</Label>
+                    <Input
+                      id="hoursCount"
+                      type="number"
+                      value={hoursCount}
+                      onChange={(e) => setHoursCount(e.target.value)}
+                      placeholder="8"
+                      min="1"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Offers Section */}
-      <div className="px-6 py-6">
-        <h2 className="text-xl font-bold text-foreground mb-4">
-          {t.offers}
-        </h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Offer Card 1 */}
-          <Card className="overflow-hidden border-2 hover:shadow-lg transition-shadow">
-            <div className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-6xl">🧹</div>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-600 to-transparent p-4">
-                <div className="text-white text-sm font-semibold mb-1">
-                  {language === 'ar' ? '1500 - 2500 ريال شهرياً' : '1500 - 2500 QR Per Month'}
+                  {/* Area */}
+                  <div className="space-y-2">
+                    <Label htmlFor="area">{t.area}</Label>
+                    <Select value={area} onValueChange={setArea}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t.selectArea} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {qatarAreas.map((qArea) => (
+                          <SelectItem key={qArea.id} value={language === 'ar' ? qArea.name : qArea.nameEn}>
+                            {language === 'ar' ? qArea.name : qArea.nameEn}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Budget */}
+                  <div className="space-y-2">
+                    <Label htmlFor="budget">{t.budget}</Label>
+                    <Input
+                      id="budget"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      placeholder={t.budgetPlaceholder}
+                    />
+                  </div>
+
+                  {/* Notes */}
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">{t.notes}</Label>
+                    <Textarea
+                      id="notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder={t.notesPlaceholder}
+                      rows={4}
+                      dir="auto"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-            <CardContent className="p-0">
-              <Button className="w-full rounded-none bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-bold">
-                {t.bookNow}
-                <br />
-                {t.payLater}
-              </Button>
-            </CardContent>
-          </Card>
+            )}
 
-          {/* Offer Card 2 */}
-          <Card className="overflow-hidden border-2 hover:shadow-lg transition-shadow">
-            <div className="relative h-48 bg-gradient-to-br from-pink-100 to-pink-50 dark:from-pink-950 dark:to-pink-900">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-6xl">💰</div>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-pink-600 to-transparent p-4">
-                <div className="text-white text-sm font-semibold mb-1">
-                  {language === 'ar' ? '1500 - 2500 ريال شهرياً' : '1500 - 2500 QR Per Month'}
-                </div>
-              </div>
-            </div>
-            <CardContent className="p-0">
-              <Button className="w-full rounded-none bg-pink-600 hover:bg-pink-700 text-white h-14 text-lg font-bold">
-                {language === 'ar' ? 'تسعير ثابت' : 'Price starts'}
-                <br />
-                {language === 'ar' ? '10 الى 20' : '10 To 20'}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            {/* Navigation Buttons */}
+            <div className="flex gap-3 pt-6 border-t mt-6">
+              {currentStep > 1 && currentStep !== 2 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevious}
+                  className="flex items-center gap-2"
+                >
+                  {language === 'ar' ? (
+                    <>
+                      <ArrowRight className="h-4 w-4" />
+                      {t.previous}
+                    </>
+                  ) : (
+                    <>
+                      <ArrowLeft className="h-4 w-4" />
+                      {t.previous}
+                    </>
+                  )}
+                </Button>
+              )}
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg">
-        <div className="grid grid-cols-4 gap-2 px-4 py-2">
-          <Button
-            variant="ghost"
-            className="flex flex-col items-center gap-1 h-auto py-3 bg-primary/10 hover:bg-primary/20"
-            onClick={() => navigate('/customer-portal')}
-          >
-            <Home className="h-5 w-5 text-primary" />
-            <span className="text-xs font-medium text-primary">{t.home}</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-muted"
-            onClick={() => {/* Navigate to orders */}}
-          >
-            <FileText className="h-5 w-5" />
-            <span className="text-xs">{t.orders}</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-muted"
-            onClick={() => {/* Navigate to location */}}
-          >
-            <MapPinned className="h-5 w-5" />
-            <span className="text-xs">{t.location}</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-muted"
-            onClick={() => {/* Navigate to profile */}}
-          >
-            <User className="h-5 w-5" />
-            <span className="text-xs">{t.profile}</span>
-          </Button>
-        </div>
+              {currentStep < 3 ? (
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex-1 flex items-center justify-center gap-2"
+                  disabled={currentStep === 1 ? !selectedService : !selectedSubService}
+                >
+                  {language === 'ar' ? (
+                    <>
+                      {t.next}
+                      <ArrowLeft className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      {t.next}
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!hoursCount || !area || !budget}
+                  className="flex-1 flex items-center justify-center gap-2 font-bold"
+                >
+                  <Check className="h-5 w-5" />
+                  {t.sendOrder}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
