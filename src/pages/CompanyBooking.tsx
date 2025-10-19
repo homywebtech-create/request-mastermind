@@ -372,9 +372,19 @@ export default function CompanyBooking() {
         .from('companies')
         .select('id, name, logo_url, phone')
         .eq('id', companyId)
-        .single();
+        .eq('is_active', true)
+        .maybeSingle();
 
       if (companyError) throw companyError;
+      
+      if (!companyData) {
+        toast({
+          title: language === 'ar' ? 'الشركة غير موجودة' : 'Company not found',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       setCompany(companyData);
 
       console.log('🔍 Fetching specialists for order:', orderId, 'company:', companyId);
