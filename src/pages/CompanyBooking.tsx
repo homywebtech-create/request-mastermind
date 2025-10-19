@@ -208,6 +208,7 @@ export default function CompanyBooking() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [customerBudget, setCustomerBudget] = useState('');
   
   // Form data
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -227,6 +228,7 @@ export default function CompanyBooking() {
   const [editedHoursCount, setEditedHoursCount] = useState<number>(1);
   const [editedServiceType, setEditedServiceType] = useState<string>('');
   const [editedCustomerAddress, setEditedCustomerAddress] = useState('');
+  const [editedBudget, setEditedBudget] = useState('');
   const [editedMainService, setEditedMainService] = useState<string>('');
   const [editedSubService, setEditedSubService] = useState<string>('');
   const [showEditWarningDialog, setShowEditWarningDialog] = useState(false);
@@ -362,7 +364,8 @@ export default function CompanyBooking() {
           customers (
             name,
             whatsapp_number,
-            area
+            area,
+            budget
           )
         `)
         .eq('id', orderId)
@@ -375,7 +378,9 @@ export default function CompanyBooking() {
         setCustomerName(orderData.customers.name || '');
         setCustomerPhone(orderData.customers.whatsapp_number || '');
         setCustomerAddress(orderData.customers.area || '');
+        setCustomerBudget(orderData.customers.budget || '');
         setEditedCustomerAddress(orderData.customers.area || '');
+        setEditedBudget(orderData.customers.budget || '');
       }
       
       // Parse hours_count (it's stored as text in DB)
@@ -938,7 +943,7 @@ export default function CompanyBooking() {
           <CardContent className="space-y-3">
             {!showEditOrderInfo ? (
               /* Display Current Info */
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                 <div className="p-3 rounded-lg bg-muted/50 border">
                   <p className="text-muted-foreground mb-1 text-xs">
                     {language === 'ar' ? 'المنطقة' : 'Area'}
@@ -959,11 +964,17 @@ export default function CompanyBooking() {
                     {hoursCount} {language === 'ar' ? 'ساعة' : 'hour(s)'}
                   </p>
                 </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-muted-foreground mb-1 text-xs">
+                    {language === 'ar' ? 'الميزانية المقترحة' : 'Proposed Budget'}
+                  </p>
+                  <p className="font-semibold">{customerBudget || '-'}</p>
+                </div>
               </div>
             ) : (
               /* Edit Form */
               <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-area">
                       {language === 'ar' ? 'المنطقة' : 'Area'}
@@ -973,6 +984,17 @@ export default function CompanyBooking() {
                       value={editedCustomerAddress}
                       onChange={(e) => setEditedCustomerAddress(e.target.value)}
                       placeholder={language === 'ar' ? 'أدخل المنطقة' : 'Enter area'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-budget">
+                      {language === 'ar' ? 'الميزانية المقترحة' : 'Proposed Budget'}
+                    </Label>
+                    <Input
+                      id="edit-budget"
+                      value={editedBudget}
+                      onChange={(e) => setEditedBudget(e.target.value)}
+                      placeholder={language === 'ar' ? 'أدخل الميزانية' : 'Enter budget'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1048,6 +1070,7 @@ export default function CompanyBooking() {
                     onClick={() => {
                       setShowEditOrderInfo(false);
                       setEditedCustomerAddress(customerAddress);
+                      setEditedBudget(customerBudget);
                       setEditedServiceType(serviceType);
                       setEditedHoursCount(hoursCount);
                       setEditedMainService('');
@@ -1077,7 +1100,8 @@ export default function CompanyBooking() {
                           `المعلومات الجديدة:\n` +
                           `المنطقة: ${editedCustomerAddress}\n` +
                           `نوع الخدمة: ${editedServiceType}\n` +
-                          `عدد الساعات: ${editedHoursCount}\n\n` +
+                          `عدد الساعات: ${editedHoursCount}\n` +
+                          `الميزانية المقترحة: ${editedBudget}\n\n` +
                           `أرجو التواصل معي لتأكيد السعر الجديد.`
                         );
                         window.open(`https://wa.me/${company.phone}?text=${message}`, '_blank');
