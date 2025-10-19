@@ -110,12 +110,17 @@ serve(async (req) => {
 
         const result = await response.json();
         
+        console.log(`📝 [FCM] Response for ${deviceToken.specialist_id}:`, JSON.stringify(result));
+        console.log(`📝 [FCM] HTTP Status: ${response.status}, Response OK: ${response.ok}`);
+        
         if (!response.ok || result.failure === 1) {
-          console.error(`❌ [FCM] Failed for ${deviceToken.specialist_id}:`, result);
+          console.error(`❌ [FCM] Failed for ${deviceToken.specialist_id}:`, JSON.stringify(result, null, 2));
+          console.error(`❌ [FCM] Error details:`, result.results?.[0]);
           
           // If token is invalid, delete it from database
           if (result.results?.[0]?.error === 'NotRegistered' || 
               result.results?.[0]?.error === 'InvalidRegistration') {
+            console.log(`🗑️ [FCM] Deleting invalid token: ${deviceToken.token.substring(0, 20)}...`);
             await supabase
               .from('device_tokens')
               .delete()
@@ -123,7 +128,7 @@ serve(async (req) => {
             console.log(`🗑️ [FCM] Removed invalid token for specialist ${deviceToken.specialist_id}`);
           }
           
-          throw new Error(result.results?.[0]?.error || 'FCM send error');
+          throw new Error(result.results?.[0]?.error || result.error || 'FCM send error');
         }
 
         console.log(`✅ [FCM] Sent to specialist ${deviceToken.specialist_id}`);
