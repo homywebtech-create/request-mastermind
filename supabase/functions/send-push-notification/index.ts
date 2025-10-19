@@ -123,13 +123,11 @@ serve(async (req) => {
     // Send FCM notifications using Firebase Admin SDK v1 API
     const results = await Promise.allSettled(
       tokens.map(async (deviceToken) => {
+        // ✅ Send ONLY data message (no notification object)
+        // This ensures MyFirebaseMessagingService handles the notification in ALL app states
         const message = {
           message: {
             token: deviceToken.token,
-            notification: {
-              title: title || 'طلب جديد',
-              body: body || 'لديك طلب جديد',
-            },
             data: {
               type: 'new_order',
               title: title || 'طلب جديد',
@@ -147,9 +145,8 @@ serve(async (req) => {
             },
             android: {
               priority: 'high',
-              notification: {
+              data: {
                 channel_id: 'new-orders-v2',
-                sound: 'short_notification',
               },
             },
           }
