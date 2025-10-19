@@ -212,6 +212,12 @@ export default function CompanyBooking() {
   const [showProfile, setShowProfile] = useState<string | null>(null); // For profile dialog
   const [termsAccepted, setTermsAccepted] = useState(true); // Auto-checked by default
   const [contractType, setContractType] = useState<'electronic' | 'physical' | ''>('');
+  const [showEditOrderInfo, setShowEditOrderInfo] = useState(false);
+  const [editedHoursCount, setEditedHoursCount] = useState<number>(1);
+  const [editedServiceType, setEditedServiceType] = useState<string>('');
+  const [editedCustomerName, setEditedCustomerName] = useState('');
+  const [editedCustomerPhone, setEditedCustomerPhone] = useState('');
+  const [editedCustomerAddress, setEditedCustomerAddress] = useState('');
 
   const totalSteps = 4;
   const t = translations[language];
@@ -345,15 +351,20 @@ export default function CompanyBooking() {
         setCustomerName(orderData.customers.name || '');
         setCustomerPhone(orderData.customers.whatsapp_number || '');
         setCustomerAddress(orderData.customers.area || '');
+        setEditedCustomerName(orderData.customers.name || '');
+        setEditedCustomerPhone(orderData.customers.whatsapp_number || '');
+        setEditedCustomerAddress(orderData.customers.area || '');
       }
       
       // Parse hours_count (it's stored as text in DB)
       const hours = orderData?.hours_count ? parseInt(orderData.hours_count) : 1;
       setHoursCount(hours);
+      setEditedHoursCount(hours);
       
       // Determine if it's a monthly service
       const svcType = orderData?.service_type || '';
       setServiceType(svcType);
+      setEditedServiceType(svcType);
       // Check if service type contains keywords for monthly contracts
       const isMonthly = svcType.toLowerCase().includes('شهري') || 
                         svcType.toLowerCase().includes('monthly') ||
@@ -809,6 +820,202 @@ export default function CompanyBooking() {
         <div className="flex justify-end mb-4">
           <LanguageSwitcher />
         </div>
+
+        {/* Order Information Card */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                <FileUser className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'معلومات الطلب الحالية' : 'Current Order Information'}
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEditOrderInfo(!showEditOrderInfo)}
+                className="gap-2"
+              >
+                {showEditOrderInfo ? (
+                  language === 'ar' ? 'إلغاء' : 'Cancel'
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    {language === 'ar' ? 'طلب تعديل' : 'Request Edit'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {!showEditOrderInfo ? (
+              /* Display Current Info */
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-muted-foreground mb-1 text-xs">
+                    {language === 'ar' ? 'اسم العميل' : 'Customer Name'}
+                  </p>
+                  <p className="font-semibold">{customerName || '-'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-muted-foreground mb-1 text-xs">
+                    {language === 'ar' ? 'رقم الواتساب' : 'WhatsApp Number'}
+                  </p>
+                  <p className="font-semibold">{customerPhone || '-'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-muted-foreground mb-1 text-xs">
+                    {language === 'ar' ? 'المنطقة' : 'Area'}
+                  </p>
+                  <p className="font-semibold">{customerAddress || '-'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-muted-foreground mb-1 text-xs">
+                    {language === 'ar' ? 'نوع الخدمة' : 'Service Type'}
+                  </p>
+                  <p className="font-semibold">{serviceType || '-'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-muted-foreground mb-1 text-xs">
+                    {language === 'ar' ? 'عدد الساعات' : 'Hours Count'}
+                  </p>
+                  <p className="font-semibold">
+                    {hoursCount} {language === 'ar' ? 'ساعة' : 'hour(s)'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Edit Form */
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">
+                      {language === 'ar' ? 'اسم العميل' : 'Customer Name'}
+                    </Label>
+                    <Input
+                      id="edit-name"
+                      value={editedCustomerName}
+                      onChange={(e) => setEditedCustomerName(e.target.value)}
+                      placeholder={language === 'ar' ? 'أدخل الاسم' : 'Enter name'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">
+                      {language === 'ar' ? 'رقم الواتساب' : 'WhatsApp Number'}
+                    </Label>
+                    <Input
+                      id="edit-phone"
+                      value={editedCustomerPhone}
+                      onChange={(e) => setEditedCustomerPhone(e.target.value)}
+                      placeholder={language === 'ar' ? 'أدخل رقم الواتساب' : 'Enter WhatsApp number'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-area">
+                      {language === 'ar' ? 'المنطقة' : 'Area'}
+                    </Label>
+                    <Input
+                      id="edit-area"
+                      value={editedCustomerAddress}
+                      onChange={(e) => setEditedCustomerAddress(e.target.value)}
+                      placeholder={language === 'ar' ? 'أدخل المنطقة' : 'Enter area'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-service">
+                      {language === 'ar' ? 'نوع الخدمة' : 'Service Type'}
+                    </Label>
+                    <Input
+                      id="edit-service"
+                      value={editedServiceType}
+                      onChange={(e) => setEditedServiceType(e.target.value)}
+                      placeholder={language === 'ar' ? 'أدخل نوع الخدمة' : 'Enter service type'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-hours">
+                      {language === 'ar' ? 'عدد الساعات' : 'Hours Count'}
+                    </Label>
+                    <Input
+                      id="edit-hours"
+                      type="number"
+                      min="1"
+                      max="24"
+                      value={editedHoursCount}
+                      onChange={(e) => setEditedHoursCount(parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowEditOrderInfo(false);
+                      setEditedCustomerName(customerName);
+                      setEditedCustomerPhone(customerPhone);
+                      setEditedCustomerAddress(customerAddress);
+                      setEditedServiceType(serviceType);
+                      setEditedHoursCount(hoursCount);
+                    }}
+                  >
+                    {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        // Update order with new info
+                        const { error: orderError } = await supabase
+                          .from('orders')
+                          .update({
+                            hours_count: editedHoursCount.toString(),
+                            service_type: editedServiceType,
+                          })
+                          .eq('id', orderId);
+
+                        if (orderError) throw orderError;
+
+                        // Update customer info
+                        const { error: customerError } = await supabase
+                          .from('customers')
+                          .update({
+                            name: editedCustomerName,
+                            whatsapp_number: editedCustomerPhone,
+                            area: editedCustomerAddress,
+                          })
+                          .eq('whatsapp_number', customerPhone);
+
+                        if (customerError) throw customerError;
+
+                        // Update local state
+                        setCustomerName(editedCustomerName);
+                        setCustomerPhone(editedCustomerPhone);
+                        setCustomerAddress(editedCustomerAddress);
+                        setServiceType(editedServiceType);
+                        setHoursCount(editedHoursCount);
+                        setShowEditOrderInfo(false);
+
+                        toast({
+                          title: language === 'ar' ? 'تم التحديث' : 'Updated',
+                          description: language === 'ar' 
+                            ? 'تم تحديث معلومات الطلب بنجاح. يمكنك الآن المتابعة.'
+                            : 'Order information updated successfully. You can now proceed.',
+                        });
+                      } catch (error: any) {
+                        console.error('Error updating order info:', error);
+                        toast({
+                          title: t.error,
+                          description: error.message,
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                  >
+                    {language === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Steps */}
         <Card>
