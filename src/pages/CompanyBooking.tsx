@@ -326,10 +326,6 @@ export default function CompanyBooking() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      console.log('🚀 Starting fetchData...');
-      console.log('🆔 Order ID:', orderId);
-      console.log('🏢 Company ID:', companyId);
 
       // Fetch order info to get hours_count and service_type
       const { data: orderData, error: orderError } = await supabase
@@ -379,11 +375,6 @@ export default function CompanyBooking() {
         .single();
 
       if (companyError) throw companyError;
-      
-      console.log('🏢 Company Data:', companyData);
-      console.log('🏢 Company Logo URL:', companyData?.logo_url);
-      console.log('🏢 Company Name:', companyData?.name);
-      
       setCompany(companyData);
 
       console.log('🔍 Fetching specialists for order:', orderId, 'company:', companyId);
@@ -817,9 +808,6 @@ export default function CompanyBooking() {
       </div>
     );
   }
-
-  console.log('📋 Render - Company State:', company);
-  console.log('📋 Render - Company ID from URL:', companyId);
 
   return (
     <div className="min-h-screen bg-white dark:bg-background py-8 px-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
