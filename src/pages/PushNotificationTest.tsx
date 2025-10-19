@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle, Loader2, Bell } from "lucide-react";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Capacitor } from '@capacitor/core';
 
 interface TestResult {
   step: string;
@@ -35,13 +36,15 @@ const PushNotificationTest = () => {
         message: "Checking if running on native platform..."
       });
 
-      const isNative = window.location.protocol === 'capacitor:';
+      const isNative = Capacitor.isNativePlatform();
+      const platform = Capacitor.getPlatform();
+      
       if (!isNative) {
         addResult({
           step: "Platform Check",
           status: "error",
           message: "Not running on native platform. This test requires a native build.",
-          details: { protocol: window.location.protocol }
+          details: { platform, isNative }
         });
         setTesting(false);
         return;
@@ -50,7 +53,7 @@ const PushNotificationTest = () => {
       addResult({
         step: "Platform Check",
         status: "success",
-        message: "Running on native platform ✓"
+        message: `Running on native platform: ${platform} ✓`
       });
 
       // Step 2: Get current user/specialist
