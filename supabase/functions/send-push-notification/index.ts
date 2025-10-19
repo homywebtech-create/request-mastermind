@@ -147,10 +147,19 @@ serve(async (req) => {
           ? {
               message: {
                 token: deviceToken.token,
+                // Include both data and notification so foreground gets the data event
+                // and background gets a system-shown notification
                 data: baseData,
+                notification: {
+                  title: title || 'طلب جديد',
+                  body: body || 'لديك طلب جديد',
+                },
                 android: {
                   priority: 'high',
                   direct_boot_ok: true,
+                  notification: {
+                    channel_id: 'new-orders-v3',
+                  },
                 },
               },
             }
@@ -165,6 +174,9 @@ serve(async (req) => {
                 android: {
                   priority: 'high',
                   direct_boot_ok: true,
+                  notification: {
+                    channel_id: 'new-orders-v3',
+                  },
                 },
               },
             };
