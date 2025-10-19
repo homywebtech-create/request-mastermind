@@ -187,7 +187,9 @@ function AppRouter() {
         {/* Redirect specialist routes to auth in web */}
         <Route path="/specialist-auth" element={<Navigate to="/auth" replace />} />
         <Route path="/specialist-orders" element={<Navigate to="/auth" replace />} />
-        <Route path="/order-tracking/:orderId" element={<Navigate to="/auth" replace />} />
+        
+        {/* Order tracking route - available in web for testing */}
+        <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
         
         {/* Admin routes */}
         <Route path="/auth" element={<Auth />} />
