@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapLocationPicker } from '@/components/booking/MapLocationPicker';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -216,6 +217,18 @@ export default function CompanyBooking() {
   const [editedHoursCount, setEditedHoursCount] = useState<number>(1);
   const [editedServiceType, setEditedServiceType] = useState<string>('');
   const [editedCustomerAddress, setEditedCustomerAddress] = useState('');
+  
+  // Services and sub-services
+  const [services, setServices] = useState<Array<{
+    id: string;
+    name: string;
+    name_en: string | null;
+    sub_services: Array<{
+      id: string;
+      name: string;
+      name_en: string | null;
+    }>;
+  }>>([]);
 
   const totalSteps = 4;
   const t = translations[language];
@@ -449,6 +462,28 @@ export default function CompanyBooking() {
       console.log('👥 Specialists:', formattedSpecialists);
 
       setSpecialists(formattedSpecialists);
+      
+      // Fetch services and sub-services for the service type dropdown
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select(`
+          id,
+          name,
+          name_en,
+          sub_services (
+            id,
+            name,
+            name_en
+          )
+        `)
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (servicesError) {
+        console.error('Error fetching services:', servicesError);
+      } else {
+        setServices(servicesData || []);
+      }
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
@@ -937,12 +972,40 @@ export default function CompanyBooking() {
                     <Label htmlFor="edit-service">
                       {language === 'ar' ? 'نوع الخدمة' : 'Service Type'}
                     </Label>
-                    <Input
-                      id="edit-service"
+                    <Select
                       value={editedServiceType}
-                      onChange={(e) => setEditedServiceType(e.target.value)}
-                      placeholder={language === 'ar' ? 'أدخل نوع الخدمة' : 'Enter service type'}
-                    />
+                      onValueChange={setEditedServiceType}
+                    >
+                      <SelectTrigger className="w-full bg-background">
+                        <SelectValue placeholder={language === 'ar' ? 'اختر نوع الخدمة' : 'Select service type'} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {services.map((service) => (
+                          <React.Fragment key={service.id}>
+                            {/* Main Service Header */}
+                            <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted/50">
+                              {language === 'ar' ? service.name : (service.name_en || service.name)}
+                            </div>
+                            {/* Sub Services */}
+                            {service.sub_services && service.sub_services.length > 0 ? (
+                              service.sub_services.map((subService) => (
+                                <SelectItem
+                                  key={subService.id}
+                                  value={language === 'ar' ? subService.name : (subService.name_en || subService.name)}
+                                  className="pl-6"
+                                >
+                                  {language === 'ar' ? subService.name : (subService.name_en || subService.name)}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value={language === 'ar' ? service.name : (service.name_en || service.name)}>
+                                {language === 'ar' ? service.name : (service.name_en || service.name)}
+                              </SelectItem>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-hours">
