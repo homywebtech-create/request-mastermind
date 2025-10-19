@@ -1,6 +1,7 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
+import { Device } from '@capacitor/device';
 import { requestFullScreenPermission, checkFullScreenPermission } from './notificationPermissions';
 
 export class FirebaseNotificationManager {
@@ -151,6 +152,27 @@ export class FirebaseNotificationManager {
     try {
       console.log('💾 [DB] حفظ Device Token...');
       
+      // Get device info
+      let deviceInfo = {
+        device_model: 'unknown',
+        device_os: platform,
+        device_os_version: 'unknown',
+        app_version: '1.0.0',
+      };
+
+      try {
+        const info = await Device.getInfo();
+        deviceInfo = {
+          device_model: info.model,
+          device_os: info.platform,
+          device_os_version: info.osVersion,
+          app_version: '1.0.0', // Can be updated from package.json if needed
+        };
+        console.log('📱 [DEVICE INFO]', deviceInfo);
+      } catch (e) {
+        console.warn('⚠️ Could not get device info:', e);
+      }
+      
       // Upsert token (insert or update if exists)
       const { error } = await supabase
         .from('device_tokens')
@@ -158,6 +180,7 @@ export class FirebaseNotificationManager {
           specialist_id: specialistId,
           token,
           platform,
+          ...deviceInfo,
           last_used_at: new Date().toISOString(),
         }, {
           onConflict: 'token',

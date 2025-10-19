@@ -258,7 +258,11 @@ export type Database = {
       }
       device_tokens: {
         Row: {
+          app_version: string | null
           created_at: string | null
+          device_model: string | null
+          device_os: string | null
+          device_os_version: string | null
           id: string
           last_used_at: string | null
           platform: string
@@ -267,7 +271,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          app_version?: string | null
           created_at?: string | null
+          device_model?: string | null
+          device_os?: string | null
+          device_os_version?: string | null
           id?: string
           last_used_at?: string | null
           platform: string
@@ -276,7 +284,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          app_version?: string | null
           created_at?: string | null
+          device_model?: string | null
+          device_os?: string | null
+          device_os_version?: string | null
           id?: string
           last_used_at?: string | null
           platform?: string

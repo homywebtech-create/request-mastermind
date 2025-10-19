@@ -102,7 +102,7 @@ serve(async (req) => {
     // Get device tokens for these specialists
     const { data: tokens, error: tokensError } = await supabase
       .from('device_tokens')
-      .select('token, platform, specialist_id')
+      .select('token, platform, specialist_id, device_model, device_os, device_os_version, app_version')
       .in('specialist_id', specialistIds);
 
     if (tokensError) {
@@ -182,6 +182,7 @@ serve(async (req) => {
             };
 
         console.log(`📤 [FCM] Sending to specialist ${deviceToken.specialist_id} (${deviceToken.platform})...`);
+        console.log(`📱 [DEVICE] Model: ${deviceToken.device_model || 'unknown'}, OS: ${deviceToken.device_os || 'unknown'} ${deviceToken.device_os_version || ''}, App: ${deviceToken.app_version || 'unknown'}`);
         console.log(`📤 [FCM] Message payload:`, JSON.stringify(message, null, 2));
 
         let response;
