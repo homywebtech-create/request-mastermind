@@ -88,7 +88,7 @@ export class FirebaseNotificationManager {
                 actionTypeId: '',
                 extra: notification.data,
                 smallIcon: 'ic_stat_icon_config_sample',
-                channelId: 'new-orders-v2',
+                channelId: 'new-orders-v3',
               }
             ]
           });
