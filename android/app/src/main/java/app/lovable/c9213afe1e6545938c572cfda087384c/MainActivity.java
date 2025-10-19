@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.media.AudioAttributes;
 import android.provider.Settings;
+import android.view.WindowManager;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -23,6 +24,32 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BatteryOptimizationPlugin.class);
         createNotificationChannel();
         checkAndRequestPermissions();
+        ensureWakeAndShowIfFromNotification(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        ensureWakeAndShowIfFromNotification(intent);
+    }
+    
+private void ensureWakeAndShowIfFromNotification(Intent intent) {
+        if (intent == null) return;
+        boolean fromNotification = intent.getBooleanExtra("fromNotification", false);
+        if (!fromNotification) return;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        } else {
+            getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            );
+        }
     }
     
     private void checkAndRequestPermissions() {
