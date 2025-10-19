@@ -125,8 +125,7 @@ serve(async (req) => {
       tokens.map(async (deviceToken) => {
         const isAndroid = (deviceToken.platform || '').toLowerCase() === 'android';
 
-        // Build message: data-only for Android so our service can show full-screen intent
-        // Keep notification+data for others (iOS/web)
+        // Build message payload
         const baseData: Record<string, string> = {
           type: (data.type as string) || 'new_order',
           title: title || 'طلب جديد',
@@ -143,23 +142,16 @@ serve(async (req) => {
           ),
         };
 
+        // IMPORTANT: For Android send DATA-ONLY messages so our
+        // MyFirebaseMessagingService.onMessageReceived() is invoked in background.
         const message = isAndroid
           ? {
               message: {
                 token: deviceToken.token,
-                // Include both data and notification so foreground gets the data event
-                // and background gets a system-shown notification
                 data: baseData,
-                notification: {
-                  title: title || 'طلب جديد',
-                  body: body || 'لديك طلب جديد',
-                },
                 android: {
                   priority: 'high',
                   direct_boot_ok: true,
-                  notification: {
-                    channel_id: 'new-orders-v3',
-                  },
                 },
               },
             }
@@ -257,9 +249,9 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('❌ [FCM] Fatal error:', error);
+    console.error('❌ [FCM] Fatal error:', (error as any)?.message || error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as any)?.message || 'Unknown error' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
