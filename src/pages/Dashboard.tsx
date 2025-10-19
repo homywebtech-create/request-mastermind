@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, TestTube } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -725,11 +725,6 @@ export default function Dashboard() {
                   <DropdownMenuItem onClick={() => navigate('/admin/users')}>
                     <UserCog className="h-4 w-4 mr-2" />
                     {tDash.users}
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem onClick={() => navigate('/push-test')}>
-                    <TestTube className="h-4 w-4 mr-2" />
-                    {language === 'ar' ? 'اختبار الإشعارات' : 'Test Notifications'}
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />

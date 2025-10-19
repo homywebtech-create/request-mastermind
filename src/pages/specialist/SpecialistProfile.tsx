@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar } from "lucide-react";
+import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -370,6 +370,14 @@ export default function SpecialistProfile() {
             >
               <Building2 className="h-4 w-4 ml-2" />
               المحفظة
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-auto py-3"
+              onClick={() => navigate('/push-test')}
+            >
+              <TestTube className="h-4 w-4 ml-2" />
+              اختبار الإشعارات
             </Button>
           </div>
         </Card>
