@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BellRing } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -97,6 +97,7 @@ export default function Dashboard() {
   const soundNotification = useRef(getSoundNotification());
   const previousOrdersCount = useRef<number>(0);
   const previousQuotesCount = useRef<number>(0);
+  const [sendingPush, setSendingPush] = useState(false);
 
   // Initialize audio context on first user interaction
   useEffect(() => {
@@ -626,14 +627,57 @@ export default function Dashboard() {
   const handleNavigateToUsers = () => {
     navigate('/admin/users');
   };
-
+ 
   const handleNavigateToActivityLogs = () => {
     navigate('/admin/activity');
   };
-
+ 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  // Admin-only: send a test push to the most recently active device token
+  const handleSendAdminTestPush = async () => {
+    try {
+      setSendingPush(true);
+      toast({ title: language === 'ar' ? 'جارٍ الإرسال…' : 'Sending…', description: language === 'ar' ? 'إرسال إشعار تجريبي إلى أحدث جهاز' : 'Sending test push to the last active device' });
+
+      const { data: latest, error: tokenErr } = await supabase
+        .from('device_tokens')
+        .select('specialist_id')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (tokenErr) throw tokenErr;
+      if (!latest?.specialist_id) {
+        toast({ title: language === 'ar' ? 'لا يوجد جهاز' : 'No device found', description: language === 'ar' ? 'لا يوجد رمز جهاز حديث لإرسال الإشعار' : 'No recent device token to send to', variant: 'destructive' });
+        return;
+      }
+
+      const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          specialistIds: [latest.specialist_id],
+          title: '🧪 Admin Test',
+          body: language === 'ar' ? 'إشعار تجريبي من لوحة المشرف' : 'Test push from Admin dashboard',
+          data: { type: 'test', route: '/specialist/new-orders' }
+        }
+      });
+
+      if (fcmError) {
+        console.error('⚠️ [FCM] Error sending notifications:', fcmError);
+        toast({ title: language === 'ar' ? 'فشل الإرسال' : 'Push failed', description: fcmError.message || (language === 'ar' ? 'حدث خطأ في إرسال الإشعار' : 'Error sending push'), variant: 'destructive' });
+      } else {
+        console.log('✅ [FCM] Notifications sent:', fcmResult);
+        toast({ title: language === 'ar' ? 'تم الإرسال' : 'Push sent', description: language === 'ar' ? 'تحقق من جهازك' : 'Check your device.' });
+      }
+    } catch (e: any) {
+      console.error('❌ Error sending admin test push:', e);
+      toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: e.message || (language === 'ar' ? 'حدث خطأ غير متوقع' : 'Unexpected error'), variant: 'destructive' });
+    } finally {
+      setSendingPush(false);
+    }
   };
 
   if (loading) {
@@ -660,6 +704,17 @@ export default function Dashboard() {
             
             <div className="flex flex-wrap gap-2 items-center">
               <LanguageSwitcher />
+              
+              <Button
+                onClick={handleSendAdminTestPush}
+                disabled={sendingPush}
+                variant="outline"
+                className="flex items-center gap-2"
+                title={language === 'ar' ? 'إرسال إشعار تجريبي' : 'Send test push'}
+              >
+                <BellRing className="h-4 w-4" />
+                {language === 'ar' ? 'إرسال إشعار تجريبي' : 'Send test push'}
+              </Button>
               
               <Button
                 variant={soundEnabled ? "default" : "outline"}
