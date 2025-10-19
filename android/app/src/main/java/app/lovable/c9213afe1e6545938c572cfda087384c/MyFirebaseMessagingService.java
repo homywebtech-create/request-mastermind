@@ -16,6 +16,7 @@ import android.util.Log;
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "FCMService";
     private static final String CHANNEL_ID = "new-orders-v2";
+    private static final String CALL_CHANNEL_ID = "booking-calls";
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -36,10 +37,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             Log.d(TAG, "🔔 Data Message - Type: " + type);
             Log.d(TAG, "🔔 Data Message - OrderID: " + orderId);
             
+            boolean useCallChannel = "new_order".equalsIgnoreCase(type) || "test".equalsIgnoreCase(type);
             // ✅ Show notification with full-screen intent (works when app is closed!)
             sendHighPriorityNotification(
                 title != null ? title : "طلب جديد",
-                body != null ? body : "لديك طلب جديد"
+                body != null ? body : "لديك طلب جديد",
+                useCallChannel
             );
         }
         // Fallback: Check if message contains a notification payload (backward compatibility)
@@ -48,7 +51,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String title = remoteMessage.getNotification().getTitle();
             String body = remoteMessage.getNotification().getBody();
             
-            sendHighPriorityNotification(title, body);
+            sendHighPriorityNotification(title, body, true);
         }
         else {
             Log.w(TAG, "⚠️ Message received but no data or notification payload");
@@ -61,9 +64,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // Token will be handled by Capacitor plugin
     }
 
-    private void sendHighPriorityNotification(String title, String body) {
-        // Create notification channel (required for Android 8.0+)
+    private void sendHighPriorityNotification(String title, String body, boolean useCallChannel) {
+        // Create notification channels (required for Android 8.0+)
         createNotificationChannel();
+
+        // Choose channel depending on type
+        String channelId = useCallChannel ? CALL_CHANNEL_ID : CHANNEL_ID;
 
         // Intent to launch MainActivity when notification is tapped
         Intent intent = new Intent(this, MainActivity.class);
@@ -90,58 +96,79 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // Custom sound
-        Uri soundUri = Uri.parse("android.resource://" + getPackageName() + "/raw/short_notification");
+        // Custom sounds (pre-O only; O+ uses channel sound)
+        Uri defaultSound = Uri.parse("android.resource://" + getPackageName() + "/raw/short_notification");
+        Uri callSound = Uri.parse("android.resource://" + getPackageName() + "/raw/notification_sound");
+        Uri soundUri = useCallChannel ? callSound : defaultSound;
 
         // Build the notification with maximum priority
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_stat_icon_config_sample)
             .setContentTitle(title != null ? title : "طلب جديد")
             .setContentText(body != null ? body : "لديك طلب جديد")
             .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_CALL) // Treat as incoming call
+            .setCategory(useCallChannel ? NotificationCompat.CATEGORY_CALL : NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .setSound(soundUri)
-            .setVibrate(new long[]{0, 1000, 500, 1000}) // Pattern: delay, vibrate, sleep, vibrate
+            .setVibrate(new long[]{0, 1000, 500, 1000})
             .setContentIntent(pendingIntent)
-            .setFullScreenIntent(fullScreenPendingIntent, true) // Key for showing on lock screen
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC); // Show on lock screen
+            .setFullScreenIntent(fullScreenPendingIntent, true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
         // Show the notification
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         notificationManager.notify((int) System.currentTimeMillis(), builder.build());
         
-        Log.d(TAG, "✅ High-priority notification sent with full-screen intent");
+        Log.d(TAG, "✅ High-priority notification sent with full-screen intent on channel: " + channelId);
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+
+            // Default channel
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
                 "New Orders",
-                NotificationManager.IMPORTANCE_MAX  // ✅ CHANGED: Maximum priority for Uber-style popup
+                NotificationManager.IMPORTANCE_MAX
             );
-            
             channel.setDescription("Notifications for new orders");
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
             channel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
-            channel.setShowBadge(true);  // ✅ ADDED: Show badge on app icon
-            channel.setBypassDnd(true);  // ✅ ADDED: Bypass Do Not Disturb mode
-            
-            // Set custom sound
+            channel.setShowBadge(true);
+            channel.setBypassDnd(true);
+
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                 .build();
-            
             Uri soundUri = Uri.parse("android.resource://" + getPackageName() + "/raw/short_notification");
             channel.setSound(soundUri, audioAttributes);
-            
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
-            
-            Log.d(TAG, "✅ Notification channel created");
+
+            // Call-style channel
+            NotificationChannel callChannel = new NotificationChannel(
+                CALL_CHANNEL_ID,
+                "Booking Calls",
+                NotificationManager.IMPORTANCE_MAX
+            );
+            callChannel.setDescription("Incoming booking alerts (call style)");
+            callChannel.enableVibration(true);
+            callChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
+            callChannel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            callChannel.setShowBadge(true);
+            callChannel.setBypassDnd(true);
+
+            AudioAttributes alarmAttributes = new AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .build();
+            Uri alarmSound = Uri.parse("android.resource://" + getPackageName() + "/raw/notification_sound");
+            callChannel.setSound(alarmSound, alarmAttributes);
+            notificationManager.createNotificationChannel(callChannel);
+
+            Log.d(TAG, "✅ Notification channels ensured (" + CHANNEL_ID + ", " + CALL_CHANNEL_ID + ")");
         }
     }
 }

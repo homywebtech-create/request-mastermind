@@ -70,28 +70,53 @@ public class MainActivity extends BridgeActivity {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Default new orders channel (heads-up)
             NotificationChannel channel = new NotificationChannel(
                 "new-orders-v2",
                 "New Orders",
-                NotificationManager.IMPORTANCE_MAX  // ✅ CHANGED: Maximum priority
+                NotificationManager.IMPORTANCE_MAX  // Maximum priority
             );
             channel.setDescription("Notifications for new orders");
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[]{0, 300, 100, 300});
-            channel.setShowBadge(true);  // ✅ ADDED
-            channel.setBypassDnd(true);  // ✅ ADDED
-            
-            // Set custom sound
+            channel.setShowBadge(true);
+            channel.setBypassDnd(true);
+
+            // Sound for default channel
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                 .build();
-            
+
             Uri soundUri = Uri.parse("android.resource://" + getPackageName() + "/raw/short_notification");
             channel.setSound(soundUri, audioAttributes);
-            
+
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
+
+            // Call-style channel for urgent bookings (full-screen intent)
+            NotificationChannel callChannel = new NotificationChannel(
+                "booking-calls",
+                "Booking Calls",
+                NotificationManager.IMPORTANCE_MAX
+            );
+            callChannel.setDescription("Incoming booking alerts (call style)");
+            callChannel.enableVibration(true);
+            callChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
+            callChannel.setShowBadge(true);
+            callChannel.setBypassDnd(true);
+            callChannel.setLockscreenVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
+
+            // Use ALARM usage to maximize audibility and lockscreen behavior
+            AudioAttributes alarmAttributes = new AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .build();
+
+            Uri alarmSound = Uri.parse("android.resource://" + getPackageName() + "/raw/notification_sound");
+            callChannel.setSound(alarmSound, alarmAttributes);
+
+            notificationManager.createNotificationChannel(callChannel);
         }
     }
     

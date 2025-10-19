@@ -123,39 +123,53 @@ serve(async (req) => {
     // Send FCM notifications using Firebase Admin SDK v1 API
     const results = await Promise.allSettled(
       tokens.map(async (deviceToken) => {
-        // 🔁 Hybrid approach: include both notification (system-handled when app is killed)
-        // and data (so our service can render rich UI when app is in foreground/background).
-        // IMPORTANT: we DO NOT set a custom Android channel here to avoid drops before the app creates it.
-        const message = {
-          message: {
-            token: deviceToken.token,
-            notification: {
-              title: title || 'طلب جديد',
-              body: body || 'لديك طلب جديد',
-            },
-            data: {
-              type: 'new_order',
-              title: title || 'طلب جديد',
-              body: body || 'لديك طلب جديد',
-              route: '/specialist/new-orders',
-              click_action: 'FLUTTER_NOTIFICATION_CLICK',
-              orderId: data.orderId?.toString() || '',
-              customerId: data.customerId?.toString() || '',
-              serviceType: data.serviceType?.toString() || '',
-              price: data.price?.toString() || '',
-              timestamp: new Date().toISOString(),
-              ...Object.fromEntries(
-                Object.entries(data).map(([k, v]) => [k, String(v)])
-              ),
-            },
-            android: {
-              priority: 'high',
-              direct_boot_ok: true
-            },
-          }
+        const isAndroid = (deviceToken.platform || '').toLowerCase() === 'android';
+
+        // Build message: data-only for Android so our service can show full-screen intent
+        // Keep notification+data for others (iOS/web)
+        const baseData: Record<string, string> = {
+          type: (data.type as string) || 'new_order',
+          title: title || 'طلب جديد',
+          body: body || 'لديك طلب جديد',
+          route: '/specialist/new-orders',
+          click_action: 'FLUTTER_NOTIFICATION_CLICK',
+          orderId: data.orderId?.toString() || '',
+          customerId: data.customerId?.toString() || '',
+          serviceType: data.serviceType?.toString() || '',
+          price: data.price?.toString() || '',
+          timestamp: new Date().toISOString(),
+          ...Object.fromEntries(
+            Object.entries(data).map(([k, v]) => [k, String(v)])
+          ),
         };
 
-        console.log(`📤 [FCM] Sending to specialist ${deviceToken.specialist_id}...`);
+        const message = isAndroid
+          ? {
+              message: {
+                token: deviceToken.token,
+                data: baseData,
+                android: {
+                  priority: 'high',
+                  direct_boot_ok: true,
+                },
+              },
+            }
+          : {
+              message: {
+                token: deviceToken.token,
+                notification: {
+                  title: title || 'طلب جديد',
+                  body: body || 'لديك طلب جديد',
+                },
+                data: baseData,
+                android: {
+                  priority: 'high',
+                  direct_boot_ok: true,
+                },
+              },
+            };
+
+        console.log(`📤 [FCM] Sending to specialist ${deviceToken.specialist_id} (${deviceToken.platform})...`);
         console.log(`📤 [FCM] Message payload:`, JSON.stringify(message, null, 2));
 
         let response;
