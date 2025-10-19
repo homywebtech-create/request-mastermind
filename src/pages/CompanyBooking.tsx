@@ -844,74 +844,164 @@ export default function CompanyBooking() {
             {/* Step 1: Booking Type or Contract Duration */}
             {currentStep === 1 && (
               <div className="space-y-6">
-                <h3 className="text-lg md:text-xl font-semibold flex items-center gap-2">
+                {/* Welcome Section with Company Logo */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-6 sm:p-8 border-2 border-primary/20 shadow-lg">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl" />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/10 rounded-full -ml-12 -mb-12 blur-2xl" />
+                  
+                  <div className="relative flex flex-col items-center text-center space-y-4">
+                    {/* Company Logo */}
+                    {company?.logo_url ? (
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
+                        <img 
+                          src={company.logo_url} 
+                          alt={company.name}
+                          className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-4 border-white dark:border-gray-800 shadow-xl"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/20 flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-xl">
+                        <Building2 className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
+                      </div>
+                    )}
+                    
+                    {/* Welcome Text */}
+                    <div className="space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                        {language === 'ar' ? 'مرحباً بك!' : 'Welcome!'}
+                      </h2>
+                      <p className="text-base sm:text-lg text-muted-foreground font-medium">
+                        {company?.name}
+                      </p>
+                      <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
+                        {language === 'ar' 
+                          ? 'نحن سعداء بخدمتك. يرجى اختيار نوع الحجز المناسب لك'
+                          : 'We are happy to serve you. Please choose your preferred booking type'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Booking Type Selection */}
+                <div className="space-y-4">
+                  <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 px-2">
+                    {isMonthlyService ? (
+                      <>
+                        <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                        <span>{t.selectContractDuration}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                        <span>{t.selectBookingType}</span>
+                      </>
+                    )}
+                  </h3>
+                  
                   {isMonthlyService ? (
-                    <>
-                      <FileText className="h-5 w-5 text-primary" />
-                      {t.selectContractDuration}
-                    </>
+                    // Monthly Service - Contract Duration Options
+                    <RadioGroup value={contractDuration} onValueChange={setContractDuration}>
+                      <div className="space-y-3">
+                        {[
+                          { value: '1-month', label: t.oneMonth, icon: '📅', duration: '30' },
+                          { value: '2-months', label: t.twoMonths, icon: '📆', duration: '60' },
+                          { value: '3-months', label: t.threeMonths, icon: '🗓️', duration: '90' }
+                        ].map((option) => (
+                          <label
+                            key={option.value}
+                            className={cn(
+                              'group relative flex items-center space-x-4 space-x-reverse border-2 rounded-2xl p-5 cursor-pointer transition-all active:scale-98 overflow-hidden',
+                              contractDuration === option.value
+                                ? 'border-primary bg-gradient-to-r from-primary/15 to-primary/5 shadow-lg scale-[1.02]'
+                                : 'border-border hover:border-primary/50 hover:bg-muted/50 hover:shadow-md'
+                            )}
+                          >
+                            {/* Background decoration */}
+                            <div className={cn(
+                              'absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 transition-opacity',
+                              contractDuration === option.value && 'opacity-100'
+                            )} />
+                            
+                            <RadioGroupItem value={option.value} id={option.value} className="relative z-10" />
+                            
+                            {/* Icon */}
+                            <div className={cn(
+                              'relative z-10 flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-2xl transition-all',
+                              contractDuration === option.value
+                                ? 'bg-primary/20 scale-110'
+                                : 'bg-muted/50 group-hover:bg-muted'
+                            )}>
+                              {option.icon}
+                            </div>
+                            
+                            <div className="relative z-10 flex-1 min-w-0">
+                              <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="font-bold text-base sm:text-lg">{option.label}</span>
+                                <span className="text-xs sm:text-sm text-muted-foreground">
+                                  ({option.duration} {language === 'ar' ? 'يوم' : 'days'})
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {contractDuration === option.value && (
+                              <Check className="relative z-10 h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0 animate-scale-in" />
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </RadioGroup>
                   ) : (
-                    <>
-                      <Calendar className="h-5 w-5 text-primary" />
-                      {t.selectBookingType}
-                    </>
+                    // General Cleaning - Booking Type Options
+                    <RadioGroup value={bookingType} onValueChange={setBookingType}>
+                      <div className="space-y-3">
+                        {[
+                          { value: 'once', label: t.oneTime, icon: '🏠', desc: language === 'ar' ? 'مرة واحدة فقط' : 'One time only' },
+                          { value: 'weekly', label: t.weekly, icon: '📅', desc: language === 'ar' ? 'كل أسبوع' : 'Every week' },
+                          { value: 'bi-weekly', label: t.biWeekly, icon: '📆', desc: language === 'ar' ? 'كل أسبوعين' : 'Every 2 weeks' },
+                          { value: 'monthly', label: t.monthly, icon: '🗓️', desc: language === 'ar' ? 'كل شهر' : 'Every month' }
+                        ].map((option) => (
+                          <label
+                            key={option.value}
+                            className={cn(
+                              'group relative flex items-center space-x-4 space-x-reverse border-2 rounded-2xl p-5 cursor-pointer transition-all active:scale-98 overflow-hidden',
+                              bookingType === option.value
+                                ? 'border-primary bg-gradient-to-r from-primary/15 to-primary/5 shadow-lg scale-[1.02]'
+                                : 'border-border hover:border-primary/50 hover:bg-muted/50 hover:shadow-md'
+                            )}
+                          >
+                            {/* Background decoration */}
+                            <div className={cn(
+                              'absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 transition-opacity',
+                              bookingType === option.value && 'opacity-100'
+                            )} />
+                            
+                            <RadioGroupItem value={option.value} id={option.value} className="relative z-10" />
+                            
+                            {/* Icon */}
+                            <div className={cn(
+                              'relative z-10 flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-2xl transition-all',
+                              bookingType === option.value
+                                ? 'bg-primary/20 scale-110'
+                                : 'bg-muted/50 group-hover:bg-muted'
+                            )}>
+                              {option.icon}
+                            </div>
+                            
+                            <div className="relative z-10 flex-1 min-w-0">
+                              <div className="font-bold text-base sm:text-lg">{option.label}</div>
+                              <div className="text-xs sm:text-sm text-muted-foreground mt-0.5">{option.desc}</div>
+                            </div>
+                            
+                            {bookingType === option.value && (
+                              <Check className="relative z-10 h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0 animate-scale-in" />
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </RadioGroup>
                   )}
-                </h3>
-                
-                {isMonthlyService ? (
-                  // Monthly Service - Contract Duration Options
-                  <RadioGroup value={contractDuration} onValueChange={setContractDuration}>
-                    <div className="space-y-3">
-                      {[
-                        { value: '1-month', label: t.oneMonth },
-                        { value: '2-months', label: t.twoMonths },
-                        { value: '3-months', label: t.threeMonths }
-                      ].map((option) => (
-                        <label
-                          key={option.value}
-                          className={cn(
-                            'flex items-center space-x-3 space-x-reverse border-2 rounded-xl p-4 cursor-pointer transition-all active:scale-98',
-                            contractDuration === option.value
-                              ? 'border-primary bg-primary/10 shadow-md'
-                              : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                          )}
-                        >
-                          <RadioGroupItem value={option.value} id={option.value} />
-                          <div className="flex-1">
-                            <span className="font-semibold text-base">{option.label}</span>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  </RadioGroup>
-                ) : (
-                  // General Cleaning - Booking Type Options
-                  <RadioGroup value={bookingType} onValueChange={setBookingType}>
-                    <div className="space-y-3">
-                      {[
-                        { value: 'once', label: t.oneTime },
-                        { value: 'weekly', label: t.weekly },
-                        { value: 'bi-weekly', label: t.biWeekly },
-                        { value: 'monthly', label: t.monthly }
-                      ].map((option) => (
-                        <label
-                          key={option.value}
-                          className={cn(
-                            'flex items-center space-x-3 space-x-reverse border-2 rounded-xl p-4 cursor-pointer transition-all active:scale-98',
-                            bookingType === option.value
-                              ? 'border-primary bg-primary/10 shadow-md'
-                              : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                          )}
-                        >
-                          <RadioGroupItem value={option.value} id={option.value} />
-                          <div className="flex-1">
-                            <span className="font-semibold text-base">{option.label}</span>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  </RadioGroup>
-                )}
+                </div>
               </div>
             )}
 
