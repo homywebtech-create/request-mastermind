@@ -326,6 +326,10 @@ export default function CompanyBooking() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      
+      console.log('🚀 Starting fetchData...');
+      console.log('🆔 Order ID:', orderId);
+      console.log('🏢 Company ID:', companyId);
 
       // Fetch order info to get hours_count and service_type
       const { data: orderData, error: orderError } = await supabase
@@ -375,6 +379,11 @@ export default function CompanyBooking() {
         .single();
 
       if (companyError) throw companyError;
+      
+      console.log('🏢 Company Data:', companyData);
+      console.log('🏢 Company Logo URL:', companyData?.logo_url);
+      console.log('🏢 Company Name:', companyData?.name);
+      
       setCompany(companyData);
 
       console.log('🔍 Fetching specialists for order:', orderId, 'company:', companyId);
@@ -809,6 +818,9 @@ export default function CompanyBooking() {
     );
   }
 
+  console.log('📋 Render - Company State:', company);
+  console.log('📋 Render - Company ID from URL:', companyId);
+
   return (
     <div className="min-h-screen bg-white dark:bg-background py-8 px-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="container mx-auto max-w-4xl">
@@ -818,7 +830,7 @@ export default function CompanyBooking() {
         </div>
 
         {/* Company Header - Compact */}
-        {company && (
+        {company ? (
           <div className="flex items-center gap-3 sm:gap-4 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-sm mb-6">
             {/* Company Logo */}
             {company.logo_url ? (
@@ -826,6 +838,10 @@ export default function CompanyBooking() {
                 src={company.logo_url} 
                 alt={company.name}
                 className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border-2 border-primary/40 shadow-md flex-shrink-0"
+                onError={(e) => {
+                  console.error('❌ Error loading company logo:', company.logo_url);
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             ) : (
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 flex items-center justify-center border-2 border-primary/40 shadow-md flex-shrink-0">
@@ -842,6 +858,15 @@ export default function CompanyBooking() {
                 {company.name}
               </h2>
             </div>
+          </div>
+        ) : (
+          <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-200 mb-6">
+            <p className="text-sm text-yellow-800">
+              {language === 'ar' 
+                ? '⚠️ لا توجد معلومات الشركة. معرف الشركة: ' + (companyId || 'غير محدد')
+                : '⚠️ Company information not found. Company ID: ' + (companyId || 'undefined')
+              }
+            </p>
           </div>
         )}
 
