@@ -99,7 +99,7 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Default new orders channel (heads-up)
             NotificationChannel channel = new NotificationChannel(
-                "new-orders-v2",
+                "new-orders-v3",
                 "New Orders",
                 NotificationManager.IMPORTANCE_MAX  // Maximum priority
             );
@@ -123,7 +123,7 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
 
             // Call-style channel for urgent bookings (full-screen intent)
             NotificationChannel callChannel = new NotificationChannel(
-                "booking-calls",
+                "booking-calls-v2",
                 "Booking Calls",
                 NotificationManager.IMPORTANCE_MAX
             );
