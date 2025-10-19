@@ -91,27 +91,44 @@ const PushNotificationTest = () => {
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('*, specialists!inner(id, name, phone)')
+        .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (profileError || !profile?.specialists) {
+      if (profileError || !profile) {
         addResult({
           step: "Specialist Profile",
           status: "error",
-          message: "No specialist profile found for this user",
+          message: "No profile found for this user",
           details: profileError
         });
         setTesting(false);
         return;
       }
 
-      const specialistId = (profile.specialists as any).id;
+      // Now get the specialist using the phone number
+      const { data: specialist, error: specialistError } = await supabase
+        .from('specialists')
+        .select('id, name, phone')
+        .eq('phone', profile.phone)
+        .single();
+
+      if (specialistError || !specialist) {
+        addResult({
+          step: "Specialist Profile",
+          status: "error",
+          message: "No specialist profile found for this phone number",
+          details: specialistError
+        });
+        setTesting(false);
+        return;
+      }
+
       addResult({
         step: "Specialist Profile",
         status: "success",
-        message: `Specialist found: ${(profile.specialists as any).name}`,
-        details: { specialistId }
+        message: `Specialist found: ${specialist.name}`,
+        details: { specialistId: specialist.id }
       });
 
       // Step 4: Initialize Firebase
@@ -122,7 +139,7 @@ const PushNotificationTest = () => {
       });
 
       try {
-        await firebaseNotifications.initialize(specialistId);
+        await firebaseNotifications.initialize(specialist.id);
         addResult({
           step: "Firebase Initialization",
           status: "success",
@@ -149,7 +166,7 @@ const PushNotificationTest = () => {
       const { data: deviceToken, error: tokenError } = await supabase
         .from('device_tokens')
         .select('token, platform, created_at, last_used_at')
-        .eq('specialist_id', specialistId)
+        .eq('specialist_id', specialist.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -187,7 +204,7 @@ const PushNotificationTest = () => {
         'send-push-notification',
         {
           body: {
-            specialistIds: [specialistId],
+            specialistIds: [specialist.id],
             title: "🧪 Test Notification",
             body: "This is a test push notification from the debug screen",
             data: {
