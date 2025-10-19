@@ -445,24 +445,8 @@ export default function CompanyBooking() {
   };
 
   const handleNext = () => {
-    if (currentStep === 1 && !location) {
-      toast({
-        title: t.missingData,
-        description: t.selectLocationError,
-        variant: 'destructive',
-      });
-      return;
-    }
-    if (currentStep === 1 && !buildingInfo.trim()) {
-      toast({
-        title: t.missingData,
-        description: t.enterBuildingInfo,
-        variant: 'destructive',
-      });
-      return;
-    }
-    // For monthly service, check contract duration instead of booking type
-    if (currentStep === 2 && isMonthlyService && !contractDuration) {
+    // Step 1: Booking Type / Contract Duration
+    if (currentStep === 1 && isMonthlyService && !contractDuration) {
       toast({
         title: t.missingData,
         description: t.selectContractDurationError,
@@ -470,8 +454,7 @@ export default function CompanyBooking() {
       });
       return;
     }
-    // For general cleaning, check booking type
-    if (currentStep === 2 && !isMonthlyService && !bookingType) {
+    if (currentStep === 1 && !isMonthlyService && !bookingType) {
       toast({
         title: t.missingData,
         description: t.selectBookingTypeError,
@@ -479,7 +462,9 @@ export default function CompanyBooking() {
       });
       return;
     }
-    if (currentStep === 3 && !bookingDateType) {
+    
+    // Step 2: Date & Specialist
+    if (currentStep === 2 && !bookingDateType) {
       toast({
         title: t.missingData,
         description: t.selectDateError,
@@ -487,7 +472,7 @@ export default function CompanyBooking() {
       });
       return;
     }
-    if (currentStep === 3 && bookingDateType === 'custom' && !customDate) {
+    if (currentStep === 2 && bookingDateType === 'custom' && !customDate) {
       toast({
         title: t.missingData,
         description: t.selectCustomDateError,
@@ -495,7 +480,7 @@ export default function CompanyBooking() {
       });
       return;
     }
-    if (currentStep === 3 && selectedSpecialistIds.length === 0) {
+    if (currentStep === 2 && selectedSpecialistIds.length === 0) {
       toast({
         title: t.missingData,
         description: t.selectSpecialistError,
@@ -503,7 +488,7 @@ export default function CompanyBooking() {
       });
       return;
     }
-    if (currentStep === 3 && !selectedTime) {
+    if (currentStep === 2 && !selectedTime) {
       toast({
         title: t.missingData,
         description: t.selectTimeError,
@@ -511,8 +496,9 @@ export default function CompanyBooking() {
       });
       return;
     }
-    // Step 4 validation - Terms or Contract
-    if (currentStep === 4 && !isMonthlyService && !termsAccepted) {
+    
+    // Step 3: Terms or Contract
+    if (currentStep === 3 && !isMonthlyService && !termsAccepted) {
       toast({
         title: t.missingData,
         description: t.pleaseAcceptTerms,
@@ -520,10 +506,28 @@ export default function CompanyBooking() {
       });
       return;
     }
-    if (currentStep === 4 && isMonthlyService && !contractType) {
+    if (currentStep === 3 && isMonthlyService && !contractType) {
       toast({
         title: t.missingData,
         description: t.pleaseSelectContractType,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Step 4: Location
+    if (currentStep === 4 && !location) {
+      toast({
+        title: t.missingData,
+        description: t.selectLocationError,
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (currentStep === 4 && !buildingInfo.trim()) {
+      toast({
+        title: t.missingData,
+        description: t.enterBuildingInfo,
         variant: 'destructive',
       });
       return;
@@ -740,35 +744,35 @@ export default function CompanyBooking() {
 
   const renderStepIndicator = () => {
     const steps = [
-      { number: 1, title: t.location },
-      { number: 2, title: isMonthlyService ? t.contractDuration : t.bookingType },
-      { number: 3, title: language === 'ar' ? 'التاريخ والمحترفة' : 'Date & Specialist' },
-      { number: 4, title: isMonthlyService ? t.contract : t.termsAndConditions }
+      { number: 1, title: isMonthlyService ? t.contractDuration : t.bookingType },
+      { number: 2, title: language === 'ar' ? 'التاريخ والمحترفة' : 'Date & Specialist' },
+      { number: 3, title: isMonthlyService ? t.contract : t.termsAndConditions },
+      { number: 4, title: t.location }
     ];
 
     return (
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => (
             <div key={step.number} className="flex items-center flex-1">
               <div className="flex flex-col items-center relative">
                 <div
                   className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all',
+                    'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold transition-all shadow-sm',
                     currentStep >= step.number
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground scale-110'
                       : 'bg-muted text-muted-foreground'
                   )}
                 >
                   {currentStep > step.number ? (
-                    <Check className="h-5 w-5" />
+                    <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                   ) : (
-                    step.number
+                    <span className="text-sm sm:text-base">{step.number}</span>
                   )}
                 </div>
-                <div className="mt-2 text-center">
+                <div className="mt-1.5 sm:mt-2 text-center max-w-[60px] sm:max-w-none">
                   <div className={cn(
-                    'text-sm font-medium',
+                    'text-[10px] sm:text-xs md:text-sm font-medium leading-tight',
                     currentStep >= step.number ? 'text-foreground' : 'text-muted-foreground'
                   )}>
                     {step.title}
@@ -778,7 +782,7 @@ export default function CompanyBooking() {
               {index < steps.length - 1 && (
                 <div
                   className={cn(
-                    'flex-1 h-1 mx-2 transition-all',
+                    'flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2 transition-all rounded-full',
                     currentStep > step.number ? 'bg-primary' : 'bg-muted'
                   )}
                 />
@@ -833,41 +837,25 @@ export default function CompanyBooking() {
 
         {/* Steps */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             {renderStepIndicator()}
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Step 1: Location */}
+          <CardContent className="space-y-6 px-3 sm:px-6">
+            {/* Step 1: Booking Type or Contract Duration */}
             {currentStep === 1 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">{t.selectLocation}</h3>
-                
-                <MapLocationPicker
-                  onLocationSelect={(lat, lng) => setLocation({ lat, lng })}
-                  initialLat={location?.lat}
-                  initialLng={location?.lng}
-                  language={language}
-                />
-
-                <div className="space-y-2">
-                  <Label htmlFor="buildingInfo">{t.buildingInfo}</Label>
-                  <Textarea
-                    id="buildingInfo"
-                    value={buildingInfo}
-                    onChange={(e) => setBuildingInfo(e.target.value)}
-                    placeholder={t.buildingPlaceholder}
-                    rows={4}
-                    dir="auto"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Booking Type or Contract Duration */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold">
-                  {isMonthlyService ? t.selectContractDuration : t.selectBookingType}
+                <h3 className="text-lg md:text-xl font-semibold flex items-center gap-2">
+                  {isMonthlyService ? (
+                    <>
+                      <FileText className="h-5 w-5 text-primary" />
+                      {t.selectContractDuration}
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="h-5 w-5 text-primary" />
+                      {t.selectBookingType}
+                    </>
+                  )}
                 </h3>
                 
                 {isMonthlyService ? (
@@ -882,15 +870,15 @@ export default function CompanyBooking() {
                         <label
                           key={option.value}
                           className={cn(
-                            'flex items-center space-x-3 space-x-reverse border-2 rounded-lg p-4 cursor-pointer transition-all',
+                            'flex items-center space-x-3 space-x-reverse border-2 rounded-xl p-4 cursor-pointer transition-all active:scale-98',
                             contractDuration === option.value
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:border-primary/50'
+                              ? 'border-primary bg-primary/10 shadow-md'
+                              : 'border-border hover:border-primary/50 hover:bg-muted/50'
                           )}
                         >
                           <RadioGroupItem value={option.value} id={option.value} />
                           <div className="flex-1">
-                            <span className="font-medium">{option.label}</span>
+                            <span className="font-semibold text-base">{option.label}</span>
                           </div>
                         </label>
                       ))}
@@ -909,15 +897,15 @@ export default function CompanyBooking() {
                         <label
                           key={option.value}
                           className={cn(
-                            'flex items-center space-x-3 space-x-reverse border-2 rounded-lg p-4 cursor-pointer transition-all',
+                            'flex items-center space-x-3 space-x-reverse border-2 rounded-xl p-4 cursor-pointer transition-all active:scale-98',
                             bookingType === option.value
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:border-primary/50'
+                              ? 'border-primary bg-primary/10 shadow-md'
+                              : 'border-border hover:border-primary/50 hover:bg-muted/50'
                           )}
                         >
                           <RadioGroupItem value={option.value} id={option.value} />
                           <div className="flex-1">
-                            <span className="font-medium">{option.label}</span>
+                            <span className="font-semibold text-base">{option.label}</span>
                           </div>
                         </label>
                       ))}
@@ -927,8 +915,8 @@ export default function CompanyBooking() {
               </div>
             )}
 
-            {/* Step 3: Date Selection & Specialists */}
-            {currentStep === 3 && (
+            {/* Step 2: Date Selection & Specialists */}
+            {currentStep === 2 && (
               <div className="space-y-6">
                 {/* Date Selection Section */}
                 <div className="space-y-4">
@@ -1339,8 +1327,8 @@ export default function CompanyBooking() {
               </div>
             )}
 
-            {/* Step 4: Terms & Conditions or Contract */}
-            {currentStep === 4 && (
+            {/* Step 3: Terms & Conditions or Contract */}
+            {currentStep === 3 && (
               <div className="space-y-6">
                 {isMonthlyService ? (
                   <MonthlyContract
@@ -1376,24 +1364,54 @@ export default function CompanyBooking() {
               </div>
             )}
 
+            {/* Step 4: Location */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <h3 className="text-lg md:text-xl font-semibold flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  {t.selectLocation}
+                </h3>
+                
+                <MapLocationPicker
+                  onLocationSelect={(lat, lng) => setLocation({ lat, lng })}
+                  initialLat={location?.lat}
+                  initialLng={location?.lng}
+                  language={language}
+                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="buildingInfo" className="text-base font-semibold">{t.buildingInfo}</Label>
+                  <Textarea
+                    id="buildingInfo"
+                    value={buildingInfo}
+                    onChange={(e) => setBuildingInfo(e.target.value)}
+                    placeholder={t.buildingPlaceholder}
+                    rows={4}
+                    dir="auto"
+                    className="resize-none text-base"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Navigation Buttons */}
-            <div className="flex gap-3 pt-6 border-t">
+            <div className="flex gap-3 pt-6 border-t mt-6">
               {currentStep > 1 && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handlePrevious}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 h-11 sm:h-12 px-4 sm:px-6 text-sm sm:text-base font-semibold"
                 >
                   {language === 'ar' ? (
                     <>
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
                       {t.previous}
                     </>
                   ) : (
                     <>
+                      <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                       {t.previous}
-                      <ArrowLeft className="h-4 w-4" />
                     </>
                   )}
                 </Button>
@@ -1403,17 +1421,17 @@ export default function CompanyBooking() {
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="flex-1 flex items-center justify-center gap-2"
+                  className="flex-1 flex items-center justify-center gap-2 h-11 sm:h-12 px-4 sm:px-6 text-sm sm:text-base font-semibold shadow-md"
                 >
                   {language === 'ar' ? (
                     <>
                       {t.next}
-                      <ArrowLeft className="h-4 w-4" />
+                      <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                     </>
                   ) : (
                     <>
-                      <ArrowRight className="h-4 w-4" />
                       {t.next}
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
                     </>
                   )}
                 </Button>
@@ -1422,12 +1440,14 @@ export default function CompanyBooking() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={
+                    !location ||
+                    !buildingInfo.trim() ||
                     !bookingDateType || 
                     selectedSpecialistIds.length === 0 || 
                     !selectedTime ||
                     (isMonthlyService ? !contractType : !termsAccepted)
                   }
-                  className="flex-1 flex items-center justify-center gap-2 text-base h-12"
+                  className="flex-1 flex items-center justify-center gap-2 h-11 sm:h-12 px-4 sm:px-6 text-sm sm:text-base font-bold shadow-lg"
                 >
                   <Check className="h-5 w-5" />
                   <span className="flex items-center gap-2">
