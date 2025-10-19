@@ -881,65 +881,70 @@ export default function CompanyBooking() {
         </div>
 
         {/* Company Header - Compact */}
-        {company ? (
-          <div className="flex items-center gap-3 sm:gap-4 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-sm mb-6">
-            {/* Company Logo */}
-            {company.logo_url ? (
-              <img 
-                src={company.logo_url} 
-                alt={company.name}
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border-2 border-primary/40 shadow-md flex-shrink-0"
-                onError={(e) => {
-                  console.error('❌ Error loading company logo:', company.logo_url);
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+        {currentStep === 1 && (
+          <>
+            {company ? (
+              <div className="flex items-center gap-3 sm:gap-4 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-sm mb-6">
+                {/* Company Logo */}
+                {company.logo_url ? (
+                  <img 
+                    src={company.logo_url} 
+                    alt={company.name}
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border-2 border-primary/40 shadow-md flex-shrink-0"
+                    onError={(e) => {
+                      console.error('❌ Error loading company logo:', company.logo_url);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 flex items-center justify-center border-2 border-primary/40 shadow-md flex-shrink-0">
+                    <Building2 className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+                  </div>
+                )}
+                
+                {/* Company Name */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground font-medium mb-1">
+                    {language === 'ar' ? 'مقدم الخدمة' : 'Service Provider'}
+                  </p>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
+                    {company.name}
+                  </h2>
+                </div>
+              </div>
             ) : (
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 flex items-center justify-center border-2 border-primary/40 shadow-md flex-shrink-0">
-                <Building2 className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+              <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-200 mb-6">
+                <p className="text-sm text-yellow-800">
+                  {language === 'ar' 
+                    ? '⚠️ لا توجد معلومات الشركة. معرف الشركة: ' + (companyId || 'غير محدد')
+                    : '⚠️ Company information not found. Company ID: ' + (companyId || 'undefined')
+                  }
+                </p>
               </div>
             )}
-            
-            {/* Company Name */}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium mb-1">
-                {language === 'ar' ? 'مقدم الخدمة' : 'Service Provider'}
-              </p>
-              <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
-                {company.name}
-              </h2>
-            </div>
-          </div>
-        ) : (
-          <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-200 mb-6">
-            <p className="text-sm text-yellow-800">
-              {language === 'ar' 
-                ? '⚠️ لا توجد معلومات الشركة. معرف الشركة: ' + (companyId || 'غير محدد')
-                : '⚠️ Company information not found. Company ID: ' + (companyId || 'undefined')
-              }
-            </p>
-          </div>
+          </>
         )}
 
         {/* Order Information Card */}
-        <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-                <FileUser className="h-5 w-5 text-primary" />
-                {language === 'ar' ? 'معلومات الطلب الحالية' : 'Current Order Information'}
-              </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowEditWarningDialog(true)}
-                className="gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                {language === 'ar' ? 'طلب تعديل' : 'Request Edit'}
-              </Button>
-            </div>
-          </CardHeader>
+        {currentStep === 1 && (
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                  <FileUser className="h-5 w-5 text-primary" />
+                  {language === 'ar' ? 'معلومات الطلب الحالية' : 'Current Order Information'}
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEditWarningDialog(true)}
+                  className="gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  {language === 'ar' ? 'طلب تعديل' : 'Request Edit'}
+                </Button>
+              </div>
+            </CardHeader>
           <CardContent className="space-y-3">
             {!showEditOrderInfo ? (
               /* Display Current Info */
@@ -1115,6 +1120,7 @@ export default function CompanyBooking() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Edit Warning Dialog */}
         <AlertDialog open={showEditWarningDialog} onOpenChange={setShowEditWarningDialog}>
