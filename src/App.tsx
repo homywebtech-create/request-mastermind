@@ -11,8 +11,6 @@ import Services from "./pages/Services";
 import Orders from "./pages/Orders";
 import CompanyAuth from "./pages/CompanyAuth";
 import CompanyPortal from "./pages/CompanyPortal";
-import CustomerAuth from "./pages/CustomerAuth";
-import CustomerPortal from "./pages/CustomerPortal";
 import Specialists from "./pages/Specialists";
 import SpecialistAuth from "./pages/SpecialistAuth";
 import SpecialistHome from "./pages/specialist/SpecialistHome";
@@ -187,9 +185,7 @@ function AppRouter() {
         {/* Redirect specialist routes to auth in web */}
         <Route path="/specialist-auth" element={<Navigate to="/auth" replace />} />
         <Route path="/specialist-orders" element={<Navigate to="/auth" replace />} />
-        
-        {/* Order tracking route - available in web for testing */}
-        <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+        <Route path="/order-tracking/:orderId" element={<Navigate to="/auth" replace />} />
         
         {/* Admin routes */}
         <Route path="/auth" element={<Auth />} />
@@ -276,15 +272,11 @@ function AppRouter() {
         <Route path="/company-portal" element={<CompanyPortal />} />
         <Route path="/specialists" element={<Specialists />} />
         
-        {/* Customer routes */}
-        <Route path="/customer-auth" element={<CustomerAuth />} />
-        <Route path="/customer-portal" element={<CustomerPortal />} />
-        
         {/* Public specialist registration route */}
         <Route path="/specialist-registration" element={<SpecialistRegistration />} />
         
         {/* Default route */}
-        <Route path="/" element={<Navigate to="/customer-auth" replace />} />
+        <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

@@ -916,11 +916,17 @@ export default function CompanyBooking() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate('/orders')}
+                onClick={() => setShowEditOrderInfo(!showEditOrderInfo)}
                 className="gap-2"
               >
-                <FileText className="h-4 w-4" />
-                {language === 'ar' ? 'طلب تعديل' : 'Request Edit'}
+                {showEditOrderInfo ? (
+                  language === 'ar' ? 'إلغاء' : 'Cancel'
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    {language === 'ar' ? 'طلب تعديل' : 'Request Edit'}
+                  </>
+                )}
               </Button>
             </div>
           </CardHeader>

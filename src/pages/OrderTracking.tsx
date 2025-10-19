@@ -459,18 +459,7 @@ export default function OrderTracking() {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Order Info Card */}
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">{order.customer?.name}</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/customer-portal?orderId=${orderId}`)}
-              className="flex items-center gap-2"
-            >
-              <FileText className="h-4 w-4" />
-              تعديل الطلب
-            </Button>
-          </div>
+          <h2 className="text-2xl font-bold mb-4">{order.customer?.name}</h2>
           <div className="space-y-2 text-sm">
             <p><span className="font-semibold">Service:</span> {order.service_type}</p>
             <p><span className="font-semibold">Area:</span> {order.customer?.area}</p>
