@@ -98,17 +98,31 @@ serve(async (req) => {
         };
 
         console.log(`📤 [FCM] Sending to specialist ${deviceToken.specialist_id}...`);
+        console.log(`📤 [FCM] Message payload:`, JSON.stringify(message, null, 2));
 
-        const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-          method: 'POST',
-          headers: {
-            'Authorization': `key=${serverKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(message),
-        });
+        let response;
+        let result;
+        
+        try {
+          response = await fetch('https://fcm.googleapis.com/fcm/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `key=${serverKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(message),
+          });
 
-        const result = await response.json();
+          console.log(`📝 [FCM] Raw HTTP Status: ${response.status} ${response.statusText}`);
+          
+          const responseText = await response.text();
+          console.log(`📝 [FCM] Raw Response Body:`, responseText);
+          
+          result = JSON.parse(responseText);
+        } catch (fetchError) {
+          console.error(`❌ [FCM] Fetch error for ${deviceToken.specialist_id}:`, fetchError);
+          throw fetchError;
+        }
         
         console.log(`📝 [FCM] Response for ${deviceToken.specialist_id}:`, JSON.stringify(result));
         console.log(`📝 [FCM] HTTP Status: ${response.status}, Response OK: ${response.ok}`);
