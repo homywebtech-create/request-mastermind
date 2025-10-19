@@ -19,26 +19,23 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         registerPlugin(NotificationPermissionPlugin.class);
+        registerPlugin(BatteryOptimizationPlugin.class);
         createNotificationChannel();
         checkAndRequestPermissions();
     }
     
     private void checkAndRequestPermissions() {
-        // 1. Check battery optimization (CRITICAL for background notifications)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Intent intent = new Intent();
-            String packageName = getPackageName();
-            android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
-            
-            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                // Request to disable battery optimization
-                intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                intent.setData(Uri.parse("package:" + packageName));
-                startActivity(intent);
-            }
+        // 1. Battery optimization exemption (CRITICAL for Xiaomi/Redmi devices)
+        BatteryOptimizationHelper.requestBatteryOptimizationExemption(this);
+        
+        // 2. For Xiaomi devices, request autostart permission after a delay
+        if (BatteryOptimizationHelper.isXiaomiDevice()) {
+            new android.os.Handler().postDelayed(() -> {
+                BatteryOptimizationHelper.openAutostartSettings(this);
+            }, 2000);
         }
         
-        // 2. For Android 12+ (API 31+), check if app can use full screen intents
+        // 3. For Android 12+ (API 31+), check if app can use full screen intents
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null && !notificationManager.canUseFullScreenIntent()) {
