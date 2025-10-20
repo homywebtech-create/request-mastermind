@@ -88,12 +88,12 @@ function MobileLanding() {
       try {
         // Check for pending navigation from notification tap
         const { Preferences } = await import('@capacitor/preferences');
-        const { value: pendingRoute } = await Preferences.get({ key: 'pendingNavigation' });
+        const { value: pendingRoute } = await Preferences.get({ key: 'pendingRoute' });
         
         if (pendingRoute) {
           console.log('📍 [PENDING NAV] Found pending navigation:', pendingRoute);
           // Clear the pending navigation
-          await Preferences.remove({ key: 'pendingNavigation' });
+          await Preferences.remove({ key: 'pendingRoute' });
           
           if (user) {
             console.log('✅ [AUTH] User authenticated - navigating to:', pendingRoute);
