@@ -97,52 +97,56 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Default new orders channel (heads-up)
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            
+            // Default new orders channel with rich notification features
             NotificationChannel channel = new NotificationChannel(
                 "new-orders-v3",
                 "New Orders",
-                NotificationManager.IMPORTANCE_MAX  // Maximum priority
+                NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("Notifications for new orders");
             channel.enableVibration(true);
-            channel.setVibrationPattern(new long[]{0, 300, 100, 300});
+            channel.setVibrationPattern(new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000});
             channel.setShowBadge(true);
             channel.setBypassDnd(true);
+            channel.enableLights(true);
+            channel.setLightColor(0xFFFF0000);
+            channel.setLockscreenVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
 
-            // Sound for default channel
+            // Sound for default channel using system notification ringtone
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                 .build();
 
-            Uri soundUri = Uri.parse("android.resource://" + getPackageName() + "/raw/short_notification");
+            Uri soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
             channel.setSound(soundUri, audioAttributes);
-
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
 
-            // Call-style channel for urgent bookings (full-screen intent)
+            // Call-style channel for urgent bookings with maximum interruption
             NotificationChannel callChannel = new NotificationChannel(
                 "booking-calls-v2",
                 "Booking Calls",
-                NotificationManager.IMPORTANCE_MAX
+                NotificationManager.IMPORTANCE_HIGH
             );
             callChannel.setDescription("Incoming booking alerts (call style)");
             callChannel.enableVibration(true);
-            callChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
+            callChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000});
             callChannel.setShowBadge(true);
             callChannel.setBypassDnd(true);
+            callChannel.enableLights(true);
+            callChannel.setLightColor(0xFFFF0000);
             callChannel.setLockscreenVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
 
-            // Use ALARM usage to maximize audibility and lockscreen behavior
+            // Use ringtone to maximize audibility and lockscreen behavior
             AudioAttributes alarmAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                 .build();
 
-            Uri alarmSound = Uri.parse("android.resource://" + getPackageName() + "/raw/notification_sound");
+            Uri alarmSound = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE);
             callChannel.setSound(alarmSound, alarmAttributes);
-
             notificationManager.createNotificationChannel(callChannel);
         }
     }

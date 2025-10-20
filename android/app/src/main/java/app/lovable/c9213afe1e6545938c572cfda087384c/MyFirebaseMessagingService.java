@@ -97,23 +97,33 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         );
 
         // Custom sounds (pre-O only; O+ uses channel sound)
-        Uri defaultSound = Uri.parse("android.resource://" + getPackageName() + "/raw/short_notification");
-        Uri callSound = Uri.parse("android.resource://" + getPackageName() + "/raw/notification_sound");
+        Uri defaultSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        Uri callSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
         Uri soundUri = useCallChannel ? callSound : defaultSound;
 
-        // Build the notification with maximum priority
+        // Long vibration pattern (10 seconds of continuous vibration)
+        long[] vibrationPattern = new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000};
+
+        // Build the notification with maximum priority and rich styling
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_stat_icon_config_sample)
             .setContentTitle(title != null ? title : "طلب جديد")
             .setContentText(body != null ? body : "لديك طلب جديد")
+            .setStyle(new NotificationCompat.BigTextStyle()
+                .bigText(body != null ? body : "لديك طلب جديد")
+                .setBigContentTitle(title != null ? title : "طلب جديد"))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(useCallChannel ? NotificationCompat.CATEGORY_CALL : NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .setSound(soundUri)
-            .setVibrate(new long[]{0, 1000, 500, 1000})
+            .setVibrate(vibrationPattern)
             .setContentIntent(pendingIntent)
             .setFullScreenIntent(fullScreenPendingIntent, true)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setColor(0xFFFF0000)
+            .setLights(0xFFFF0000, 500, 500)
+            .setOngoing(false)
+            .setTimeoutAfter(30000);
 
         // Show the notification
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -130,41 +140,45 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
                 "New Orders",
-                NotificationManager.IMPORTANCE_MAX
+                NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("Notifications for new orders");
             channel.enableVibration(true);
-            channel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
+            channel.setVibrationPattern(new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000});
             channel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
             channel.setShowBadge(true);
             channel.setBypassDnd(true);
+            channel.enableLights(true);
+            channel.setLightColor(0xFFFF0000);
 
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                 .build();
-            Uri soundUri = Uri.parse("android.resource://" + getPackageName() + "/raw/short_notification");
+            Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
             channel.setSound(soundUri, audioAttributes);
             notificationManager.createNotificationChannel(channel);
 
-            // Call-style channel
+            // Call-style channel with maximum interruption
             NotificationChannel callChannel = new NotificationChannel(
                 CALL_CHANNEL_ID,
                 "Booking Calls",
-                NotificationManager.IMPORTANCE_MAX
+                NotificationManager.IMPORTANCE_HIGH
             );
             callChannel.setDescription("Incoming booking alerts (call style)");
             callChannel.enableVibration(true);
-            callChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
+            callChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000});
             callChannel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
             callChannel.setShowBadge(true);
             callChannel.setBypassDnd(true);
+            callChannel.enableLights(true);
+            callChannel.setLightColor(0xFFFF0000);
 
             AudioAttributes alarmAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                 .build();
-            Uri alarmSound = Uri.parse("android.resource://" + getPackageName() + "/raw/notification_sound");
+            Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
             callChannel.setSound(alarmSound, alarmAttributes);
             notificationManager.createNotificationChannel(callChannel);
 
