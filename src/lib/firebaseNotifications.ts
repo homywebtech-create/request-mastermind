@@ -110,8 +110,8 @@ export class FirebaseNotificationManager {
         await PushNotifications.addListener('pushNotificationActionPerformed', async (notification) => {
           console.log('👆 [TAP] تم النقر على الإشعار:', notification);
           
-          // Store pending navigation in preferences
-          const route = notification.notification.data?.route || '/specialist/new-orders';
+          // Get the route from notification data
+          const route = notification.notification.data?.route || '/specialist-orders/new';
           console.log('🔀 حفظ وجهة التنقل:', route);
           
           const { Preferences } = await import('@capacitor/preferences');

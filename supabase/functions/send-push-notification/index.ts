@@ -125,12 +125,25 @@ serve(async (req) => {
       tokens.map(async (deviceToken) => {
         const isAndroid = (deviceToken.platform || '').toLowerCase() === 'android';
 
+        // Determine the correct route based on notification type
+        const notificationType = (data.type as string) || 'new_order';
+        let targetRoute = '/specialist-orders/new'; // Default to new orders
+        
+        if (notificationType === 'new_quote' || notificationType === 'quote_response') {
+          targetRoute = '/specialist-orders'; // Active orders
+        } else if (notificationType === 'new_order') {
+          targetRoute = '/specialist-orders/new';
+        } else if (notificationType === 'order_update') {
+          // If orderId exists, go to order tracking
+          targetRoute = data.orderId ? `/order-tracking/${data.orderId}` : '/specialist-orders';
+        }
+
         // Build message payload
         const baseData: Record<string, string> = {
-          type: (data.type as string) || 'new_order',
+          type: notificationType,
           title: title || 'طلب جديد',
           body: body || 'لديك طلب جديد',
-          route: '/specialist/new-orders',
+          route: targetRoute,
           click_action: 'FLUTTER_NOTIFICATION_CLICK',
           orderId: data.orderId?.toString() || '',
           customerId: data.customerId?.toString() || '',
