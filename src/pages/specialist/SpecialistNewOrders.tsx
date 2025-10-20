@@ -231,24 +231,24 @@ export default function SpecialistNewOrders() {
         const platform = (window as any).Capacitor?.getPlatform();
         console.log('🖥️ المنصة:', platform || 'web');
         
-        // 1. Play sound IMMEDIATELY - HIGHEST PRIORITY!
-        console.log('\n🔊🔊🔊 [خطوة 1/4] تشغيل الصوت...');
-        try {
-          // Ensure audio context is initialized
-          await soundNotification.current.initialize();
-          await soundNotification.current.playNewOrderSound();
-          console.log('✅✅✅ الصوت: تم التشغيل بنجاح!');
-        } catch (soundError) {
-          console.error('❌❌❌ الصوت: فشل التشغيل:', soundError);
-          // Try backup sound method
-          try {
-            const audio = new Audio('/notification-sound.mp3');
-            await audio.play();
-            console.log('✅ الصوت الاحتياطي: تم التشغيل');
-          } catch (backupError) {
-            console.error('❌ الصوت الاحتياطي: فشل أيضاً:', backupError);
-          }
-        }
+        // 1. Play sound IMMEDIATELY - HIGHEST PRIORITY! (COMMENTED: Push notifications now handle this)
+        // console.log('\n🔊🔊🔊 [خطوة 1/4] تشغيل الصوت...');
+        // try {
+        //   // Ensure audio context is initialized
+        //   await soundNotification.current.initialize();
+        //   await soundNotification.current.playNewOrderSound();
+        //   console.log('✅✅✅ الصوت: تم التشغيل بنجاح!');
+        // } catch (soundError) {
+        //   console.error('❌❌❌ الصوت: فشل التشغيل:', soundError);
+        //   // Try backup sound method
+        //   try {
+        //     const audio = new Audio('/notification-sound.mp3');
+        //     await audio.play();
+        //     console.log('✅ الصوت الاحتياطي: تم التشغيل');
+        //   } catch (backupError) {
+        //     console.error('❌ الصوت الاحتياطي: فشل أيضاً:', backupError);
+        //   }
+        // }
         
         // 2. Vibrate device - STRONG vibration pattern
         console.log('\n📳 [خطوة 2/4] اهتزاز الجهاز...');

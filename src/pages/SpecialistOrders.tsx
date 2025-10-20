@@ -167,8 +167,8 @@ export default function SpecialistOrders() {
           // Refresh orders when a new order is assigned to this specialist
           fetchOrders(specialistId);
           
-          // Play long ringtone sound notification for new order
-          soundNotification.current.playNewOrderSound();
+          // Play long ringtone sound notification for new order (COMMENTED: Push notifications now handle this)
+          // soundNotification.current.playNewOrderSound();
           
           // Check app state to bring app to foreground if in background
           try {

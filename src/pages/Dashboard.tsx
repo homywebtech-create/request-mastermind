@@ -127,10 +127,10 @@ export default function Dashboard() {
           console.log('New order detected:', payload);
           fetchOrders();
           
-          // Play sound notification for new order
-          if (soundEnabled) {
-            soundNotification.current.playNewOrderSound();
-          }
+          // Play sound notification for new order (COMMENTED: Push notifications now handle this)
+          // if (soundEnabled) {
+          //   soundNotification.current.playNewOrderSound();
+          // }
           
           toast({
             title: "🔔 طلب جديد",
