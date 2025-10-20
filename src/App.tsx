@@ -192,6 +192,12 @@ function AppRouter() {
               <SpecialistNewOrders />
             </ProtectedRoute>
           } />
+          {/* Alias for legacy deep link path used by notifications */}
+          <Route path="/specialist/new-orders" element={
+            <ProtectedRoute>
+              <SpecialistNewOrders />
+            </ProtectedRoute>
+          } />
           <Route path="/specialist-orders/stats" element={
             <ProtectedRoute>
               <SpecialistStats />
