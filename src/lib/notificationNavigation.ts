@@ -4,7 +4,8 @@ import { Capacitor } from '@capacitor/core';
 
 /**
  * Initialize notification navigation handler for deep linking
- * Handles navigation when app is opened from a notification tap
+ * Captures deep-link URLs from notification taps and stores the target route.
+ * Navigation is handled centrally in App.tsx to avoid race conditions.
  */
 export const initializeNotificationNavigation = (navigate: (path: string) => void) => {
   const platform = Capacitor.getPlatform();
@@ -33,8 +34,7 @@ export const initializeNotificationNavigation = (navigate: (path: string) => voi
   // Listen for app state changes (resume from background)
   App.addListener('appStateChange', async ({ isActive }) => {
     if (isActive) {
-      console.log('📱 [NAV] App resumed - checking for pending route');
-      await checkAndNavigateToPendingRoute(navigate);
+      console.log('📱 [NAV] App resumed - pending route (if any) will be handled by App root');
     }
   });
 
@@ -46,7 +46,7 @@ export const initializeNotificationNavigation = (navigate: (path: string) => voi
       console.log('🧭 [NAV] Deep link contained route:', route);
       await Preferences.set({ key: 'pendingRoute', value: route });
     }
-    await checkAndNavigateToPendingRoute(navigate);
+    // Do NOT navigate here; App.tsx handles it once auth is ready
   });
 
   // Check initial launch URL as well (cold start via notification)
@@ -68,7 +68,9 @@ export const initializeNotificationNavigation = (navigate: (path: string) => voi
 };
 
 /**
- * Check for pending route and navigate if found
+ * Check for pending route and navigate if found.
+ * Note: We keep this utility exported for manual invocations if ever needed,
+ * but initializeNotificationNavigation no longer calls it automatically.
  */
 export const checkAndNavigateToPendingRoute = async (navigate: (path: string) => void) => {
   try {
@@ -76,11 +78,7 @@ export const checkAndNavigateToPendingRoute = async (navigate: (path: string) =>
     
     if (pendingRoute) {
       console.log('🔀 [NAV] Found pending route:', pendingRoute);
-      
-      // Clear the pending route
       await Preferences.remove({ key: 'pendingRoute' });
-      
-      // Navigate to the route
       console.log('✅ [NAV] Navigating to:', pendingRoute);
       navigate(pendingRoute);
     } else {
