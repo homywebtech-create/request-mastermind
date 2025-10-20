@@ -74,14 +74,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // Choose channel depending on type
         String channelId = useCallChannel ? CALL_CHANNEL_ID : CHANNEL_ID;
 
-        // Intent to launch MainActivity when notification is tapped
-        Intent intent = new Intent(this, MainActivity.class);
+        // Intent to launch MainActivity when notification is tapped (deep link)
+        Uri deepLink = Uri.parse("request-mastermind://open?route=" + Uri.encode(route));
+        Intent intent = new Intent(Intent.ACTION_VIEW, deepLink);
+        intent.setPackage(getPackageName());
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.putExtra("route", route);
         intent.putExtra("fromNotification", true);
+        intent.putExtra("route", route);
         
         // Full-screen intent (like incoming call)
-        Intent fullScreenIntent = new Intent(this, MainActivity.class);
+        Intent fullScreenIntent = new Intent(Intent.ACTION_VIEW, deepLink);
+        fullScreenIntent.setPackage(getPackageName());
         fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         fullScreenIntent.putExtra("fromNotification", true);
         fullScreenIntent.putExtra("route", route);

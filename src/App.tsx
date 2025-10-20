@@ -29,6 +29,7 @@ import SetPassword from "./pages/SetPassword";
 import ContractManagement from "./pages/ContractManagement";
 import AdminSpecialists from "./pages/AdminSpecialists";
 import PushNotificationTest from "./pages/PushNotificationTest";
+import { initializeNotificationNavigation } from "@/lib/notificationNavigation";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,13 @@ function MobileLanding() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [navigationHandled, setNavigationHandled] = useState(false);
+
+  // Initialize deep-link navigation listeners as early as possible
+  useEffect(() => {
+    if (isCapacitorApp) {
+      initializeNotificationNavigation(navigate);
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const handleNavigation = async () => {
