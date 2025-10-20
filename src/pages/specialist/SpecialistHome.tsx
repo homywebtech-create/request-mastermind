@@ -9,6 +9,7 @@ import BottomNavigation from "@/components/specialist/BottomNavigation";
 import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
+import { initializeNotificationNavigation } from "@/lib/notificationNavigation";
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface Order {
@@ -41,6 +42,8 @@ export default function SpecialistHome() {
 
   useEffect(() => {
     checkAuth();
+    // Initialize notification navigation handler
+    initializeNotificationNavigation(navigate);
   }, []);
 
   // Update current time every second

@@ -289,12 +289,12 @@ export default function SpecialistAuth() {
       console.log("✅ Login successful - checking for pending route");
       
       const { Preferences } = await import('@capacitor/preferences');
-      const { value: postLoginRoute } = await Preferences.get({ key: 'postLoginRoute' });
+      const { value: pendingRoute } = await Preferences.get({ key: 'pendingRoute' });
       
-      if (postLoginRoute) {
-        console.log("📍 Navigating to pending route:", postLoginRoute);
-        await Preferences.remove({ key: 'postLoginRoute' });
-        navigate(postLoginRoute, { replace: true });
+      if (pendingRoute) {
+        console.log("📍 Navigating to pending route:", pendingRoute);
+        await Preferences.remove({ key: 'pendingRoute' });
+        navigate(pendingRoute, { replace: true });
       } else {
         console.log("📍 Navigating to default orders page");
         navigate('/specialist-orders', { replace: true });

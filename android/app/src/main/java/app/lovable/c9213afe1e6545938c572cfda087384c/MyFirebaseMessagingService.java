@@ -31,17 +31,20 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String body = remoteMessage.getData().get("body");
             String type = remoteMessage.getData().get("type");
             String orderId = remoteMessage.getData().get("orderId");
+            String route = remoteMessage.getData().get("route");
             
             Log.d(TAG, "🔔 Data Message - Title: " + title);
             Log.d(TAG, "🔔 Data Message - Body: " + body);
             Log.d(TAG, "🔔 Data Message - Type: " + type);
             Log.d(TAG, "🔔 Data Message - OrderID: " + orderId);
+            Log.d(TAG, "🔀 Data Message - Route: " + route);
             
             boolean useCallChannel = "new_order".equalsIgnoreCase(type) || "test".equalsIgnoreCase(type);
             // ✅ Show notification with full-screen intent (works when app is closed!)
             sendHighPriorityNotification(
                 title != null ? title : "طلب جديد",
                 body != null ? body : "لديك طلب جديد",
+                route != null ? route : "/specialist-orders/new",
                 useCallChannel
             );
         }
@@ -51,7 +54,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String title = remoteMessage.getNotification().getTitle();
             String body = remoteMessage.getNotification().getBody();
             
-            sendHighPriorityNotification(title, body, true);
+            sendHighPriorityNotification(title, body, "/specialist-orders/new", true);
         }
         else {
             Log.w(TAG, "⚠️ Message received but no data or notification payload");
@@ -64,7 +67,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // Token will be handled by Capacitor plugin
     }
 
-    private void sendHighPriorityNotification(String title, String body, boolean useCallChannel) {
+    private void sendHighPriorityNotification(String title, String body, String route, boolean useCallChannel) {
         // Create notification channels (required for Android 8.0+)
         createNotificationChannel();
 
@@ -74,13 +77,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // Intent to launch MainActivity when notification is tapped
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.putExtra("route", "/specialist/new-orders");
+        intent.putExtra("route", route);
+        intent.putExtra("fromNotification", true);
         
         // Full-screen intent (like incoming call)
         Intent fullScreenIntent = new Intent(this, MainActivity.class);
         fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         fullScreenIntent.putExtra("fromNotification", true);
-        fullScreenIntent.putExtra("route", "/specialist/new-orders");
+        fullScreenIntent.putExtra("route", route);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this, 

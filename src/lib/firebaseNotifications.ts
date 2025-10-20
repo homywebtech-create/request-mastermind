@@ -116,7 +116,7 @@ export class FirebaseNotificationManager {
           
           const { Preferences } = await import('@capacitor/preferences');
           await Preferences.set({
-            key: 'pendingNavigation',
+            key: 'pendingRoute',
             value: route,
           });
           
