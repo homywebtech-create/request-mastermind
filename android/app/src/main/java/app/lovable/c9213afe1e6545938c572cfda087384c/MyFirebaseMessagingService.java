@@ -97,9 +97,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         );
 
         // Custom sounds (pre-O only; O+ uses channel sound)
-        Uri defaultSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        Uri callSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-        Uri soundUri = useCallChannel ? callSound : defaultSound;
+        Uri notificationSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        Uri soundUri = notificationSound;
 
         // Long vibration pattern (10 seconds of continuous vibration)
         long[] vibrationPattern = new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000};
@@ -174,12 +173,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             callChannel.enableLights(true);
             callChannel.setLightColor(0xFFFF0000);
 
-            AudioAttributes alarmAttributes = new AudioAttributes.Builder()
+            AudioAttributes notificationAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                 .build();
-            Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-            callChannel.setSound(alarmSound, alarmAttributes);
+            Uri notificationSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            callChannel.setSound(notificationSound, notificationAttributes);
             notificationManager.createNotificationChannel(callChannel);
 
             Log.d(TAG, "✅ Notification channels ensured (" + CHANNEL_ID + ", " + CALL_CHANNEL_ID + ")");
