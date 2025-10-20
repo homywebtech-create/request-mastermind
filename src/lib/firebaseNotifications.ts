@@ -84,7 +84,7 @@ export class FirebaseNotificationManager {
                 body: notification.body || 'لديك طلب جديد',
                 id: Date.now(),
                 schedule: { at: new Date(Date.now() + 100) },
-                sound: 'short_notification.mp3',
+                sound: 'notification_sound.mp3',
                 attachments: undefined,
                 actionTypeId: '',
                 extra: notification.data,
