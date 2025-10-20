@@ -3,8 +3,8 @@ import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
 /**
- * Initialize notification navigation handler
- * This handles deep linking when app is opened from a notification
+ * Initialize notification navigation handler for deep linking
+ * Handles navigation when app is opened from a notification tap
  */
 export const initializeNotificationNavigation = (navigate: (path: string) => void) => {
   const platform = Capacitor.getPlatform();
