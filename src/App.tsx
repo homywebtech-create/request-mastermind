@@ -29,7 +29,9 @@ import SetPassword from "./pages/SetPassword";
 import ContractManagement from "./pages/ContractManagement";
 import AdminSpecialists from "./pages/AdminSpecialists";
 import PushNotificationTest from "./pages/PushNotificationTest";
-import { initializeNotificationNavigation } from "@/lib/notificationNavigation";
+import { firebaseNotifications } from "./lib/firebaseNotifications";
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 const queryClient = new QueryClient();
 
@@ -76,69 +78,95 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Single Router for ALL environments (Web + Mobile)
+// Single source of truth for deep-link navigation
 function MobileLanding() {
-  const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [navigationHandled, setNavigationHandled] = useState(false);
+  const { user, loading } = useAuth();
+  const [deepLink, setDeepLink] = useState<string | null>(null);
+  const [hasNavigated, setHasNavigated] = useState(false);
 
-  // Initialize deep-link navigation listeners as early as possible
-  useEffect(() => {
-    if (isCapacitorApp) {
-      initializeNotificationNavigation(navigate);
+  // Extract route from deep link URL
+  const extractRoute = (url: string): string | null => {
+    try {
+      const parsed = new URL(url);
+      const route = parsed.searchParams.get('route');
+      return route ? decodeURIComponent(route) : null;
+    } catch {
+      return null;
     }
-  }, [navigate]);
+  };
 
+  // Set up deep link listeners once on mount
   useEffect(() => {
-    const handleNavigation = async () => {
-      if (loading || navigationHandled) return;
+    if (Capacitor.getPlatform() === 'web') return;
 
-      try {
-        // Check for pending navigation from notification tap
-        const { Preferences } = await import('@capacitor/preferences');
-        const { value: pendingRoute } = await Preferences.get({ key: 'pendingRoute' });
-        
-        if (pendingRoute) {
-          console.log('📍 [PENDING NAV] Found pending navigation:', pendingRoute);
-          // Clear the pending navigation
-          await Preferences.remove({ key: 'pendingRoute' });
-          
-          if (user) {
-            console.log('✅ [AUTH] User authenticated - navigating to:', pendingRoute);
-            setNavigationHandled(true);
-            navigate(pendingRoute, { replace: true });
-            return;
-          } else {
-            console.log('⚠️ [AUTH] No user - storing route and redirecting to auth');
-            // Store the route to navigate after login
-            await Preferences.set({ key: 'postLoginRoute', value: pendingRoute });
-          }
-        }
+    console.log('🔗 [APP] Setting up deep link listeners');
 
-        setNavigationHandled(true);
-        if (user) {
-          navigate('/specialist-orders', { replace: true });
-        } else {
-          navigate('/specialist-auth', { replace: true });
-        }
-      } catch (error) {
-        console.error('Error handling navigation:', error);
-        setNavigationHandled(true);
-        if (user) {
-          navigate('/specialist-orders', { replace: true });
-        } else {
-          navigate('/specialist-auth', { replace: true });
+    let listener: any;
+
+    // Check launch URL (cold start from notification)
+    CapApp.getLaunchUrl().then((launchUrl) => {
+      if (launchUrl?.url) {
+        const route = extractRoute(launchUrl.url);
+        if (route) {
+          console.log('🔗 [APP] Launch URL contained route:', route);
+          setDeepLink(route);
         }
       }
+    });
+
+    // Listen for app opened via URL (warm start from notification)
+    const setupListener = async () => {
+      listener = await CapApp.addListener('appUrlOpen', (data) => {
+        if (data.url) {
+          const route = extractRoute(data.url);
+          if (route) {
+            console.log('🔗 [APP] App URL open contained route:', route);
+            setDeepLink(route);
+          }
+        }
+      });
     };
 
-    handleNavigation();
-  }, [user, loading, navigate, navigationHandled]);
+    setupListener();
 
-  if (loading || !navigationHandled) {
+    return () => {
+      if (listener) {
+        listener.remove();
+      }
+    };
+  }, []);
+
+  // Handle navigation once auth is ready
+  useEffect(() => {
+    if (loading || hasNavigated) return;
+
+    console.log('🧭 [APP] Handling navigation - user:', !!user, 'deepLink:', deepLink);
+
+    if (deepLink) {
+      if (user) {
+        console.log('✅ [APP] Navigating to deep link:', deepLink);
+        navigate(deepLink, { replace: true });
+      } else {
+        console.log('🔐 [APP] Deep link present but not authenticated, going to auth');
+        navigate('/specialist-auth', { replace: true });
+      }
+    } else {
+      // Normal navigation
+      if (user) {
+        navigate('/specialist-orders', { replace: true });
+      } else {
+        navigate('/specialist-auth', { replace: true });
+      }
+    }
+
+    setHasNavigated(true);
+  }, [user, loading, deepLink, navigate, hasNavigated]);
+
+  if (loading || !hasNavigated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
