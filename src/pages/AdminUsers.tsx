@@ -135,16 +135,25 @@ export default function AdminUsers() {
         .select('user_id, role')
         .in('role', ['admin', 'admin_full', 'admin_manager', 'admin_viewer']);
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+        throw rolesError;
+      }
+
+      console.log('Roles data:', rolesData);
 
       if (!rolesData || rolesData.length === 0) {
+        console.log('No admin roles found');
         setAdminUsers([]);
+        setLoading(false);
         return;
       }
 
       // Extract user_ids and create a map of user_id -> role
       const userIds = rolesData.map(r => r.user_id);
       const roleMap = new Map(rolesData.map(r => [r.user_id, r.role]));
+
+      console.log('Fetching profiles for user IDs:', userIds);
 
       // Then get profiles for those users
       const { data: profilesData, error: profilesError } = await supabase
@@ -153,22 +162,29 @@ export default function AdminUsers() {
         .in('user_id', userIds)
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      console.log('Profiles data:', profilesData);
 
       const formattedData = profilesData.map((item: any) => ({
         id: item.id,
         user_id: item.user_id,
         full_name: item.full_name,
         phone: item.phone,
+        email: item.email,
         role: roleMap.get(item.user_id),
         created_at: item.created_at,
         is_active: item.is_active
       }));
 
+      console.log('Formatted admin users:', formattedData);
       setAdminUsers(formattedData);
     } catch (error: any) {
       toast.error("Failed to load admin users");
-      console.error(error);
+      console.error('Error in fetchAdminUsers:', error);
     } finally {
       setLoading(false);
     }
