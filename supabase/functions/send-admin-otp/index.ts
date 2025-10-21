@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email with OTP
     const emailResponse = await resend.emails.send({
-      from: "Alnamilat Admin <onboarding@resend.dev>",
+      from: "onboarding@resend.dev",
       to: [email],
       subject: "كود تسجيل الدخول - Admin Login Code",
       html: `
