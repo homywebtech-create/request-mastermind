@@ -82,7 +82,7 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
         }
 
         // 3) Android 12+ Full-screen intent: open setting only once if not allowed
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             boolean fullScreenAllowed = notificationManager != null && notificationManager.canUseFullScreenIntent();
             boolean fsPromptDone = prefs.getBoolean("fs_intent_prompt_done", false);
@@ -156,7 +156,7 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
         @PluginMethod
         public void requestFullScreenPermission(PluginCall call) {
             // 1) Full-screen intent setting (Android 12+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 NotificationManager notificationManager = getContext().getSystemService(NotificationManager.class);
                 if (notificationManager != null && !notificationManager.canUseFullScreenIntent()) {
                     Intent fsIntent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT);
@@ -198,7 +198,7 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
         @PluginMethod
         public void checkFullScreenPermission(PluginCall call) {
             boolean fullScreenAllowed = true;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 NotificationManager notificationManager = getContext().getSystemService(NotificationManager.class);
                 fullScreenAllowed = notificationManager != null && notificationManager.canUseFullScreenIntent();
             }
