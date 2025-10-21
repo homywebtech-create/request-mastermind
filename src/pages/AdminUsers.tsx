@@ -15,6 +15,8 @@ import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircl
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
+import { PermissionsSelector } from "@/components/admin/PermissionsSelector";
+import { Permission } from "@/config/permissions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,7 +75,7 @@ export default function AdminUsers() {
   
   const [newAdmin, setNewAdmin] = useState({
     email: "",
-    role: "admin_viewer"
+    permissions: [] as Permission[]
   });
 
   const [editAdmin, setEditAdmin] = useState({
@@ -192,13 +194,19 @@ export default function AdminUsers() {
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (newAdmin.permissions.length === 0) {
+      toast.error(language === 'ar' ? 'يجب اختيار صلاحية واحدة على الأقل' : 'Please select at least one permission');
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('create-admin-invite', {
         body: {
           email: newAdmin.email,
-          role: newAdmin.role
+          permissions: newAdmin.permissions
         }
       });
 
@@ -224,7 +232,7 @@ export default function AdminUsers() {
       setShowAddForm(false);
       setNewAdmin({
         email: "",
-        role: "admin_viewer"
+        permissions: [] as Permission[]
       });
       
       toast.success(language === 'ar' ? "تم إنشاء رابط الدعوة ✅" : "Invite link created ✅");
@@ -435,7 +443,7 @@ export default function AdminUsers() {
 
       {showAddForm && (
         <Card className="p-6">
-          <form onSubmit={handleCreateAdmin} className="space-y-4">
+          <form onSubmit={handleCreateAdmin} className="space-y-6">
             <div className="space-y-4">
               <div className="bg-muted/50 p-4 rounded-lg border">
                 <p className="text-sm text-muted-foreground">
@@ -458,17 +466,14 @@ export default function AdminUsers() {
               </div>
               
               <div>
-                <Label htmlFor="role">{t.role}</Label>
-                <Select value={newAdmin.role} onValueChange={(value) => setNewAdmin({ ...newAdmin, role: value })}>
-                  <SelectTrigger id="role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin_viewer">{t.viewer} ({language === 'ar' ? 'عرض فقط' : 'View Only'})</SelectItem>
-                    <SelectItem value="admin_manager">{t.manager} ({language === 'ar' ? 'عرض وتعديل' : 'View & Edit'})</SelectItem>
-                    <SelectItem value="admin_full">{t.fullAdmin} ({language === 'ar' ? 'جميع الصلاحيات' : 'All Permissions'})</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-base font-semibold">
+                  {language === 'ar' ? 'الصلاحيات' : 'Permissions'}
+                </Label>
+                <PermissionsSelector
+                  selectedPermissions={newAdmin.permissions}
+                  onPermissionsChange={(permissions) => setNewAdmin({ ...newAdmin, permissions })}
+                  language={language}
+                />
               </div>
             </div>
             <div className="flex gap-2">
