@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,32 @@ export default function Auth() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const t = useTranslation(language);
+
+  // Check for existing session and handle redirect
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/admin');
+      }
+    };
+    
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event);
+      if (event === 'SIGNED_IN' && session) {
+        toast({
+          title: language === 'ar' ? "تم تسجيل الدخول بنجاح ✅" : "Successfully signed in ✅",
+          description: language === 'ar' ? "جاري التوجيه..." : "Redirecting...",
+        });
+        navigate('/admin');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, language, toast]);
 
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
