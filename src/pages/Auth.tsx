@@ -12,9 +12,8 @@ import { useTranslation } from "@/i18n";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [codeSent, setCodeSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { language } = useLanguage();
@@ -32,65 +31,28 @@ export default function Auth() {
     checkSession();
   }, [navigate]);
 
-  const handleSendCode = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.functions.invoke('send-admin-otp', {
-        body: { email },
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
       if (error) throw error;
 
-      setCodeSent(true);
       toast({
-        title: language === 'ar' ? "تم إرسال الكود ✉️" : "Code Sent ✉️",
-        description: language === 'ar' 
-          ? "تحقق من بريدك الإلكتروني للحصول على كود تسجيل الدخول" 
-          : "Check your email for the login code",
+        title: language === 'ar' ? "تم تسجيل الدخول بنجاح ✅" : "Successfully signed in ✅",
+        description: language === 'ar' ? "جاري التوجيه..." : "Redirecting...",
       });
+
+      navigate('/admin');
     } catch (error: any) {
       toast({
         title: t.common.error,
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('verify-admin-otp', {
-        body: { email, code },
-      });
-
-      if (error) throw error;
-
-      if (data.access_token && data.refresh_token) {
-        await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-        });
-
-        toast({
-          title: language === 'ar' ? "تم تسجيل الدخول بنجاح ✅" : "Successfully signed in ✅",
-          description: language === 'ar' ? "جاري التوجيه..." : "Redirecting...",
-        });
-
-        navigate('/admin');
-      } else {
-        throw new Error('Invalid response from server');
-      }
-    } catch (error: any) {
-      toast({
-        title: t.common.error,
-        description: error.message || (language === 'ar' ? 'كود غير صحيح' : 'Invalid code'),
+        description: error.message || (language === 'ar' ? 'بريد إلكتروني أو كلمة مرور غير صحيحة' : 'Invalid email or password'),
         variant: "destructive",
       });
     } finally {
@@ -109,91 +71,46 @@ export default function Auth() {
             {language === 'ar' ? 'تسجيل دخول الأدمن' : 'Admin Login'}
           </CardTitle>
           <CardDescription>
-            {codeSent 
-              ? (language === 'ar' 
-                  ? '✉️ تم إرسال كود التحقق إلى بريدك الإلكتروني'
-                  : '✉️ Verification code sent to your email')
-              : (language === 'ar'
-                  ? 'أدخل بريدك الإلكتروني للحصول على كود تسجيل الدخول'
-                  : 'Enter your email to receive a login code')
-            }
+            {language === 'ar'
+              ? 'أدخل بريدك الإلكتروني وكلمة المرور'
+              : 'Enter your email and password'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {codeSent ? (
-            <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div className="p-4 bg-primary/10 rounded-lg text-center">
-                <p className="text-sm text-muted-foreground mb-2">
-                  {language === 'ar'
-                    ? 'تم إرسال الكود إلى'
-                    : 'Code sent to'}
-                </p>
-                <p className="font-semibold text-primary">{email}</p>
-              </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">{t.common.email}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="admin@example.com"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="code">
-                  {language === 'ar' ? 'كود التحقق' : 'Verification Code'}
-                </Label>
-                <Input
-                  id="code"
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  required
-                  placeholder="123456"
-                  maxLength={6}
-                  className="text-center text-2xl tracking-widest"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">
+                {language === 'ar' ? 'كلمة المرور' : 'Password'}
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+            </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading 
-                  ? t.common.loading 
-                  : (language === 'ar' ? '✓ تحقق من الكود' : '✓ Verify Code')
-                }
-              </Button>
-
-              <Button 
-                variant="outline" 
-                type="button"
-                className="w-full"
-                onClick={() => {
-                  setCodeSent(false);
-                  setCode("");
-                }}
-              >
-                {language === 'ar' ? 'إرسال كود جديد' : 'Send New Code'}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleSendCode} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">{t.common.email}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="alnamilat@gmail.com"
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading 
-                  ? t.common.loading 
-                  : (language === 'ar' ? '📧 إرسال كود الدخول' : '📧 Send Login Code')
-                }
-              </Button>
-
-              <p className="text-xs text-center text-muted-foreground">
-                {language === 'ar'
-                  ? '💡 سنرسل لك كود مكون من 6 أرقام عبر البريد الإلكتروني'
-                  : '💡 We\'ll send you a 6-digit code via email'}
-              </p>
-            </form>
-          )}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading 
+                ? t.common.loading 
+                : (language === 'ar' ? '🔐 تسجيل الدخول' : '🔐 Sign In')
+              }
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
