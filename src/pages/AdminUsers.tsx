@@ -73,8 +73,6 @@ export default function AdminUsers() {
   
   const [newAdmin, setNewAdmin] = useState({
     email: "",
-    full_name: "",
-    phone: "",
     role: "admin_viewer"
   });
 
@@ -199,7 +197,8 @@ export default function AdminUsers() {
     try {
       const { data, error } = await supabase.functions.invoke('create-admin-invite', {
         body: {
-          email: newAdmin.email
+          email: newAdmin.email,
+          role: newAdmin.role
         }
       });
 
@@ -225,8 +224,6 @@ export default function AdminUsers() {
       setShowAddForm(false);
       setNewAdmin({
         email: "",
-        full_name: "",
-        phone: "",
         role: "admin_viewer"
       });
       
@@ -458,6 +455,20 @@ export default function AdminUsers() {
                   required
                   placeholder="newadmin@example.com"
                 />
+              </div>
+              
+              <div>
+                <Label htmlFor="role">{t.role}</Label>
+                <Select value={newAdmin.role} onValueChange={(value) => setNewAdmin({ ...newAdmin, role: value })}>
+                  <SelectTrigger id="role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin_viewer">{t.viewer} ({language === 'ar' ? 'عرض فقط' : 'View Only'})</SelectItem>
+                    <SelectItem value="admin_manager">{t.manager} ({language === 'ar' ? 'عرض وتعديل' : 'View & Edit'})</SelectItem>
+                    <SelectItem value="admin_full">{t.fullAdmin} ({language === 'ar' ? 'جميع الصلاحيات' : 'All Permissions'})</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="flex gap-2">

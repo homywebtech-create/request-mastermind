@@ -34,18 +34,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify token
+    // Verify token - code field now contains JSON with token and role
     const { data: inviteData, error: fetchError } = await supabase
       .from("verification_codes")
       .select("*")
       .eq("phone", email)
-      .eq("code", token)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (fetchError || !inviteData) {
+    if (fetchError || !inviteData || inviteData.length === 0) {
       console.error("Invalid or expired token:", fetchError);
       return new Response(
         JSON.stringify({ error: "رابط الدعوة غير صحيح أو منتهي الصلاحية" }),
@@ -56,11 +54,38 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Parse the invite data to get token and role
+    let inviteToken: string;
+    let userRole: string = "admin"; // default role
+    
+    try {
+      const parsedCode = JSON.parse(inviteData[0].code);
+      inviteToken = parsedCode.token;
+      userRole = parsedCode.role || "admin";
+    } catch {
+      // Fallback for old format (plain token string)
+      inviteToken = inviteData[0].code;
+    }
+
+    // Verify the token matches
+    if (inviteToken !== token) {
+      console.error("Token mismatch");
+      return new Response(
+        JSON.stringify({ error: "رابط الدعوة غير صحيح" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Using role:", userRole);
+
     // Mark token as used
     await supabase
       .from("verification_codes")
       .update({ verified: true })
-      .eq("id", inviteData.id);
+      .eq("id", inviteData[0].id);
 
     // Check if user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
@@ -83,16 +108,20 @@ const handler = async (req: Request): Promise<Response> => {
         .from("user_roles")
         .select("*")
         .eq("user_id", userId)
-        .eq("role", "admin")
         .single();
 
-      // Add admin role if not exists
-      if (!roleData) {
+      // Update or add role
+      if (roleData) {
+        await supabase
+          .from("user_roles")
+          .update({ role: userRole })
+          .eq("user_id", userId);
+      } else {
         await supabase
           .from("user_roles")
           .insert({
             user_id: userId,
-            role: "admin",
+            role: userRole,
           });
       }
     } else {
@@ -111,12 +140,12 @@ const handler = async (req: Request): Promise<Response> => {
 
       userId = userData.user.id;
 
-      // Add admin role
+      // Add admin role with the specified role from invite
       await supabase
         .from("user_roles")
         .insert({
           user_id: userId,
-          role: "admin",
+          role: userRole,
         });
     }
 

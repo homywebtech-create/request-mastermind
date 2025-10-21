@@ -11,6 +11,7 @@ const corsHeaders = {
 
 interface CreateInviteRequest {
   email: string;
+  role?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -19,8 +20,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email }: CreateInviteRequest = await req.json();
-    console.log("Creating admin invite for:", email);
+    const { email, role = 'admin' }: CreateInviteRequest = await req.json();
+    console.log("Creating admin invite for:", email, "with role:", role);
 
     if (!email) {
       throw new Error("Email is required");
@@ -54,11 +55,14 @@ const handler = async (req: Request): Promise<Response> => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
+    // Store the role in the code field as JSON with the token
+    const inviteData = JSON.stringify({ token: invite_token, role });
+    
     const { error: insertError } = await supabase
       .from("verification_codes")
       .insert({
         phone: email, // Using phone field to store email
-        code: invite_token,
+        code: inviteData,
         expires_at: expiresAt.toISOString(),
         verified: false,
       });
