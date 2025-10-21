@@ -32,18 +32,15 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: existingUser } = await supabase.auth.admin.listUsers();
     const userExists = existingUser?.users?.some(u => u.email === email);
 
-    if (userExists) {
-      console.log("User already exists, deleting old verification codes and creating new invite");
-      
-      // Delete old verification codes for this email
-      const { error: deleteError } = await supabase
-        .from("verification_codes")
-        .delete()
-        .eq("phone", email); // phone field is used to store email
-      
-      if (deleteError) {
-        console.error("Error deleting old codes:", deleteError);
-      }
+    // Always delete old verification codes for this email (used or not)
+    console.log("Deleting all old verification codes for:", email);
+    const { error: deleteError } = await supabase
+      .from("verification_codes")
+      .delete()
+      .eq("phone", email); // phone field is used to store email
+    
+    if (deleteError) {
+      console.error("Error deleting old codes:", deleteError);
     }
 
     // Generate a secure token
