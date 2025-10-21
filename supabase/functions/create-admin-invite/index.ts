@@ -46,9 +46,9 @@ const handler = async (req: Request): Promise<Response> => {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .single();
+      .in("role", ["admin", "admin_full", "admin_manager"]);
 
-    if (!roleData || roleData.role !== "admin") {
+    if (!roleData || roleData.length === 0) {
       throw new Error("Only admins can create invites");
     }
 
