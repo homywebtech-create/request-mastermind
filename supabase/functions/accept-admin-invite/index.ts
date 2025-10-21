@@ -120,21 +120,27 @@ const handler = async (req: Request): Promise<Response> => {
         });
     }
 
-    // Generate session for immediate login
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
+    // Generate session for immediate login using anon key
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const anonClient = createClient(supabaseUrl, anonKey);
+    
+    const { data: signInData, error: signInError } = await anonClient.auth.signInWithPassword({
       email: email,
+      password: password,
     });
 
-    if (sessionError) throw sessionError;
+    if (signInError) {
+      console.error("Sign in error:", signInError);
+      throw signInError;
+    }
 
     console.log("Admin account setup completed successfully");
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        access_token: sessionData.properties?.access_token,
-        refresh_token: sessionData.properties?.refresh_token,
+        access_token: signInData.session?.access_token,
+        refresh_token: signInData.session?.refresh_token,
       }),
       {
         status: 200,

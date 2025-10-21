@@ -59,13 +59,30 @@ export default function SetPassword() {
         body: { email, token, password },
       });
 
-      if (error) throw error;
+      console.log("Accept invite response:", { data, error });
 
-      if (data.access_token && data.refresh_token) {
-        await supabase.auth.setSession({
+      if (error) {
+        console.error("Invoke error:", error);
+        throw new Error(error.message || 'فشل في إنشاء الحساب');
+      }
+
+      if (data?.error) {
+        console.error("Function returned error:", data.error);
+        throw new Error(data.error);
+      }
+
+      // Check if we got tokens
+      if (data?.access_token && data?.refresh_token) {
+        console.log("Setting session with tokens");
+        const { error: sessionError } = await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
         });
+
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          throw sessionError;
+        }
 
         toast({
           title: language === 'ar' ? "تم بنجاح ✅" : "Success ✅",
@@ -74,7 +91,8 @@ export default function SetPassword() {
 
         navigate('/admin');
       } else {
-        throw new Error('Invalid response from server');
+        console.error("Invalid response structure:", data);
+        throw new Error('استجابة غير صحيحة من الخادم');
       }
     } catch (error: any) {
       console.error("Set password error:", error);
