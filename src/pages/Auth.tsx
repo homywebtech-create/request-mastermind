@@ -12,14 +12,15 @@ import { useTranslation } from "@/i18n";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { language } = useLanguage();
   const t = useTranslation(language);
 
-  // Check for existing session and handle redirect
+  // Check for existing session
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -29,47 +30,67 @@ export default function Auth() {
     };
     
     checkSession();
+  }, [navigate]);
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth event:', event);
-      if (event === 'SIGNED_IN' && session) {
-        toast({
-          title: language === 'ar' ? "تم تسجيل الدخول بنجاح ✅" : "Successfully signed in ✅",
-          description: language === 'ar' ? "جاري التوجيه..." : "Redirecting...",
-        });
-        navigate('/admin');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate, language, toast]);
-
-  const handleMagicLinkLogin = async (e: React.FormEvent) => {
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/admin`,
-        },
+      const { error } = await supabase.functions.invoke('send-admin-otp', {
+        body: { email },
       });
 
       if (error) throw error;
 
-      setEmailSent(true);
+      setCodeSent(true);
       toast({
-        title: language === 'ar' ? "تم إرسال الرابط ✉️" : "Link Sent ✉️",
+        title: language === 'ar' ? "تم إرسال الكود ✉️" : "Code Sent ✉️",
         description: language === 'ar' 
-          ? "تحقق من بريدك الإلكتروني للحصول على رابط تسجيل الدخول السحري" 
-          : "Check your email for the magic link to sign in",
+          ? "تحقق من بريدك الإلكتروني للحصول على كود تسجيل الدخول" 
+          : "Check your email for the login code",
       });
     } catch (error: any) {
       toast({
         title: t.common.error,
         description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-admin-otp', {
+        body: { email, code },
+      });
+
+      if (error) throw error;
+
+      if (data.access_token && data.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+        });
+
+        toast({
+          title: language === 'ar' ? "تم تسجيل الدخول بنجاح ✅" : "Successfully signed in ✅",
+          description: language === 'ar' ? "جاري التوجيه..." : "Redirecting...",
+        });
+
+        navigate('/admin');
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (error: any) {
+      toast({
+        title: t.common.error,
+        description: error.message || (language === 'ar' ? 'كود غير صحيح' : 'Invalid code'),
         variant: "destructive",
       });
     } finally {
@@ -88,45 +109,65 @@ export default function Auth() {
             {language === 'ar' ? 'تسجيل دخول الأدمن' : 'Admin Login'}
           </CardTitle>
           <CardDescription>
-            {emailSent 
+            {codeSent 
               ? (language === 'ar' 
-                  ? '✉️ تم إرسال رابط تسجيل الدخول إلى بريدك الإلكتروني'
-                  : '✉️ Magic link sent to your email')
+                  ? '✉️ تم إرسال كود التحقق إلى بريدك الإلكتروني'
+                  : '✉️ Verification code sent to your email')
               : (language === 'ar'
-                  ? 'أدخل بريدك الإلكتروني للحصول على رابط تسجيل دخول سحري'
-                  : 'Enter your email to receive a magic login link')
+                  ? 'أدخل بريدك الإلكتروني للحصول على كود تسجيل الدخول'
+                  : 'Enter your email to receive a login code')
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {emailSent ? (
-            <div className="space-y-4 text-center">
-              <div className="p-4 bg-primary/10 rounded-lg">
+          {codeSent ? (
+            <form onSubmit={handleVerifyCode} className="space-y-4">
+              <div className="p-4 bg-primary/10 rounded-lg text-center">
                 <p className="text-sm text-muted-foreground mb-2">
                   {language === 'ar'
-                    ? 'تحقق من صندوق البريد الوارد في'
-                    : 'Check your inbox at'}
+                    ? 'تم إرسال الكود إلى'
+                    : 'Code sent to'}
                 </p>
                 <p className="font-semibold text-primary">{email}</p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {language === 'ar'
-                  ? 'انقر على الرابط في البريد الإلكتروني لتسجيل الدخول'
-                  : 'Click the link in the email to sign in'}
-              </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="code">
+                  {language === 'ar' ? 'كود التحقق' : 'Verification Code'}
+                </Label>
+                <Input
+                  id="code"
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  required
+                  placeholder="123456"
+                  maxLength={6}
+                  className="text-center text-2xl tracking-widest"
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading 
+                  ? t.common.loading 
+                  : (language === 'ar' ? '✓ تحقق من الكود' : '✓ Verify Code')
+                }
+              </Button>
+
               <Button 
                 variant="outline" 
+                type="button"
                 className="w-full"
                 onClick={() => {
-                  setEmailSent(false);
-                  setEmail("");
+                  setCodeSent(false);
+                  setCode("");
                 }}
               >
-                {language === 'ar' ? 'إرسال رابط جديد' : 'Send Another Link'}
+                {language === 'ar' ? 'إرسال كود جديد' : 'Send New Code'}
               </Button>
-            </div>
+            </form>
           ) : (
-            <form onSubmit={handleMagicLinkLogin} className="space-y-4">
+            <form onSubmit={handleSendCode} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">{t.common.email}</Label>
                 <Input
@@ -142,14 +183,14 @@ export default function Auth() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading 
                   ? t.common.loading 
-                  : (language === 'ar' ? '🔗 إرسال رابط الدخول' : '🔗 Send Magic Link')
+                  : (language === 'ar' ? '📧 إرسال كود الدخول' : '📧 Send Login Code')
                 }
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">
                 {language === 'ar'
-                  ? '💡 لا حاجة لكلمة مرور - سنرسل لك رابط تسجيل دخول آمن'
-                  : '💡 No password needed - we\'ll send you a secure login link'}
+                  ? '💡 سنرسل لك كود مكون من 6 أرقام عبر البريد الإلكتروني'
+                  : '💡 We\'ll send you a 6-digit code via email'}
               </p>
             </form>
           )}
