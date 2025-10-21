@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircle, Mail, ArrowLeft } from "lucide-react";
+import { Loader2, UserPlus, Shield, Eye, Settings, Edit, Trash2, Ban, CheckCircle, Mail, ArrowLeft, Copy, Check } from "lucide-react";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
@@ -44,6 +44,12 @@ interface AdminUser {
   is_active: boolean;
 }
 
+interface InviteDialogState {
+  show: boolean;
+  email: string;
+  inviteLink: string;
+}
+
 export default function AdminUsers() {
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -57,6 +63,12 @@ export default function AdminUsers() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [inviteDialog, setInviteDialog] = useState<InviteDialogState>({
+    show: false,
+    email: '',
+    inviteLink: ''
+  });
+  const [copied, setCopied] = useState(false);
   
   const [newAdmin, setNewAdmin] = useState({
     email: "",
@@ -167,20 +179,21 @@ export default function AdminUsers() {
     setLoading(true);
 
     try {
-      // Call edge function to create admin user (bypasses signup restrictions)
-      const { data, error } = await supabase.functions.invoke('create-admin-user', {
+      const { data, error } = await supabase.functions.invoke('create-admin-invite', {
         body: {
-          email: newAdmin.email,
-          full_name: newAdmin.full_name,
-          phone: newAdmin.phone,
-          role: newAdmin.role
+          email: newAdmin.email
         }
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
-      toast.success(data?.message || "Admin user created successfully and invitation email sent");
+      // Show invite link dialog
+      setInviteDialog({
+        show: true,
+        email: newAdmin.email,
+        inviteLink: data.inviteLink
+      });
+      
       setShowAddForm(false);
       setNewAdmin({
         email: "",
@@ -188,13 +201,21 @@ export default function AdminUsers() {
         phone: "",
         role: "admin_viewer"
       });
-      fetchAdminUsers();
+      
+      toast.success(language === 'ar' ? "تم إنشاء رابط الدعوة ✅" : "Invite link created ✅");
     } catch (error: any) {
-      console.error('Create admin error:', error);
-      toast.error(error.message || "Failed to create admin user");
+      console.error('Create invite error:', error);
+      toast.error(error.message || (language === 'ar' ? 'فشل إنشاء الدعوة' : 'Failed to create invite'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyInviteLink = () => {
+    navigator.clipboard.writeText(inviteDialog.inviteLink);
+    setCopied(true);
+    toast.success(language === 'ar' ? "تم النسخ ✅" : "Copied ✅");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleToggleActive = async (admin: AdminUser) => {
@@ -391,59 +412,27 @@ export default function AdminUsers() {
             <div className="space-y-4">
               <div className="bg-muted/50 p-4 rounded-lg border">
                 <p className="text-sm text-muted-foreground">
-                  {t.passwordSetupInfo}
+                  {language === 'ar' 
+                    ? '🔗 سيتم إنشاء رابط دعوة يمكنك نسخه وإرساله للأدمن الجديد'
+                    : '🔗 An invite link will be created that you can copy and send to the new admin'}
                 </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">{tCommon.email}</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newAdmin.email}
-                    onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                    required
-                    placeholder="user@example.com"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="full_name">{t.fullName}</Label>
-                  <Input
-                    id="full_name"
-                    value={newAdmin.full_name}
-                    onChange={(e) => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
-                    required
-                    placeholder={t.fullName}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">{tCommon.phone}</Label>
-                  <Input
-                    id="phone"
-                    value={newAdmin.phone}
-                    onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })}
-                    placeholder="Optional"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="role">{t.role}</Label>
-                  <Select value={newAdmin.role} onValueChange={(value) => setNewAdmin({ ...newAdmin, role: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin_viewer">{t.viewer} (View Only)</SelectItem>
-                      <SelectItem value="admin_manager">{t.manager} (View & Edit)</SelectItem>
-                      <SelectItem value="admin_full">{t.fullAdmin} (All Permissions)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="email">{tCommon.email}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newAdmin.email}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                  required
+                  placeholder="newadmin@example.com"
+                />
               </div>
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.createAccount}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (language === 'ar' ? '🔗 إنشاء رابط الدعوة' : '🔗 Create Invite Link')}
               </Button>
               <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                 {tCommon.cancel}
@@ -589,6 +578,76 @@ export default function AdminUsers() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Invite Link Dialog */}
+      <Dialog open={inviteDialog.show} onOpenChange={(open) => setInviteDialog({...inviteDialog, show: open})}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              {language === 'ar' ? '✅ تم إنشاء رابط الدعوة' : '✅ Invite Link Created'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ar'
+                ? 'انسخ الرابط التالي وأرسله للأدمن الجديد'
+                : 'Copy the following link and send it to the new admin'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-1">
+                {language === 'ar' ? 'البريد الإلكتروني:' : 'Email:'}
+              </p>
+              <p className="font-semibold">{inviteDialog.email}</p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>{language === 'ar' ? 'رابط الدعوة:' : 'Invite Link:'}</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyInviteLink}
+                  className="gap-2"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      {language === 'ar' ? 'تم النسخ' : 'Copied'}
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      {language === 'ar' ? 'نسخ' : 'Copy'}
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="p-3 bg-background border rounded-lg break-all text-sm font-mono">
+                {inviteDialog.inviteLink}
+              </div>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+              <p className="text-sm flex items-center gap-2">
+                ⏱️ <span>{language === 'ar' ? 'الرابط صالح لمدة 24 ساعة' : 'Link valid for 24 hours'}</span>
+              </p>
+              <p className="text-sm flex items-center gap-2">
+                🔒 <span>{language === 'ar' 
+                  ? 'الأدمن الجديد سيضع كلمة مرور خاصة به عند فتح الرابط'
+                  : 'New admin will set their own password when opening the link'}</span>
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setInviteDialog({show: false, email: '', inviteLink: ''})}>
+              {language === 'ar' ? 'إغلاق' : 'Close'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

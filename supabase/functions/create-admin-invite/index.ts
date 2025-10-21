@@ -86,7 +86,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate invite link
-    const inviteLink = `${Deno.env.get("VITE_SUPABASE_URL")?.replace('https://vqmktyspogggcrohdwhg.supabase.co', 'https://c9213afe-1e65-4593-8c57-2cfda087384c.lovableproject.com')}/set-password?token=${invite_token}&email=${encodeURIComponent(email)}`;
+    const origin = `${req.headers.get('origin') || 'https://c9213afe-1e65-4593-8c57-2cfda087384c.lovableproject.com'}`;
+    const inviteLink = `${origin}/set-password?token=${invite_token}&email=${encodeURIComponent(email)}`;
 
     console.log("Invite created successfully");
 
