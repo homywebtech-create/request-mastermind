@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email with OTP
     const emailResponse = await resend.emails.send({
-      from: "eng3moh@gmail.com",
+      from: "onboarding@resend.dev",
       to: [email],
       subject: "كود تسجيل الدخول - Admin Login Code",
       html: `
@@ -104,13 +104,19 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email response:", emailResponse);
+
+    // Check if email sending failed
+    if (emailResponse.error) {
+      console.error("Failed to send email:", emailResponse.error);
+      throw new Error(`فشل إرسال البريد الإلكتروني: ${emailResponse.error.message}`);
+    }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: "OTP sent successfully",
-        messageId: emailResponse.id 
+        messageId: emailResponse.data?.id 
       }),
       {
         status: 200,
