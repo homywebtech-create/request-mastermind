@@ -12,6 +12,7 @@ const corsHeaders = {
 interface CreateInviteRequest {
   email: string;
   role?: string;
+  permissions?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
