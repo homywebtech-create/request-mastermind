@@ -40,7 +40,6 @@ const handler = async (req: Request): Promise<Response> => {
       .select("*")
       .eq("phone", email)
       .eq("code", token)
-      .eq("verified", false)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
@@ -63,25 +62,63 @@ const handler = async (req: Request): Promise<Response> => {
       .update({ verified: true })
       .eq("id", inviteData.id);
 
-    // Create admin user
-    const { data: userData, error: createError } = await supabase.auth.admin.createUser({
-      email: email,
-      password: password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: "Admin User",
-      }
-    });
+    // Check if user already exists
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
 
-    if (createError) throw createError;
+    let userId: string;
 
-    // Add admin role
-    await supabase
-      .from("user_roles")
-      .insert({
-        user_id: userData.user.id,
-        role: "admin",
+    if (existingUser) {
+      console.log("User exists, updating password and ensuring admin role");
+      userId = existingUser.id;
+
+      // Update password
+      await supabase.auth.admin.updateUserById(userId, {
+        password: password,
+        email_confirm: true,
       });
+
+      // Check if admin role exists
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .single();
+
+      // Add admin role if not exists
+      if (!roleData) {
+        await supabase
+          .from("user_roles")
+          .insert({
+            user_id: userId,
+            role: "admin",
+          });
+      }
+    } else {
+      console.log("Creating new admin user");
+      // Create admin user
+      const { data: userData, error: createError } = await supabase.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: "Admin User",
+        }
+      });
+
+      if (createError) throw createError;
+
+      userId = userData.user.id;
+
+      // Add admin role
+      await supabase
+        .from("user_roles")
+        .insert({
+          user_id: userId,
+          role: "admin",
+        });
+    }
 
     // Generate session for immediate login
     const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
@@ -91,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (sessionError) throw sessionError;
 
-    console.log("Admin account created successfully");
+    console.log("Admin account setup completed successfully");
 
     return new Response(
       JSON.stringify({ 
