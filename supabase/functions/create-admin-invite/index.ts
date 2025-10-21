@@ -28,30 +28,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if requesting user is an admin
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Unauthorized");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      throw new Error("Unauthorized");
-    }
-
-    // Check if user is admin
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .in("role", ["admin", "admin_full", "admin_manager"]);
-
-    if (!roleData || roleData.length === 0) {
-      throw new Error("Only admins can create invites");
-    }
-
     // Check if user already exists
     const { data: existingUser } = await supabase.auth.admin.listUsers();
     const userExists = existingUser?.users?.some(u => u.email === email);

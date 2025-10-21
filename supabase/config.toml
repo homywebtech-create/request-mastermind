@@ -25,7 +25,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-admin-invite]
-verify_jwt = true
+verify_jwt = false
 
 [functions.accept-admin-invite]
 verify_jwt = false
