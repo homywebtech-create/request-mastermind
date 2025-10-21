@@ -185,7 +185,17 @@ export default function AdminUsers() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Create invite error:', error);
+        // Check for specific error messages
+        if (error.message?.includes("User already exists")) {
+          toast.error(language === 'ar' ? '❌ هذا البريد الإلكتروني مسجل بالفعل في النظام' : '❌ This email is already registered');
+        } else {
+          toast.error(error.message || (language === 'ar' ? 'فشل إنشاء الدعوة' : 'Failed to create invite'));
+        }
+        setLoading(false);
+        return;
+      }
 
       // Show invite link dialog
       setInviteDialog({
