@@ -33,7 +33,17 @@ const handler = async (req: Request): Promise<Response> => {
     const userExists = existingUser?.users?.some(u => u.email === email);
 
     if (userExists) {
-      throw new Error("User already exists");
+      console.log("User already exists, deleting old verification codes and creating new invite");
+      
+      // Delete old verification codes for this email
+      const { error: deleteError } = await supabase
+        .from("verification_codes")
+        .delete()
+        .eq("phone", email); // phone field is used to store email
+      
+      if (deleteError) {
+        console.error("Error deleting old codes:", deleteError);
+      }
     }
 
     // Generate a secure token

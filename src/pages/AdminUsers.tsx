@@ -423,8 +423,8 @@ export default function AdminUsers() {
               <div className="bg-muted/50 p-4 rounded-lg border">
                 <p className="text-sm text-muted-foreground">
                   {language === 'ar' 
-                    ? '🔗 سيتم إنشاء رابط دعوة يمكنك نسخه وإرساله للأدمن الجديد'
-                    : '🔗 An invite link will be created that you can copy and send to the new admin'}
+                    ? '🔗 سيتم إنشاء رابط دعوة يمكنك نسخه وإرساله للأدمن الجديد. إذا كان البريد موجوداً مسبقاً، سيتم إنشاء رابط جديد.'
+                    : '🔗 An invite link will be created that you can copy and send to the new admin. If the email exists, a new link will be generated.'}
                 </p>
               </div>
               
