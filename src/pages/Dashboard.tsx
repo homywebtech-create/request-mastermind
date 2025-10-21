@@ -22,6 +22,7 @@ import { getSoundNotification } from "@/lib/soundNotification";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
+import { hasPermission } from "@/config/permissions";
 
 interface Order {
   id: string;
@@ -93,6 +94,7 @@ export default function Dashboard() {
   const [pendingDeletionRequestsCount, setPendingDeletionRequestsCount] = useState(0);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const { role } = useUserRole(user?.id);
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
   const previousOrdersCount = useRef<number>(0);
@@ -672,95 +674,124 @@ export default function Dashboard() {
               </Button>
 
               {/* Priority Actions - Always Visible with Alerts */}
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/specialists')}
-                className="flex items-center gap-2 relative"
-              >
-                <Users className="h-4 w-4" />
-                {tDash.specialists}
-                {suspendedSpecialistsCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-2 -right-2 h-5 min-w-[20px] flex items-center justify-center px-1 text-xs"
-                  >
-                    {suspendedSpecialistsCount}
-                  </Badge>
-                )}
-              </Button>
+              {hasPermission(role, 'view_specialists') && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/admin/specialists')}
+                  className="flex items-center gap-2 relative"
+                >
+                  <Users className="h-4 w-4" />
+                  {tDash.specialists}
+                  {suspendedSpecialistsCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 h-5 min-w-[20px] flex items-center justify-center px-1 text-xs"
+                    >
+                      {suspendedSpecialistsCount}
+                    </Badge>
+                  )}
+                </Button>
+              )}
 
-              <Button
-                variant="outline"
-                onClick={() => navigate('/deletion-requests')}
-                className="flex items-center gap-2 relative"
-              >
-                <AlertCircle className="h-4 w-4" />
-                {language === 'ar' ? 'طلبات الحذف' : 'Deletion Requests'}
-                {pendingDeletionRequestsCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-2 -right-2 h-5 min-w-[20px] flex items-center justify-center px-1 text-xs"
-                  >
-                    {pendingDeletionRequestsCount}
-                  </Badge>
-                )}
-              </Button>
+              {hasPermission(role, 'view_deletion_requests') && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/deletion-requests')}
+                  className="flex items-center gap-2 relative"
+                >
+                  <AlertCircle className="h-4 w-4" />
+                  {language === 'ar' ? 'طلبات الحذف' : 'Deletion Requests'}
+                  {pendingDeletionRequestsCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 h-5 min-w-[20px] flex items-center justify-center px-1 text-xs"
+                    >
+                      {pendingDeletionRequestsCount}
+                    </Badge>
+                  )}
+                </Button>
+              )}
 
-              {/* Separator */}
-              <div className="h-8 w-px bg-border mx-2" />
+              {/* Separator - Only show if there are dropdown items */}
+              {(hasPermission(role, 'view_activity_logs') || 
+                hasPermission(role, 'view_users') || 
+                hasPermission(role, 'view_contracts') || 
+                hasPermission(role, 'view_services') || 
+                hasPermission(role, 'view_companies')) && (
+                <>
+                  <div className="h-8 w-px bg-border mx-2" />
 
-              {/* Other Options - Dropdown Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <MoreVertical className="h-4 w-4" />
-                    {language === 'ar' ? "خيارات أخرى" : "More Options"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={language === 'ar' ? "end" : "start"} className="w-56">
-                  <DropdownMenuItem onClick={() => navigate('/admin/activity')}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    {tDash.activityLogs}
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem onClick={() => navigate('/admin/users')}>
-                    <UserCog className="h-4 w-4 mr-2" />
-                    {tDash.users}
-                  </DropdownMenuItem>
+                  {/* Other Options - Dropdown Menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <MoreVertical className="h-4 w-4" />
+                        {language === 'ar' ? "خيارات أخرى" : "More Options"}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align={language === 'ar' ? "end" : "start"} className="w-56">
+                      {hasPermission(role, 'view_activity_logs') && (
+                        <DropdownMenuItem onClick={() => navigate('/admin/activity')}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          {tDash.activityLogs}
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {hasPermission(role, 'manage_users') && (
+                        <DropdownMenuItem onClick={() => navigate('/admin/users')}>
+                          <UserCog className="h-4 w-4 mr-2" />
+                          {tDash.users}
+                        </DropdownMenuItem>
+                      )}
 
-                  <DropdownMenuSeparator />
+                      {(hasPermission(role, 'view_contracts') || 
+                        hasPermission(role, 'view_services') || 
+                        hasPermission(role, 'view_companies')) && 
+                        (hasPermission(role, 'view_activity_logs') || hasPermission(role, 'manage_users')) && (
+                        <DropdownMenuSeparator />
+                      )}
 
-                  <DropdownMenuItem onClick={() => navigate('/contracts')}>
-                    <FileCheck className="h-4 w-4 mr-2" />
-                    {language === 'ar' ? 'العقود' : 'Contracts'}
-                  </DropdownMenuItem>
+                      {hasPermission(role, 'view_contracts') && (
+                        <DropdownMenuItem onClick={() => navigate('/contracts')}>
+                          <FileCheck className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'العقود' : 'Contracts'}
+                        </DropdownMenuItem>
+                      )}
 
-                  <DropdownMenuItem onClick={() => navigate('/services')}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    {tDash.services}
-                  </DropdownMenuItem>
+                      {hasPermission(role, 'view_services') && (
+                        <DropdownMenuItem onClick={() => navigate('/services')}>
+                          <Settings className="h-4 w-4 mr-2" />
+                          {tDash.services}
+                        </DropdownMenuItem>
+                      )}
 
-                  <DropdownMenuItem onClick={() => navigate('/companies')}>
-                    <Building2 className="h-4 w-4 mr-2" />
-                    {language === 'ar' ? 'الشركات' : 'Companies'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      {hasPermission(role, 'view_companies') && (
+                        <DropdownMenuItem onClick={() => navigate('/companies')}>
+                          <Building2 className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'الشركات' : 'Companies'}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
 
-              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    New Order
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <OrderForm 
-                    onSubmit={handleCreateOrder}
-                    onCancel={() => setIsFormOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+              {hasPermission(role, 'manage_orders') && (
+                <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      New Order
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <OrderForm 
+                      onSubmit={handleCreateOrder}
+                      onCancel={() => setIsFormOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
 
               <Button
                 variant="outline"

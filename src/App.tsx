@@ -32,6 +32,7 @@ import PushNotificationTest from "./pages/PushNotificationTest";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { RoleProtectedRoute } from "./components/auth/RoleProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -241,73 +242,73 @@ function AppRouter() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="view_dashboard">
               <Dashboard />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/companies"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="view_companies">
               <Companies />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/services"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="view_services">
               <Services />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/contracts"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="view_contracts">
               <ContractManagement />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/admin/specialists"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="view_specialists">
               <AdminSpecialists />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/orders"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="view_orders">
               <Orders />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/deletion-requests"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="view_deletion_requests">
               <DeletionRequests />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="manage_users">
               <AdminUsers />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/admin/activity"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute requiredPermission="view_activity_logs">
               <ActivityLogs />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
@@ -325,9 +326,9 @@ function AppRouter() {
         
         {/* Push notification test (admin only) */}
         <Route path="/push-test" element={
-          <ProtectedRoute>
+          <RoleProtectedRoute requiredPermission="view_dashboard">
             <PushNotificationTest />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         } />
         
         {/* Default route */}
