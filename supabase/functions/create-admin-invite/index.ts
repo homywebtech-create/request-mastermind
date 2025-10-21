@@ -21,8 +21,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, role = 'admin' }: CreateInviteRequest = await req.json();
-    console.log("Creating admin invite for:", email, "with role:", role);
+    const { email, role = 'admin', permissions = [] }: CreateInviteRequest = await req.json();
+    console.log("Creating admin invite for:", email, "with role:", role, "permissions:", permissions);
 
     if (!email) {
       throw new Error("Email is required");
@@ -56,8 +56,8 @@ const handler = async (req: Request): Promise<Response> => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
-    // Store the role in the code field as JSON with the token
-    const inviteData = JSON.stringify({ token: invite_token, role });
+    // Store the role and permissions in the code field as JSON with the token
+    const inviteData = JSON.stringify({ token: invite_token, role, permissions });
     
     const { error: insertError } = await supabase
       .from("verification_codes")

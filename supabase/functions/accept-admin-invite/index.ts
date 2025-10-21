@@ -54,14 +54,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Parse the invite data to get token and role
+    // Parse the invite data to get token, role and permissions
     let inviteToken: string;
     let userRole: string = "admin"; // default role
+    let userPermissions: string[] = [];
     
     try {
       const parsedCode = JSON.parse(inviteData[0].code);
       inviteToken = parsedCode.token;
       userRole = parsedCode.role || "admin";
+      userPermissions = parsedCode.permissions || [];
     } catch {
       // Fallback for old format (plain token string)
       inviteToken = inviteData[0].code;
@@ -124,6 +126,25 @@ const handler = async (req: Request): Promise<Response> => {
             role: userRole,
           });
       }
+      
+      // Add custom permissions if provided
+      if (userPermissions.length > 0) {
+        // Delete existing permissions
+        await supabase
+          .from("user_permissions")
+          .delete()
+          .eq("user_id", userId);
+
+        // Insert new permissions
+        const permissionsToInsert = userPermissions.map(permission => ({
+          user_id: userId,
+          permission: permission
+        }));
+
+        await supabase
+          .from("user_permissions")
+          .insert(permissionsToInsert);
+      }
     } else {
       console.log("Creating new admin user");
       // Create admin user
@@ -147,6 +168,18 @@ const handler = async (req: Request): Promise<Response> => {
           user_id: userId,
           role: userRole,
         });
+      
+      // Add custom permissions if provided
+      if (userPermissions.length > 0) {
+        const permissionsToInsert = userPermissions.map(permission => ({
+          user_id: userId,
+          permission: permission
+        }));
+
+        await supabase
+          .from("user_permissions")
+          .insert(permissionsToInsert);
+      }
     }
 
     // Generate session for immediate login using anon key
