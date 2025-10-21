@@ -38,6 +38,7 @@ interface AdminUser {
   id: string;
   user_id: string;
   full_name: string;
+  email: string | null;
   phone: string | null;
   role: string;
   created_at: string;
@@ -79,6 +80,7 @@ export default function AdminUsers() {
 
   const [editAdmin, setEditAdmin] = useState({
     full_name: "",
+    email: "",
     phone: "",
     role: ""
   });
@@ -292,6 +294,7 @@ export default function AdminUsers() {
     setSelectedUser(admin);
     setEditAdmin({
       full_name: admin.full_name,
+      email: admin.email || "",
       phone: admin.phone || "",
       role: admin.role
     });
@@ -307,6 +310,7 @@ export default function AdminUsers() {
         .from('profiles')
         .update({
           full_name: editAdmin.full_name,
+          email: editAdmin.email || null,
           phone: editAdmin.phone || null
         })
         .eq('user_id', selectedUser.user_id);
@@ -473,6 +477,7 @@ export default function AdminUsers() {
           <TableHeader>
             <TableRow>
               <TableHead>{tCommon.name}</TableHead>
+              <TableHead>{tCommon.email}</TableHead>
               <TableHead>{tCommon.phone}</TableHead>
               <TableHead>{t.role}</TableHead>
               <TableHead>{t.createdDate}</TableHead>
@@ -484,6 +489,7 @@ export default function AdminUsers() {
             {adminUsers.map((admin) => (
               <TableRow key={admin.id}>
                 <TableCell className="font-medium">{admin.full_name}</TableCell>
+                <TableCell>{admin.email || "N/A"}</TableCell>
                 <TableCell>{admin.phone || "N/A"}</TableCell>
                 <TableCell>{getRoleBadge(admin.role)}</TableCell>
                 <TableCell>{new Date(admin.created_at).toLocaleDateString('en-US')}</TableCell>
@@ -551,6 +557,16 @@ export default function AdminUsers() {
                 value={editAdmin.full_name}
                 onChange={(e) => setEditAdmin({ ...editAdmin, full_name: e.target.value })}
                 placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_email">Email</Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={editAdmin.email || ''}
+                onChange={(e) => setEditAdmin({ ...editAdmin, email: e.target.value })}
+                placeholder="admin@example.com"
               />
             </div>
             <div>
