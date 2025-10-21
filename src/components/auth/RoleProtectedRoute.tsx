@@ -34,6 +34,17 @@ export function RoleProtectedRoute({
 
   // Check permission if required
   if (requiredPermission && !hasPermission(role, requiredPermission)) {
+    // Prevent infinite redirect loop - if already at fallback, show error instead
+    if (window.location.pathname === fallbackPath) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+            <p className="text-muted-foreground">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      );
+    }
     return <Navigate to={fallbackPath} replace />;
   }
 
