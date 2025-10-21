@@ -77,9 +77,15 @@ serve(async (req) => {
       );
     }
 
-    // Generate email and password for specialist
+    // Generate specialist credentials with cryptographically secure password
     const email = `specialist_${specialist.id}@system.local`;
-    const password = `specialist_${specialist.id}_${Date.now()}`;
+    // Use crypto.getRandomValues for secure random password generation
+    const passwordBytes = new Uint8Array(32);
+    crypto.getRandomValues(passwordBytes);
+    const password = btoa(String.fromCharCode(...passwordBytes))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .slice(0, 32);
 
     console.log("7. Checking if user exists in auth...");
 

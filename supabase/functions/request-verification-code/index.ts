@@ -105,16 +105,13 @@ serve(async (req) => {
       .eq('phone', cleanPhone)
       .lt('expires_at', new Date().toISOString());
     
-    // في بيئة التطوير، نرجع الكود في الاستجابة
-    // في الإنتاج، يجب إزالة هذا واستخدام WhatsApp Business API
-    const isDevelopment = true; // تغيير إلى false في الإنتاج
-
+    // SECURITY: Never return OTP codes in production
+    // Codes should only be delivered via WhatsApp/SMS
     return new Response(
       JSON.stringify({ 
         success: true,
         message: 'Verification code sent successfully',
-        expiresIn: 600, // 10 minutes in seconds
-        ...(isDevelopment && { code: code, devMode: true }) // إرجاع الكود في وضع التطوير فقط
+        expiresIn: 600 // 10 minutes in seconds
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -85,9 +85,15 @@ serve(async (req) => {
 
     console.log('6. Company found:', company.name);
 
-    // Generate email and password
+    // Generate company credentials with cryptographically secure password
     const companyEmail = `${phone.replace('+', '')}@company.local`;
-    const companyPassword = `${phone}_${company.id}`;
+    // Use crypto.getRandomValues for secure random password generation
+    const passwordBytes = new Uint8Array(32);
+    crypto.getRandomValues(passwordBytes);
+    const companyPassword = btoa(String.fromCharCode(...passwordBytes))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .slice(0, 32);
 
     console.log('7. Checking if user exists in auth...');
 
