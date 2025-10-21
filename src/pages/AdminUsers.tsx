@@ -115,7 +115,7 @@ export default function AdminUsers() {
 
     // Now we have both user and role loaded
     // Check if user has admin access
-    if (role !== 'admin' && role !== 'admin_full') {
+    if (!role || !['admin', 'admin_full', 'admin_manager', 'admin_viewer'].includes(role)) {
       console.log('AdminUsers - Access denied, role:', role);
       toast.error("Access denied - Admin role required");
       navigate("/");
