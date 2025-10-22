@@ -733,8 +733,28 @@ export default function CompanyBooking() {
 
       if (orderError) throw orderError;
 
+      // If no specialists selected but there are quotes, auto-select the one with lowest price
+      let finalSelectedIds = [...selectedSpecialistIds];
+      if (finalSelectedIds.length === 0) {
+        const { data: quotesData } = await supabase
+          .from('order_specialists')
+          .select('specialist_id, quoted_price')
+          .eq('order_id', orderId)
+          .not('quoted_price', 'is', null);
+
+        if (quotesData && quotesData.length > 0) {
+          // Find lowest price
+          const lowestQuote = quotesData.reduce((lowest, current) => {
+            const currentPrice = parseFloat(current.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
+            const lowestPrice = parseFloat(lowest.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
+            return currentPrice < lowestPrice ? current : lowest;
+          });
+          finalSelectedIds = [lowestQuote.specialist_id];
+        }
+      }
+
       // Accept all selected specialists FIRST (before checking availability)
-      for (const specialistId of selectedSpecialistIds) {
+      for (const specialistId of finalSelectedIds) {
         const { error: acceptError } = await supabase
           .from('order_specialists')
           .update({ 
@@ -751,22 +771,24 @@ export default function CompanyBooking() {
       }
 
       // First, reject all unselected specialists for this order
-      const { error: rejectError } = await supabase
-        .from('order_specialists')
-        .update({ 
-          is_accepted: false,
-          rejected_at: new Date().toISOString(),
-          rejection_reason: 'تم اختيار عرض آخر'
-        })
-        .eq('order_id', orderId)
-        .not('specialist_id', 'in', `(${selectedSpecialistIds.join(',')})`);
+      if (finalSelectedIds.length > 0) {
+        const { error: rejectError } = await supabase
+          .from('order_specialists')
+          .update({ 
+            is_accepted: false,
+            rejected_at: new Date().toISOString(),
+            rejection_reason: 'تم اختيار عرض آخر'
+          })
+          .eq('order_id', orderId)
+          .not('specialist_id', 'in', `(${finalSelectedIds.join(',')})`);
 
-      if (rejectError) {
-        console.error('Error rejecting other specialists:', rejectError);
+        if (rejectError) {
+          console.error('Error rejecting other specialists:', rejectError);
+        }
       }
 
       // THEN create schedules (this is optional and won't block the booking)
-      for (const specialistId of selectedSpecialistIds) {
+      for (const specialistId of finalSelectedIds) {
         try {
           const response = await supabase.functions.invoke('manage-specialist-schedule', {
             body: {
