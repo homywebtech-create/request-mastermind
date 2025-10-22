@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ interface ActivityLog {
 export default function ActivityLogs() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { role, loading: roleLoading } = useUserRole(user?.id);
+  const { role, loading: roleLoading } = useUserRole();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({

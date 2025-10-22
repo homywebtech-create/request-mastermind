@@ -33,6 +33,7 @@ import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { RoleProtectedRoute } from "./components/auth/RoleProtectedRoute";
+import { UserRoleProvider } from "./contexts/UserRoleContext";
 
 const queryClient = new QueryClient();
 
@@ -343,9 +344,11 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppRouter />
+        <UserRoleProvider>
+          <Toaster />
+          <Sonner />
+          <AppRouter />
+        </UserRoleProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

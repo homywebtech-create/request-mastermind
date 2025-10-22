@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { Permission } from "@/config/permissions";
 import { Loader2 } from "lucide-react";
@@ -22,7 +22,7 @@ export function PermissionGuard({
   fallback 
 }: PermissionGuardProps) {
   const { user, loading: authLoading } = useAuth();
-  const { role, loading: roleLoading } = useUserRole(user?.id);
+  const { role, loading: roleLoading } = useUserRole();
   const { hasPermission, hasAnyPermission, hasAllPermissions, loading: permsLoading } = useUserPermissions(user?.id, role);
   const { language } = useLanguage();
 

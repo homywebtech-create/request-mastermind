@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,7 +59,7 @@ export default function AdminUsers() {
   const t = useTranslation(language).adminUsers;
   const tCommon = useTranslation(language).common;
   const { user, loading: authLoading } = useAuth();
-  const { role, loading: roleLoading } = useUserRole(user?.id);
+  const { role, loading: roleLoading } = useUserRole();
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { OrdersTable } from "@/components/orders/orders-table";
@@ -67,7 +67,7 @@ export default function Orders() {
   const t = useTranslation(language).orders;
   const tCommon = useTranslation(language).common;
   const { user, loading: authLoading } = useAuth();
-  const { role, loading: roleLoading } = useUserRole(user?.id);
+  const { role, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const navigate = useNavigate();
   

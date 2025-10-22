@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { Permission } from "@/config/permissions";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -18,7 +18,7 @@ export function RoleProtectedRoute({
   fallbackPath = "/auth" 
 }: RoleProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
-  const { role, loading: roleLoading } = useUserRole(user?.id);
+  const { role, loading: roleLoading } = useUserRole();
   const { hasPermission, loading: permsLoading } = useUserPermissions(user?.id, role);
   const { language } = useLanguage();
 

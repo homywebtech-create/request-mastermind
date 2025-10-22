@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -94,7 +94,7 @@ export default function Dashboard() {
   const [pendingDeletionRequestsCount, setPendingDeletionRequestsCount] = useState(0);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const { role } = useUserRole(user?.id);
+  const { role } = useUserRole();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
   const previousOrdersCount = useRef<number>(0);
