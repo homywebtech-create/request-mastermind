@@ -16,6 +16,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/contexts/UserRoleContext";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 
 interface Order {
   id: string;
@@ -112,6 +115,9 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const { language } = useLanguage();
   const t = useTranslation(language).orders;
   const tCommon = useTranslation(language).common;
+  const { user } = useAuth();
+  const { role } = useUserRole();
+  const { hasPermission } = useUserPermissions(user?.id, role);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [resendDialogOpen, setResendDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -948,13 +954,13 @@ Thank you for contacting us! 🌟`;
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t.allOrders}</SelectItem>
-                <SelectItem value="new">{t.newRequests}</SelectItem>
-                <SelectItem value="awaiting-response">{t.awaitingResponse}</SelectItem>
-                <SelectItem value="upcoming">{t.upcoming}</SelectItem>
-                <SelectItem value="in-progress">{t.inProgress}</SelectItem>
-                <SelectItem value="completed">{t.completed}</SelectItem>
-                <SelectItem value="cancelled">{t.cancelled}</SelectItem>
+                {hasPermission('view_orders') && <SelectItem value="all">{t.allOrders}</SelectItem>}
+                {hasPermission('view_new_requests') && <SelectItem value="new">{t.newRequests}</SelectItem>}
+                {hasPermission('view_awaiting_response') && <SelectItem value="awaiting-response">{t.awaitingResponse}</SelectItem>}
+                {hasPermission('view_upcoming') && <SelectItem value="upcoming">{t.upcoming}</SelectItem>}
+                {hasPermission('view_in_progress') && <SelectItem value="in-progress">{t.inProgress}</SelectItem>}
+                {hasPermission('view_completed') && <SelectItem value="completed">{t.completed}</SelectItem>}
+                {hasPermission('view_orders') && <SelectItem value="cancelled">{t.cancelled}</SelectItem>}
               </SelectContent>
             </Select>
             <Badge variant="secondary">
