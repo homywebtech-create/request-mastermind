@@ -92,6 +92,16 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
         if (authError) throw authError;
         if (!authData.user) throw new Error("Failed to create user");
 
+        // Update profile with company_id
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ company_id: companyId })
+          .eq("user_id", authData.user.id);
+
+        if (profileError) {
+          console.error("Error updating profile:", profileError);
+        }
+
         // Create company user record
         const { data: companyUserData, error: companyUserError } = await supabase
           .from("company_users")

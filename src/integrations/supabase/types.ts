@@ -1073,26 +1073,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_expired_id_cards: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_expired_id_cards: { Args: never; Returns: undefined }
       check_verification_rate_limit: {
         Args: { phone_number: string }
         Returns: boolean
       }
-      cleanup_expired_verification_codes: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      generate_order_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_specialist_registration_token: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      cleanup_expired_verification_codes: { Args: never; Returns: undefined }
+      generate_order_number: { Args: never; Returns: string }
+      generate_specialist_registration_token: { Args: never; Returns: string }
       get_next_available_time: {
         Args: { _duration_hours?: number; _specialist_id: string }
         Returns: string
@@ -1112,8 +1100,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: { _user_id: string }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_company_member: {
+        Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
       is_specialist_available: {
