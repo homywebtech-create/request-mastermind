@@ -413,11 +413,16 @@ export default function OrderTracking() {
       if (error) throw error;
 
       await updateOrderStage('payment_received');
+      
       toast({
         title: "Thank You!",
-        description: "Rating submitted successfully",
+        description: "Order completed successfully",
       });
-      navigate(-1);
+      
+      // Navigate back after 1 second to show success message
+      setTimeout(() => {
+        navigate('/specialist-home');
+      }, 1500);
     } catch (error) {
       console.error('Error submitting rating:', error);
       toast({
@@ -883,26 +888,23 @@ export default function OrderTracking() {
               <p className="text-lg text-muted-foreground">
                 Payment has been received and work is completed
               </p>
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Redirecting to home...
+              </p>
             </div>
-
-            <Button
-              onClick={() => navigate(-1)}
-              className="w-full"
-              size="lg"
-            >
-              Back to Orders
-            </Button>
           </Card>
         )}
 
-        {/* Back Button */}
-        <Button
-          onClick={() => navigate(-1)}
-          variant="outline"
-          className="w-full"
-        >
-          Back
-        </Button>
+        {/* Back Button - Hide when payment is received */}
+        {stage !== 'payment_received' && (
+          <Button
+            onClick={() => navigate(-1)}
+            variant="outline"
+            className="w-full"
+          >
+            Back
+          </Button>
+        )}
       </div>
     </div>
   );

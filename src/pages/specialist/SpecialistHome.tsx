@@ -73,6 +73,17 @@ export default function SpecialistHome() {
           fetchNewOrdersCount(specialistId);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders'
+        },
+        () => {
+          fetchOrders(specialistId);
+        }
+      )
       .subscribe();
 
     return () => {
