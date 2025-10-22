@@ -178,20 +178,11 @@ serve(async (req) => {
           ),
         };
 
-        // IMPORTANT: For Android send DATA-ONLY messages so our
-        // MyFirebaseMessagingService.onMessageReceived() is invoked in background.
+        // IMPORTANT: Include BOTH notification and data for Android
+        // - notification: Ensures FCM displays notification when app is CLOSED
+        // - data: Allows MyFirebaseMessagingService.onMessageReceived() to handle it when app is open/background
         const message = isAndroid
           ? {
-              message: {
-                token: deviceToken.token,
-                data: baseData,
-                android: {
-                  priority: 'high',
-                  direct_boot_ok: true,
-                },
-              },
-            }
-          : {
               message: {
                 token: deviceToken.token,
                 notification: {
@@ -203,7 +194,25 @@ serve(async (req) => {
                   priority: 'high',
                   direct_boot_ok: true,
                   notification: {
-                    channel_id: 'new-orders-v3',
+                    channel_id: 'new-orders-v4',
+                    sound: 'notification_sound',
+                  },
+                },
+              },
+            }
+          : {
+              message: {
+                token: deviceToken.token,
+                notification: {
+                  title: title || 'طلب جديد',
+                  body: body || 'لديك طلب جديد',
+                },
+                data: baseData,
+                apns: {
+                  payload: {
+                    aps: {
+                      sound: 'notification_sound.mp3',
+                    },
                   },
                 },
               },
