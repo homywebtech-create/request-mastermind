@@ -221,37 +221,49 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   });
 
   // Group orders by companies for awaiting-response filter
+  // IMPORTANT: For company view, only show quotes from the current company
   const getCompanyQuotes = (order: Order): CompanyQuoteGroup[] => {
     if (!order.order_specialists) return [];
     
     const companyMap = new Map<string, CompanyQuoteGroup>();
 
     order.order_specialists
-      .filter(os => os.quoted_price && os.is_accepted === null && os.specialists)
+      .filter(os => {
+        // Must have a quote and not yet accepted
+        if (!os.quoted_price || os.is_accepted !== null || !os.specialists) return false;
+        
+        // PRIVACY CHECK: If company view, only show quotes from current company
+        if (isCompanyView && companyId) {
+          return os.specialists.company_id === companyId;
+        }
+        
+        // Admin can see all quotes
+        return true;
+      })
       .forEach(os => {
         // Add null check for specialists
         if (!os.specialists) return;
         
-        const companyId = os.specialists.companies?.id;
-        const companyName = os.specialists.companies?.name || 'Unknown Company';
+        const quoteCompanyId = os.specialists.companies?.id;
+        const quoteCompanyName = os.specialists.companies?.name || 'Unknown Company';
         
         // Extract numeric value from price string (e.g., "24 QAR" -> 24)
         const priceMatch = os.quoted_price?.match(/(\d+(\.\d+)?)/);
         const price = priceMatch ? parseFloat(priceMatch[1]) : Infinity;
         
-        if (!companyId) return;
+        if (!quoteCompanyId) return;
 
-        if (!companyMap.has(companyId)) {
-          companyMap.set(companyId, {
-            companyId,
-            companyName,
+        if (!companyMap.has(quoteCompanyId)) {
+          companyMap.set(quoteCompanyId, {
+            companyId: quoteCompanyId,
+            companyName: quoteCompanyName,
             lowestPrice: price,
             lowestPriceFormatted: os.quoted_price || '',
             quotesCount: 1,
             specialists: [os]
           });
         } else {
-          const existing = companyMap.get(companyId)!;
+          const existing = companyMap.get(quoteCompanyId)!;
           existing.specialists.push(os);
           existing.quotesCount++;
           if (price < existing.lowestPrice) {
