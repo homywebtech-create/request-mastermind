@@ -2,7 +2,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Shield } from "lucide-react";
-import { CompanyUser } from "@/pages/CompanyTeam";
+import { CompanyUser } from "@/types/company-team";
 import {
   Table,
   TableBody,

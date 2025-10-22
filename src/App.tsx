@@ -30,7 +30,7 @@ import SetPassword from "./pages/SetPassword";
 import ContractManagement from "./pages/ContractManagement";
 import AdminSpecialists from "./pages/AdminSpecialists";
 import PushNotificationTest from "./pages/PushNotificationTest";
-import CompanyTeam from "./pages/CompanyTeam";
+import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -260,14 +260,6 @@ function AppRouter() {
           }
         />
         <Route
-          path="/company-team"
-          element={
-            <RoleProtectedRoute requiredPermission="view_companies">
-              <CompanyTeam />
-            </RoleProtectedRoute>
-          }
-        />
-        <Route
           path="/services"
           element={
             <RoleProtectedRoute requiredPermission="view_services">
@@ -331,6 +323,7 @@ function AppRouter() {
         {/* Company routes */}
         <Route path="/company-auth" element={<CompanyAuth />} />
         <Route path="/company-portal" element={<CompanyPortal />} />
+        <Route path="/company/team" element={<CompanyTeamManagement />} />
         <Route path="/company/contracts" element={<CompanyContracts />} />
         <Route path="/specialists" element={<Specialists />} />
         

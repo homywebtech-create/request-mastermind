@@ -1,84 +1,84 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft, UserPlus, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, UserPlus, Loader2, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CompanyUserForm } from "@/components/company/CompanyUserForm";
 import { CompanyUsersTable } from "@/components/company/CompanyUsersTable";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { CompanyUser } from "@/types/company-team";
 
-export interface CompanyUser {
-  id: string;
-  company_id: string;
-  user_id: string;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  is_active: boolean;
-  is_owner: boolean;
-  created_at: string;
-  permissions: string[];
-}
-
-export default function CompanyTeam() {
+export default function CompanyTeamManagement() {
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const companyId = searchParams.get("companyId");
   
   const [users, setUsers] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<CompanyUser | null>(null);
+  const [companyId, setCompanyId] = useState<string>("");
   const [companyName, setCompanyName] = useState<string>("");
 
   useEffect(() => {
-    if (companyId) {
-      fetchCompanyName();
-      fetchUsers();
-    } else {
-      navigate("/companies");
+    checkAuthAndFetchData();
+  }, []);
+
+  const checkAuthAndFetchData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        navigate("/company-auth");
+        return;
+      }
+
+      // Get company info from profile
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profileError || !profile?.company_id) {
+        toast.error(language === "ar" ? "لم يتم العثور على شركة مرتبطة بهذا الحساب" : "No company found");
+        navigate("/company-portal");
+        return;
+      }
+
+      setCompanyId(profile.company_id);
+
+      // Fetch company name
+      const { data: companyData } = await supabase
+        .from("companies")
+        .select("name")
+        .eq("id", profile.company_id)
+        .single();
+
+      setCompanyName(companyData?.name || "");
+
+      // Fetch users
+      await fetchUsers(profile.company_id);
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error(language === "ar" ? "حدث خطأ" : "An error occurred");
+    } finally {
+      setLoading(false);
     }
-  }, [companyId]);
-
-  const fetchCompanyName = async () => {
-    if (!companyId) return;
-    
-    const { data, error } = await supabase
-      .from("companies")
-      .select("name")
-      .eq("id", companyId)
-      .single();
-
-    if (error) {
-      console.error("Error fetching company:", error);
-      return;
-    }
-
-    setCompanyName(data?.name || "");
   };
 
-  const fetchUsers = async () => {
-    if (!companyId) return;
-
+  const fetchUsers = async (compId: string) => {
     try {
-      setLoading(true);
-
       const { data: usersData, error: usersError } = await supabase
         .from("company_users")
         .select("*")
-        .eq("company_id", companyId)
+        .eq("company_id", compId)
         .order("is_owner", { ascending: false })
         .order("full_name");
 
-      if (usersError) {
-        console.error("Error fetching users:", usersError);
-        toast.error(language === "ar" ? "حدث خطأ في تحميل المستخدمين" : "Error loading users");
-        return;
-      }
+      if (usersError) throw usersError;
 
       const { data: permissionsData, error: permissionsError } = await supabase
         .from("company_user_permissions")
@@ -97,11 +97,9 @@ export default function CompanyTeam() {
       })) || [];
 
       setUsers(usersWithPermissions);
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error(language === "ar" ? "حدث خطأ غير متوقع" : "Unexpected error");
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      console.error("Error fetching users:", error);
+      toast.error(language === "ar" ? "حدث خطأ في تحميل المستخدمين" : "Error loading users");
     }
   };
 
@@ -132,7 +130,7 @@ export default function CompanyTeam() {
     }
 
     toast.success(language === "ar" ? "تم حذف المستخدم بنجاح" : "User deleted successfully");
-    fetchUsers();
+    fetchUsers(companyId);
   };
 
   const handleToggleActive = async (userId: string, currentStatus: boolean) => {
@@ -148,7 +146,7 @@ export default function CompanyTeam() {
     }
 
     toast.success(language === "ar" ? "تم تحديث حالة المستخدم" : "User status updated");
-    fetchUsers();
+    fetchUsers(companyId);
   };
 
   if (loading) {
@@ -160,38 +158,47 @@ export default function CompanyTeam() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">
-            {language === "ar" ? "إدارة الفريق" : "Team Management"}
-          </h1>
-          <p className="text-muted-foreground">
-            {companyName}
-          </p>
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-8 w-8 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold">
+                  {language === "ar" ? "إدارة الفريق" : "Team Management"}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {companyName}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <Button
+                variant="outline"
+                onClick={() => navigate("/company-portal")}
+              >
+                {language === "ar" ? <ArrowRight className="ml-2 h-4 w-4" /> : <ArrowLeft className="mr-2 h-4 w-4" />}
+                {language === "ar" ? "العودة" : "Back"}
+              </Button>
+              <Button onClick={handleAddUser}>
+                <UserPlus className={language === "ar" ? "ml-2 h-4 w-4" : "mr-2 h-4 w-4"} />
+                {language === "ar" ? "إضافة مستخدم" : "Add User"}
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          <Button
-            variant="outline"
-            onClick={() => navigate("/companies")}
-          >
-            {language === "ar" ? <ArrowRight className="ml-2 h-4 w-4" /> : <ArrowLeft className="mr-2 h-4 w-4" />}
-            {language === "ar" ? "العودة للشركات" : "Back to Companies"}
-          </Button>
-          <Button onClick={handleAddUser}>
-            <UserPlus className={language === "ar" ? "ml-2 h-4 w-4" : "mr-2 h-4 w-4"} />
-            {language === "ar" ? "إضافة مستخدم" : "Add User"}
-          </Button>
-        </div>
-      </div>
+      </header>
 
-      <CompanyUsersTable
-        users={users}
-        onEdit={handleEditUser}
-        onDelete={handleDeleteUser}
-        onToggleActive={handleToggleActive}
-      />
+      <main className="container mx-auto px-4 py-8" dir={language === "ar" ? "rtl" : "ltr"}>
+        <CompanyUsersTable
+          users={users}
+          onEdit={handleEditUser}
+          onDelete={handleDeleteUser}
+          onToggleActive={handleToggleActive}
+        />
+      </main>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
@@ -203,11 +210,11 @@ export default function CompanyTeam() {
             </DialogTitle>
           </DialogHeader>
           <CompanyUserForm
-            companyId={companyId!}
+            companyId={companyId}
             user={editingUser}
             onSuccess={() => {
               setDialogOpen(false);
-              fetchUsers();
+              fetchUsers(companyId);
             }}
             onCancel={() => setDialogOpen(false)}
           />

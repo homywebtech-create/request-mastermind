@@ -517,6 +517,14 @@ export default function CompanyPortal() {
               <LanguageSwitcher />
               <Button
                 variant="outline"
+                onClick={() => navigate("/company/team")}
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">{language === 'ar' ? 'الفريق' : 'Team'}</span>
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => navigate("/company/contracts")}
                 className="flex items-center gap-2"
               >
