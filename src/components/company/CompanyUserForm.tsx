@@ -45,6 +45,9 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
     setLoading(true);
 
     try {
+      // Preserve current admin session before any auth operations
+      const { data: { session: adminSession } } = await supabase.auth.getSession();
+
       if (user) {
         // Update existing user
         const { error: updateError } = await supabase
@@ -151,6 +154,14 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
           toast.error(language === "ar" ? "فشل إنشاء المستخدم" : "Failed to create user");
           setLoading(false);
           return;
+        }
+
+        // Ensure we run the insert as admin
+        if (adminSession) {
+          await supabase.auth.setSession({
+            access_token: adminSession.access_token,
+            refresh_token: adminSession.refresh_token,
+          });
         }
 
         // Create company user record
