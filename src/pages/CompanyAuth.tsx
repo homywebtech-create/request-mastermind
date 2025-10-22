@@ -98,20 +98,37 @@ export default function CompanyAuth() {
         setVerificationCode(data.code);
         
         toast({
-          title: "🚀 وضع التطوير - الكود تم ملؤه تلقائياً",
+          title: language === 'ar' ? "🚀 وضع التطوير - الكود المرسل" : "🚀 Dev Mode - Code Sent",
           description: (
             <div className="space-y-2">
-              <p className="text-2xl font-bold text-center">{data.code}</p>
-              <p className="text-xs">✅ تم ملء الكود تلقائياً. اضغط تحقق وتسجيل الدخول</p>
-              <p className="text-xs text-muted-foreground">Valid for 10 minutes</p>
+              <div className="p-4 bg-primary/10 rounded-lg border-2 border-primary">
+                <p className="text-3xl font-bold text-center tracking-wider">{data.code}</p>
+              </div>
+              <p className="text-sm font-medium">
+                {language === 'ar' 
+                  ? `✅ تم إرسال الكود إلى شركة ${company.name}`
+                  : `✅ Code sent to company ${company.name}`
+                }
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar' 
+                  ? "الكود تم ملؤه تلقائياً. اضغط 'تحقق وتسجيل الدخول'"
+                  : "Code auto-filled. Click 'Verify and Login'"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar' ? 'صالح لمدة 10 دقائق' : 'Valid for 10 minutes'}
+              </p>
             </div>
           ),
-          duration: 5000,
+          duration: 8000,
         });
       } else {
         toast({
-          title: "Code Sent",
-          description: `Verification code sent to company ${company.name}`,
+          title: language === 'ar' ? "✅ تم إرسال الكود" : "✅ Code Sent",
+          description: language === 'ar'
+            ? `تم إرسال كود التحقق إلى شركة ${company.name}`
+            : `Verification code sent to company ${company.name}`,
+          duration: 5000,
         });
       }
 

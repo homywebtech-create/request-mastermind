@@ -95,8 +95,7 @@ serve(async (req) => {
     }
 
     // TODO: Send verification code via WhatsApp or SMS
-    // For now, we'll return the code in development mode
-    console.log(`Verification code for ${cleanPhone}: ${code}`);
+    console.log(`🔐 Verification code for ${cleanPhone}: ${code}`);
     
     // Clean up old expired codes for this phone number
     await supabaseAdmin
@@ -105,13 +104,21 @@ serve(async (req) => {
       .eq('phone', cleanPhone)
       .lt('expires_at', new Date().toISOString());
     
-    // SECURITY: Never return OTP codes in production
-    // Codes should only be delivered via WhatsApp/SMS
+    // Check if in development mode (not in production)
+    const isDevelopment = !Deno.env.get('SUPABASE_URL')?.includes('supabase.co');
+    
+    // SECURITY: Only return OTP codes in development mode
+    // In production, codes should only be delivered via WhatsApp/SMS
     return new Response(
       JSON.stringify({ 
         success: true,
         message: 'Verification code sent successfully',
-        expiresIn: 600 // 10 minutes in seconds
+        expiresIn: 600, // 10 minutes in seconds
+        // Return code only in development mode for testing
+        ...(isDevelopment && { 
+          devMode: true, 
+          code: code 
+        })
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
