@@ -65,6 +65,94 @@ const isCapacitorApp = (() => {
   return detected;
 })();
 
+// Global deep link and notification click handler (always mounted on mobile)
+function DeepLinkHandler() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // Extract route from deep link URL
+  const extractRoute = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    try {
+      const parsed = new URL(url);
+      const route = parsed.searchParams.get('route');
+      return route ? decodeURIComponent(route) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Navigate or stash pending route based on auth
+  const handleRoute = async (route: string | null) => {
+    if (!route) return;
+
+    // Mark that a deep link navigation is happening to avoid default redirects
+    sessionStorage.setItem('deeplink:navigated', '1');
+
+    if (loading) {
+      const { Preferences } = await import('@capacitor/preferences');
+      await Preferences.set({ key: 'pendingRoute', value: route });
+      return;
+    }
+
+    if (user) {
+      navigate(route, { replace: true });
+    } else {
+      const { Preferences } = await import('@capacitor/preferences');
+      await Preferences.set({ key: 'pendingRoute', value: route });
+      navigate('/specialist-auth', { replace: true });
+    }
+  };
+
+  // Handle deep links on cold start and when app is opened via URL
+  useEffect(() => {
+    if (Capacitor.getPlatform() === 'web') return;
+
+    let appUrlOpenListener: any;
+
+    // Cold start deep link
+    CapApp.getLaunchUrl().then((launchUrl) => {
+      handleRoute(extractRoute(launchUrl?.url));
+    });
+
+    // Warm start deep link
+    (async () => {
+      appUrlOpenListener = await CapApp.addListener('appUrlOpen', (data) => {
+        handleRoute(extractRoute(data?.url));
+      });
+    })();
+
+    return () => {
+      if (appUrlOpenListener) appUrlOpenListener.remove();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When auth becomes ready, process any pending route saved by pushNotificationActionPerformed
+  useEffect(() => {
+    if (loading) return;
+
+    (async () => {
+      if (Capacitor.getPlatform() === 'web') return;
+      const { Preferences } = await import('@capacitor/preferences');
+      const { value } = await Preferences.get({ key: 'pendingRoute' });
+      if (value) {
+        await Preferences.remove({ key: 'pendingRoute' });
+        sessionStorage.setItem('deeplink:navigated', '1');
+        if (user) {
+          navigate(value, { replace: true });
+        } else {
+          await Preferences.set({ key: 'pendingRoute', value });
+          navigate('/specialist-auth', { replace: true });
+        }
+      }
+    })();
+  }, [user, loading, navigate]);
+
+  return null;
+}
+
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
@@ -84,7 +172,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 // Single source of truth for deep-link navigation
-function MobileLanding() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [deepLink, setDeepLink] = useState<string | null>(null);
@@ -185,6 +272,7 @@ function AppRouter() {
     // Mobile App Routes (Capacitor)
     return (
       <BrowserRouter>
+        <DeepLinkHandler />
         <Routes>
           <Route path="/specialist-auth" element={<SpecialistAuth />} />
           <Route path="/specialist-orders" element={
