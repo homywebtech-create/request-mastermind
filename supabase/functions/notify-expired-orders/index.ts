@@ -25,12 +25,77 @@ serve(async (req) => {
     }
     
     const specificOrderId = body?.order_id;
+    const expiresAt = body?.expires_at;
 
-    if (specificOrderId) {
-      console.log(`⏰ [EXPIRY-INSTANT] Processing specific order: ${specificOrderId}`);
+    if (specificOrderId && expiresAt) {
+      console.log(`⏰ [EXPIRY-SCHEDULED] Received order ${specificOrderId} with expiry at ${expiresAt}`);
       
-      // Get the specific order
-      const { data: expiredOrders, error: ordersError } = await supabase
+      const expiryTime = new Date(expiresAt).getTime();
+      const now = Date.now();
+      const delay = expiryTime - now;
+
+      // If already expired, process immediately
+      if (delay <= 0) {
+        console.log(`⚡ [EXPIRY-INSTANT] Order ${specificOrderId} already expired, processing now`);
+        
+        const { data: order, error: ordersError } = await supabase
+          .from('orders')
+          .select('id, order_number, service_type, status, expires_at, notified_expiry')
+          .eq('id', specificOrderId)
+          .in('status', ['pending', 'waiting_quotes'])
+          .is('notified_expiry', null)
+          .single();
+
+        if (!ordersError && order) {
+          await processExpiredOrder(supabase, order);
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, processed: 1, scheduled: false }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        // Schedule for exact expiry time
+        const delaySeconds = Math.round(delay / 1000);
+        console.log(`⏳ [EXPIRY-SCHEDULED] Waiting ${delaySeconds}s until order ${specificOrderId} expires...`);
+        
+        // Use setTimeout for delayed execution
+        setTimeout(async () => {
+          console.log(`🔔 [EXPIRY-TRIGGERED] Timer expired for order ${specificOrderId}, processing now`);
+          
+          const { data: order, error: ordersError } = await supabase
+            .from('orders')
+            .select('id, order_number, service_type, status, expires_at, notified_expiry')
+            .eq('id', specificOrderId)
+            .in('status', ['pending', 'waiting_quotes'])
+            .is('notified_expiry', null)
+            .single();
+
+          if (!ordersError && order) {
+            await processExpiredOrder(supabase, order);
+          } else {
+            console.log(`ℹ️ [EXPIRY-TRIGGERED] Order ${specificOrderId} already processed or status changed`);
+          }
+        }, delay);
+
+        // Return immediately without waiting
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            scheduled: true, 
+            delay_seconds: delaySeconds,
+            message: `Notification scheduled for ${new Date(expiryTime).toISOString()}`
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Handle manual trigger without expires_at (backwards compatibility)
+    if (specificOrderId) {
+      console.log(`⏰ [EXPIRY-MANUAL] Processing specific order: ${specificOrderId}`);
+      
+      const { data: order, error: ordersError } = await supabase
         .from('orders')
         .select('id, order_number, service_type, status, expires_at, notified_expiry')
         .eq('id', specificOrderId)
@@ -38,16 +103,15 @@ serve(async (req) => {
         .is('notified_expiry', null)
         .single();
 
-      if (ordersError || !expiredOrders) {
-        console.log(`ℹ️ [EXPIRY-INSTANT] Order ${specificOrderId} not found or already notified`);
+      if (ordersError || !order) {
+        console.log(`ℹ️ [EXPIRY-MANUAL] Order ${specificOrderId} not found or already notified`);
         return new Response(
           JSON.stringify({ success: true, message: 'Order already processed or not found' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      // Process single order
-      await processExpiredOrder(supabase, expiredOrders);
+      await processExpiredOrder(supabase, order);
 
       return new Response(
         JSON.stringify({ success: true, processed: 1, notified: 1 }),
