@@ -75,6 +75,8 @@ export default function CompanyTeamManagement() {
         .from("company_users")
         .select("*")
         .eq("company_id", compId)
+        .not("email", "like", "%@system.local")
+        .not("email", "like", "%@company.local")
         .order("is_owner", { ascending: false })
         .order("full_name");
 
