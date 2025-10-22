@@ -154,6 +154,16 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
         }
 
         // Create company user record
+        console.log("About to insert company user:", {
+          company_id: companyId,
+          user_id: userId,
+          full_name: formData.full_name,
+          email: formData.email,
+          phone: formData.phone,
+          is_owner: false,
+          is_active: true,
+        });
+
         const { data: companyUserData, error: companyUserError } = await supabase
           .from("company_users")
           .insert({
@@ -168,7 +178,12 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
           .select()
           .single();
 
-        if (companyUserError) throw companyUserError;
+        console.log("Insert result:", { data: companyUserData, error: companyUserError });
+
+        if (companyUserError) {
+          console.error("Company user error details:", companyUserError);
+          throw companyUserError;
+        }
 
         // Insert permissions
         if (selectedPermissions.length > 0) {
