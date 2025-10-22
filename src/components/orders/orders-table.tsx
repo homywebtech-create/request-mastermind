@@ -188,19 +188,20 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     
     if (filter === 'in-progress') {
       if (isCompanyView && companyId) {
-        // For companies: show orders where company specialist was accepted and is tracking
+        // For companies: show orders where company specialist was accepted AND tracking started
         const hasAcceptedSpecialist = order.order_specialists?.some(os => 
           os.is_accepted === true && os.specialists?.company_id === companyId
         );
-        const trackingStage = order.tracking_stage;
-        return hasAcceptedSpecialist && 
-               trackingStage && 
-               ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
+        const trackingStarted = order.tracking_stage && 
+               ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
+        return hasAcceptedSpecialist && trackingStarted;
       } else {
-        // For admin: show orders with active tracking
-        return order.tracking_stage && 
+        // For admin: show accepted orders with active tracking
+        const hasAcceptedQuote = order.order_specialists?.some(os => os.is_accepted === true);
+        const trackingStarted = order.tracking_stage && 
                order.tracking_stage !== null &&
                ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
+        return hasAcceptedQuote && trackingStarted;
       }
     }
     
@@ -432,12 +433,6 @@ Thank you for contacting us! 🌟`;
         .eq('id', orderSpecialistId);
 
       if (error) throw error;
-
-      // Keep order status as pending to show in upcoming until tracking starts
-      await supabase
-        .from('orders')
-        .update({ status: 'pending' })
-        .eq('id', orderId);
 
       toast({
         title: t.quoteAccepted,
