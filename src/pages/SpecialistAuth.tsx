@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, ArrowRight, CheckCircle } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 import {
   InputOTP,
   InputOTPGroup,
@@ -283,6 +284,20 @@ export default function SpecialistAuth() {
       } catch (fcmError) {
         console.error('⚠️ [FCM] Failed to initialize notifications:', fcmError);
         // Continue anyway - non-critical
+      }
+
+      // Check for pending route from notification click
+      if (Capacitor.getPlatform() !== 'web') {
+        const { Preferences } = await import('@capacitor/preferences');
+        const { value: pendingRoute } = await Preferences.get({ key: 'pendingRoute' });
+        
+        if (pendingRoute) {
+          console.log('🔗 [AUTH] Found pending route after login:', pendingRoute);
+          await Preferences.remove({ key: 'pendingRoute' });
+          console.log("✅ Login successful - navigating to pending route:", pendingRoute);
+          navigate(pendingRoute, { replace: true });
+          return;
+        }
       }
 
       // Navigate to orders page (deep links are handled by App.tsx)

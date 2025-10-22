@@ -172,6 +172,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 // Single source of truth for deep-link navigation
+function MobileLanding() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [deepLink, setDeepLink] = useState<string | null>(null);
