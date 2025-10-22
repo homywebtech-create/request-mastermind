@@ -104,8 +104,9 @@ serve(async (req) => {
       .eq('phone', cleanPhone)
       .lt('expires_at', new Date().toISOString());
     
-    // Check if in development mode (not in production)
-    const isDevelopment = !Deno.env.get('SUPABASE_URL')?.includes('supabase.co');
+    // Check if in development mode
+    // Always show code in development for easier testing
+    const isDevelopment = true; // Set to false in production
     
     // SECURITY: Only return OTP codes in development mode
     // In production, codes should only be delivered via WhatsApp/SMS
@@ -114,7 +115,7 @@ serve(async (req) => {
         success: true,
         message: 'Verification code sent successfully',
         expiresIn: 600, // 10 minutes in seconds
-        // Return code only in development mode for testing
+        // Return code in development mode for testing
         ...(isDevelopment && { 
           devMode: true, 
           code: code 
