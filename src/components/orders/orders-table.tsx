@@ -433,10 +433,10 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
-      // Update order status to in-progress
+      // Keep order status as pending to show in upcoming until tracking starts
       await supabase
         .from('orders')
-        .update({ status: 'in-progress' })
+        .update({ status: 'pending' })
         .eq('id', orderId);
 
       toast({
