@@ -821,7 +821,7 @@ export default function Dashboard() {
                 </>
               )}
 
-              {userHasPermission('manage_orders') && (
+              {userHasPermission('create_order') && (
                 <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                   <DialogTrigger asChild>
                     <Button className="flex items-center gap-2">

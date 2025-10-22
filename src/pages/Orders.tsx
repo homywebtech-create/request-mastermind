@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 
 interface OrderFormData {
   customerName: string;
@@ -68,6 +69,7 @@ export default function Orders() {
   const tCommon = useTranslation(language).common;
   const { user, loading: authLoading } = useAuth();
   const { role, loading: roleLoading } = useUserRole();
+  const { hasPermission: userHasPermission } = useUserPermissions(user?.id, role);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -516,7 +518,7 @@ export default function Orders() {
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           
-          {!showForm && (
+          {!showForm && userHasPermission('create_order') && (
             <Button onClick={() => setShowForm(true)} size="lg">
               <Plus className="h-5 w-5 ml-2" />
               {t.newOrder}
@@ -525,7 +527,7 @@ export default function Orders() {
         </div>
       </div>
 
-      {showForm && (
+      {showForm && userHasPermission('create_order') && (
         <OrderForm 
           onSubmit={handleCreateOrder}
           onCancel={() => setShowForm(false)}
