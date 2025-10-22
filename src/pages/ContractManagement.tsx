@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, CheckCircle, XCircle, Clock, Building2, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Clock, Building2, Eye, FileText, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { useTranslation } from '@/i18n';
@@ -58,6 +59,9 @@ export default function ContractManagement() {
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [companies, setCompanies] = useState<Array<{ id: string; name: string; name_en?: string }>>([]);
   
   const translations = useTranslation(language);
   const t = translations.contracts;
@@ -65,7 +69,23 @@ export default function ContractManagement() {
 
   useEffect(() => {
     fetchContracts();
+    fetchCompanies();
   }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name, name_en')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setCompanies(data || []);
+    } catch (error: any) {
+      console.error('Error fetching companies:', error);
+    }
+  };
 
   const fetchContracts = async () => {
     try {
@@ -200,6 +220,87 @@ export default function ContractManagement() {
     }
   };
 
+  const openAssignDialog = (contract: ContractTemplate) => {
+    setSelectedContract(contract);
+    setSelectedCompanyId('');
+    setAssignDialogOpen(true);
+  };
+
+  const handleAssignCompany = async () => {
+    if (!selectedContract || !selectedCompanyId) {
+      toast({
+        title: tCommon.error,
+        description: language === 'ar' ? 'يرجى اختيار شركة' : 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      const { error } = await supabase
+        .from('contract_templates')
+        .update({
+          company_id: selectedCompanyId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', selectedContract.id);
+
+      if (error) throw error;
+
+      toast({
+        title: tCommon.success,
+        description: language === 'ar' ? 'تم تعيين الشركة بنجاح' : 'Company assigned successfully',
+      });
+
+      setAssignDialogOpen(false);
+      fetchContracts();
+    } catch (error: any) {
+      console.error('Error assigning company:', error);
+      toast({
+        title: tCommon.error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDeleteContract = async (contractId: string) => {
+    if (!confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا العقد؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to delete this contract? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      const { error } = await supabase
+        .from('contract_templates')
+        .delete()
+        .eq('id', contractId);
+
+      if (error) throw error;
+
+      toast({
+        title: tCommon.success,
+        description: language === 'ar' ? 'تم حذف العقد بنجاح' : 'Contract deleted successfully',
+      });
+
+      fetchContracts();
+    } catch (error: any) {
+      console.error('Error deleting contract:', error);
+      toast({
+        title: tCommon.error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
@@ -282,9 +383,15 @@ export default function ContractManagement() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {language === 'ar' ? contract.companies?.name : (contract.companies?.name_en || contract.companies?.name)}
-                          </span>
+                          {contract.company_id ? (
+                            <span className="font-medium">
+                              {language === 'ar' ? contract.companies?.name : (contract.companies?.name_en || contract.companies?.name)}
+                            </span>
+                          ) : (
+                            <Badge variant="outline" className="text-orange-600 border-orange-600">
+                              {language === 'ar' ? 'غير مخصص' : 'Unassigned'}
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>{contract.title}</TableCell>
@@ -319,7 +426,7 @@ export default function ContractManagement() {
                         {new Date(contract.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -332,13 +439,26 @@ export default function ContractManagement() {
                             {language === 'ar' ? 'عرض' : 'View'}
                           </Button>
                           
+                          {!contract.company_id && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openAssignDialog(contract)}
+                              disabled={processing}
+                              className="border-orange-600 text-orange-600 hover:bg-orange-50"
+                            >
+                              <Building2 className="h-4 w-4 me-1" />
+                              {language === 'ar' ? 'تعيين شركة' : 'Assign Company'}
+                            </Button>
+                          )}
+                          
                           {contract.approval_status === 'pending' && (
                             <>
                               <Button
                                 variant="default"
                                 size="sm"
                                 onClick={() => handleApprove(contract.id)}
-                                disabled={processing}
+                                disabled={processing || !contract.company_id}
                                 className="bg-green-600 hover:bg-green-700"
                               >
                                 <CheckCircle className="h-4 w-4 me-1" />
@@ -357,8 +477,18 @@ export default function ContractManagement() {
                             </>
                           )}
                           
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteContract(contract.id)}
+                            disabled={processing}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          
                           {contract.approval_status === 'rejected' && contract.rejection_reason && (
-                            <div className="text-xs text-destructive max-w-xs">
+                            <div className="text-xs text-destructive max-w-xs w-full mt-1">
                               {contract.rejection_reason}
                             </div>
                           )}
@@ -546,6 +676,53 @@ export default function ContractManagement() {
                 >
                   <XCircle className="h-4 w-4 me-2" />
                   {processing ? (language === 'ar' ? 'جاري الرفض...' : 'Rejecting...') : (language === 'ar' ? 'رفض العقد' : 'Reject Contract')}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Assign Company Dialog */}
+        <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'تعيين شركة للعقد' : 'Assign Company to Contract'}</DialogTitle>
+              <DialogDescription>
+                {language === 'ar' ? 'اختر الشركة التي تريد نسب العقد إليها' : 'Select the company to assign this contract to'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="company-select">{language === 'ar' ? 'الشركة' : 'Company'}</Label>
+                <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
+                  <SelectTrigger id="company-select">
+                    <SelectValue placeholder={language === 'ar' ? 'اختر شركة...' : 'Select a company...'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {language === 'ar' ? company.name : (company.name_en || company.name)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setAssignDialogOpen(false)}
+                  disabled={processing}
+                >
+                  {tCommon.cancel}
+                </Button>
+                <Button
+                  onClick={handleAssignCompany}
+                  disabled={processing || !selectedCompanyId}
+                >
+                  <Building2 className="h-4 w-4 me-2" />
+                  {processing ? (language === 'ar' ? 'جاري التعيين...' : 'Assigning...') : (language === 'ar' ? 'تعيين' : 'Assign')}
                 </Button>
               </div>
             </div>
