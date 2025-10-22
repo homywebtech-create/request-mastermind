@@ -22,7 +22,6 @@ import { getSoundNotification } from "@/lib/soundNotification";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
-import { hasPermission } from "@/config/permissions";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
@@ -719,7 +718,7 @@ export default function Dashboard() {
               </Button>
 
               {/* Priority Actions - Always Visible with Alerts */}
-              {hasPermission(role, 'view_specialists') && (
+              {userHasPermission('view_specialists') && (
                 <Button
                   variant="outline"
                   onClick={() => navigate('/admin/specialists')}
@@ -738,7 +737,7 @@ export default function Dashboard() {
                 </Button>
               )}
 
-              {hasPermission(role, 'view_deletion_requests') && (
+              {userHasPermission('view_deletion_requests') && (
                 <Button
                   variant="outline"
                   onClick={() => navigate('/deletion-requests')}
@@ -758,11 +757,12 @@ export default function Dashboard() {
               )}
 
               {/* Separator - Only show if there are dropdown items */}
-              {(hasPermission(role, 'view_activity_logs') || 
-                hasPermission(role, 'view_users') || 
-                hasPermission(role, 'view_contracts') || 
-                hasPermission(role, 'view_services') || 
-                hasPermission(role, 'view_companies')) && (
+              {(userHasPermission('view_activity_logs') || 
+                userHasPermission('manage_users') || 
+                userHasPermission('view_users') ||
+                userHasPermission('view_contracts') || 
+                userHasPermission('view_services') || 
+                userHasPermission('view_companies')) && (
                 <>
                   <div className="h-8 w-px bg-border mx-2" />
 
@@ -775,42 +775,42 @@ export default function Dashboard() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align={language === 'ar' ? "end" : "start"} className="w-56">
-                      {hasPermission(role, 'view_activity_logs') && (
+                      {userHasPermission('view_activity_logs') && (
                         <DropdownMenuItem onClick={() => navigate('/admin/activity')}>
                           <FileText className="h-4 w-4 mr-2" />
                           {tDash.activityLogs}
                         </DropdownMenuItem>
                       )}
                       
-                      {hasPermission(role, 'manage_users') && (
+                      {(userHasPermission('manage_users') || userHasPermission('view_users')) && (
                         <DropdownMenuItem onClick={() => navigate('/admin/users')}>
                           <UserCog className="h-4 w-4 mr-2" />
                           {tDash.users}
                         </DropdownMenuItem>
                       )}
 
-                      {(hasPermission(role, 'view_contracts') || 
-                        hasPermission(role, 'view_services') || 
-                        hasPermission(role, 'view_companies')) && 
-                        (hasPermission(role, 'view_activity_logs') || hasPermission(role, 'manage_users')) && (
+                      {(userHasPermission('view_contracts') || 
+                        userHasPermission('view_services') || 
+                        userHasPermission('view_companies')) && 
+                        (userHasPermission('view_activity_logs') || userHasPermission('manage_users') || userHasPermission('view_users')) && (
                         <DropdownMenuSeparator />
                       )}
 
-                      {hasPermission(role, 'view_contracts') && (
+                      {userHasPermission('view_contracts') && (
                         <DropdownMenuItem onClick={() => navigate('/contracts')}>
                           <FileCheck className="h-4 w-4 mr-2" />
                           {language === 'ar' ? 'العقود' : 'Contracts'}
                         </DropdownMenuItem>
                       )}
 
-                      {hasPermission(role, 'view_services') && (
+                      {userHasPermission('view_services') && (
                         <DropdownMenuItem onClick={() => navigate('/services')}>
                           <Settings className="h-4 w-4 mr-2" />
                           {tDash.services}
                         </DropdownMenuItem>
                       )}
 
-                      {hasPermission(role, 'view_companies') && (
+                      {userHasPermission('view_companies') && (
                         <DropdownMenuItem onClick={() => navigate('/companies')}>
                           <Building2 className="h-4 w-4 mr-2" />
                           {language === 'ar' ? 'الشركات' : 'Companies'}
@@ -821,7 +821,7 @@ export default function Dashboard() {
                 </>
               )}
 
-              {hasPermission(role, 'manage_orders') && (
+              {userHasPermission('manage_orders') && (
                 <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                   <DialogTrigger asChild>
                     <Button className="flex items-center gap-2">

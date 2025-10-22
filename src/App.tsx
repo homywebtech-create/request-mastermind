@@ -300,7 +300,7 @@ function AppRouter() {
         <Route
           path="/admin/users"
           element={
-            <RoleProtectedRoute requiredPermission="manage_users">
+            <RoleProtectedRoute anyPermissions={['manage_users', 'view_users']}>
               <AdminUsers />
             </RoleProtectedRoute>
           }

@@ -9,17 +9,19 @@ import { useLanguage } from "@/hooks/useLanguage";
 interface RoleProtectedRouteProps {
   children: ReactNode;
   requiredPermission?: Permission;
+  anyPermissions?: Permission[];
   fallbackPath?: string;
 }
 
 export function RoleProtectedRoute({ 
   children, 
   requiredPermission,
+  anyPermissions,
   fallbackPath = "/auth" 
 }: RoleProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { role, loading: roleLoading } = useUserRole();
-  const { hasPermission, permissions, loading: permsLoading } = useUserPermissions(user?.id, role);
+  const { hasPermission, hasAnyPermission, permissions, loading: permsLoading } = useUserPermissions(user?.id, role);
   const { language } = useLanguage();
 
   console.log('RoleProtectedRoute - State:', {
@@ -27,10 +29,12 @@ export function RoleProtectedRoute({
     role,
     permissions,
     requiredPermission,
+    anyPermissions,
     authLoading,
     roleLoading,
     permsLoading,
-    hasPermission: requiredPermission ? hasPermission(requiredPermission) : 'N/A'
+    hasPermission: requiredPermission ? hasPermission(requiredPermission) : 'N/A',
+    hasAnyPermission: anyPermissions ? hasAnyPermission(anyPermissions) : 'N/A'
   });
 
   // Show loading spinner while checking auth, role, and permissions
@@ -50,6 +54,48 @@ export function RoleProtectedRoute({
   // Check permission if required
   if (requiredPermission && !hasPermission(requiredPermission)) {
     console.log('RoleProtectedRoute - Access denied. Required:', requiredPermission, 'Available:', permissions);
+    
+    // Find first available page based on user permissions
+    const redirectPriority = [
+      { path: '/admin', permission: 'view_orders' as const },
+      { path: '/orders', permission: 'view_orders' as const },
+      { path: '/companies', permission: 'view_companies' as const },
+      { path: '/admin/specialists', permission: 'view_specialists' as const },
+      { path: '/services', permission: 'view_services' as const },
+      { path: '/contracts', permission: 'view_contracts' as const },
+      { path: '/admin/users', permission: 'manage_users' as const },
+      { path: '/deletion-requests', permission: 'view_deletion_requests' as const },
+      { path: '/admin/activity', permission: 'view_activity_logs' as const },
+    ];
+
+    // Find first available page
+    for (const { path, permission } of redirectPriority) {
+      if (hasPermission(permission)) {
+        return <Navigate to={path} replace />;
+      }
+    }
+
+    // If no permissions available, show error
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="text-6xl">🔒</div>
+          <h2 className="text-2xl font-bold">
+            {language === 'ar' ? 'غير مصرح' : 'Access Denied'}
+          </h2>
+          <p className="text-muted-foreground">
+            {language === 'ar' 
+              ? 'ليس لديك صلاحية للوصول إلى أي صفحة. يرجى التواصل مع المدير.'
+              : 'You don\'t have permission to access any page. Please contact the administrator.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check anyPermissions if specified
+  if (anyPermissions && !hasAnyPermission(anyPermissions)) {
+    console.log('RoleProtectedRoute - Access denied. Required any of:', anyPermissions, 'Available:', permissions);
     
     // Find first available page based on user permissions
     const redirectPriority = [
