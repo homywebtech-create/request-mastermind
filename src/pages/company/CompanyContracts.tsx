@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Plus, Trash2, Save, Upload, X, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
@@ -16,7 +17,7 @@ import { useTranslation } from '@/i18n';
 interface ContractTemplate {
   id: string;
   company_id: string;
-  sub_service_id?: string;
+  sub_service_ids?: string[]; // Changed to array
   contract_type: 'full_contract' | 'terms_only';
   title: string;
   content_ar: string;
@@ -29,14 +30,14 @@ interface ContractTemplate {
   approved_at?: string;
   rejection_reason?: string;
   created_at: string;
-  sub_services?: {
+  sub_services?: Array<{
     name: string;
     name_en?: string;
     services?: {
       name: string;
       name_en?: string;
     };
-  };
+  }>;
 }
 
 interface Service {
@@ -84,12 +85,12 @@ export default function CompanyContracts() {
   // Load service data when a template is selected
   useEffect(() => {
     const loadServiceData = async () => {
-      if (selectedTemplate?.sub_service_id) {
-        // Fetch the sub-service to get its service_id
+      if (selectedTemplate?.sub_service_ids && selectedTemplate.sub_service_ids.length > 0) {
+        // Fetch the first sub-service to get its service_id
         const { data: subService } = await supabase
           .from('sub_services')
           .select('service_id')
-          .eq('id', selectedTemplate.sub_service_id)
+          .eq('id', selectedTemplate.sub_service_ids[0])
           .single();
 
         if (subService?.service_id) {
@@ -183,29 +184,51 @@ export default function CompanyContracts() {
   const fetchTemplates = async (companyId: string) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch templates
+      const { data: templatesData, error: templatesError } = await supabase
         .from('contract_templates')
-        .select(`
-          *,
-          sub_services (
-            name,
-            name_en,
-            services (
-              name,
-              name_en
-            )
-          )
-        `)
+        .select('*')
         .eq('company_id', companyId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (templatesError) throw templatesError;
       
-      setTemplates((data || []) as ContractTemplate[]);
+      // For each template, fetch its associated sub-services
+      const templatesWithServices = await Promise.all(
+        (templatesData || []).map(async (template) => {
+          const { data: contractSubServices } = await supabase
+            .from('contract_sub_services')
+            .select(`
+              sub_service_id,
+              sub_services (
+                id,
+                name,
+                name_en,
+                services (
+                  name,
+                  name_en
+                )
+              )
+            `)
+            .eq('contract_id', template.id);
+
+          const subServiceIds = contractSubServices?.map(css => css.sub_service_id) || [];
+          const subServices = contractSubServices?.map(css => css.sub_services).filter(Boolean) || [];
+
+          return {
+            ...template,
+            sub_service_ids: subServiceIds,
+            sub_services: subServices,
+          };
+        })
+      );
+      
+      setTemplates(templatesWithServices as ContractTemplate[]);
       
       // Select first template if exists
-      if (data && data.length > 0 && !selectedTemplate) {
-        setSelectedTemplate(data[0] as ContractTemplate);
+      if (templatesWithServices && templatesWithServices.length > 0 && !selectedTemplate) {
+        setSelectedTemplate(templatesWithServices[0] as ContractTemplate);
       }
     } catch (error: any) {
       console.error('Error fetching templates:', error);
@@ -225,7 +248,7 @@ export default function CompanyContracts() {
     const newTemplate: ContractTemplate = {
       id: '',
       company_id: company.id,
-      sub_service_id: undefined,
+      sub_service_ids: [],
       contract_type: 'full_contract',
       title: language === 'ar' ? 'عقد جديد' : 'New Contract',
       content_ar: '',
@@ -301,10 +324,10 @@ export default function CompanyContracts() {
     if (!selectedTemplate || !company) return;
 
     // Validate
-    if (!selectedTemplate.sub_service_id) {
+    if (!selectedTemplate.sub_service_ids || selectedTemplate.sub_service_ids.length === 0) {
       toast({
         title: tCommon.error,
-        description: language === 'ar' ? 'يرجى اختيار الخدمة الفرعية' : 'Please select a sub-service',
+        description: language === 'ar' ? 'يرجى اختيار خدمة فرعية واحدة على الأقل' : 'Please select at least one sub-service',
         variant: 'destructive',
       });
       return;
@@ -339,12 +362,11 @@ export default function CompanyContracts() {
       setSaving(true);
       
       if (isCreating || !selectedTemplate.id) {
-        // Create new
+        // Create new contract
         const { data, error } = await supabase
           .from('contract_templates')
           .insert({
             company_id: company.id,
-            sub_service_id: selectedTemplate.sub_service_id,
             contract_type: selectedTemplate.contract_type,
             title: selectedTemplate.title || '',
             content_ar: selectedTemplate.content_ar || '',
@@ -359,21 +381,35 @@ export default function CompanyContracts() {
           .single();
 
         if (error) throw error;
+
+        // Insert sub-services relationships
+        const contractSubServices = selectedTemplate.sub_service_ids.map(subServiceId => ({
+          contract_id: data.id,
+          sub_service_id: subServiceId,
+        }));
+
+        const { error: cssError } = await supabase
+          .from('contract_sub_services')
+          .insert(contractSubServices);
+
+        if (cssError) throw cssError;
         
-        setSelectedTemplate(data as ContractTemplate);
+        setSelectedTemplate({ ...data, sub_service_ids: selectedTemplate.sub_service_ids } as ContractTemplate);
         setIsCreating(false);
-        fetchTemplates(company.id);
         
         toast({
           title: tCommon.success,
-          description: language === 'ar' ? 'تم إنشاء العقد بنجاح. في انتظار موافقة الإدارة.' : 'Contract created. Awaiting admin approval.',
+          description: language === 'ar' ? 'تم إنشاء العقد بنجاح. في انتظار اعتماده' : 'Contract created successfully. Awaiting approval',
         });
+
+        if (company) {
+          fetchTemplates(company.id);
+        }
       } else {
         // Update existing
         const { error } = await supabase
           .from('contract_templates')
           .update({
-            sub_service_id: selectedTemplate.sub_service_id,
             contract_type: selectedTemplate.contract_type,
             title: selectedTemplate.title || '',
             content_ar: selectedTemplate.content_ar || '',
@@ -391,12 +427,34 @@ export default function CompanyContracts() {
 
         if (error) throw error;
 
-        fetchTemplates(company.id);
-        
+        // Delete existing sub-services relationships
+        const { error: deleteError } = await supabase
+          .from('contract_sub_services')
+          .delete()
+          .eq('contract_id', selectedTemplate.id);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new sub-services relationships
+        const contractSubServices = selectedTemplate.sub_service_ids.map(subServiceId => ({
+          contract_id: selectedTemplate.id,
+          sub_service_id: subServiceId,
+        }));
+
+        const { error: cssError } = await supabase
+          .from('contract_sub_services')
+          .insert(contractSubServices);
+
+        if (cssError) throw cssError;
+
         toast({
           title: tCommon.success,
-          description: language === 'ar' ? 'تم تحديث العقد. في انتظار موافقة الإدارة.' : 'Contract updated. Awaiting admin approval.',
+          description: language === 'ar' ? 'تم تحديث العقد بنجاح. في انتظار اعتماده' : 'Contract updated successfully. Awaiting approval',
         });
+
+        if (company) {
+          fetchTemplates(company.id);
+        }
       }
     } catch (error: any) {
       console.error('Error saving template:', error);
@@ -615,7 +673,7 @@ export default function CompanyContracts() {
                       value={selectedServiceId}
                       onChange={(e) => {
                         setSelectedServiceId(e.target.value);
-                        setSelectedTemplate({ ...selectedTemplate, sub_service_id: undefined });
+                        setSelectedTemplate({ ...selectedTemplate, sub_service_ids: [] });
                         if (e.target.value) {
                           fetchSubServices(e.target.value);
                         } else {
@@ -636,27 +694,35 @@ export default function CompanyContracts() {
                     </select>
                   </div>
 
-                  {/* Sub-Service Selection */}
-                  {selectedServiceId && (
+                  {/* Sub-Services Multi-Selection */}
+                  {selectedServiceId && subServices.length > 0 && (
                     <div className="space-y-3">
                       <Label className="text-base font-semibold">
-                        {language === 'ar' ? 'الخدمة الفرعية' : 'Sub-Service'} <span className="text-destructive">*</span>
+                        {language === 'ar' ? 'الخدمات الفرعية' : 'Sub-Services'} <span className="text-destructive">*</span>
                       </Label>
-                      <select
-                        value={selectedTemplate.sub_service_id || ''}
-                        onChange={(e) => setSelectedTemplate({ ...selectedTemplate, sub_service_id: e.target.value || undefined })}
-                        disabled={selectedTemplate.approval_status === 'approved'}
-                        className="w-full px-4 py-2 border rounded-lg bg-background"
-                      >
-                        <option value="">
-                          {language === 'ar' ? 'اختر الخدمة الفرعية' : 'Select Sub-Service'}
-                        </option>
-                        {subServices.map((subService) => (
-                          <option key={subService.id} value={subService.id}>
-                            {language === 'ar' ? subService.name : (subService.name_en || subService.name)}
-                          </option>
-                        ))}
-                      </select>
+                      {selectedTemplate.approval_status === 'approved' ? (
+                        <div className="w-full px-4 py-2 border rounded-lg bg-muted text-muted-foreground">
+                          {selectedTemplate.sub_service_ids?.map(id => {
+                            const ss = subServices.find(s => s.id === id);
+                            return ss ? (language === 'ar' ? ss.name : (ss.name_en || ss.name)) : '';
+                          }).join(', ') || (language === 'ar' ? 'غير محدد' : 'Not specified')}
+                        </div>
+                      ) : (
+                        <MultiSelect
+                          options={subServices.map(ss => ({
+                            label: language === 'ar' ? ss.name : (ss.name_en || ss.name),
+                            value: ss.id
+                          }))}
+                          selected={selectedTemplate.sub_service_ids || []}
+                          onChange={(values) => setSelectedTemplate({ ...selectedTemplate, sub_service_ids: values })}
+                          placeholder={language === 'ar' ? 'اختر الخدمات الفرعية...' : 'Select sub-services...'}
+                        />
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'يمكنك اختيار أكثر من خدمة فرعية. العقد سيكون صالحاً لجميع الخدمات المختارة.' 
+                          : 'You can select multiple sub-services. The contract will be valid for all selected services.'}
+                      </p>
                     </div>
                   )}
 

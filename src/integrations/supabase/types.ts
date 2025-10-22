@@ -132,6 +132,42 @@ export type Database = {
           },
         ]
       }
+      contract_sub_services: {
+        Row: {
+          contract_id: string
+          created_at: string
+          id: string
+          sub_service_id: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          id?: string
+          sub_service_id: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          id?: string
+          sub_service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_sub_services_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_sub_services_sub_service_id_fkey"
+            columns: ["sub_service_id"]
+            isOneToOne: false
+            referencedRelation: "sub_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_templates: {
         Row: {
           approval_status: string | null
