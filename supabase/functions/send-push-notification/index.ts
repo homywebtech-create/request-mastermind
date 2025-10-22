@@ -129,13 +129,32 @@ serve(async (req) => {
         const notificationType = (data.type as string) || 'new_order';
         let targetRoute = '/specialist-orders/new'; // Default to new orders
         
+        console.log(`📍 [ROUTE] Determining route for type: ${notificationType}, orderId: ${data.orderId || 'none'}`);
+        
+        // Route mapping based on notification type
         if (notificationType === 'new_quote' || notificationType === 'quote_response') {
-          targetRoute = '/specialist-orders'; // Active orders
-        } else if (notificationType === 'new_order') {
+          // Quote-related notifications → Active orders page
+          targetRoute = '/specialist-orders';
+          console.log(`📍 [ROUTE] Quote notification → ${targetRoute}`);
+        } else if (notificationType === 'new_order' || notificationType === 'resend_order') {
+          // New or resent order notifications → New orders page
           targetRoute = '/specialist-orders/new';
-        } else if (notificationType === 'order_update') {
-          // If orderId exists, go to order tracking
+          console.log(`📍 [ROUTE] New/Resent order → ${targetRoute}`);
+        } else if (notificationType === 'order_update' || notificationType === 'order_status_change') {
+          // Order update notifications → Order tracking page (if orderId exists)
           targetRoute = data.orderId ? `/order-tracking/${data.orderId}` : '/specialist-orders';
+          console.log(`📍 [ROUTE] Order update → ${targetRoute}`);
+        } else if (notificationType === 'booking_confirmed' || notificationType === 'booking_update') {
+          // Booking-related → Order tracking page (if orderId exists)
+          targetRoute = data.orderId ? `/order-tracking/${data.orderId}` : '/specialist-orders';
+          console.log(`📍 [ROUTE] Booking notification → ${targetRoute}`);
+        } else if (notificationType === 'test') {
+          // Test notifications → New orders page
+          targetRoute = '/specialist-orders/new';
+          console.log(`📍 [ROUTE] Test notification → ${targetRoute}`);
+        } else {
+          // Unknown type → default to new orders
+          console.log(`⚠️ [ROUTE] Unknown notification type: ${notificationType}, using default: ${targetRoute}`);
         }
 
         // Build message payload
