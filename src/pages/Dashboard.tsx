@@ -94,6 +94,7 @@ export default function Dashboard() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [suspendedSpecialistsCount, setSuspendedSpecialistsCount] = useState(0);
   const [pendingDeletionRequestsCount, setPendingDeletionRequestsCount] = useState(0);
+  const [userProfile, setUserProfile] = useState<{ full_name: string; is_active: boolean } | null>(null);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const { role } = useUserRole();
@@ -102,6 +103,25 @@ export default function Dashboard() {
   const soundNotification = useRef(getSoundNotification());
   const previousOrdersCount = useRef<number>(0);
   const previousQuotesCount = useRef<number>(0);
+
+  // Fetch user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, is_active')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!error && data) {
+        setUserProfile(data);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user?.id]);
 
   // Initialize audio context on first user interaction
   useEffect(() => {
@@ -654,6 +674,28 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
+          {/* Welcome Message with User Status */}
+          {userProfile && (
+            <div className="mb-4 flex items-center gap-3 pb-3 border-b">
+              <div className="flex items-center gap-2">
+                <div className={`h-3 w-3 rounded-full ${userProfile.is_active ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                <span className="text-sm text-muted-foreground">
+                  {userProfile.is_active 
+                    ? (language === 'ar' ? 'متصل' : 'Online')
+                    : (language === 'ar' ? 'غير متصل' : 'Offline')
+                  }
+                </span>
+              </div>
+              <div className="h-4 w-px bg-border" />
+              <h2 className="text-lg font-medium">
+                {language === 'ar' 
+                  ? `مرحباً، ${userProfile.full_name}` 
+                  : `Welcome, ${userProfile.full_name}`
+                }
+              </h2>
+            </div>
+          )}
+          
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground">
