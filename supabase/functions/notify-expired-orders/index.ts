@@ -18,16 +18,16 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find orders that expired in the last 2 minutes and haven't been notified yet
-    // We check last 2 minutes to catch any that might have been missed
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    // Find orders that expired in the last 90 seconds and haven't been notified yet
+    // We check last 90 seconds for faster notification delivery
+    const ninetySecondsAgo = new Date(Date.now() - 90 * 1000).toISOString();
     const now = new Date().toISOString();
 
     const { data: expiredOrders, error: ordersError } = await supabase
       .from('orders')
       .select('id, order_number, service_type, status, expires_at, notified_expiry')
       .lt('expires_at', now)
-      .gt('expires_at', twoMinutesAgo)
+      .gt('expires_at', ninetySecondsAgo)
       .in('status', ['pending', 'waiting_quotes'])
       .is('notified_expiry', null);
 
