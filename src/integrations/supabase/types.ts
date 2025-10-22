@@ -146,7 +146,7 @@ export type Database = {
           id: string
           is_active: boolean
           rejection_reason: string | null
-          service_id: string | null
+          sub_service_id: string | null
           terms_ar: string[]
           terms_en: string[]
           title: string
@@ -165,7 +165,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           rejection_reason?: string | null
-          service_id?: string | null
+          sub_service_id?: string | null
           terms_ar?: string[]
           terms_en?: string[]
           title: string
@@ -184,7 +184,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           rejection_reason?: string | null
-          service_id?: string | null
+          sub_service_id?: string | null
           terms_ar?: string[]
           terms_en?: string[]
           title?: string
@@ -199,10 +199,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "contract_templates_service_id_fkey"
-            columns: ["service_id"]
+            foreignKeyName: "contract_templates_sub_service_id_fkey"
+            columns: ["sub_service_id"]
             isOneToOne: false
-            referencedRelation: "services"
+            referencedRelation: "sub_services"
             referencedColumns: ["id"]
           },
         ]

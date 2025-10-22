@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 interface ContractTemplate {
   id: string;
   company_id: string;
-  service_id?: string;
+  sub_service_id?: string;
   contract_type: 'full_contract' | 'terms_only';
   title: string;
   content_ar: string;
@@ -37,9 +37,13 @@ interface ContractTemplate {
     name: string;
     name_en?: string;
   };
-  services?: {
+  sub_services?: {
     name: string;
     name_en?: string;
+    services?: {
+      name: string;
+      name_en?: string;
+    };
   };
 }
 
@@ -74,9 +78,13 @@ export default function ContractManagement() {
             name,
             name_en
           ),
-          services (
+          sub_services (
             name,
-            name_en
+            name_en,
+            services (
+              name,
+              name_en
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -281,12 +289,22 @@ export default function ContractManagement() {
                       </TableCell>
                       <TableCell>{contract.title}</TableCell>
                       <TableCell>
-                        <span className="text-sm">
-                          {contract.services 
-                            ? (language === 'ar' ? contract.services.name : (contract.services.name_en || contract.services.name))
+                        <div className="text-sm">
+                          {contract.sub_services?.services 
+                            ? (language === 'ar' 
+                                ? contract.sub_services.services.name 
+                                : (contract.sub_services.services.name_en || contract.sub_services.services.name))
                             : '-'
                           }
-                        </span>
+                          {contract.sub_services && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {language === 'ar' 
+                                ? contract.sub_services.name 
+                                : (contract.sub_services.name_en || contract.sub_services.name)
+                              }
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
@@ -378,10 +396,23 @@ export default function ContractManagement() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm text-muted-foreground">{language === 'ar' ? 'نوع الخدمة' : 'Service Type'}</Label>
+                    <Label className="text-sm text-muted-foreground">{language === 'ar' ? 'الخدمة الرئيسية' : 'Main Service'}</Label>
                     <p className="font-medium mt-1">
-                      {selectedContract.services 
-                        ? (language === 'ar' ? selectedContract.services.name : (selectedContract.services.name_en || selectedContract.services.name))
+                      {selectedContract.sub_services?.services 
+                        ? (language === 'ar' 
+                            ? selectedContract.sub_services.services.name 
+                            : (selectedContract.sub_services.services.name_en || selectedContract.sub_services.services.name))
+                        : '-'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">{language === 'ar' ? 'الخدمة الفرعية' : 'Sub-Service'}</Label>
+                    <p className="font-medium mt-1">
+                      {selectedContract.sub_services 
+                        ? (language === 'ar' 
+                            ? selectedContract.sub_services.name 
+                            : (selectedContract.sub_services.name_en || selectedContract.sub_services.name))
                         : '-'
                       }
                     </p>
@@ -415,21 +446,25 @@ export default function ContractManagement() {
                   </div>
                 )}
 
-                {/* Arabic Content */}
-                <div>
-                  <Label className="mb-2 block">{t.arabicContent}</Label>
-                  <div className="p-4 bg-muted rounded-lg" dir="rtl">
-                    <p className="whitespace-pre-wrap">{selectedContract.content_ar}</p>
-                  </div>
-                </div>
+                {/* Arabic Content - Only for full contracts */}
+                {selectedContract.contract_type === 'full_contract' && (
+                  <>
+                    <div>
+                      <Label className="mb-2 block">{t.arabicContent}</Label>
+                      <div className="p-4 bg-muted rounded-lg" dir="rtl">
+                        <p className="whitespace-pre-wrap">{selectedContract.content_ar}</p>
+                      </div>
+                    </div>
 
-                {/* English Content */}
-                <div>
-                  <Label className="mb-2 block">{t.englishContent}</Label>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="whitespace-pre-wrap">{selectedContract.content_en}</p>
-                  </div>
-                </div>
+                    {/* English Content */}
+                    <div>
+                      <Label className="mb-2 block">{t.englishContent}</Label>
+                      <div className="p-4 bg-muted rounded-lg">
+                        <p className="whitespace-pre-wrap">{selectedContract.content_en}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Arabic Terms */}
                 {selectedContract.terms_ar.length > 0 && (

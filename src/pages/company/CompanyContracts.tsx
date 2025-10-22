@@ -16,7 +16,7 @@ import { useTranslation } from '@/i18n';
 interface ContractTemplate {
   id: string;
   company_id: string;
-  service_id?: string;
+  sub_service_id?: string;
   contract_type: 'full_contract' | 'terms_only';
   title: string;
   content_ar: string;
@@ -29,12 +29,27 @@ interface ContractTemplate {
   approved_at?: string;
   rejection_reason?: string;
   created_at: string;
+  sub_services?: {
+    name: string;
+    name_en?: string;
+    services?: {
+      name: string;
+      name_en?: string;
+    };
+  };
 }
 
 interface Service {
   id: string;
   name: string;
   name_en: string;
+}
+
+interface SubService {
+  id: string;
+  service_id: string;
+  name: string;
+  name_en?: string;
 }
 
 interface Company {
@@ -55,6 +70,8 @@ export default function CompanyContracts() {
   const [uploading, setUploading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
+  const [subServices, setSubServices] = useState<SubService[]>([]);
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   
   const translations = useTranslation(language);
   const t = translations.contracts;
@@ -63,6 +80,27 @@ export default function CompanyContracts() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Load service data when a template is selected
+  useEffect(() => {
+    const loadServiceData = async () => {
+      if (selectedTemplate?.sub_service_id) {
+        // Fetch the sub-service to get its service_id
+        const { data: subService } = await supabase
+          .from('sub_services')
+          .select('service_id')
+          .eq('id', selectedTemplate.sub_service_id)
+          .single();
+
+        if (subService?.service_id) {
+          setSelectedServiceId(subService.service_id);
+          await fetchSubServices(subService.service_id);
+        }
+      }
+    };
+
+    loadServiceData();
+  }, [selectedTemplate?.id]);
 
   const checkAuth = async () => {
     try {
@@ -126,12 +164,38 @@ export default function CompanyContracts() {
     }
   };
 
+  const fetchSubServices = async (serviceId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('sub_services')
+        .select('id, service_id, name, name_en')
+        .eq('service_id', serviceId)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setSubServices((data || []) as SubService[]);
+    } catch (error: any) {
+      console.error('Error fetching sub-services:', error);
+    }
+  };
+
   const fetchTemplates = async (companyId: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('contract_templates')
-        .select('*')
+        .select(`
+          *,
+          sub_services (
+            name,
+            name_en,
+            services (
+              name,
+              name_en
+            )
+          )
+        `)
         .eq('company_id', companyId)
         .order('created_at', { ascending: false });
 
@@ -161,7 +225,7 @@ export default function CompanyContracts() {
     const newTemplate: ContractTemplate = {
       id: '',
       company_id: company.id,
-      service_id: undefined,
+      sub_service_id: undefined,
       contract_type: 'full_contract',
       title: language === 'ar' ? 'عقد جديد' : 'New Contract',
       content_ar: '',
@@ -175,6 +239,8 @@ export default function CompanyContracts() {
     };
     
     setSelectedTemplate(newTemplate);
+    setSelectedServiceId('');
+    setSubServices([]);
     setIsCreating(true);
   };
 
@@ -235,19 +301,35 @@ export default function CompanyContracts() {
     if (!selectedTemplate || !company) return;
 
     // Validate
-    if (!selectedTemplate.service_id) {
+    if (!selectedTemplate.sub_service_id) {
       toast({
         title: tCommon.error,
-        description: language === 'ar' ? 'يرجى اختيار نوع الخدمة' : 'Please select a service type',
+        description: language === 'ar' ? 'يرجى اختيار الخدمة الفرعية' : 'Please select a sub-service',
         variant: 'destructive',
       });
       return;
     }
 
-    if (!selectedTemplate.title || !selectedTemplate.content_ar || !selectedTemplate.content_en) {
+    // Validate based on contract type
+    if (selectedTemplate.contract_type === 'full_contract') {
+      if (!selectedTemplate.title || !selectedTemplate.content_ar || !selectedTemplate.content_en) {
+        toast({
+          title: tCommon.error,
+          description: language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    // Validate terms
+    const hasArabicTerms = selectedTemplate.terms_ar.some(t => t.trim());
+    const hasEnglishTerms = selectedTemplate.terms_en.some(t => t.trim());
+    
+    if (!hasArabicTerms || !hasEnglishTerms) {
       toast({
         title: tCommon.error,
-        description: language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
+        description: language === 'ar' ? 'يرجى إضافة شروط وأحكام باللغتين' : 'Please add terms in both languages',
         variant: 'destructive',
       });
       return;
@@ -262,11 +344,11 @@ export default function CompanyContracts() {
           .from('contract_templates')
           .insert({
             company_id: company.id,
-            service_id: selectedTemplate.service_id,
+            sub_service_id: selectedTemplate.sub_service_id,
             contract_type: selectedTemplate.contract_type,
-            title: selectedTemplate.title,
-            content_ar: selectedTemplate.content_ar,
-            content_en: selectedTemplate.content_en,
+            title: selectedTemplate.title || '',
+            content_ar: selectedTemplate.content_ar || '',
+            content_en: selectedTemplate.content_en || '',
             terms_ar: selectedTemplate.terms_ar.filter(t => t.trim()),
             terms_en: selectedTemplate.terms_en.filter(t => t.trim()),
             is_active: selectedTemplate.is_active,
@@ -291,11 +373,11 @@ export default function CompanyContracts() {
         const { error } = await supabase
           .from('contract_templates')
           .update({
-            service_id: selectedTemplate.service_id,
+            sub_service_id: selectedTemplate.sub_service_id,
             contract_type: selectedTemplate.contract_type,
-            title: selectedTemplate.title,
-            content_ar: selectedTemplate.content_ar,
-            content_en: selectedTemplate.content_en,
+            title: selectedTemplate.title || '',
+            content_ar: selectedTemplate.content_ar || '',
+            content_en: selectedTemplate.content_en || '',
             terms_ar: selectedTemplate.terms_ar.filter(t => t.trim()),
             terms_en: selectedTemplate.terms_en.filter(t => t.trim()),
             is_active: selectedTemplate.is_active,
@@ -527,16 +609,24 @@ export default function CompanyContracts() {
                   {/* Service Selection */}
                   <div className="space-y-3">
                     <Label className="text-base font-semibold">
-                      {language === 'ar' ? 'نوع الخدمة' : 'Service Type'} <span className="text-destructive">*</span>
+                      {language === 'ar' ? 'الخدمة الرئيسية' : 'Main Service'} <span className="text-destructive">*</span>
                     </Label>
                     <select
-                      value={selectedTemplate.service_id || ''}
-                      onChange={(e) => setSelectedTemplate({ ...selectedTemplate, service_id: e.target.value || undefined })}
+                      value={selectedServiceId}
+                      onChange={(e) => {
+                        setSelectedServiceId(e.target.value);
+                        setSelectedTemplate({ ...selectedTemplate, sub_service_id: undefined });
+                        if (e.target.value) {
+                          fetchSubServices(e.target.value);
+                        } else {
+                          setSubServices([]);
+                        }
+                      }}
                       disabled={selectedTemplate.approval_status === 'approved'}
                       className="w-full px-4 py-2 border rounded-lg bg-background"
                     >
                       <option value="">
-                        {language === 'ar' ? 'اختر نوع الخدمة' : 'Select Service Type'}
+                        {language === 'ar' ? 'اختر الخدمة الرئيسية' : 'Select Main Service'}
                       </option>
                       {services.map((service) => (
                         <option key={service.id} value={service.id}>
@@ -545,6 +635,30 @@ export default function CompanyContracts() {
                       ))}
                     </select>
                   </div>
+
+                  {/* Sub-Service Selection */}
+                  {selectedServiceId && (
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold">
+                        {language === 'ar' ? 'الخدمة الفرعية' : 'Sub-Service'} <span className="text-destructive">*</span>
+                      </Label>
+                      <select
+                        value={selectedTemplate.sub_service_id || ''}
+                        onChange={(e) => setSelectedTemplate({ ...selectedTemplate, sub_service_id: e.target.value || undefined })}
+                        disabled={selectedTemplate.approval_status === 'approved'}
+                        className="w-full px-4 py-2 border rounded-lg bg-background"
+                      >
+                        <option value="">
+                          {language === 'ar' ? 'اختر الخدمة الفرعية' : 'Select Sub-Service'}
+                        </option>
+                        {subServices.map((subService) => (
+                          <option key={subService.id} value={subService.id}>
+                            {language === 'ar' ? subService.name : (subService.name_en || subService.name)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* Contract Type */}
                   <div className="space-y-3">
@@ -622,41 +736,55 @@ export default function CompanyContracts() {
                     )}
                   </div>
 
-                  {/* Title */}
-                  <div className="space-y-2">
-                    <Label htmlFor="title">{language === 'ar' ? 'عنوان العقد' : 'Contract Title'}</Label>
-                    <Input
-                      id="title"
-                      value={selectedTemplate.title}
-                      onChange={(e) => setSelectedTemplate({ ...selectedTemplate, title: e.target.value })}
-                      placeholder={language === 'ar' ? 'عنوان العقد' : 'Contract Title'}
-                    />
-                  </div>
+                  {/* Full Contract Fields - Only show if contract_type is full_contract */}
+                  {selectedTemplate.contract_type === 'full_contract' && (
+                    <>
+                      {/* Title */}
+                      <div className="space-y-2">
+                        <Label htmlFor="title">
+                          {language === 'ar' ? 'عنوان العقد' : 'Contract Title'} <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="title"
+                          value={selectedTemplate.title}
+                          onChange={(e) => setSelectedTemplate({ ...selectedTemplate, title: e.target.value })}
+                          placeholder={language === 'ar' ? 'عنوان العقد' : 'Contract Title'}
+                          disabled={selectedTemplate.approval_status === 'approved'}
+                        />
+                      </div>
 
-                  {/* Arabic Content */}
-                  <div className="space-y-2">
-                    <Label htmlFor="content-ar">{t.arabicContent}</Label>
-                    <Textarea
-                      id="content-ar"
-                      value={selectedTemplate.content_ar}
-                      onChange={(e) => setSelectedTemplate({ ...selectedTemplate, content_ar: e.target.value })}
-                      placeholder={t.arabicContent}
-                      rows={3}
-                      dir="rtl"
-                    />
-                  </div>
+                      {/* Arabic Content */}
+                      <div className="space-y-2">
+                        <Label htmlFor="content-ar">
+                          {t.arabicContent} <span className="text-destructive">*</span>
+                        </Label>
+                        <Textarea
+                          id="content-ar"
+                          value={selectedTemplate.content_ar}
+                          onChange={(e) => setSelectedTemplate({ ...selectedTemplate, content_ar: e.target.value })}
+                          placeholder={t.arabicContent}
+                          rows={6}
+                          dir="rtl"
+                          disabled={selectedTemplate.approval_status === 'approved'}
+                        />
+                      </div>
 
-                  {/* English Content */}
-                  <div className="space-y-2">
-                    <Label htmlFor="content-en">{t.englishContent}</Label>
-                    <Textarea
-                      id="content-en"
-                      value={selectedTemplate.content_en}
-                      onChange={(e) => setSelectedTemplate({ ...selectedTemplate, content_en: e.target.value })}
-                      placeholder={t.englishContent}
-                      rows={3}
-                    />
-                  </div>
+                      {/* English Content */}
+                      <div className="space-y-2">
+                        <Label htmlFor="content-en">
+                          {t.englishContent} <span className="text-destructive">*</span>
+                        </Label>
+                        <Textarea
+                          id="content-en"
+                          value={selectedTemplate.content_en}
+                          onChange={(e) => setSelectedTemplate({ ...selectedTemplate, content_en: e.target.value })}
+                          placeholder={t.englishContent}
+                          rows={6}
+                          disabled={selectedTemplate.approval_status === 'approved'}
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Arabic Terms */}
                   <div className="space-y-3">
