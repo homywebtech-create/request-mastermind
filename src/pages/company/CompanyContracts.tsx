@@ -680,7 +680,6 @@ export default function CompanyContracts() {
                           setSubServices([]);
                         }
                       }}
-                      disabled={selectedTemplate.approval_status === 'approved'}
                       className="w-full px-4 py-2 border rounded-lg bg-background"
                     >
                       <option value="">
@@ -700,24 +699,15 @@ export default function CompanyContracts() {
                       <Label className="text-base font-semibold">
                         {language === 'ar' ? 'الخدمات الفرعية' : 'Sub-Services'} <span className="text-destructive">*</span>
                       </Label>
-                      {selectedTemplate.approval_status === 'approved' ? (
-                        <div className="w-full px-4 py-2 border rounded-lg bg-muted text-muted-foreground">
-                          {selectedTemplate.sub_service_ids?.map(id => {
-                            const ss = subServices.find(s => s.id === id);
-                            return ss ? (language === 'ar' ? ss.name : (ss.name_en || ss.name)) : '';
-                          }).join(', ') || (language === 'ar' ? 'غير محدد' : 'Not specified')}
-                        </div>
-                      ) : (
-                        <MultiSelect
-                          options={subServices.map(ss => ({
-                            label: language === 'ar' ? ss.name : (ss.name_en || ss.name),
-                            value: ss.id
-                          }))}
-                          selected={selectedTemplate.sub_service_ids || []}
-                          onChange={(values) => setSelectedTemplate({ ...selectedTemplate, sub_service_ids: values })}
-                          placeholder={language === 'ar' ? 'اختر الخدمات الفرعية...' : 'Select sub-services...'}
-                        />
-                      )}
+                      <MultiSelect
+                        options={subServices.map(ss => ({
+                          label: language === 'ar' ? ss.name : (ss.name_en || ss.name),
+                          value: ss.id
+                        }))}
+                        selected={selectedTemplate.sub_service_ids || []}
+                        onChange={(values) => setSelectedTemplate({ ...selectedTemplate, sub_service_ids: values })}
+                        placeholder={language === 'ar' ? 'اختر الخدمات الفرعية...' : 'Select sub-services...'}
+                      />
                       <p className="text-xs text-muted-foreground">
                         {language === 'ar' 
                           ? 'يمكنك اختيار أكثر من خدمة فرعية. العقد سيكون صالحاً لجميع الخدمات المختارة.' 
@@ -738,7 +728,6 @@ export default function CompanyContracts() {
                           value="full_contract"
                           checked={selectedTemplate.contract_type === 'full_contract'}
                           onChange={(e) => setSelectedTemplate({ ...selectedTemplate, contract_type: e.target.value as 'full_contract' | 'terms_only' })}
-                          disabled={selectedTemplate.approval_status === 'approved'}
                           className="w-4 h-4"
                         />
                         <span>{language === 'ar' ? 'عقد كامل' : 'Full Contract'}</span>
@@ -749,7 +738,6 @@ export default function CompanyContracts() {
                           value="terms_only"
                           checked={selectedTemplate.contract_type === 'terms_only'}
                           onChange={(e) => setSelectedTemplate({ ...selectedTemplate, contract_type: e.target.value as 'full_contract' | 'terms_only' })}
-                          disabled={selectedTemplate.approval_status === 'approved'}
                           className="w-4 h-4"
                         />
                         <span>{language === 'ar' ? 'شروط وأحكام فقط' : 'Terms & Conditions Only'}</span>
@@ -815,7 +803,6 @@ export default function CompanyContracts() {
                           value={selectedTemplate.title}
                           onChange={(e) => setSelectedTemplate({ ...selectedTemplate, title: e.target.value })}
                           placeholder={language === 'ar' ? 'عنوان العقد' : 'Contract Title'}
-                          disabled={selectedTemplate.approval_status === 'approved'}
                         />
                       </div>
 
@@ -831,7 +818,6 @@ export default function CompanyContracts() {
                           placeholder={t.arabicContent}
                           rows={6}
                           dir="rtl"
-                          disabled={selectedTemplate.approval_status === 'approved'}
                         />
                       </div>
 
@@ -846,7 +832,6 @@ export default function CompanyContracts() {
                           onChange={(e) => setSelectedTemplate({ ...selectedTemplate, content_en: e.target.value })}
                           placeholder={t.englishContent}
                           rows={6}
-                          disabled={selectedTemplate.approval_status === 'approved'}
                         />
                       </div>
                     </>
@@ -933,7 +918,7 @@ export default function CompanyContracts() {
                   <div className="flex justify-end pt-6 border-t">
                     <Button
                       onClick={handleSave}
-                      disabled={saving || selectedTemplate.approval_status === 'approved'}
+                      disabled={saving}
                       size="lg"
                       className="min-w-[200px]"
                     >
