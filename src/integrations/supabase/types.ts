@@ -141,10 +141,12 @@ export type Database = {
           company_logo_url: string | null
           content_ar: string
           content_en: string
+          contract_type: string
           created_at: string
           id: string
           is_active: boolean
           rejection_reason: string | null
+          service_id: string | null
           terms_ar: string[]
           terms_en: string[]
           title: string
@@ -158,10 +160,12 @@ export type Database = {
           company_logo_url?: string | null
           content_ar: string
           content_en: string
+          contract_type?: string
           created_at?: string
           id?: string
           is_active?: boolean
           rejection_reason?: string | null
+          service_id?: string | null
           terms_ar?: string[]
           terms_en?: string[]
           title: string
@@ -175,10 +179,12 @@ export type Database = {
           company_logo_url?: string | null
           content_ar?: string
           content_en?: string
+          contract_type?: string
           created_at?: string
           id?: string
           is_active?: boolean
           rejection_reason?: string | null
+          service_id?: string | null
           terms_ar?: string[]
           terms_en?: string[]
           title?: string
@@ -190,6 +196,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_templates_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]

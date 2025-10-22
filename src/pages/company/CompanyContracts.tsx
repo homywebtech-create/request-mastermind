@@ -16,6 +16,8 @@ import { useTranslation } from '@/i18n';
 interface ContractTemplate {
   id: string;
   company_id: string;
+  service_id?: string;
+  contract_type: 'full_contract' | 'terms_only';
   title: string;
   content_ar: string;
   content_en: string;
@@ -27,6 +29,12 @@ interface ContractTemplate {
   approved_at?: string;
   rejection_reason?: string;
   created_at: string;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  name_en: string;
 }
 
 interface Company {
@@ -46,6 +54,7 @@ export default function CompanyContracts() {
   const [company, setCompany] = useState<Company | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
   
   const translations = useTranslation(language);
   const t = translations.contracts;
@@ -89,6 +98,7 @@ export default function CompanyContracts() {
 
       if (companyData) {
         setCompany(companyData);
+        fetchServices();
         fetchTemplates(companyData.id);
       }
     } catch (error: any) {
@@ -98,6 +108,21 @@ export default function CompanyContracts() {
         description: error.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('id, name, name_en')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setServices((data || []) as Service[]);
+    } catch (error: any) {
+      console.error('Error fetching services:', error);
     }
   };
 
@@ -136,6 +161,8 @@ export default function CompanyContracts() {
     const newTemplate: ContractTemplate = {
       id: '',
       company_id: company.id,
+      service_id: undefined,
+      contract_type: 'full_contract',
       title: language === 'ar' ? 'عقد جديد' : 'New Contract',
       content_ar: '',
       content_en: '',
@@ -208,6 +235,15 @@ export default function CompanyContracts() {
     if (!selectedTemplate || !company) return;
 
     // Validate
+    if (!selectedTemplate.service_id) {
+      toast({
+        title: tCommon.error,
+        description: language === 'ar' ? 'يرجى اختيار نوع الخدمة' : 'Please select a service type',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!selectedTemplate.title || !selectedTemplate.content_ar || !selectedTemplate.content_en) {
       toast({
         title: tCommon.error,
@@ -226,6 +262,8 @@ export default function CompanyContracts() {
           .from('contract_templates')
           .insert({
             company_id: company.id,
+            service_id: selectedTemplate.service_id,
+            contract_type: selectedTemplate.contract_type,
             title: selectedTemplate.title,
             content_ar: selectedTemplate.content_ar,
             content_en: selectedTemplate.content_en,
@@ -253,6 +291,8 @@ export default function CompanyContracts() {
         const { error } = await supabase
           .from('contract_templates')
           .update({
+            service_id: selectedTemplate.service_id,
+            contract_type: selectedTemplate.contract_type,
             title: selectedTemplate.title,
             content_ar: selectedTemplate.content_ar,
             content_en: selectedTemplate.content_en,
@@ -484,6 +524,59 @@ export default function CompanyContracts() {
                 </CardHeader>
                 
                 <CardContent className="space-y-6">
+                  {/* Service Selection */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">
+                      {language === 'ar' ? 'نوع الخدمة' : 'Service Type'} <span className="text-destructive">*</span>
+                    </Label>
+                    <select
+                      value={selectedTemplate.service_id || ''}
+                      onChange={(e) => setSelectedTemplate({ ...selectedTemplate, service_id: e.target.value || undefined })}
+                      disabled={selectedTemplate.approval_status === 'approved'}
+                      className="w-full px-4 py-2 border rounded-lg bg-background"
+                    >
+                      <option value="">
+                        {language === 'ar' ? 'اختر نوع الخدمة' : 'Select Service Type'}
+                      </option>
+                      {services.map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {language === 'ar' ? service.name : service.name_en}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Contract Type */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">
+                      {language === 'ar' ? 'نوع العقد' : 'Contract Type'} <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="full_contract"
+                          checked={selectedTemplate.contract_type === 'full_contract'}
+                          onChange={(e) => setSelectedTemplate({ ...selectedTemplate, contract_type: e.target.value as 'full_contract' | 'terms_only' })}
+                          disabled={selectedTemplate.approval_status === 'approved'}
+                          className="w-4 h-4"
+                        />
+                        <span>{language === 'ar' ? 'عقد كامل' : 'Full Contract'}</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="terms_only"
+                          checked={selectedTemplate.contract_type === 'terms_only'}
+                          onChange={(e) => setSelectedTemplate({ ...selectedTemplate, contract_type: e.target.value as 'full_contract' | 'terms_only' })}
+                          disabled={selectedTemplate.approval_status === 'approved'}
+                          className="w-4 h-4"
+                        />
+                        <span>{language === 'ar' ? 'شروط وأحكام فقط' : 'Terms & Conditions Only'}</span>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Logo */}
                   <div className="space-y-3">
                     <Label>{language === 'ar' ? 'شعار الشركة' : 'Company Logo'}</Label>

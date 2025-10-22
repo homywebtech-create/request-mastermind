@@ -18,6 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 interface ContractTemplate {
   id: string;
   company_id: string;
+  service_id?: string;
+  contract_type: 'full_contract' | 'terms_only';
   title: string;
   content_ar: string;
   content_en: string;
@@ -32,6 +34,10 @@ interface ContractTemplate {
   created_at: string;
   updated_at: string;
   companies?: {
+    name: string;
+    name_en?: string;
+  };
+  services?: {
     name: string;
     name_en?: string;
   };
@@ -65,6 +71,10 @@ export default function ContractManagement() {
         .select(`
           *,
           companies (
+            name,
+            name_en
+          ),
+          services (
             name,
             name_en
           )
@@ -244,6 +254,8 @@ export default function ContractManagement() {
                 <TableRow>
                   <TableHead>{language === 'ar' ? 'الشركة' : 'Company'}</TableHead>
                   <TableHead>{language === 'ar' ? 'عنوان العقد' : 'Contract Title'}</TableHead>
+                  <TableHead>{language === 'ar' ? 'نوع الخدمة' : 'Service Type'}</TableHead>
+                  <TableHead>{language === 'ar' ? 'نوع العقد' : 'Contract Type'}</TableHead>
                   <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
                   <TableHead>{language === 'ar' ? 'تاريخ الإنشاء' : 'Created At'}</TableHead>
                   <TableHead className="text-right">{language === 'ar' ? 'الإجراءات' : 'Actions'}</TableHead>
@@ -252,7 +264,7 @@ export default function ContractManagement() {
               <TableBody>
                 {contracts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       {language === 'ar' ? 'لا توجد عقود' : 'No contracts found'}
                     </TableCell>
                   </TableRow>
@@ -268,6 +280,22 @@ export default function ContractManagement() {
                         </div>
                       </TableCell>
                       <TableCell>{contract.title}</TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {contract.services 
+                            ? (language === 'ar' ? contract.services.name : (contract.services.name_en || contract.services.name))
+                            : '-'
+                          }
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {contract.contract_type === 'full_contract' 
+                            ? (language === 'ar' ? 'عقد كامل' : 'Full Contract')
+                            : (language === 'ar' ? 'شروط فقط' : 'Terms Only')
+                          }
+                        </Badge>
+                      </TableCell>
                       <TableCell>{getStatusBadge(contract.approval_status)}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(contract.created_at).toLocaleDateString()}
@@ -341,6 +369,40 @@ export default function ContractManagement() {
             
             {selectedContract && (
               <div className="space-y-6">
+                {/* Contract Information */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">{language === 'ar' ? 'الشركة' : 'Company'}</Label>
+                    <p className="font-medium mt-1">
+                      {language === 'ar' ? selectedContract.companies?.name : (selectedContract.companies?.name_en || selectedContract.companies?.name)}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">{language === 'ar' ? 'نوع الخدمة' : 'Service Type'}</Label>
+                    <p className="font-medium mt-1">
+                      {selectedContract.services 
+                        ? (language === 'ar' ? selectedContract.services.name : (selectedContract.services.name_en || selectedContract.services.name))
+                        : '-'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">{language === 'ar' ? 'نوع العقد' : 'Contract Type'}</Label>
+                    <p className="font-medium mt-1">
+                      {selectedContract.contract_type === 'full_contract' 
+                        ? (language === 'ar' ? 'عقد كامل' : 'Full Contract')
+                        : (language === 'ar' ? 'شروط وأحكام فقط' : 'Terms & Conditions Only')
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">{language === 'ar' ? 'تاريخ الإنشاء' : 'Created At'}</Label>
+                    <p className="font-medium mt-1">
+                      {new Date(selectedContract.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
                 {/* Company Logo */}
                 {selectedContract.company_logo_url && (
                   <div>
