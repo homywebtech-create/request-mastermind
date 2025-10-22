@@ -225,11 +225,6 @@ export default function CompanyContracts() {
       );
       
       setTemplates(templatesWithServices as ContractTemplate[]);
-      
-      // Select first template if exists
-      if (templatesWithServices && templatesWithServices.length > 0 && !selectedTemplate) {
-        setSelectedTemplate(templatesWithServices[0] as ContractTemplate);
-      }
     } catch (error: any) {
       console.error('Error fetching templates:', error);
       toast({
