@@ -78,28 +78,76 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
 
         toast.success(language === "ar" ? "تم تحديث المستخدم بنجاح" : "User updated successfully");
       } else {
-        // Create new user in auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.full_name,
-            },
-          },
-        });
-
-        if (authError) throw authError;
-        if (!authData.user) throw new Error("Failed to create user");
-
-        // Update profile with company_id
-        const { error: profileError } = await supabase
+        // Check if user already exists
+        const { data: existingUser } = await supabase
           .from("profiles")
-          .update({ company_id: companyId })
-          .eq("user_id", authData.user.id);
+          .select("user_id, company_id")
+          .eq("email", formData.email)
+          .maybeSingle();
 
-        if (profileError) {
-          console.error("Error updating profile:", profileError);
+        let userId: string;
+
+        if (existingUser) {
+          // User exists, check if they're already in this company
+          const { data: existingCompanyUser } = await supabase
+            .from("company_users")
+            .select("id")
+            .eq("user_id", existingUser.user_id)
+            .eq("company_id", companyId)
+            .maybeSingle();
+
+          if (existingCompanyUser) {
+            toast.error(language === "ar" ? "هذا المستخدم موجود بالفعل في الفريق" : "User already exists in this team");
+            setLoading(false);
+            return;
+          }
+
+          // Add existing user to company
+          userId = existingUser.user_id;
+          
+          // Update their profile to link to this company if not already linked
+          if (!existingUser.company_id) {
+            await supabase
+              .from("profiles")
+              .update({ company_id: companyId })
+              .eq("user_id", userId);
+          }
+        } else {
+          // Create new user in auth
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+              data: {
+                full_name: formData.full_name,
+              },
+              emailRedirectTo: `${window.location.origin}/company-auth`
+            },
+          });
+
+          if (authError) {
+            if (authError.message.includes("already registered")) {
+              toast.error(language === "ar" ? "البريد الإلكتروني مستخدم بالفعل" : "Email already registered");
+            } else {
+              toast.error(authError.message);
+            }
+            setLoading(false);
+            return;
+          }
+          
+          if (!authData.user) {
+            toast.error(language === "ar" ? "فشل إنشاء المستخدم" : "Failed to create user");
+            setLoading(false);
+            return;
+          }
+
+          userId = authData.user.id;
+
+          // Update profile with company_id
+          await supabase
+            .from("profiles")
+            .update({ company_id: companyId })
+            .eq("user_id", userId);
         }
 
         // Create company user record
@@ -107,7 +155,7 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
           .from("company_users")
           .insert({
             company_id: companyId,
-            user_id: authData.user.id,
+            user_id: userId,
             full_name: formData.full_name,
             email: formData.email,
             phone: formData.phone,
