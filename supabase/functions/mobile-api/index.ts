@@ -61,14 +61,39 @@ serve(async (req) => {
         .from('orders')
         .select(`
           *,
-          customers (name, whatsapp_number),
-          companies (name)
+          customers (name, whatsapp_number, area),
+          companies (name),
+          order_specialists!inner (
+            id,
+            is_accepted,
+            quoted_price,
+            specialists!inner (
+              id,
+              name,
+              company_id
+            )
+          )
         `)
         .or(`company_id.eq.${profile.company_id},send_to_all_companies.eq.true`)
         .order('created_at', { ascending: false });
 
+      // Filter by status if provided
       if (status) {
-        query = query.eq('status', status);
+        if (status === 'upcoming') {
+          // For upcoming: orders with accepted specialists but not completed
+          query = query
+            .eq('order_specialists.is_accepted', true)
+            .neq('status', 'completed')
+            .neq('status', 'cancelled');
+        } else if (status === 'pending') {
+          // For pending: orders without accepted specialists
+          query = query
+            .is('order_specialists.is_accepted', null)
+            .eq('status', 'pending');
+        } else {
+          // For other statuses, filter by order status
+          query = query.eq('status', status);
+        }
       }
 
       const { data: orders, error: ordersError } = await query;
