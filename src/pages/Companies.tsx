@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy, Upload, Image as ImageIcon, Phone, Mail, MapPin, Pencil, Trash2 } from "lucide-react";
+import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy, Upload, Image as ImageIcon, Phone, Mail, MapPin, Pencil, Trash2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -965,6 +965,14 @@ export default function Companies() {
                               title={t.manageServices}
                             >
                               <Settings className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigate(`/company-team?companyId=${company.id}`)}
+                              title={language === "ar" ? "إدارة الفريق" : "Manage Team"}
+                            >
+                              <Users className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"

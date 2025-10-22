@@ -132,6 +132,85 @@ export type Database = {
           },
         ]
       }
+      company_user_permissions: {
+        Row: {
+          company_user_id: string
+          created_at: string
+          id: string
+          permission: Database["public"]["Enums"]["company_permission"]
+        }
+        Insert: {
+          company_user_id: string
+          created_at?: string
+          id?: string
+          permission: Database["public"]["Enums"]["company_permission"]
+        }
+        Update: {
+          company_user_id?: string
+          created_at?: string
+          id?: string
+          permission?: Database["public"]["Enums"]["company_permission"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_user_permissions_company_user_id_fkey"
+            columns: ["company_user_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_users: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          is_owner: boolean
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          is_owner?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          is_owner?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_sub_services: {
         Row: {
           contract_id: string
@@ -1018,6 +1097,14 @@ export type Database = {
         Args: { _duration_hours?: number; _specialist_id: string }
         Returns: string
       }
+      has_company_permission: {
+        Args: {
+          _company_id: string
+          _permission: Database["public"]["Enums"]["company_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1050,6 +1137,15 @@ export type Database = {
         | "admin_full"
         | "admin_viewer"
         | "admin_manager"
+      company_permission:
+        | "manage_specialists"
+        | "view_specialists"
+        | "manage_orders"
+        | "view_orders"
+        | "manage_contracts"
+        | "view_contracts"
+        | "manage_team"
+        | "view_reports"
       order_status:
         | "pending"
         | "quoted"
@@ -1190,6 +1286,16 @@ export const Constants = {
         "admin_full",
         "admin_viewer",
         "admin_manager",
+      ],
+      company_permission: [
+        "manage_specialists",
+        "view_specialists",
+        "manage_orders",
+        "view_orders",
+        "manage_contracts",
+        "view_contracts",
+        "manage_team",
+        "view_reports",
       ],
       order_status: [
         "pending",
