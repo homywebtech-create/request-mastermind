@@ -14,6 +14,7 @@ This document maps all notification types to their respective routes in the app.
 | `order_status_change` | `/order-tracking/:orderId` | Order Tracking | Order status update |
 | `booking_confirmed` | `/order-tracking/:orderId` | Order Tracking | Booking confirmed |
 | `booking_update` | `/order-tracking/:orderId` | Order Tracking | Booking details changed |
+| `order_expired` | `/specialist-orders/new` | New Orders | Order 3-minute timer expired |
 | `test` | `/specialist-orders/new` | New Orders | Test notification |
 
 ## How It Works
@@ -78,8 +79,22 @@ To test each notification type:
 
 1. **New Order**: Create order from admin → sends to specialists
 2. **Resend Order**: Click resend button in orders table
-3. **Test**: Use notification test page (`/push-test`)
-4. **Order Updates**: Change order status in tracking page
+3. **Order Expired**: Wait 3 minutes after order is sent → automated notification sent
+4. **Test**: Use notification test page (`/push-test`)
+5. **Order Updates**: Change order status in tracking page
+
+## Automated Notifications
+
+### Order Expiry Notifications
+- **Trigger**: Automatically sent when order 3-minute timer expires
+- **Frequency**: Checked every minute by cron job
+- **Recipients**: All specialists who received the order but didn't submit a quote
+- **Message**: "⏰ انتهى وقت العرض - انتهى وقت تقديم عرض للطلب {order_number}"
+- **Route**: Takes user to new orders page to see other opportunities
+- **Implementation**: 
+  - Edge function: `supabase/functions/notify-expired-orders/index.ts`
+  - Cron job: Runs every minute via pg_cron
+  - Database field: `orders.notified_expiry` tracks if notification was sent
 
 ## Common Issues
 
