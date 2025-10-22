@@ -82,7 +82,8 @@ export default function AdminUsers() {
     full_name: "",
     email: "",
     phone: "",
-    role: ""
+    role: "",
+    permissions: [] as Permission[]
   });
 
   useEffect(() => {
@@ -295,13 +296,23 @@ export default function AdminUsers() {
     }
   };
 
-  const handleEditClick = (admin: AdminUser) => {
+  const handleEditClick = async (admin: AdminUser) => {
     setSelectedUser(admin);
+    
+    // Load current custom permissions
+    const { data: permissionsData, error } = await supabase
+      .from('user_permissions')
+      .select('permission')
+      .eq('user_id', admin.user_id);
+    
+    const currentPermissions = permissionsData ? permissionsData.map(p => p.permission as Permission) : [];
+    
     setEditAdmin({
       full_name: admin.full_name,
       email: admin.email || "",
       phone: admin.phone || "",
-      role: admin.role
+      role: admin.role,
+      permissions: currentPermissions
     });
     setShowEditDialog(true);
   };
@@ -341,6 +352,29 @@ export default function AdminUsers() {
           }]);
 
         if (roleError) throw roleError;
+      }
+
+      // Update custom permissions
+      // Delete all existing permissions
+      const { error: deletePermsError } = await supabase
+        .from('user_permissions')
+        .delete()
+        .eq('user_id', selectedUser.user_id);
+
+      if (deletePermsError) throw deletePermsError;
+
+      // Insert new permissions
+      if (editAdmin.permissions.length > 0) {
+        const permissionsToInsert = editAdmin.permissions.map(permission => ({
+          user_id: selectedUser.user_id,
+          permission
+        }));
+
+        const { error: insertPermsError } = await supabase
+          .from('user_permissions')
+          .insert(permissionsToInsert);
+
+        if (insertPermsError) throw insertPermsError;
       }
 
       toast.success("Data updated successfully");
@@ -558,25 +592,25 @@ export default function AdminUsers() {
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit User Data</DialogTitle>
+            <DialogTitle>{language === 'ar' ? 'تعديل بيانات المستخدم' : 'Edit User Data'}</DialogTitle>
             <DialogDescription>
-              Edit basic user information
+              {language === 'ar' ? 'تعديل المعلومات الأساسية والصلاحيات' : 'Edit basic information and permissions'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit_full_name">Full Name</Label>
+              <Label htmlFor="edit_full_name">{tCommon.name}</Label>
               <Input
                 id="edit_full_name"
                 value={editAdmin.full_name}
                 onChange={(e) => setEditAdmin({ ...editAdmin, full_name: e.target.value })}
-                placeholder="Enter full name"
+                placeholder={language === 'ar' ? 'الاسم الكامل' : 'Enter full name'}
               />
             </div>
             <div>
-              <Label htmlFor="edit_email">Email</Label>
+              <Label htmlFor="edit_email">{tCommon.email}</Label>
               <Input
                 id="edit_email"
                 type="email"
@@ -586,34 +620,49 @@ export default function AdminUsers() {
               />
             </div>
             <div>
-              <Label htmlFor="edit_phone">Phone Number</Label>
+              <Label htmlFor="edit_phone">{tCommon.phone}</Label>
               <Input
                 id="edit_phone"
                 value={editAdmin.phone}
                 onChange={(e) => setEditAdmin({ ...editAdmin, phone: e.target.value })}
-                placeholder="Optional"
+                placeholder={language === 'ar' ? 'اختياري' : 'Optional'}
               />
             </div>
             <div>
-              <Label htmlFor="edit_role">Role</Label>
+              <Label htmlFor="edit_role">{t.role}</Label>
               <Select value={editAdmin.role} onValueChange={(value) => setEditAdmin({ ...editAdmin, role: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin_viewer">Viewer (View Only)</SelectItem>
-                  <SelectItem value="admin_manager">Manager (View & Edit)</SelectItem>
-                  <SelectItem value="admin_full">Full Admin (All Permissions)</SelectItem>
+                  <SelectItem value="admin_viewer">{language === 'ar' ? 'مشاهد (عرض فقط)' : 'Viewer (View Only)'}</SelectItem>
+                  <SelectItem value="admin_manager">{language === 'ar' ? 'مدير (عرض وتعديل)' : 'Manager (View & Edit)'}</SelectItem>
+                  <SelectItem value="admin_full">{language === 'ar' ? 'أدمن كامل (كل الصلاحيات)' : 'Full Admin (All Permissions)'}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label className="text-base font-semibold">
+                {language === 'ar' ? 'الصلاحيات المخصصة' : 'Custom Permissions'}
+              </Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                {language === 'ar' 
+                  ? 'اترك فارغاً لاستخدام صلاحيات الدور الافتراضية' 
+                  : 'Leave empty to use default role permissions'}
+              </p>
+              <PermissionsSelector
+                selectedPermissions={editAdmin.permissions}
+                onPermissionsChange={(permissions) => setEditAdmin({ ...editAdmin, permissions })}
+                language={language}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
+              {tCommon.cancel}
             </Button>
             <Button onClick={handleUpdateAdmin}>
-              Save Changes
+              {tCommon.save}
             </Button>
           </DialogFooter>
         </DialogContent>

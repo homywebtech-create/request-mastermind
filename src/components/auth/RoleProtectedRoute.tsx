@@ -19,8 +19,19 @@ export function RoleProtectedRoute({
 }: RoleProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { role, loading: roleLoading } = useUserRole();
-  const { hasPermission, loading: permsLoading } = useUserPermissions(user?.id, role);
+  const { hasPermission, permissions, loading: permsLoading } = useUserPermissions(user?.id, role);
   const { language } = useLanguage();
+
+  console.log('RoleProtectedRoute - State:', {
+    user: user?.id,
+    role,
+    permissions,
+    requiredPermission,
+    authLoading,
+    roleLoading,
+    permsLoading,
+    hasPermission: requiredPermission ? hasPermission(requiredPermission) : 'N/A'
+  });
 
   // Show loading spinner while checking auth, role, and permissions
   if (authLoading || roleLoading || permsLoading) {
@@ -38,6 +49,7 @@ export function RoleProtectedRoute({
 
   // Check permission if required
   if (requiredPermission && !hasPermission(requiredPermission)) {
+    console.log('RoleProtectedRoute - Access denied. Required:', requiredPermission, 'Available:', permissions);
     // Prevent infinite redirect loop - if already at fallback, show error instead
     if (window.location.pathname === fallbackPath) {
       return (

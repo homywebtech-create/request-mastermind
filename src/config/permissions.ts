@@ -1,4 +1,4 @@
-import { UserRole } from "@/hooks/useUserRole";
+import { UserRole } from "@/contexts/UserRoleContext";
 
 // Define all available permissions in the system
 export type Permission = 
