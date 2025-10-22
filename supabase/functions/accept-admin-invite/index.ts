@@ -13,6 +13,7 @@ interface AcceptInviteRequest {
   email: string;
   token: string;
   password: string;
+  fullName?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,8 +22,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, token, password }: AcceptInviteRequest = await req.json();
-    console.log("Accepting admin invite for:", email);
+    const { email, token, password, fullName }: AcceptInviteRequest = await req.json();
+    console.log("Accepting admin invite for:", email, "with name:", fullName);
 
     if (!email || !token || !password) {
       throw new Error("Email, token, and password are required");
@@ -99,11 +100,25 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("User exists, updating password and ensuring admin role");
       userId = existingUser.id;
 
-      // Update password
-      await supabase.auth.admin.updateUserById(userId, {
+      // Update password and user metadata
+      const updateData: any = {
         password: password,
         email_confirm: true,
-      });
+      };
+      
+      if (fullName) {
+        updateData.user_metadata = { full_name: fullName };
+      }
+      
+      await supabase.auth.admin.updateUserById(userId, updateData);
+      
+      // Update profile if fullName is provided
+      if (fullName) {
+        await supabase
+          .from("profiles")
+          .update({ full_name: fullName })
+          .eq("user_id", userId);
+      }
 
       // Check if admin role exists
       const { data: roleData } = await supabase
@@ -153,7 +168,7 @@ const handler = async (req: Request): Promise<Response> => {
         password: password,
         email_confirm: true,
         user_metadata: {
-          full_name: "Admin User",
+          full_name: fullName || "Admin User",
         }
       });
 

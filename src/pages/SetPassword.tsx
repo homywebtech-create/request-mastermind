@@ -13,6 +13,7 @@ export default function SetPassword() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const email = searchParams.get("email");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,15 @@ export default function SetPassword() {
 
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!fullName.trim()) {
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "الرجاء إدخال الاسم الكامل" : "Please enter your full name",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast({
@@ -56,7 +66,7 @@ export default function SetPassword() {
 
     try {
       const { data, error } = await supabase.functions.invoke('accept-admin-invite', {
-        body: { email, token, password },
+        body: { email, token, password, fullName },
       });
 
       console.log("Accept invite response:", { data, error });
@@ -129,6 +139,20 @@ export default function SetPassword() {
                 {language === 'ar' ? 'البريد الإلكتروني:' : 'Email:'}
               </p>
               <p className="font-semibold">{email}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fullName">
+                {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+              </Label>
+              <Input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                placeholder={language === 'ar' ? 'أدخل اسمك الكامل' : 'Enter your full name'}
+              />
             </div>
 
             <div className="space-y-2">
