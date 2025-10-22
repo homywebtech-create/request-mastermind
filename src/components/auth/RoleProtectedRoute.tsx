@@ -50,25 +50,43 @@ export function RoleProtectedRoute({
   // Check permission if required
   if (requiredPermission && !hasPermission(requiredPermission)) {
     console.log('RoleProtectedRoute - Access denied. Required:', requiredPermission, 'Available:', permissions);
-    // Prevent infinite redirect loop - if already at fallback, show error instead
-    if (window.location.pathname === fallbackPath) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <div className="text-6xl">🔒</div>
-            <h2 className="text-2xl font-bold">
-              {language === 'ar' ? 'غير مصرح' : 'Access Denied'}
-            </h2>
-            <p className="text-muted-foreground">
-              {language === 'ar' 
-                ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة'
-                : 'You don\'t have permission to access this page.'}
-            </p>
-          </div>
-        </div>
-      );
+    
+    // Find first available page based on user permissions
+    const redirectPriority = [
+      { path: '/admin', permission: 'view_orders' as const },
+      { path: '/orders', permission: 'view_orders' as const },
+      { path: '/companies', permission: 'view_companies' as const },
+      { path: '/admin/specialists', permission: 'view_specialists' as const },
+      { path: '/services', permission: 'view_services' as const },
+      { path: '/contracts', permission: 'view_contracts' as const },
+      { path: '/admin/users', permission: 'manage_users' as const },
+      { path: '/deletion-requests', permission: 'view_deletion_requests' as const },
+      { path: '/admin/activity', permission: 'view_activity_logs' as const },
+    ];
+
+    // Find first available page
+    for (const { path, permission } of redirectPriority) {
+      if (hasPermission(permission)) {
+        return <Navigate to={path} replace />;
+      }
     }
-    return <Navigate to={fallbackPath} replace />;
+
+    // If no permissions available, show error
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="text-6xl">🔒</div>
+          <h2 className="text-2xl font-bold">
+            {language === 'ar' ? 'غير مصرح' : 'Access Denied'}
+          </h2>
+          <p className="text-muted-foreground">
+            {language === 'ar' 
+              ? 'ليس لديك صلاحية للوصول إلى أي صفحة. يرجى التواصل مع المدير.'
+              : 'You don\'t have permission to access any page. Please contact the administrator.'}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

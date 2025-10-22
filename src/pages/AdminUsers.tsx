@@ -377,9 +377,13 @@ export default function AdminUsers() {
         if (insertPermsError) throw insertPermsError;
       }
 
-      toast.success("Data updated successfully");
+      toast.success("Data updated successfully. User will be redirected to an appropriate page.");
       setShowEditDialog(false);
-      fetchAdminUsers();
+      
+      // Force refresh after a short delay to allow realtime subscription to trigger
+      setTimeout(() => {
+        fetchAdminUsers();
+      }, 500);
     } catch (error: any) {
       toast.error(error.message || "Failed to update data");
     }
