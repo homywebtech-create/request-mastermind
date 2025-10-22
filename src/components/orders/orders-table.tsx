@@ -158,36 +158,31 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
         return companySpecialists && 
                companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
       } else {
-        // For admin: show orders with quotes that are either:
-        // 1. Not accepted yet by admin, OR
-        // 2. Accepted by admin but customer hasn't confirmed booking yet
+        // For admin: show orders with quotes but NO quote accepted yet
         const hasAnyAccepted = order.order_specialists?.some(os => os.is_accepted === true);
         const hasQuotes = order.order_specialists?.some(os => os.quoted_price);
-        const customerConfirmed = order.booking_date != null;
         
-        // Show in awaiting-response if has quotes AND (not accepted OR accepted but customer hasn't confirmed)
-        return hasQuotes && (!hasAnyAccepted || (hasAnyAccepted && !customerConfirmed));
+        // Show only if has quotes AND no quote accepted yet
+        return hasQuotes && !hasAnyAccepted;
       }
     }
     
     if (filter === 'upcoming') {
       if (isCompanyView && companyId) {
-        // For companies: show orders where company specialist was accepted AND customer confirmed booking, but not started tracking
+        // For companies: show orders where company specialist was accepted but not started tracking yet
         const hasAcceptedSpecialist = order.order_specialists?.some(os => 
           os.is_accepted === true && os.specialists?.company_id === companyId
         );
-        const customerConfirmed = order.booking_date != null;
         const notStartedTracking = !order.tracking_stage;
         const notCompleted = order.status !== 'completed';
-        return hasAcceptedSpecialist && customerConfirmed && notStartedTracking && notCompleted;
+        return hasAcceptedSpecialist && notStartedTracking && notCompleted;
       } else {
-        // For admin: show orders with accepted quotes AND customer confirmed booking, but not started tracking
+        // For admin: show orders with accepted quotes but tracking hasn't started yet
         const hasAcceptedQuote = order.order_specialists && 
                                  order.order_specialists.some(os => os.is_accepted === true);
-        const customerConfirmed = order.booking_date != null;
         const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
         const notCompleted = order.status !== 'completed';
-        return hasAcceptedQuote && customerConfirmed && notStartedTracking && notCompleted;
+        return hasAcceptedQuote && notStartedTracking && notCompleted;
       }
     }
     
