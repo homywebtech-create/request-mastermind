@@ -733,6 +733,23 @@ export default function CompanyBooking() {
 
       if (orderError) throw orderError;
 
+      // Accept all selected specialists FIRST (before checking availability)
+      for (const specialistId of selectedSpecialistIds) {
+        const { error: acceptError } = await supabase
+          .from('order_specialists')
+          .update({ 
+            is_accepted: true,
+            rejected_at: null,
+            rejection_reason: null
+          })
+          .eq('order_id', orderId)
+          .eq('specialist_id', specialistId);
+
+        if (acceptError) {
+          console.error('Error accepting specialist:', specialistId, acceptError);
+        }
+      }
+
       // First, reject all unselected specialists for this order
       const { error: rejectError } = await supabase
         .from('order_specialists')
@@ -748,24 +765,8 @@ export default function CompanyBooking() {
         console.error('Error rejecting other specialists:', rejectError);
       }
 
-      // Accept all selected specialists and create schedules
+      // THEN create schedules (this is optional and won't block the booking)
       for (const specialistId of selectedSpecialistIds) {
-        const { error: acceptError } = await supabase
-          .from('order_specialists')
-          .update({ 
-            is_accepted: true,
-            rejected_at: null,
-            rejection_reason: null
-          })
-          .eq('order_id', orderId)
-          .eq('specialist_id', specialistId);
-
-        if (acceptError) {
-          console.error('Error accepting specialist:', specialistId, acceptError);
-          continue;
-        }
-
-        // Create schedule entry for this specialist
         try {
           const response = await supabase.functions.invoke('manage-specialist-schedule', {
             body: {
