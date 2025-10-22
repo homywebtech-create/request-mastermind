@@ -148,6 +148,10 @@ serve(async (req) => {
           // Booking-related → Order tracking page (if orderId exists)
           targetRoute = data.orderId ? `/order-tracking/${data.orderId}` : '/specialist-orders';
           console.log(`📍 [ROUTE] Booking notification → ${targetRoute}`);
+        } else if (notificationType === 'order_expired') {
+          // Order expired → Stay on new orders page to see other opportunities
+          targetRoute = '/specialist-orders/new';
+          console.log(`📍 [ROUTE] Order expired → ${targetRoute}`);
         } else if (notificationType === 'test') {
           // Test notifications → New orders page
           targetRoute = '/specialist-orders/new';

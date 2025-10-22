@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.accept-admin-invite]
 verify_jwt = false
+
+[functions.notify-expired-orders]
+verify_jwt = false
