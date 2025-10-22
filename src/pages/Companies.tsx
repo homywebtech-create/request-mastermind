@@ -424,15 +424,38 @@ export default function Companies() {
     let phoneWithoutCode = company.phone || "";
     let detectedCountryCode = "QA";
     
+    console.log('📝 Opening edit dialog for company:', {
+      companyId: company.id,
+      companyName: company.name,
+      originalPhone: company.phone
+    });
+    
     if (company.phone) {
       for (const country of countries) {
         if (company.phone.startsWith(country.dialCode)) {
           detectedCountryCode = country.code;
           phoneWithoutCode = company.phone.substring(country.dialCode.length);
+          console.log('✂️ Phone extraction:', {
+            matchedCountry: country.name,
+            dialCode: country.dialCode,
+            phoneWithoutCode
+          });
           break;
         }
       }
     }
+    
+    console.log('📋 Final edit form data:', {
+      detectedCountryCode,
+      phoneWithoutCode,
+      fullData: {
+        name: company.name,
+        name_en: company.name_en || "",
+        phone: phoneWithoutCode,
+        email: company.email || "",
+        address: company.address || "",
+      }
+    });
     
     setEditCountryCode(detectedCountryCode);
     setEditFormData({
@@ -454,6 +477,14 @@ export default function Companies() {
     const selectedCountry = countries.find(c => c.code === editCountryCode);
     const fullPhone = editFormData.phone ? `${selectedCountry?.dialCode}${editFormData.phone}` : "";
 
+    console.log('🔍 Update Debug Info:', {
+      editCountryCode,
+      selectedCountry,
+      rawPhone: editFormData.phone,
+      fullPhone,
+      companyId: selectedCompany.id
+    });
+
     let logoUrl = selectedCompany.logo_url;
     
     if (editLogoFile) {
@@ -472,32 +503,39 @@ export default function Companies() {
       logo_url: logoUrl
     };
 
-    console.log('Updating company with data:', updateData);
+    console.log('📤 Sending update with data:', updateData);
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("companies")
       .update(updateData)
-      .eq("id", selectedCompany.id);
+      .eq("id", selectedCompany.id)
+      .select();
 
     if (error) {
-      console.error('Update error:', error);
+      console.error('❌ Update error:', error);
       toast({
         title: tCommon.error,
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: tCommon.success,
-        description: t.companyUpdated,
-      });
-      setIsEditDialogOpen(false);
-      setSelectedCompany(null);
-      setEditCountryCode("QA");
-      setEditLogoFile(null);
-      setEditLogoPreview(null);
-      fetchCompanies();
+      return;
     }
+
+    console.log('✅ Update successful, returned data:', data);
+
+    toast({
+      title: tCommon.success,
+      description: t.companyUpdated,
+    });
+    
+    setIsEditDialogOpen(false);
+    setSelectedCompany(null);
+    setEditCountryCode("QA");
+    setEditLogoFile(null);
+    setEditLogoPreview(null);
+    
+    // Refresh companies list
+    await fetchCompanies();
   };
 
   const sendLoginLink = (companyName: string, phone: string) => {
