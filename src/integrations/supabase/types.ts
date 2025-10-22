@@ -134,42 +134,65 @@ export type Database = {
       }
       contract_templates: {
         Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string | null
           company_logo_url: string | null
           content_ar: string
           content_en: string
           created_at: string
           id: string
           is_active: boolean
+          rejection_reason: string | null
           terms_ar: string[]
           terms_en: string[]
           title: string
           updated_at: string
         }
         Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
           company_logo_url?: string | null
           content_ar: string
           content_en: string
           created_at?: string
           id?: string
           is_active?: boolean
+          rejection_reason?: string | null
           terms_ar?: string[]
           terms_en?: string[]
           title: string
           updated_at?: string
         }
         Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
           company_logo_url?: string | null
           content_ar?: string
           content_en?: string
           created_at?: string
           id?: string
           is_active?: boolean
+          rejection_reason?: string | null
           terms_ar?: string[]
           terms_en?: string[]
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contract_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customers: {
         Row: {

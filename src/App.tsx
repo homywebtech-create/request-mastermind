@@ -11,6 +11,7 @@ import Services from "./pages/Services";
 import Orders from "./pages/Orders";
 import CompanyAuth from "./pages/CompanyAuth";
 import CompanyPortal from "./pages/CompanyPortal";
+import CompanyContracts from "./pages/company/CompanyContracts";
 import Specialists from "./pages/Specialists";
 import SpecialistAuth from "./pages/SpecialistAuth";
 import SpecialistHome from "./pages/specialist/SpecialistHome";
@@ -321,6 +322,7 @@ function AppRouter() {
         {/* Company routes */}
         <Route path="/company-auth" element={<CompanyAuth />} />
         <Route path="/company-portal" element={<CompanyPortal />} />
+        <Route path="/company/contracts" element={<CompanyContracts />} />
         <Route path="/specialists" element={<Specialists />} />
         
         {/* Public specialist registration route */}
