@@ -533,6 +533,7 @@ export type Database = {
           link_copied_at: string | null
           modified_by: string | null
           notes: string | null
+          notified_expiry: boolean | null
           order_link: string | null
           order_number: string | null
           selected_booking_type: string | null
@@ -564,6 +565,7 @@ export type Database = {
           link_copied_at?: string | null
           modified_by?: string | null
           notes?: string | null
+          notified_expiry?: boolean | null
           order_link?: string | null
           order_number?: string | null
           selected_booking_type?: string | null
@@ -595,6 +597,7 @@ export type Database = {
           link_copied_at?: string | null
           modified_by?: string | null
           notes?: string | null
+          notified_expiry?: boolean | null
           order_link?: string | null
           order_number?: string | null
           selected_booking_type?: string | null
