@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { CompanyUser } from "@/types/company-team";
 import { CompanyPermissionsSelector } from "./CompanyPermissionsSelector";
+import { DialogDescription } from "@/components/ui/dialog";
 
 interface CompanyUserFormProps {
   companyId: string;
@@ -195,6 +196,12 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" dir={language === "ar" ? "rtl" : "ltr"}>
+      <DialogDescription className="sr-only">
+        {user
+          ? (language === "ar" ? "قم بتعديل بيانات المستخدم" : "Edit user information")
+          : (language === "ar" ? "قم بإضافة مستخدم جديد للفريق" : "Add a new user to the team")}
+      </DialogDescription>
+      
       <div className="space-y-2">
         <Label htmlFor="full_name">
           {language === "ar" ? "الاسم الكامل" : "Full Name"}
