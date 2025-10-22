@@ -159,6 +159,7 @@ export default function SpecialistHome() {
         `)
         .in('id', orderIds)
         .gte('booking_date', new Date().toISOString().split('T')[0]) // Only show today and future orders
+        .neq('status', 'completed') // Hide completed orders
         .order('booking_date', { ascending: true });
 
       const ordersWithQuotes = ordersData?.map(order => {
