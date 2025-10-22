@@ -685,6 +685,54 @@ export type Database = {
           },
         ]
       }
+      specialist_schedules: {
+        Row: {
+          created_at: string | null
+          end_time: string
+          id: string
+          order_id: string
+          specialist_id: string
+          start_time: string
+          travel_buffer_minutes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time: string
+          id?: string
+          order_id: string
+          specialist_id: string
+          start_time: string
+          travel_buffer_minutes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          order_id?: string
+          specialist_id?: string
+          start_time?: string
+          travel_buffer_minutes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_schedules_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_schedules_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialist_specialties: {
         Row: {
           created_at: string
@@ -966,6 +1014,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_next_available_time: {
+        Args: { _duration_hours?: number; _specialist_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -975,6 +1027,10 @@ export type Database = {
       }
       is_admin: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_specialist_available: {
+        Args: { _end_time: string; _specialist_id: string; _start_time: string }
         Returns: boolean
       }
       log_activity: {

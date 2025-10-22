@@ -479,7 +479,44 @@ export default function CompanyBooking() {
       console.log('✅ Filtered specialists for this company:', formattedSpecialists.length);
       console.log('👥 Specialists:', formattedSpecialists);
 
-      setSpecialists(formattedSpecialists);
+      // Check availability for each specialist based on schedules
+      const specialistsWithAvailability = await Promise.all(
+        formattedSpecialists.map(async (specialist: any) => {
+          // Fetch schedules for this specialist
+          const { data: schedules, error: schedulesError } = await supabase
+            .from('specialist_schedules')
+            .select('start_time, end_time, travel_buffer_minutes')
+            .eq('specialist_id', specialist.id)
+            .gte('end_time', new Date().toISOString());
+
+          if (schedulesError) {
+            console.error('Error fetching schedules for specialist:', specialist.id, schedulesError);
+            return specialist;
+          }
+
+          // If specialist has future bookings, set booked_until to the last end time + buffer
+          if (schedules && schedules.length > 0) {
+            const latestSchedule = schedules.reduce((latest, current) => {
+              const currentEnd = new Date(current.end_time);
+              const latestEnd = new Date(latest.end_time);
+              return currentEnd > latestEnd ? current : latest;
+            });
+
+            const bookedUntil = new Date(latestSchedule.end_time);
+            bookedUntil.setMinutes(bookedUntil.getMinutes() + (latestSchedule.travel_buffer_minutes || 120));
+
+            return {
+              ...specialist,
+              booked_until: bookedUntil.toISOString(),
+              has_active_bookings: true,
+            };
+          }
+
+          return specialist;
+        })
+      );
+
+      setSpecialists(specialistsWithAvailability);
       
       // Fetch services and sub-services for the service type dropdown
       const { data: servicesData, error: servicesError } = await supabase
@@ -641,6 +678,40 @@ export default function CompanyBooking() {
 
       const bookingDate = bookingDateType; // This is already in ISO format (YYYY-MM-DD)
 
+      // Verify specialist availability before booking
+      const availabilityChecks = await Promise.all(
+        selectedSpecialistIds.map(async (specialistId) => {
+          const response = await supabase.functions.invoke('manage-specialist-schedule', {
+            body: {
+              specialist_id: specialistId,
+              order_id: orderId,
+              booking_date: bookingDate,
+              booking_time: selectedTime,
+              hours_count: hoursCount,
+            },
+          });
+
+          return {
+            specialist_id: specialistId,
+            available: response.data?.available !== false,
+            error: response.error,
+          };
+        })
+      );
+
+      // Check if all specialists are available
+      const unavailableSpecialists = availabilityChecks.filter(check => !check.available);
+      if (unavailableSpecialists.length > 0) {
+        toast({
+          title: language === 'ar' ? 'خطأ في التوفر' : 'Availability Error',
+          description: language === 'ar' 
+            ? 'بعض الخبيرات المحددات غير متاحات في هذا الوقت. يرجى اختيار وقت آخر.'
+            : 'Some selected specialists are not available at this time. Please choose another time.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // Update order details - set status to in-progress when contract is approved
       const { error: orderError } = await supabase
         .from('orders')
@@ -677,7 +748,7 @@ export default function CompanyBooking() {
         console.error('Error rejecting other specialists:', rejectError);
       }
 
-      // Accept all selected specialists
+      // Accept all selected specialists and create schedules
       for (const specialistId of selectedSpecialistIds) {
         const { error: acceptError } = await supabase
           .from('order_specialists')
@@ -691,6 +762,28 @@ export default function CompanyBooking() {
 
         if (acceptError) {
           console.error('Error accepting specialist:', specialistId, acceptError);
+          continue;
+        }
+
+        // Create schedule entry for this specialist
+        try {
+          const response = await supabase.functions.invoke('manage-specialist-schedule', {
+            body: {
+              specialist_id: specialistId,
+              order_id: orderId,
+              booking_date: bookingDate,
+              booking_time: selectedTime,
+              hours_count: hoursCount,
+            },
+          });
+
+          if (response.error) {
+            console.error('Error creating schedule for specialist:', specialistId, response.error);
+          } else {
+            console.log('Schedule created for specialist:', specialistId, response.data);
+          }
+        } catch (scheduleError) {
+          console.error('Failed to create schedule for specialist:', specialistId, scheduleError);
         }
       }
 
