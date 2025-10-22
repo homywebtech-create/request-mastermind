@@ -23,6 +23,8 @@ import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { hasPermission } from "@/config/permissions";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 interface Order {
   id: string;
@@ -95,6 +97,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const { role } = useUserRole();
+  const { hasPermission: userHasPermission } = useUserPermissions(user?.id, role);
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
   const previousOrdersCount = useRef<number>(0);
@@ -808,51 +811,61 @@ export default function Dashboard() {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          <div onClick={() => setFilter('pending')} className="cursor-pointer">
-            <StatsCard
-              title="New Requests"
-              value={stats.pending}
-              icon={<Package className="h-4 w-4" />}
-              variant="pending"
-              isActive={filter === 'pending'}
-            />
-          </div>
-          <div onClick={() => setFilter('awaiting-response')} className="cursor-pointer">
-            <StatsCard
-              title="Awaiting Response"
-              value={stats.awaitingResponse}
-              icon={<Clock className="h-4 w-4" />}
-              variant="awaiting"
-              isActive={filter === 'awaiting-response'}
-            />
-          </div>
-          <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
-            <StatsCard
-              title="Upcoming"
-              value={stats.upcoming}
-              icon={<CheckCircle className="h-4 w-4" />}
-              variant="success"
-              isActive={filter === 'upcoming'}
-            />
-          </div>
-          <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
-            <StatsCard
-              title="In Progress"
-              value={stats.inProgress}
-              icon={<Users className="h-4 w-4" />}
-              variant="warning"
-              isActive={filter === 'in-progress'}
-            />
-          </div>
-          <div onClick={() => setFilter('completed')} className="cursor-pointer">
-            <StatsCard
-              title="Completed"
-              value={stats.completed}
-              icon={<CheckCircle className="h-4 w-4" />}
-              variant="success"
-              isActive={filter === 'completed'}
-            />
-          </div>
+          {userHasPermission('view_new_requests') && (
+            <div onClick={() => setFilter('pending')} className="cursor-pointer">
+              <StatsCard
+                title="New Requests"
+                value={stats.pending}
+                icon={<Package className="h-4 w-4" />}
+                variant="pending"
+                isActive={filter === 'pending'}
+              />
+            </div>
+          )}
+          {userHasPermission('view_awaiting_response') && (
+            <div onClick={() => setFilter('awaiting-response')} className="cursor-pointer">
+              <StatsCard
+                title="Awaiting Response"
+                value={stats.awaitingResponse}
+                icon={<Clock className="h-4 w-4" />}
+                variant="awaiting"
+                isActive={filter === 'awaiting-response'}
+              />
+            </div>
+          )}
+          {userHasPermission('view_upcoming') && (
+            <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
+              <StatsCard
+                title="Upcoming"
+                value={stats.upcoming}
+                icon={<CheckCircle className="h-4 w-4" />}
+                variant="success"
+                isActive={filter === 'upcoming'}
+              />
+            </div>
+          )}
+          {userHasPermission('view_in_progress') && (
+            <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
+              <StatsCard
+                title="In Progress"
+                value={stats.inProgress}
+                icon={<Users className="h-4 w-4" />}
+                variant="warning"
+                isActive={filter === 'in-progress'}
+              />
+            </div>
+          )}
+          {userHasPermission('view_completed') && (
+            <div onClick={() => setFilter('completed')} className="cursor-pointer">
+              <StatsCard
+                title="Completed"
+                value={stats.completed}
+                icon={<CheckCircle className="h-4 w-4" />}
+                variant="success"
+                isActive={filter === 'completed'}
+              />
+            </div>
+          )}
         </div>
 
         <OrdersTable 

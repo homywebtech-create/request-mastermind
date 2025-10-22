@@ -34,6 +34,7 @@ import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { RoleProtectedRoute } from "./components/auth/RoleProtectedRoute";
 import { UserRoleProvider } from "./contexts/UserRoleContext";
+import { PermissionRedirect } from "./components/auth/PermissionRedirect";
 
 const queryClient = new QueryClient();
 
@@ -243,7 +244,7 @@ function AppRouter() {
         <Route
           path="/admin"
           element={
-            <RoleProtectedRoute requiredPermission="view_dashboard">
+            <RoleProtectedRoute requiredPermission="view_orders" fallbackPath="/orders">
               <Dashboard />
             </RoleProtectedRoute>
           }
@@ -332,8 +333,12 @@ function AppRouter() {
           </RoleProtectedRoute>
         } />
         
-        {/* Default route */}
-        <Route path="/" element={<Navigate to="/auth" replace />} />
+        {/* Default route - redirect based on permissions */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <PermissionRedirect />
+          </ProtectedRoute>
+        } />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

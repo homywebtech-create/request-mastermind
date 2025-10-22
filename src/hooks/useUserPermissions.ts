@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Permission, getRolePermissions } from "@/config/permissions";
 import { UserRole } from "@/contexts/UserRoleContext";
@@ -6,16 +6,30 @@ import { UserRole } from "@/contexts/UserRoleContext";
 export function useUserPermissions(userId: string | undefined, role: UserRole | null) {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef<{ userId: string | undefined; role: UserRole | null } | null>(null);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
+    // Check if we already fetched for this user and role
+    if (fetchedRef.current?.userId === userId && fetchedRef.current?.role === role) {
+      return;
+    }
+
     if (!userId) {
       console.log('useUserPermissions - No userId, clearing permissions');
+      fetchedRef.current = { userId, role };
       setPermissions([]);
       setLoading(false);
       return;
     }
 
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      return;
+    }
+
     const fetchPermissions = async () => {
+      isFetchingRef.current = true;
       console.log('useUserPermissions - Fetching for userId:', userId, 'role:', role);
       try {
         // First, check if user has custom permissions
@@ -41,10 +55,14 @@ export function useUserPermissions(userId: string | undefined, role: UserRole | 
           console.log('useUserPermissions - Using role-based permissions:', rolePerms, 'for role:', role);
           setPermissions(rolePerms);
         }
+
+        // Mark this userId and role as fetched
+        fetchedRef.current = { userId, role };
       } catch (error) {
         console.error('Error in useUserPermissions:', error);
       } finally {
         setLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
