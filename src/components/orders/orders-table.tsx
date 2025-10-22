@@ -60,8 +60,8 @@ interface Order {
       companies?: {
         id: string;
         name: string;
-      };
-    };
+      } | null;
+    } | null;
   }>;
 }
 
@@ -227,10 +227,13 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     const companyMap = new Map<string, CompanyQuoteGroup>();
 
     order.order_specialists
-      .filter(os => os.quoted_price && os.is_accepted === null)
+      .filter(os => os.quoted_price && os.is_accepted === null && os.specialists)
       .forEach(os => {
-        const companyId = os.specialists?.companies?.id;
-        const companyName = os.specialists?.companies?.name || 'Unknown Company';
+        // Add null check for specialists
+        if (!os.specialists) return;
+        
+        const companyId = os.specialists.companies?.id;
+        const companyName = os.specialists.companies?.name || 'Unknown Company';
         
         // Extract numeric value from price string (e.g., "24 QAR" -> 24)
         const priceMatch = os.quoted_price?.match(/(\d+(\.\d+)?)/);
