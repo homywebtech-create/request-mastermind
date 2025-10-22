@@ -158,9 +158,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
                companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
       } else {
         // For admin: show orders with any quotes not yet accepted
-        return order.order_specialists && 
-               order.order_specialists.some(os => os.quoted_price) &&
-               !order.order_specialists.some(os => os.is_accepted === true);
+        // IMPORTANT: Exclude orders where ANY specialist is accepted
+        const hasAnyAccepted = order.order_specialists?.some(os => os.is_accepted === true);
+        const hasQuotes = order.order_specialists?.some(os => os.quoted_price);
+        return hasQuotes && !hasAnyAccepted;
       }
     }
     
