@@ -1363,6 +1363,14 @@ export default function CompanyBooking() {
                       <div className="space-y-4">
                         {specialists
                           .sort((a, b) => {
+                            // First, sort by availability (available first, booked last)
+                            const isBookedA = a.booked_until && new Date(a.booked_until) > new Date();
+                            const isBookedB = b.booked_until && new Date(b.booked_until) > new Date();
+                            
+                            if (isBookedA && !isBookedB) return 1; // a is booked, b is not -> b comes first
+                            if (!isBookedA && isBookedB) return -1; // a is not booked, b is -> a comes first
+                            
+                            // If both have the same availability status, sort by price
                             const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0') * hoursCount;
                             const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0') * hoursCount;
                             return priceA - priceB;
@@ -1381,10 +1389,10 @@ export default function CompanyBooking() {
                                   'border-2 rounded-xl overflow-hidden transition-all',
                                   isSelected
                                     ? 'border-primary shadow-lg'
+                                    : isBooked
+                                    ? 'border-gray-400 dark:border-gray-600 opacity-60 bg-gray-50 dark:bg-gray-900/30'
                                     : isLowest 
                                     ? 'border-green-500 shadow-md' 
-                                    : isBooked
-                                    ? 'border-orange-400 opacity-75'
                                     : 'border-border hover:shadow-md'
                                 )}
                               >
@@ -1393,8 +1401,8 @@ export default function CompanyBooking() {
                                   className={cn(
                                     'flex gap-4 p-4 cursor-pointer transition-colors',
                                     isSelected && 'bg-primary/5',
-                                    isLowest && !isSelected && 'bg-green-50 dark:bg-green-950/20',
-                                    isBooked && 'bg-orange-50 dark:bg-orange-950/20'
+                                    isBooked && 'bg-gray-100 dark:bg-gray-800/50 cursor-not-allowed',
+                                    isLowest && !isSelected && !isBooked && 'bg-green-50 dark:bg-green-950/20'
                                   )}
                                   onClick={() => {
                                     // Toggle selection for monthly service, single for general
