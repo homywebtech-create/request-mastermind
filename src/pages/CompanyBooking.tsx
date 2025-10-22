@@ -712,7 +712,7 @@ export default function CompanyBooking() {
         return;
       }
 
-      // Update order details - set status to in-progress when contract is approved
+      // Update order details - keep as pending to show in upcoming until tracking starts
       const { error: orderError } = await supabase
         .from('orders')
         .update({
@@ -723,7 +723,7 @@ export default function CompanyBooking() {
           booking_date: bookingDate,
           booking_date_type: 'custom',
           booking_time: selectedTime,
-          status: 'in-progress',
+          status: 'pending',
           tracking_stage: null,
           notes: isMonthlyService 
             ? `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}`
