@@ -97,13 +97,37 @@ function MobileLanding() {
   const [hasNavigated, setHasNavigated] = useState(false);
   const [pendingRouteChecked, setPendingRouteChecked] = useState(false);
 
-  // Extract route from deep link URL
+  // Extract route from deep link URL (supports custom schemes + path-based)
   const extractRoute = (url: string): string | null => {
     try {
-      const parsed = new URL(url);
-      const route = parsed.searchParams.get('route');
-      return route ? decodeURIComponent(route) : null;
+      // 1) Prefer explicit query param ?route=...
+      const qIndex = url.indexOf('?');
+      if (qIndex !== -1) {
+        const qs = url.substring(qIndex + 1);
+        const params = new URLSearchParams(qs);
+        const r = params.get('route');
+        if (r) return decodeURIComponent(r);
+      }
+
+      // 2) Fallback: custom scheme with path (e.g., request-mastermind://open/path or ...//order-tracking/123)
+      const pathMatch = url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^/]*(\/.+)?$/);
+      if (pathMatch && pathMatch[1]) {
+        return pathMatch[1];
+      }
+
+      // 3) Last attempt: use URL with a dummy base
+      const parsed = new URL(url, 'https://deep.link');
+      const fromRoute = parsed.searchParams.get('route');
+      if (fromRoute) return decodeURIComponent(fromRoute);
+      if (parsed.pathname && parsed.pathname !== '/') return parsed.pathname + parsed.search;
+
+      return null;
     } catch {
+      // Final fallback: regex for route query
+      try {
+        const m = decodeURIComponent(url).match(/(?:\?|&)route=([^&]+)/);
+        if (m) return decodeURIComponent(m[1]);
+      } catch {}
       return null;
     }
   };

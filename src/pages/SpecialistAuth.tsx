@@ -60,8 +60,8 @@ export default function SpecialistAuth() {
               .single();
 
             if (specialist?.is_active) {
-              // Redirect to specialist dashboard
-              navigate('/specialist-orders', { replace: true });
+              // Centralized routing: go to root and let MobileLanding handle target page
+              navigate('/', { replace: true });
               return;
             }
           }
@@ -286,29 +286,11 @@ export default function SpecialistAuth() {
         // Continue anyway - non-critical
       }
 
-      // Check for pending route from notification click
-      if (Capacitor.getPlatform() !== 'web') {
-        const { Preferences } = await import('@capacitor/preferences');
-        const { value: pendingRoute } = await Preferences.get({ key: 'pendingRoute' });
-        
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('✅ [LOGIN SUCCESS] Checking for pending navigation route...');
-        console.log('📋 [PENDING ROUTE]:', pendingRoute || 'none');
-        
-        if (pendingRoute) {
-          console.log('🎯 [POST-LOGIN NAV] Navigating to pending route:', pendingRoute);
-          await Preferences.remove({ key: 'pendingRoute' });
-          console.log('🗑️ [CLEARED] Removed pending route from preferences');
-          navigate(pendingRoute, { replace: true });
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          return;
-        }
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      }
+      // Centralized routing: pending route is handled by MobileLanding at "/" after login.
 
-      // Navigate to orders page (deep links are handled by App.tsx)
-      console.log("✅ Login successful - navigating to default: /specialist-orders");
-      navigate("/specialist-orders", { replace: true });
+      // Navigate to root; MobileLanding will route to deep link or default page.
+      console.log("✅ Login successful - navigating to root for centralized routing");
+      navigate("/", { replace: true });
     } catch (error: any) {
       console.error('Error verifying code:', error);
       toast({
