@@ -232,8 +232,7 @@ export default function OrderTracking() {
     }
 
     // Open maps with coordinates - will open in default map app on phone
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
-    window.location.href = mapsUrl;
+    await openMapsHelper(order.gps_latitude, order.gps_longitude);
   };
 
   const updateOrderStage = async (newStage: Stage) => {
@@ -487,7 +486,7 @@ export default function OrderTracking() {
                 </div>
               </div>
               <Button 
-                onClick={() => window.location.href = `https://wa.me/${order.customer?.whatsapp_number.replace(/\+/g, '')}`}
+                onClick={() => openWhatsApp(order.customer?.whatsapp_number || '')}
                 className="w-full bg-green-600 hover:bg-green-700"
               >
                 <Phone className="ml-2 h-5 w-5" />

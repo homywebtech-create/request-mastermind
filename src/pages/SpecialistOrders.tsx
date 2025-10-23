@@ -9,6 +9,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Badge } from "@/components/ui/badge";
 import { differenceInMinutes, parseISO } from "date-fns";
+import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import {
   Dialog,
   DialogContent,
@@ -504,7 +505,7 @@ export default function SpecialistOrders() {
   };
 
   const openWhatsApp = (phone: string) => {
-    window.location.href = `https://wa.me/${phone.replace(/\+/g, '')}`;
+    openWhatsAppHelper(phone);
   };
 
   if (isLoading) {

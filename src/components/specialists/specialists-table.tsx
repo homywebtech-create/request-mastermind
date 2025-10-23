@@ -86,9 +86,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
   const [showProfile, setShowProfile] = useState<Specialist | null>(null);
 
   const openWhatsApp = (phoneNumber: string) => {
-    const cleanNumber = phoneNumber.replace(/\D/g, "");
-    const whatsappUrl = `https://wa.me/${cleanNumber}`;
-    window.location.href = whatsappUrl;
+    openWhatsAppHelper(phoneNumber);
   };
 
   const handleGenerateRegistrationLink = async (specialistId: string) => {

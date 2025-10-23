@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy } from "lucide-react";
+import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -416,17 +417,12 @@ You can use this link to track your order status at any time.
 
 Thank you for contacting us! 🌟`;
     
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
-    
-    window.location.href = whatsappUrl;
+    openWhatsAppHelper(cleanNumber, message);
     onLinkCopied(order.id);
   };
 
   const openWhatsApp = (phoneNumber: string) => {
-    const cleanNumber = phoneNumber.replace(/\D/g, '');
-    const whatsappUrl = `https://wa.me/${cleanNumber}`;
-    window.location.href = whatsappUrl;
+    openWhatsAppHelper(phoneNumber);
   };
 
   const handleAcceptQuote = async (orderSpecialistId: string, orderId: string) => {

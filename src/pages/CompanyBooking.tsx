@@ -835,7 +835,7 @@ export default function CompanyBooking() {
 
       // Redirect to WhatsApp
       if (company?.phone) {
-        window.location.href = `https://wa.me/${company.phone}?text=${message}`;
+        openWhatsApp(company.phone, message);
       }
 
       toast({
@@ -1225,7 +1225,7 @@ export default function CompanyBooking() {
                           `الميزانية المقترحة: ${editedBudget}\n\n` +
                           `أرجو التواصل معي لتأكيد السعر الجديد.`
                         );
-                        window.location.href = `https://wa.me/${company.phone}?text=${message}`;
+                        openWhatsApp(company.phone, message);
                       }
                     }}
                   >
