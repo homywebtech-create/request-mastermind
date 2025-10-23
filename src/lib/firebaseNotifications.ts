@@ -123,7 +123,12 @@ export class FirebaseNotificationManager {
           });
           
           console.log('✅ [SAVED] Route saved to preferences');
-          console.log('ℹ️ [NEXT] App will navigate after session is restored');
+          
+          // CRITICAL: Emit event for immediate navigation when app is running
+          window.dispatchEvent(new CustomEvent('notificationNavigate', { 
+            detail: { route } 
+          }));
+          console.log('📤 [EVENT] Navigation event dispatched for route:', route);
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         });
 

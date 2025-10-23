@@ -56,6 +56,7 @@ const DeepLinkController = () => {
     if (!isMobile) return;
 
     let appUrlOpenListener: { remove: () => void } | undefined;
+    let notificationNavigateListener: ((event: CustomEvent) => void) | undefined;
 
     const setup = async () => {
       // 1) Check pending route saved by notification tap while logged out
@@ -102,6 +103,25 @@ const DeepLinkController = () => {
       } catch (e) {
         console.warn("[DeepLinkController] addListener appUrlOpen failed", e);
       }
+
+      // 4) Listen for notification taps when app is already running
+      notificationNavigateListener = ((event: CustomEvent) => {
+        const route = event.detail?.route;
+        if (!route) return;
+        
+        console.log('🔔 [DeepLinkController] Notification navigate event received:', route);
+        
+        // Navigate immediately if user is logged in
+        if (user && !loading) {
+          console.log('✅ [DeepLinkController] Navigating to:', route);
+          navigate(route, { replace: true });
+        } else {
+          console.log('💾 [DeepLinkController] Saving route for post-login navigation');
+          deepLinkRef.current = route;
+        }
+      }) as (event: CustomEvent) => void;
+
+      window.addEventListener('notificationNavigate', notificationNavigateListener as EventListener);
     };
 
     setup();
@@ -110,9 +130,12 @@ const DeepLinkController = () => {
       try {
         appUrlOpenListener?.remove();
       } catch {}
+      if (notificationNavigateListener) {
+        window.removeEventListener('notificationNavigate', notificationNavigateListener as EventListener);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile]);
+  }, [isMobile, user, loading, navigate]);
 
   // Perform initial navigation once auth + pending check are ready
   useEffect(() => {
