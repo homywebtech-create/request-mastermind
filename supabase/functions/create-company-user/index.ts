@@ -14,6 +14,7 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('Missing authorization header');
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -34,11 +35,14 @@ serve(async (req) => {
     // Get current user
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
+      console.error('Auth error:', userError);
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized', details: userError?.message }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    console.log('Authenticated user:', user.id, user.email);
 
     const { companyId, userData, permissions } = await req.json();
 
@@ -103,9 +107,20 @@ serve(async (req) => {
       .maybeSingle();
 
     const isAdmin = userRole && ['admin', 'admin_full', 'admin_manager'].includes(userRole.role);
+    console.log('User role check:', { userId: user.id, role: userRole?.role, isAdmin });
 
     // If not admin, check if requesting user is company owner or has manage_team permission
     if (!isAdmin) {
+      // First check if user's profile is linked to this company
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('company_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      console.log('Profile check:', { userId: user.id, profileCompanyId: profile?.company_id, requestedCompanyId: companyId });
+      
+      // Check if user exists in company_users table
       const { data: companyUser, error: companyUserError } = await supabaseAdmin
         .from('company_users')
         .select('id, is_owner')
@@ -113,29 +128,36 @@ serve(async (req) => {
         .eq('company_id', companyId)
         .maybeSingle();
 
+      console.log('Company user check:', { companyUser, error: companyUserError });
+
       if (companyUserError) {
         console.error('Error fetching company user:', companyUserError);
         return new Response(
-          JSON.stringify({ error: 'Failed to verify permissions' }),
+          JSON.stringify({ error: 'Failed to verify permissions', details: companyUserError.message }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      if (!companyUser) {
+      // If user is not in company_users but their profile is linked to the company, they are the owner
+      if (!companyUser && profile?.company_id === companyId) {
+        console.log('User is company owner via profile link');
+        // User is the company owner, allow the operation
+      } else if (!companyUser) {
+        console.error('User not authorized:', { userId: user.id, companyId });
         return new Response(
           JSON.stringify({ error: 'Unauthorized - not a member of this company' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      }
-
-      // If not owner, check for manage_team permission
-      if (!companyUser.is_owner) {
+      } else if (!companyUser.is_owner) {
+        // If not owner, check for manage_team permission
         const { data: hasPermission } = await supabaseAdmin
           .from('company_user_permissions')
           .select('id')
           .eq('company_user_id', companyUser.id)
           .eq('permission', 'manage_team')
           .maybeSingle();
+
+        console.log('Permission check:', { hasPermission });
 
         if (!hasPermission) {
           return new Response(
