@@ -419,14 +419,14 @@ Thank you for contacting us! 🌟`;
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
     
-    window.open(whatsappUrl, '_blank');
+    window.location.href = whatsappUrl;
     onLinkCopied(order.id);
   };
 
   const openWhatsApp = (phoneNumber: string) => {
     const cleanNumber = phoneNumber.replace(/\D/g, '');
     const whatsappUrl = `https://wa.me/${cleanNumber}`;
-    window.open(whatsappUrl, '_blank');
+    window.location.href = whatsappUrl;
   };
 
   const handleAcceptQuote = async (orderSpecialistId: string, orderId: string) => {
@@ -1111,10 +1111,10 @@ Thank you for contacting us! 🌟`;
                                             size="sm"
                                             variant="default"
                                             className="flex-1"
-                                            onClick={() => {
-                                              const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
-                                              window.open(url, '_blank');
-                                            }}
+                            onClick={() => {
+                              const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                              window.location.href = url;
+                            }}
                                           >
                                             <Building2 className="h-3 w-3 mr-2" />
                                             {t.enterCompanyPage}

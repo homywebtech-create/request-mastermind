@@ -504,7 +504,7 @@ export default function SpecialistOrders() {
   };
 
   const openWhatsApp = (phone: string) => {
-    window.open(`https://wa.me/${phone.replace(/\+/g, '')}`, '_blank');
+    window.location.href = `https://wa.me/${phone.replace(/\+/g, '')}`;
   };
 
   if (isLoading) {
