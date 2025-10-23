@@ -19,6 +19,7 @@ import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { useLanguage } from '@/hooks/useLanguage';
 import { TermsAndConditions } from '@/components/booking/TermsAndConditions';
 import { MonthlyContract } from '@/components/booking/MonthlyContract';
+import { openWhatsApp } from '@/lib/externalLinks';
 import {
   AlertDialog,
   AlertDialogAction,

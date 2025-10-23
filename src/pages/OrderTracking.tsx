@@ -16,6 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { openWhatsApp, openMaps as openMapsHelper } from "@/lib/externalLinks";
 
 type Stage = 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
@@ -221,7 +222,7 @@ export default function OrderTracking() {
     }
   };
 
-  const openMaps = () => {
+  const openMaps = async () => {
     if (!order?.gps_latitude || !order?.gps_longitude) {
       toast({
         title: "Error",

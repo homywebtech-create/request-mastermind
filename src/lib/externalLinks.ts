@@ -1,4 +1,4 @@
-import { App } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 
 const isNative = () => Capacitor.isNativePlatform();
@@ -12,7 +12,7 @@ export async function openWhatsApp(phone: string, text?: string) {
   if (isNative()) {
     const schemeUrl = `whatsapp://send?phone=${clean}${encodedText ? `&text=${encodedText}` : ''}`;
     try {
-      await App.openUrl({ url: schemeUrl });
+      await Browser.open({ url: schemeUrl });
       return;
     } catch (e) {
       // Fall through to web fallback
@@ -32,13 +32,13 @@ export async function openMaps(lat: number, lng: number, label?: string) {
       const plt = platform();
       if (plt === 'ios') {
         const url = `maps://?q=${encodeURIComponent(label || 'Location')}&sll=${lat},${lng}`;
-        await App.openUrl({ url });
+        await Browser.open({ url });
         return;
       }
       // android (geo:) or default
       const queryLabel = label ? `(${encodeURIComponent(label)})` : '';
       const url = `geo:${lat},${lng}?q=${lat},${lng}${queryLabel}`;
-      await App.openUrl({ url });
+      await Browser.open({ url });
       return;
     } catch (e) {
       // Fall through to web fallback
@@ -53,7 +53,7 @@ export async function openMaps(lat: number, lng: number, label?: string) {
 export async function openUrlPreferApp(url: string) {
   if (isNative()) {
     try {
-      await App.openUrl({ url });
+      await Browser.open({ url });
       return;
     } catch (e) {
       // ignore

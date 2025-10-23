@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 
 interface Specialist {
   id: string;
