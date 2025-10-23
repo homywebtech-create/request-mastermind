@@ -757,8 +757,7 @@ export default function Dashboard() {
               )}
 
               {/* Separator - Only show if there are dropdown items */}
-              {(userHasPermission('view_admin_statistics') ||
-                userHasPermission('view_activity_logs') || 
+              {(userHasPermission('view_activity_logs') || 
                 userHasPermission('manage_users') || 
                 userHasPermission('view_users') ||
                 userHasPermission('view_contracts') || 
@@ -776,13 +775,6 @@ export default function Dashboard() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align={language === 'ar' ? "end" : "start"} className="w-56">
-                      {userHasPermission('view_admin_statistics') && (
-                        <DropdownMenuItem onClick={() => navigate('/admin/statistics')}>
-                          <BarChart className="h-4 w-4 mr-2" />
-                          {language === 'ar' ? 'الإحصائيات' : 'Statistics'}
-                        </DropdownMenuItem>
-                      )}
-                      
                       {userHasPermission('view_activity_logs') && (
                         <DropdownMenuItem onClick={() => navigate('/admin/activity')}>
                           <FileText className="h-4 w-4 mr-2" />
@@ -917,6 +909,20 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* Statistics Button */}
+        {userHasPermission('view_admin_statistics') && (
+          <div className="flex justify-start">
+            <Button
+              onClick={() => navigate('/admin/statistics')}
+              className="flex items-center gap-2"
+              size="lg"
+            >
+              <BarChart className="h-5 w-5" />
+              {language === 'ar' ? 'عرض الإحصائيات الشاملة' : 'View Full Statistics'}
+            </Button>
+          </div>
+        )}
 
         <OrdersTable 
           orders={orders}
