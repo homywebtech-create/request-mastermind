@@ -220,6 +220,7 @@ function MobileLanding() {
   const { user, loading } = useAuth();
   const [deepLink, setDeepLink] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
+  const [pendingRouteChecked, setPendingRouteChecked] = useState(false);
 
   // Extract route from deep link URL
   const extractRoute = (url: string): string | null => {
@@ -273,41 +274,63 @@ function MobileLanding() {
     };
   }, []);
 
-  // Handle navigation once auth is ready
+  // Check for pending routes FIRST (from notification tap while logged out)
   useEffect(() => {
-    if (loading || hasNavigated) return;
-
-    console.log('🧭 [APP] Handling navigation - user:', !!user, 'deepLink:', deepLink);
-
-    // Avoid racing default navigation when a deep link is being processed elsewhere
-    const deepLinkInProgress = sessionStorage.getItem('deeplink:navigated') === '1';
-    if (deepLinkInProgress) {
-      console.log('⏭️ [APP] Deep link in progress, skipping default navigation');
-      setHasNavigated(true);
+    if (Capacitor.getPlatform() === 'web') {
+      setPendingRouteChecked(true);
       return;
     }
 
+    const checkPendingRoute = async () => {
+      console.log('🔍 [PENDING] Checking for pending route from notification...');
+      
+      const { Preferences } = await import('@capacitor/preferences');
+      const { value } = await Preferences.get({ key: 'pendingRoute' });
+      
+      if (value) {
+        console.log('✅ [PENDING] Found pending route:', value);
+        setDeepLink(value);
+        await Preferences.remove({ key: 'pendingRoute' });
+      } else {
+        console.log('ℹ️ [PENDING] No pending route found');
+      }
+      
+      setPendingRouteChecked(true);
+    };
+
+    checkPendingRoute();
+  }, []);
+
+  // Handle navigation once auth is ready AND pending route is checked
+  useEffect(() => {
+    if (loading || hasNavigated || !pendingRouteChecked) {
+      console.log('⏸️ [NAV] Waiting...', { loading, hasNavigated, pendingRouteChecked });
+      return;
+    }
+
+    console.log('🧭 [NAV] Ready to navigate - user:', !!user, 'deepLink:', deepLink);
+
     if (deepLink) {
-      // Mark deep link handling to prevent default redirects
-      sessionStorage.setItem('deeplink:navigated', '1');
       if (user) {
-        console.log('✅ [APP] Navigating to deep link:', deepLink);
+        console.log('✅ [NAV] User + deep link → navigating to:', deepLink);
         navigate(deepLink, { replace: true });
       } else {
-        console.log('🔐 [APP] Deep link present but not authenticated, going to auth');
+        console.log('🔐 [NAV] Deep link but not authenticated → going to auth');
         navigate('/specialist-auth', { replace: true });
       }
     } else {
       // Normal navigation
       if (user) {
+        console.log('🏠 [NAV] User logged in → default to /specialist-orders');
         navigate('/specialist-orders', { replace: true });
       } else {
+        console.log('🔐 [NAV] Not logged in → going to /specialist-auth');
         navigate('/specialist-auth', { replace: true });
       }
     }
 
     setHasNavigated(true);
-  }, [user, loading, deepLink, navigate, hasNavigated]);
+  }, [user, loading, deepLink, navigate, hasNavigated, pendingRouteChecked]);
 
   if (loading || !hasNavigated) {
     return (

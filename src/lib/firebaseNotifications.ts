@@ -121,9 +121,6 @@ export class FirebaseNotificationManager {
             key: 'pendingRoute',
             value: route,
           });
-
-          // Prevent default landing navigation from racing the deep link
-          try { sessionStorage.setItem('deeplink:navigated', '1'); } catch {}
           
           console.log('✅ [SAVED] Route saved to preferences');
           console.log('ℹ️ [NEXT] App will navigate after session is restored');
