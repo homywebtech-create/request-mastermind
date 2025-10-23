@@ -829,23 +829,6 @@ export default function Dashboard() {
                 </>
               )}
 
-              {userHasPermission('create_order') && (
-                <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      New Order
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <OrderForm 
-                      onSubmit={handleCreateOrder}
-                      onCancel={() => setIsFormOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-              )}
-
               <Button
                 variant="outline"
                 size="icon"
@@ -918,7 +901,26 @@ export default function Dashboard() {
           )}
         </div>
 
-        <OrdersTable 
+        {userHasPermission('create_order') && (
+          <div className="flex justify-start">
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Order
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <OrderForm 
+                  onSubmit={handleCreateOrder}
+                  onCancel={() => setIsFormOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+
+        <OrdersTable
           orders={orders}
           onUpdateStatus={handleUpdateStatus}
           onLinkCopied={handleLinkCopied}
