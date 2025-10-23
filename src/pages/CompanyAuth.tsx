@@ -93,27 +93,36 @@ export default function CompanyAuth() {
         if (!usersError && allCompanyUsers) {
           console.log("8. All company user numbers:", allCompanyUsers.map(u => u.phone));
           
+          // جرب البحث المباشر أولاً
           companyUser = allCompanyUsers.find(u => u.phone === cleanPhone);
           
+          // إذا لم ينجح، جرب بدون علامة +
           if (!companyUser) {
             const phoneWithoutPlus = cleanPhone.replace('+', '');
             companyUser = allCompanyUsers.find(u => u.phone?.replace('+', '') === phoneWithoutPlus);
-            console.log("9. Trying company user search without + sign");
+            console.log("9. Trying company user search without + sign:", phoneWithoutPlus);
           }
           
+          // إذا لم ينجح، جرب بالرقم فقط (بدون رمز الدولة)
           if (!companyUser) {
-            companyUser = allCompanyUsers.find(u => u.phone?.endsWith(phoneNumber));
-            console.log("10. Trying company user search with number only");
+            companyUser = allCompanyUsers.find(u => {
+              // تحقق إذا كان رقم المستخدم هو نفس الرقم المدخل
+              return u.phone === phoneNumber || 
+                     u.phone?.endsWith(phoneNumber) ||
+                     phoneNumber === u.phone?.replace(/^\+?\d{1,4}/, ''); // إزالة رمز الدولة من المخزن
+            });
+            console.log("10. Trying company user search with number only:", phoneNumber);
           }
 
           if (companyUser && companyUser.companies) {
-            // استخدم بيانات الشركة من company_user
+            // استخدم الرقم الكامل مع رمز الدولة للتحقق
             company = {
               id: companyUser.companies.id,
               name: companyUser.companies.name,
-              phone: companyUser.phone // استخدم رقم المستخدم للتحقق
+              phone: cleanPhone // استخدم الرقم الكامل الذي أدخله المستخدم
             };
             console.log("11. Company user found:", companyUser.full_name, "for company:", company.name);
+            console.log("12. Using phone for verification:", company.phone);
           }
         }
       }

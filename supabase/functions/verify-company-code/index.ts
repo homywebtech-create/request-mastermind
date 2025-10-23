@@ -86,7 +86,8 @@ serve(async (req) => {
       // البحث في جدول company_users
       console.log('6. Not found in companies, searching company_users...');
       
-      const { data: userData, error: userError } = await supabaseAdmin
+      // جلب جميع مستخدمي الشركات النشطين للمقارنة
+      const { data: allUsers, error: usersError } = await supabaseAdmin
         .from('company_users')
         .select(`
           id,
@@ -99,18 +100,30 @@ serve(async (req) => {
             is_active
           )
         `)
-        .eq('phone', phone)
         .eq('is_active', true)
-        .eq('companies.is_active', true)
-        .maybeSingle();
+        .eq('companies.is_active', true);
 
-      if (userData && userData.companies) {
-        companyUser = userData;
-        company = {
-          id: userData.companies.id,
-          name: userData.companies.name
-        };
-        console.log('7. Company user found:', companyUser.full_name, 'for company:', company.name);
+      if (!usersError && allUsers) {
+        // استخراج الرقم بدون رمز الدولة
+        const phoneWithoutCountryCode = phone.replace(/^\+?\d{1,4}/, '');
+        console.log('7. Searching for phone:', phone, 'or short version:', phoneWithoutCountryCode);
+        
+        // البحث بعدة طرق
+        const userData = allUsers.find(u => 
+          u.phone === phone || 
+          u.phone === phoneWithoutCountryCode ||
+          u.phone?.replace(/^\+?\d{1,4}/, '') === phoneWithoutCountryCode ||
+          phone.endsWith(u.phone || '')
+        );
+
+        if (userData && userData.companies) {
+          companyUser = userData;
+          company = {
+            id: userData.companies.id,
+            name: userData.companies.name
+          };
+          console.log('8. Company user found:', companyUser.full_name, 'for company:', company.name);
+        }
       }
     }
 
