@@ -95,41 +95,52 @@ serve(async (req) => {
       );
     }
 
-    // Check if the requesting user has permission to manage team
-    const { data: requestingUserProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('company_id')
+    // Check if user is admin
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (requestingUserProfile?.company_id !== companyId) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - wrong company' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const isAdmin = userRole && ['admin', 'admin_full', 'admin_manager'].includes(userRole.role);
 
-    // Check if requesting user has manage_team permission or is owner
-    const { data: companyUser } = await supabaseAdmin
-      .from('company_users')
-      .select('is_owner')
-      .eq('user_id', user.id)
-      .eq('company_id', companyId)
-      .single();
+    // If not admin, check if the requesting user has permission to manage team
+    if (!isAdmin) {
+      const { data: requestingUserProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('company_id')
+        .eq('user_id', user.id)
+        .single();
 
-    if (!companyUser?.is_owner) {
-      const { data: hasPermission } = await supabaseAdmin
-        .from('company_user_permissions')
-        .select('id')
-        .eq('company_user_id', companyUser?.id)
-        .eq('permission', 'manage_team')
-        .maybeSingle();
-
-      if (!hasPermission) {
+      if (requestingUserProfile?.company_id !== companyId) {
         return new Response(
-          JSON.stringify({ error: 'Unauthorized - no manage_team permission' }),
+          JSON.stringify({ error: 'Unauthorized - wrong company' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
+
+      // Check if requesting user has manage_team permission or is owner
+      const { data: companyUser } = await supabaseAdmin
+        .from('company_users')
+        .select('is_owner')
+        .eq('user_id', user.id)
+        .eq('company_id', companyId)
+        .single();
+
+      if (!companyUser?.is_owner) {
+        const { data: hasPermission } = await supabaseAdmin
+          .from('company_user_permissions')
+          .select('id')
+          .eq('company_user_id', companyUser?.id)
+          .eq('permission', 'manage_team')
+          .maybeSingle();
+
+        if (!hasPermission) {
+          return new Response(
+            JSON.stringify({ error: 'Unauthorized - no manage_team permission' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
     }
 
