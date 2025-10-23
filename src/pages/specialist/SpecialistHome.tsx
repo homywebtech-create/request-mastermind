@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { Clock, MapPin, Navigation, Calendar } from "lucide-react";
+import { Clock, MapPin, Navigation, Calendar, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import LanguageSelector from "@/components/specialist/LanguageSelector";
+import { translateOrderDetails } from "@/lib/translateHelper";
 import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
@@ -26,6 +28,10 @@ interface Order {
   order_specialist?: {
     quoted_price: string | null;
   };
+  translated?: {
+    service_type?: string;
+    area?: string;
+  };
 }
 
 export default function SpecialistHome() {
@@ -35,6 +41,7 @@ export default function SpecialistHome() {
   const [specialistName, setSpecialistName] = useState('');
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [preferredLanguage, setPreferredLanguage] = useState('ar');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -111,12 +118,13 @@ export default function SpecialistHome() {
         
         const { data: specialist } = await supabase
           .from('specialists')
-          .select('id')
+          .select('id, preferred_language')
           .eq('phone', profile.phone)
           .single();
 
         if (specialist) {
           setSpecialistId(specialist.id);
+          setPreferredLanguage(specialist.preferred_language || 'ar');
           
           // 🔥 Initialize Firebase Push Notifications
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -183,7 +191,26 @@ export default function SpecialistHome() {
         };
       });
 
-      setOrders(ordersWithQuotes || []);
+      // Translate orders if needed
+      const translatedOrders = await Promise.all((ordersWithQuotes || []).map(async (order) => {
+        if (preferredLanguage && preferredLanguage !== 'ar') {
+          const translated = await translateOrderDetails({
+            serviceType: order.service_type,
+            area: order.customer?.area || undefined,
+          }, preferredLanguage);
+          
+          return {
+            ...order,
+            translated: {
+              service_type: translated.serviceType,
+              area: translated.area,
+            }
+          };
+        }
+        return order;
+      }));
+
+      setOrders(translatedOrders || []);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
@@ -284,8 +311,19 @@ export default function SpecialistHome() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
-          <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
+              <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
+            </div>
+            {specialistId && (
+              <LanguageSelector 
+                specialistId={specialistId} 
+                currentLanguage={preferredLanguage}
+                onLanguageChange={(lang) => setPreferredLanguage(lang)}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -348,15 +386,23 @@ export default function SpecialistHome() {
                     </h3>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <MapPin className="h-4 w-4" />
-                      <span>{order.customer?.area || (isAr ? 'غير محدد' : 'Not specified')}</span>
+                      <span>{order.translated?.area || order.customer?.area || (isAr ? 'غير محدد' : 'Not specified')}</span>
+                      {order.translated && preferredLanguage !== 'ar' && (
+                        <Globe className="h-3 w-3 text-blue-500" />
+                      )}
                     </div>
                   </div>
 
                   {/* Service and Price */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-primary/10 p-3 rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-1">{isAr ? 'الخدمة' : 'Service'}</p>
-                      <p className="font-bold text-sm">{order.service_type}</p>
+                      <div className="flex items-center gap-2 justify-between mb-1">
+                        <p className="text-xs text-muted-foreground">{isAr ? 'الخدمة' : 'Service'}</p>
+                        {order.translated && preferredLanguage !== 'ar' && (
+                          <Globe className="h-3 w-3 text-blue-500" />
+                        )}
+                      </div>
+                      <p className="font-bold text-sm">{order.translated?.service_type || order.service_type}</p>
                     </div>
                     <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
                       <p className="text-xs text-muted-foreground mb-1">{isAr ? 'السعر المتفق عليه' : 'Agreed price'}</p>

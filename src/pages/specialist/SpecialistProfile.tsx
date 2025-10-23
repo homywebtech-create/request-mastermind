@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -194,8 +195,19 @@ export default function SpecialistProfile() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <h1 className="text-2xl font-bold mb-1">الحساب والإعدادات</h1>
-          <p className="text-sm opacity-90">معلومات حسابك الشخصي</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">الحساب والإعدادات</h1>
+              <p className="text-sm opacity-90">معلومات حسابك الشخصي</p>
+            </div>
+            {specialist && (
+              <LanguageSelector 
+                specialistId={specialist.id} 
+                currentLanguage={specialist.preferred_language}
+                onLanguageChange={(lang) => setSpecialist({ ...specialist, preferred_language: lang })}
+              />
+            )}
+          </div>
         </div>
       </div>
 
