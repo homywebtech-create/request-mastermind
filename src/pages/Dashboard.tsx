@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -757,7 +757,8 @@ export default function Dashboard() {
               )}
 
               {/* Separator - Only show if there are dropdown items */}
-              {(userHasPermission('view_activity_logs') || 
+              {(userHasPermission('view_admin_statistics') ||
+                userHasPermission('view_activity_logs') || 
                 userHasPermission('manage_users') || 
                 userHasPermission('view_users') ||
                 userHasPermission('view_contracts') || 
@@ -775,6 +776,13 @@ export default function Dashboard() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align={language === 'ar' ? "end" : "start"} className="w-56">
+                      {userHasPermission('view_admin_statistics') && (
+                        <DropdownMenuItem onClick={() => navigate('/admin/statistics')}>
+                          <BarChart className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'الإحصائيات' : 'Statistics'}
+                        </DropdownMenuItem>
+                      )}
+                      
                       {userHasPermission('view_activity_logs') && (
                         <DropdownMenuItem onClick={() => navigate('/admin/activity')}>
                           <FileText className="h-4 w-4 mr-2" />

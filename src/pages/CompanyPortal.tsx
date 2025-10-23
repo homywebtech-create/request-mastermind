@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck } from "lucide-react";
+import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck, BarChart } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { OrderForm } from "@/components/orders/order-form";
@@ -515,6 +515,14 @@ export default function CompanyPortal() {
             
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
+              <Button
+                variant="outline"
+                onClick={() => navigate("/company/statistics")}
+                className="flex items-center gap-2"
+              >
+                <BarChart className="h-4 w-4" />
+                <span className="hidden sm:inline">{language === 'ar' ? 'الإحصائيات' : 'Statistics'}</span>
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => navigate("/company/team")}
