@@ -1141,6 +1141,7 @@ export type Database = {
         | "view_contracts"
         | "manage_team"
         | "view_reports"
+        | "view_statistics"
       order_status:
         | "pending"
         | "quoted"
@@ -1291,6 +1292,7 @@ export const Constants = {
         "view_contracts",
         "manage_team",
         "view_reports",
+        "view_statistics",
       ],
       order_status: [
         "pending",
