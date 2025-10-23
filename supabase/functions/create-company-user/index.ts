@@ -95,7 +95,7 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is admin
+    // Check if user is admin first
     const { data: userRole } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -104,34 +104,36 @@ serve(async (req) => {
 
     const isAdmin = userRole && ['admin', 'admin_full', 'admin_manager'].includes(userRole.role);
 
-    // If not admin, check if the requesting user has permission to manage team
+    // If not admin, check if requesting user is company owner or has manage_team permission
     if (!isAdmin) {
-      const { data: requestingUserProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('company_id')
+      const { data: companyUser, error: companyUserError } = await supabaseAdmin
+        .from('company_users')
+        .select('id, is_owner')
         .eq('user_id', user.id)
-        .single();
+        .eq('company_id', companyId)
+        .maybeSingle();
 
-      if (requestingUserProfile?.company_id !== companyId) {
+      if (companyUserError) {
+        console.error('Error fetching company user:', companyUserError);
         return new Response(
-          JSON.stringify({ error: 'Unauthorized - wrong company' }),
+          JSON.stringify({ error: 'Failed to verify permissions' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!companyUser) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - not a member of this company' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      // Check if requesting user has manage_team permission or is owner
-      const { data: companyUser } = await supabaseAdmin
-        .from('company_users')
-        .select('is_owner')
-        .eq('user_id', user.id)
-        .eq('company_id', companyId)
-        .single();
-
-      if (!companyUser?.is_owner) {
+      // If not owner, check for manage_team permission
+      if (!companyUser.is_owner) {
         const { data: hasPermission } = await supabaseAdmin
           .from('company_user_permissions')
           .select('id')
-          .eq('company_user_id', companyUser?.id)
+          .eq('company_user_id', companyUser.id)
           .eq('permission', 'manage_team')
           .maybeSingle();
 
