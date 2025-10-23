@@ -41,17 +41,81 @@ export default function CompanyAuth() {
       console.log("2. Entered number:", phoneNumber);
       console.log("3. Full number after merge:", cleanPhone);
 
-      // استخدام edge function للبحث (يتجاوز RLS)
-      console.log("4. Searching for company using edge function...");
-      
-      const { data: findResult, error: findError } = await supabase.functions.invoke("find-company-by-phone", {
-        body: { phone: cleanPhone },
-      });
+      // البحث في جدول الشركات أولاً
+      const { data: allCompanies, error: fetchError } = await supabase
+        .from("companies")
+        .select("id, name, phone")
+        .eq("is_active", true);
 
-      console.log("5. Search result:", findResult);
-      console.log("6. Search error:", findError);
+      if (fetchError) {
+        console.error("Error fetching companies:", fetchError);
+        throw fetchError;
+      }
 
-      if (findError || !findResult?.success) {
+      console.log("4. All registered company numbers:", allCompanies?.map(c => c.phone));
+
+      let company = allCompanies?.find(c => c.phone === cleanPhone);
+
+      if (!company) {
+        const phoneWithoutPlus = cleanPhone.replace('+', '');
+        company = allCompanies?.find(c => c.phone?.replace('+', '') === phoneWithoutPlus);
+        console.log("5. Trying search without + sign:", phoneWithoutPlus);
+      }
+
+      // إذا لم يتم العثور على الشركة، ابحث في company_users (الآن يمكن للجميع القراءة)
+      if (!company) {
+        console.log("6. Not found in companies, searching company_users...");
+        
+        const { data: allCompanyUsers, error: usersError } = await supabase
+          .from("company_users")
+          .select(`
+            id,
+            phone,
+            full_name,
+            is_active,
+            company_id,
+            companies (
+              id,
+              name,
+              is_active
+            )
+          `)
+          .eq("is_active", true);
+
+        console.log("7. Query error:", usersError);
+        console.log("7. All company users count:", allCompanyUsers?.length);
+
+        if (!usersError && allCompanyUsers) {
+          console.log("7. All company user numbers:", allCompanyUsers.map(u => u.phone));
+          
+          // فلتر الشركات النشطة فقط
+          const activeUsers = allCompanyUsers.filter(u => u.companies?.is_active === true);
+          console.log("8. Active company users count:", activeUsers.length);
+          
+          // جرب البحث المباشر أولاً
+          let companyUser = activeUsers.find(u => u.phone === cleanPhone);
+          
+          // إذا لم ينجح، جرب بدون علامة +
+          if (!companyUser) {
+            const phoneWithoutPlus = cleanPhone.replace('+', '');
+            companyUser = activeUsers.find(u => u.phone?.replace(/\+/g, '') === phoneWithoutPlus);
+            console.log("9. Trying company user search without + sign:", phoneWithoutPlus);
+          }
+
+          if (companyUser && companyUser.companies) {
+            company = {
+              id: companyUser.companies.id,
+              name: companyUser.companies.name,
+              phone: cleanPhone
+            };
+            console.log("10. Company user found:", companyUser.full_name, "for company:", company.name);
+          }
+        }
+      }
+
+      console.log("11. Final company:", company);
+
+      if (!company) {
         toast({
           title: "Login Error",
           description: (
@@ -68,8 +132,7 @@ export default function CompanyAuth() {
         return;
       }
 
-      const company = findResult.company;
-      console.log("7. Company found:", company.name);
+      console.log("12. Company found:", company.name);
 
 
       const { data, error } = await supabase.functions.invoke("request-verification-code", {
