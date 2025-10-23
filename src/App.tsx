@@ -74,35 +74,58 @@ function DeepLinkHandler() {
 
   // Extract route from deep link URL
   const extractRoute = (url: string | null | undefined): string | null => {
-    if (!url) return null;
+    console.log('🔍 [DEEP LINK] Extracting route from URL:', url);
+    if (!url) {
+      console.log('⚠️ [DEEP LINK] No URL provided');
+      return null;
+    }
     try {
       const parsed = new URL(url);
       const route = parsed.searchParams.get('route');
-      return route ? decodeURIComponent(route) : null;
-    } catch {
+      const extractedRoute = route ? decodeURIComponent(route) : null;
+      console.log('✅ [DEEP LINK] Extracted route:', extractedRoute);
+      return extractedRoute;
+    } catch (error) {
+      console.error('❌ [DEEP LINK] Failed to parse URL:', error);
       return null;
     }
   };
 
   // Navigate or stash pending route based on auth
   const handleRoute = async (route: string | null) => {
-    if (!route) return;
+    if (!route) {
+      console.log('⚠️ [HANDLE ROUTE] No route to handle');
+      return;
+    }
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔀 [HANDLE ROUTE] Processing route:', route);
+    console.log('👤 [AUTH STATE] User:', user ? 'logged in' : 'not logged in');
+    console.log('⏳ [AUTH STATE] Loading:', loading);
 
     // Mark that a deep link navigation is happening to avoid default redirects
     sessionStorage.setItem('deeplink:navigated', '1');
 
     if (loading) {
+      console.log('⏳ [WAITING] Auth still loading, saving route to preferences');
       const { Preferences } = await import('@capacitor/preferences');
       await Preferences.set({ key: 'pendingRoute', value: route });
+      console.log('✅ [SAVED] Route saved, will process after auth completes');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       return;
     }
 
     if (user) {
+      console.log('✅ [NAVIGATE] User logged in, navigating to:', route);
       navigate(route, { replace: true });
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     } else {
+      console.log('⚠️ [NOT LOGGED IN] Saving route and redirecting to login');
       const { Preferences } = await import('@capacitor/preferences');
       await Preferences.set({ key: 'pendingRoute', value: route });
+      console.log('✅ [SAVED] Route saved, redirecting to /specialist-auth');
       navigate('/specialist-auth', { replace: true });
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     }
   };
 
@@ -136,17 +159,35 @@ function DeepLinkHandler() {
 
     (async () => {
       if (Capacitor.getPlatform() === 'web') return;
+      
+      console.log('🔄 [PENDING ROUTE CHECK] Auth ready, checking for pending routes...');
+      console.log('👤 [AUTH] User:', user ? 'logged in' : 'not logged in');
+      
       const { Preferences } = await import('@capacitor/preferences');
       const { value } = await Preferences.get({ key: 'pendingRoute' });
+      
+      console.log('📋 [PENDING ROUTE] Value:', value || 'none');
+      
       if (value) {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🎯 [PROCESSING] Found pending route:', value);
+        
         await Preferences.remove({ key: 'pendingRoute' });
+        console.log('🗑️ [CLEARED] Removed pending route from preferences');
+        
         sessionStorage.setItem('deeplink:navigated', '1');
+        
         if (user) {
+          console.log('✅ [NAVIGATE] User is logged in, navigating to:', value);
           navigate(value, { replace: true });
         } else {
+          console.log('⚠️ [NOT LOGGED IN] User not authenticated, saving route and going to login');
           await Preferences.set({ key: 'pendingRoute', value });
           navigate('/specialist-auth', { replace: true });
         }
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      } else {
+        console.log('ℹ️ [NO PENDING] No pending route to process\n');
       }
     })();
   }, [user, loading, navigate]);

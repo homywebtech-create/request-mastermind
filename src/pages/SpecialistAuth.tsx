@@ -291,17 +291,23 @@ export default function SpecialistAuth() {
         const { Preferences } = await import('@capacitor/preferences');
         const { value: pendingRoute } = await Preferences.get({ key: 'pendingRoute' });
         
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ [LOGIN SUCCESS] Checking for pending navigation route...');
+        console.log('📋 [PENDING ROUTE]:', pendingRoute || 'none');
+        
         if (pendingRoute) {
-          console.log('🔗 [AUTH] Found pending route after login:', pendingRoute);
+          console.log('🎯 [POST-LOGIN NAV] Navigating to pending route:', pendingRoute);
           await Preferences.remove({ key: 'pendingRoute' });
-          console.log("✅ Login successful - navigating to pending route:", pendingRoute);
+          console.log('🗑️ [CLEARED] Removed pending route from preferences');
           navigate(pendingRoute, { replace: true });
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
           return;
         }
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       }
 
       // Navigate to orders page (deep links are handled by App.tsx)
-      console.log("✅ Login successful - navigating to orders");
+      console.log("✅ Login successful - navigating to default: /specialist-orders");
       navigate("/specialist-orders", { replace: true });
     } catch (error: any) {
       console.error('Error verifying code:', error);
