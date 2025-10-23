@@ -279,7 +279,17 @@ function MobileLanding() {
 
     console.log('🧭 [APP] Handling navigation - user:', !!user, 'deepLink:', deepLink);
 
+    // Avoid racing default navigation when a deep link is being processed elsewhere
+    const deepLinkInProgress = sessionStorage.getItem('deeplink:navigated') === '1';
+    if (deepLinkInProgress) {
+      console.log('⏭️ [APP] Deep link in progress, skipping default navigation');
+      setHasNavigated(true);
+      return;
+    }
+
     if (deepLink) {
+      // Mark deep link handling to prevent default redirects
+      sessionStorage.setItem('deeplink:navigated', '1');
       if (user) {
         console.log('✅ [APP] Navigating to deep link:', deepLink);
         navigate(deepLink, { replace: true });
