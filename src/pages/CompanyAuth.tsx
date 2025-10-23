@@ -92,14 +92,24 @@ export default function CompanyAuth() {
           const activeUsers = allCompanyUsers.filter(u => u.companies?.is_active === true);
           console.log("8. Active company users count:", activeUsers.length);
           
+          // دالة لتنظيف رقم الهاتف
+          const normalizePhone = (phone: string) => phone?.replace(/\+/g, '') || '';
+          const searchPhoneClean = normalizePhone(cleanPhone);
+          
           // جرب البحث المباشر أولاً
           let companyUser = activeUsers.find(u => u.phone === cleanPhone);
           
-          // إذا لم ينجح، جرب بدون علامة +
+          // إذا لم ينجح، قارن الأرقام بدون علامة + (لمعالجة حالات التكرار مثل +974+974)
           if (!companyUser) {
-            const phoneWithoutPlus = cleanPhone.replace('+', '');
-            companyUser = activeUsers.find(u => u.phone?.replace(/\+/g, '') === phoneWithoutPlus);
-            console.log("9. Trying company user search without + sign:", phoneWithoutPlus);
+            console.log("9. Trying normalized phone search. Search:", searchPhoneClean);
+            companyUser = activeUsers.find(u => {
+              const userPhoneClean = normalizePhone(u.phone);
+              console.log("   - Comparing:", userPhoneClean, "with", searchPhoneClean);
+              // تحقق من التطابق الكامل أو إذا كان أحدهما يحتوي على الآخر (لحالة التكرار)
+              return userPhoneClean === searchPhoneClean || 
+                     userPhoneClean.includes(searchPhoneClean) ||
+                     searchPhoneClean.includes(userPhoneClean);
+            });
           }
 
           if (companyUser && companyUser.companies) {
