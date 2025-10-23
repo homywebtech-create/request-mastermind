@@ -219,7 +219,17 @@ export default function SpecialistAuth() {
         }
       });
 
-      if (error) throw error;
+      // Handle HTTP errors (non-2xx responses)
+      if (error) {
+        const errorMessage = data?.error || error.message || "Failed to verify code";
+        toast({
+          title: t.common.error,
+          description: errorMessage,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
       if (data?.error) {
         toast({
