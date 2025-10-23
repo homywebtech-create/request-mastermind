@@ -80,32 +80,37 @@ export default function CompanyAuth() {
             full_name,
             is_active,
             company_id,
-            companies!inner (
+            companies (
               id,
               name,
-              phone,
               is_active
             )
           `)
-          .eq("is_active", true)
-          .eq("companies.is_active", true);
+          .eq("is_active", true);
+
+        console.log("8. Query error:", usersError);
+        console.log("8. All company users count:", allCompanyUsers?.length);
 
         if (!usersError && allCompanyUsers) {
           console.log("8. All company user numbers:", allCompanyUsers.map(u => u.phone));
           
+          // فلتر الشركات النشطة فقط
+          const activeUsers = allCompanyUsers.filter(u => u.companies?.is_active === true);
+          console.log("8.5. Active company users count:", activeUsers.length);
+          
           // جرب البحث المباشر أولاً
-          companyUser = allCompanyUsers.find(u => u.phone === cleanPhone);
+          companyUser = activeUsers.find(u => u.phone === cleanPhone);
           
           // إذا لم ينجح، جرب بدون علامة +
           if (!companyUser) {
             const phoneWithoutPlus = cleanPhone.replace('+', '');
-            companyUser = allCompanyUsers.find(u => u.phone?.replace('+', '') === phoneWithoutPlus);
+            companyUser = activeUsers.find(u => u.phone?.replace('+', '') === phoneWithoutPlus);
             console.log("9. Trying company user search without + sign:", phoneWithoutPlus);
           }
           
           // إذا لم ينجح، جرب بالرقم فقط (بدون رمز الدولة)
           if (!companyUser) {
-            companyUser = allCompanyUsers.find(u => {
+            companyUser = activeUsers.find(u => {
               // تحقق إذا كان رقم المستخدم هو نفس الرقم المدخل
               return u.phone === phoneNumber || 
                      u.phone?.endsWith(phoneNumber) ||
@@ -124,6 +129,8 @@ export default function CompanyAuth() {
             console.log("11. Company user found:", companyUser.full_name, "for company:", company.name);
             console.log("12. Using phone for verification:", company.phone);
           }
+        } else if (usersError) {
+          console.error("Error fetching company users:", usersError);
         }
       }
 

@@ -86,7 +86,7 @@ serve(async (req) => {
       // البحث في جدول company_users
       console.log('6. Not found in companies, searching company_users...');
       
-      // جلب جميع مستخدمي الشركات النشطين للمقارنة
+      // جلب جميع مستخدمي الشركات النشطين
       const { data: allUsers, error: usersError } = await supabaseAdmin
         .from('company_users')
         .select(`
@@ -94,26 +94,34 @@ serve(async (req) => {
           phone,
           full_name,
           company_id,
-          companies!inner (
+          companies (
             id,
             name,
             is_active
           )
         `)
-        .eq('is_active', true)
-        .eq('companies.is_active', true);
+        .eq('is_active', true);
+
+      console.log('7. Query error:', usersError);
+      console.log('7. All users count:', allUsers?.length);
 
       if (!usersError && allUsers) {
+        // فلتر الشركات النشطة فقط
+        const activeUsers = allUsers.filter(u => u.companies?.is_active === true);
+        console.log('7.5. Active users count:', activeUsers.length);
+        console.log('7.6. All phones:', activeUsers.map(u => u.phone));
+        
         // استخراج الرقم بدون رمز الدولة
         const phoneWithoutCountryCode = phone.replace(/^\+?\d{1,4}/, '');
-        console.log('7. Searching for phone:', phone, 'or short version:', phoneWithoutCountryCode);
+        console.log('8. Searching for phone:', phone, 'or short version:', phoneWithoutCountryCode);
         
         // البحث بعدة طرق
-        const userData = allUsers.find(u => 
+        const userData = activeUsers.find(u => 
           u.phone === phone || 
           u.phone === phoneWithoutCountryCode ||
           u.phone?.replace(/^\+?\d{1,4}/, '') === phoneWithoutCountryCode ||
-          phone.endsWith(u.phone || '')
+          phone.endsWith(u.phone || '') ||
+          u.phone?.replace(/\+/g, '') === phone.replace(/\+/g, '')
         );
 
         if (userData && userData.companies) {
@@ -122,7 +130,9 @@ serve(async (req) => {
             id: userData.companies.id,
             name: userData.companies.name
           };
-          console.log('8. Company user found:', companyUser.full_name, 'for company:', company.name);
+          console.log('9. Company user found:', companyUser.full_name, 'for company:', company.name);
+        } else {
+          console.log('9. No matching user found');
         }
       }
     }
