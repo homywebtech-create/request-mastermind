@@ -58,6 +58,7 @@ export default function SpecialistNewOrders() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set()); // Track new orders for animation
   const [currentTime, setCurrentTime] = useState(Date.now()); // For timer updates
+  const [newOrdersCount, setNewOrdersCount] = useState(0); // Dynamic count for badge
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
@@ -214,6 +215,7 @@ export default function SpecialistNewOrders() {
     if (!specialistId) return;
 
     fetchOrders(specialistId);
+    fetchNewOrdersCount(specialistId);
 
     // Enhanced notification function with GUARANTEED sound + vibration
     const triggerNotification = async (type: 'new' | 'resend' = 'new') => {
@@ -346,6 +348,7 @@ export default function SpecialistNewOrders() {
           console.log('Full Payload:', JSON.stringify(payload, null, 2));
           
           await fetchOrders(specialistId);
+          await fetchNewOrdersCount(specialistId);
           await triggerNotification('new');
           
           console.log('✅ تم معالجة الطلب الجديد بنجاح');
@@ -406,6 +409,7 @@ export default function SpecialistNewOrders() {
           console.log('🔁🔁🔁 إعادة إرسال مؤكدة! تشغيل الإشعار...');
           
           await fetchOrders(specialistId);
+          await fetchNewOrdersCount(specialistId);
           await triggerNotification('resend');
           
           console.log('✅✅✅ اكتمل معالج إعادة الإرسال بنجاح!');
@@ -425,6 +429,7 @@ export default function SpecialistNewOrders() {
           console.log('\n📝 تحديث على order_specialists');
           console.log('Order Specialist ID:', (payload.new as any)?.id);
           await fetchOrders(specialistId);
+          await fetchNewOrdersCount(specialistId);
           console.log('✅ تم تحديث القائمة\n');
         }
       )
@@ -480,6 +485,48 @@ export default function SpecialistNewOrders() {
     } catch (error) {
       console.error('Auth check error:', error);
       navigate('/specialist-auth');
+    }
+  };
+
+  const fetchNewOrdersCount = async (specId: string) => {
+    try {
+      // Get current time for expiry check
+      const now = new Date().toISOString();
+      
+      // Count orders that are:
+      // 1. Assigned to this specialist
+      // 2. Not quoted yet (quoted_price is null)
+      // 3. Not rejected (rejected_at is null)
+      // 4. Not expired (expires_at is in the future)
+      const { data: orderSpecialists } = await supabase
+        .from('order_specialists')
+        .select(`
+          id,
+          order_id,
+          orders!inner (
+            expires_at
+          )
+        `)
+        .eq('specialist_id', specId)
+        .is('quoted_price', null)
+        .is('rejected_at', null);
+
+      if (!orderSpecialists) {
+        setNewOrdersCount(0);
+        return;
+      }
+
+      // Filter out expired orders
+      const validOrders = orderSpecialists.filter((os: any) => {
+        const expiresAt = os.orders?.expires_at;
+        if (!expiresAt) return true; // Include if no expiry
+        return new Date(expiresAt) > new Date(now); // Include if not expired
+      });
+
+      setNewOrdersCount(validOrders.length);
+    } catch (error) {
+      console.error('Error fetching new orders count:', error);
+      setNewOrdersCount(0);
     }
   };
 
@@ -961,7 +1008,7 @@ export default function SpecialistNewOrders() {
         )}
       </div>
 
-      <BottomNavigation newOrdersCount={orders.length} />
+      <BottomNavigation newOrdersCount={newOrdersCount} />
     </div>
   );
 }

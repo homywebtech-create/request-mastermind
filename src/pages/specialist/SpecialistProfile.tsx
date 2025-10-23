@@ -122,16 +122,37 @@ export default function SpecialistProfile() {
 
   const fetchNewOrdersCount = async (specId: string) => {
     try {
-      const { count } = await supabase
+      const now = new Date().toISOString();
+      
+      const { data: orderSpecialists } = await supabase
         .from('order_specialists')
-        .select('*', { count: 'exact', head: true })
+        .select(`
+          id,
+          order_id,
+          orders!inner (
+            expires_at
+          )
+        `)
         .eq('specialist_id', specId)
         .is('quoted_price', null)
         .is('rejected_at', null);
 
-      setNewOrdersCount(count || 0);
+      if (!orderSpecialists) {
+        setNewOrdersCount(0);
+        return;
+      }
+
+      // Filter out expired orders
+      const validOrders = orderSpecialists.filter((os: any) => {
+        const expiresAt = os.orders?.expires_at;
+        if (!expiresAt) return true;
+        return new Date(expiresAt) > new Date(now);
+      });
+
+      setNewOrdersCount(validOrders.length);
     } catch (error) {
       console.error('Error fetching new orders count:', error);
+      setNewOrdersCount(0);
     }
   };
 

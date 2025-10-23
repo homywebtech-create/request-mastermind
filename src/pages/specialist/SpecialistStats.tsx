@@ -100,10 +100,16 @@ export default function SpecialistStats() {
   const fetchStats = async (specId: string) => {
     try {
       setIsLoading(true);
+      const now = new Date().toISOString();
 
       const { data: orderSpecialists } = await supabase
         .from('order_specialists')
-        .select('*')
+        .select(`
+          *,
+          orders!inner (
+            expires_at
+          )
+        `)
         .eq('specialist_id', specId);
 
       if (!orderSpecialists) {
@@ -111,9 +117,13 @@ export default function SpecialistStats() {
         return;
       }
 
-      const newOrders = orderSpecialists.filter(os => 
-        !os.quoted_price && !os.rejected_at
-      ).length;
+      // Filter for new orders (not expired, no quote, not rejected)
+      const newOrders = orderSpecialists.filter((os: any) => {
+        if (os.quoted_price || os.rejected_at) return false;
+        const expiresAt = os.orders?.expires_at;
+        if (!expiresAt) return true;
+        return new Date(expiresAt) > new Date(now);
+      }).length;
 
       const quotedOrders = orderSpecialists.filter(os => 
         os.quoted_price && os.is_accepted === null
