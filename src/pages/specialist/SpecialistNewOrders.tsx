@@ -5,8 +5,9 @@ import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock, MapPin, Package, FileText, Tag, Sparkles } from "lucide-react";
+import { Clock, MapPin, Package, FileText, Tag, Sparkles, Globe } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import { translateOrderDetails } from "@/lib/translateHelper";
 import {
   Dialog,
   DialogContent,
@@ -36,8 +37,14 @@ interface Order {
   order_specialist?: {
     id: string;
   };
-  isNew?: boolean; // Flag for highlighting new orders
-  timeRemaining?: number; // Seconds remaining until expiry
+  isNew?: boolean;
+  timeRemaining?: number;
+  translated?: {
+    service_type?: string;
+    notes?: string;
+    area?: string;
+    booking_type?: string;
+  };
 }
 
 export default function SpecialistNewOrders() {
@@ -45,6 +52,7 @@ export default function SpecialistNewOrders() {
   const [isLoading, setIsLoading] = useState(true);
   const [specialistId, setSpecialistId] = useState('');
   const [specialistName, setSpecialistName] = useState('');
+  const [preferredLanguage, setPreferredLanguage] = useState('ar');
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set()); // Track new orders for animation
@@ -456,12 +464,13 @@ export default function SpecialistNewOrders() {
         
         const { data: specialist } = await supabase
           .from('specialists')
-          .select('id')
+          .select('id, preferred_language')
           .eq('phone', profile.phone)
           .single();
 
         if (specialist) {
           setSpecialistId(specialist.id);
+          setPreferredLanguage(specialist.preferred_language || 'ar');
           
           // Initialize Firebase Push Notifications
           try {
@@ -556,7 +565,31 @@ export default function SpecialistNewOrders() {
       });
 
       setNewOrderIds(newOrderIdsSet);
-      setOrders(ordersWithSpec || []);
+      
+      // Translate orders if needed
+      const translatedOrders = await Promise.all(ordersWithSpec.map(async (order) => {
+        if (preferredLanguage && preferredLanguage !== 'ar') {
+          const translated = await translateOrderDetails({
+            serviceType: order.service_type,
+            notes: order.notes || undefined,
+            area: order.customer?.area || undefined,
+            bookingType: order.booking_type || undefined,
+          }, preferredLanguage);
+          
+          return {
+            ...order,
+            translated: {
+              service_type: translated.serviceType,
+              notes: translated.notes,
+              area: translated.area,
+              booking_type: translated.bookingType,
+            }
+          };
+        }
+        return order;
+      }));
+      
+      setOrders(translatedOrders || []);
       
       // Auto-remove "new" flag after 30 seconds
       if (newOrderIdsSet.size > 0) {
@@ -757,13 +790,20 @@ export default function SpecialistNewOrders() {
                     </div>
                   </div>
 
-                  {/* Order Details */}
+                   {/* Order Details */}
                   <div className="grid grid-cols-1 gap-3">
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
                       <Package className="h-5 w-5 text-primary" />
                       <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">الخدمة</p>
-                        <p className="font-bold text-sm">{order.service_type}</p>
+                        <div className="flex items-center gap-2 justify-between">
+                          <p className="text-xs text-muted-foreground">الخدمة</p>
+                          {order.translated && preferredLanguage !== 'ar' && (
+                            <Globe className="h-3 w-3 text-blue-500" />
+                          )}
+                        </div>
+                        <p className="font-bold text-sm">
+                          {order.translated?.service_type || order.service_type}
+                        </p>
                       </div>
                     </div>
 
@@ -771,8 +811,15 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
                         <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">المنطقة</p>
-                          <p className="font-bold text-sm">{order.customer.area}</p>
+                          <div className="flex items-center gap-2 justify-between">
+                            <p className="text-xs text-muted-foreground">المنطقة</p>
+                            {order.translated && preferredLanguage !== 'ar' && (
+                              <Globe className="h-3 w-3 text-blue-500" />
+                            )}
+                          </div>
+                          <p className="font-bold text-sm">
+                            {order.translated?.area || order.customer.area}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -781,8 +828,15 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
                         <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">نوع الحجز</p>
-                          <p className="font-bold text-sm">{order.booking_type}</p>
+                          <div className="flex items-center gap-2 justify-between">
+                            <p className="text-xs text-muted-foreground">نوع الحجز</p>
+                            {order.translated && preferredLanguage !== 'ar' && (
+                              <Globe className="h-3 w-3 text-blue-500" />
+                            )}
+                          </div>
+                          <p className="font-bold text-sm">
+                            {order.translated?.booking_type || order.booking_type}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -802,8 +856,15 @@ export default function SpecialistNewOrders() {
                     <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                       <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-xs text-amber-700 dark:text-amber-300 mb-1 font-bold">ملاحظات</p>
-                        <p className="text-sm leading-relaxed">{order.notes}</p>
+                        <div className="flex items-center gap-2 justify-between mb-1">
+                          <p className="text-xs text-amber-700 dark:text-amber-300 font-bold">ملاحظات</p>
+                          {order.translated && preferredLanguage !== 'ar' && (
+                            <Globe className="h-3 w-3 text-blue-500" />
+                          )}
+                        </div>
+                        <p className="text-sm leading-relaxed">
+                          {order.translated?.notes || order.notes}
+                        </p>
                       </div>
                     </div>
                   )}

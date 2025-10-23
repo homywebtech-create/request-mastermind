@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube } from "lucide-react";
+import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -45,6 +46,7 @@ interface Specialist {
   has_pet_allergy: boolean | null;
   has_cleaning_allergy: boolean | null;
   notes: string | null;
+  preferred_language: string;
 }
 
 interface Company {
@@ -136,6 +138,45 @@ export default function SpecialistProfile() {
     await supabase.auth.signOut();
     navigate('/specialist-auth');
   };
+
+  const handleLanguageChange = async (newLanguage: string) => {
+    if (!specialist) return;
+    
+    try {
+      const { error } = await supabase
+        .from('specialists')
+        .update({ preferred_language: newLanguage })
+        .eq('id', specialist.id);
+
+      if (error) throw error;
+
+      setSpecialist({ ...specialist, preferred_language: newLanguage });
+      toast({
+        title: isAr ? "تم التحديث" : "Updated",
+        description: isAr ? "تم تحديث لغتك المفضلة بنجاح" : "Your preferred language has been updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating language:', error);
+      toast({
+        title: isAr ? "خطأ" : "Error",
+        description: isAr ? "فشل تحديث اللغة" : "Failed to update language",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const languageOptions = [
+    { value: 'ar', label: 'العربية (Arabic)' },
+    { value: 'en', label: 'English' },
+    { value: 'tl', label: 'Tagalog (Filipino)' },
+    { value: 'hi', label: 'हिन्दी (Hindi)' },
+    { value: 'si', label: 'සිංහල (Sinhala)' },
+    { value: 'bn', label: 'বাংলা (Bengali)' },
+    { value: 'sw', label: 'Kiswahili (Swahili)' },
+    { value: 'am', label: 'አማርኛ (Amharic)' },
+    { value: 'ti', label: 'ትግርኛ (Tigrinya)' },
+    { value: 'fa', label: 'فارسی (Farsi)' },
+  ];
 
   if (isLoading) {
     return (
@@ -347,6 +388,37 @@ export default function SpecialistProfile() {
             </div>
           </Card>
         )}
+
+        {/* Language Preference */}
+        <Card className="p-4">
+          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <Globe className="h-5 w-5 text-primary" />
+            {isAr ? 'اللغة المفضلة للطلبات' : 'Preferred Language for Orders'}
+          </h3>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground mb-3">
+              {isAr 
+                ? 'اختر اللغة التي تريد أن تظهر بها تفاصيل الطلبات والعروض'
+                : 'Choose the language you want order details and offers to appear in'
+              }
+            </p>
+            <Select 
+              value={specialist?.preferred_language || 'ar'} 
+              onValueChange={handleLanguageChange}
+            >
+              <SelectTrigger className="w-full h-12">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {languageOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
 
         {/* Quick Actions */}
         <Card className="p-4">

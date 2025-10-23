@@ -873,6 +873,7 @@ export type Database = {
           nationality: string | null
           notes: string | null
           phone: string
+          preferred_language: string | null
           rating: number | null
           registration_completed_at: string | null
           registration_token: string | null
@@ -904,6 +905,7 @@ export type Database = {
           nationality?: string | null
           notes?: string | null
           phone: string
+          preferred_language?: string | null
           rating?: number | null
           registration_completed_at?: string | null
           registration_token?: string | null
@@ -935,6 +937,7 @@ export type Database = {
           nationality?: string | null
           notes?: string | null
           phone?: string
+          preferred_language?: string | null
           rating?: number | null
           registration_completed_at?: string | null
           registration_token?: string | null
