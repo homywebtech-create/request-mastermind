@@ -174,14 +174,8 @@ export default function SpecialistNewOrders() {
   useEffect(() => {
     checkAuth();
     
-    // Show version indicator with more details
-    const platform = (window as any).Capacitor?.getPlatform();
-    sonnerToast.success(`✅ النسخة 6.0 - Firebase Push Notifications 🔥 | ${platform || 'web'}`, {
-      duration: 5000,
-      position: "top-center",
-    });
-    
     console.log('🚀 [APP START] تطبيق المحترفين - جاهز');
+    const platform = (window as any).Capacitor?.getPlatform();
     console.log(`📱 [PLATFORM] ${platform || 'web'}`);
   }, []);
 
