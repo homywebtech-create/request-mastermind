@@ -83,21 +83,23 @@ export default function LanguageSelector({
   const currentOption = languageOptions.find(opt => opt.value === selectedLanguage);
 
   return (
-    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
-      <Globe className="h-4 w-4 text-white" />
+    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
+      <Globe className="h-5 w-5 text-white" />
       <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
-        <SelectTrigger className="h-9 min-w-[140px] border-white/20 bg-white/5 text-white">
+        <SelectTrigger className="h-10 min-w-[160px] border-white/30 bg-white/10 text-white hover:bg-white/20 transition-colors">
           <SelectValue>
-            <span className="flex items-center gap-2">
-              {currentOption?.flag} {currentOption?.label}
+            <span className="flex items-center gap-2 font-medium">
+              <span className="text-lg">{currentOption?.flag}</span>
+              <span>{currentOption?.label}</span>
             </span>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-white">
           {languageOptions.map(option => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem key={option.value} value={option.value} className="cursor-pointer">
               <span className="flex items-center gap-2">
-                {option.flag} {option.label}
+                <span className="text-lg">{option.flag}</span>
+                <span>{option.label}</span>
               </span>
             </SelectItem>
           ))}
