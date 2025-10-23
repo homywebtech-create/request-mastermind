@@ -7,7 +7,8 @@ export type CompanyPermission =
   | 'manage_contracts'
   | 'view_contracts'
   | 'manage_team'
-  | 'view_reports';
+  | 'view_reports'
+  | 'view_statistics';
 
 /**
  * Get permission display name
@@ -25,6 +26,7 @@ export function getCompanyPermissionDisplayName(
     view_contracts: { ar: 'عرض العقود', en: 'View Contracts' },
     manage_team: { ar: 'إدارة الفريق', en: 'Manage Team' },
     view_reports: { ar: 'عرض التقارير', en: 'View Reports' },
+    view_statistics: { ar: 'عرض الإحصائيات', en: 'View Statistics' },
   };
   
   return names[permission][language];

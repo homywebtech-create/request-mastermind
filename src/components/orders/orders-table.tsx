@@ -1104,32 +1104,37 @@ Thank you for contacting us! 🌟`;
                                       </div>
                                     </div>
                                     <div className="mt-2 flex gap-2">
-                                      <Button
-                                        size="sm"
-                                        variant="default"
-                                        className="flex-1"
-                                        onClick={() => {
-                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
-                                          window.open(url, '_blank');
-                                        }}
-                                      >
-                                        <Building2 className="h-3 w-3 mr-2" />
-                                        {t.enterCompanyPage}
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
-                                          navigator.clipboard.writeText(url);
-                                          toast({
-                                            title: t.linkCopiedSuccess,
-                                            description: t.linkCopiedSuccessDesc,
-                                          });
-                                        }}
-                                      >
-                                        <Copy className="h-3 w-3" />
-                                      </Button>
+                                      {/* Only show these buttons to users with appropriate permissions */}
+                                      {(canManageOrders || !isCompanyView) && (
+                                        <>
+                                          <Button
+                                            size="sm"
+                                            variant="default"
+                                            className="flex-1"
+                                            onClick={() => {
+                                              const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                                              window.open(url, '_blank');
+                                            }}
+                                          >
+                                            <Building2 className="h-3 w-3 mr-2" />
+                                            {t.enterCompanyPage}
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                                              navigator.clipboard.writeText(url);
+                                              toast({
+                                                title: t.linkCopiedSuccess,
+                                                description: t.linkCopiedSuccessDesc,
+                                              });
+                                            }}
+                                          >
+                                            <Copy className="h-3 w-3" />
+                                          </Button>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
                                 ))}

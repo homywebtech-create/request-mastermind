@@ -519,6 +519,7 @@ export default function CompanyPortal() {
                     {company.name_en}
                   </h2>
                 )}
+                {/* Current user info only */}
                 {company.currentUserName && (
                   <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                     <Users className="h-3 w-3" />
@@ -546,8 +547,8 @@ export default function CompanyPortal() {
                 </Button>
               )}
               
-              {/* Statistics - only for users with view_reports permission */}
-              {hasPermission('view_reports') && (
+              {/* Statistics - only for users with view_reports or view_statistics permission */}
+              {(hasPermission('view_reports') || hasPermission('view_statistics')) && (
                 <Button
                   variant="outline"
                   onClick={() => navigate("/company/statistics")}
