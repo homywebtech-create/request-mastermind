@@ -75,10 +75,10 @@ export function RoleProtectedRoute({
       }
     }
 
-    // If no permissions available, show error
+    // If no permissions available, show error with logout option
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center space-y-6 max-w-md">
           <div className="text-6xl">🔒</div>
           <h2 className="text-2xl font-bold">
             {language === 'ar' ? 'غير مصرح' : 'Access Denied'}
@@ -88,6 +88,26 @@ export function RoleProtectedRoute({
               ? 'ليس لديك صلاحية للوصول إلى أي صفحة. يرجى التواصل مع المدير.'
               : 'You don\'t have permission to access any page. Please contact the administrator.'}
           </p>
+          <div className="flex flex-col gap-3 mt-6">
+            <button
+              onClick={() => {
+                import("@/integrations/supabase/client").then(({ supabase }) => {
+                  supabase.auth.signOut().then(() => {
+                    window.location.href = '/auth';
+                  });
+                });
+              }}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            >
+              {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+            </button>
+            <a
+              href="/company-auth"
+              className="px-6 py-3 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors inline-block"
+            >
+              {language === 'ar' ? 'تسجيل دخول كشركة' : 'Login as Company'}
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -117,10 +137,10 @@ export function RoleProtectedRoute({
       }
     }
 
-    // If no permissions available, show error
+    // If no permissions available, show error with logout option
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center space-y-6 max-w-md">
           <div className="text-6xl">🔒</div>
           <h2 className="text-2xl font-bold">
             {language === 'ar' ? 'غير مصرح' : 'Access Denied'}
@@ -130,6 +150,26 @@ export function RoleProtectedRoute({
               ? 'ليس لديك صلاحية للوصول إلى أي صفحة. يرجى التواصل مع المدير.'
               : 'You don\'t have permission to access any page. Please contact the administrator.'}
           </p>
+          <div className="flex flex-col gap-3 mt-6">
+            <button
+              onClick={() => {
+                import("@/integrations/supabase/client").then(({ supabase }) => {
+                  supabase.auth.signOut().then(() => {
+                    window.location.href = '/auth';
+                  });
+                });
+              }}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            >
+              {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+            </button>
+            <a
+              href="/company-auth"
+              className="px-6 py-3 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors inline-block"
+            >
+              {language === 'ar' ? 'تسجيل دخول كشركة' : 'Login as Company'}
+            </a>
+          </div>
         </div>
       </div>
     );
