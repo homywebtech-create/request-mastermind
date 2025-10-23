@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAuth } from "@/hooks/useAuth";
+import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, UserPlus, Loader2, Building2 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +16,8 @@ import { CompanyUser } from "@/types/company-team";
 export default function CompanyTeamManagement() {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { hasPermission, loading: permissionsLoading } = useCompanyUserPermissions(user?.id);
   
   const [users, setUsers] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +29,14 @@ export default function CompanyTeamManagement() {
   useEffect(() => {
     checkAuthAndFetchData();
   }, []);
+
+  // Redirect if user doesn't have permission
+  useEffect(() => {
+    if (!permissionsLoading && !hasPermission('manage_team')) {
+      toast.error(language === "ar" ? "ليس لديك صلاحية للوصول إلى هذه الصفحة" : "You don't have permission to access this page");
+      navigate("/company-portal");
+    }
+  }, [permissionsLoading, hasPermission, navigate, language]);
 
   const checkAuthAndFetchData = async () => {
     try {

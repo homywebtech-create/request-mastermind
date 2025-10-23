@@ -19,6 +19,7 @@ import { useTranslation } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 
 interface Order {
   id: string;
@@ -119,6 +120,13 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const { user } = useAuth();
   const { role } = useUserRole();
   const { hasPermission } = useUserPermissions(user?.id, role);
+  const { hasPermission: hasCompanyPermission } = useCompanyUserPermissions(user?.id);
+  
+  // Determine if user can manage orders based on view type
+  const canManageOrders = isCompanyView 
+    ? hasCompanyPermission('manage_orders')
+    : hasPermission('manage_orders');
+  
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [resendDialogOpen, setResendDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -1202,7 +1210,7 @@ Thank you for contacting us! 🌟`;
                       
                       <TableCell>
                         <div className="flex items-center gap-2 flex-wrap">
-                          {isPending && (
+                          {isPending && canManageOrders && (
                             <>
                               <Button
                                 size="sm"

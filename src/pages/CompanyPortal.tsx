@@ -528,9 +528,6 @@ export default function CompanyPortal() {
                     )}
                   </p>
                 )}
-                <p className="text-sm text-muted-foreground mt-1">
-                  {language === 'ar' ? 'رقم الشركة:' : 'Company:'}  {company.phone}
-                </p>
               </div>
             </div>
             
@@ -538,7 +535,7 @@ export default function CompanyPortal() {
               <LanguageSwitcher />
               
               {/* Team Management - only for users with manage_team permission */}
-              {hasAnyPermission(['manage_team', 'view_reports']) && (
+              {hasPermission('manage_team') && (
                 <Button
                   variant="outline"
                   onClick={() => navigate("/company/team")}
