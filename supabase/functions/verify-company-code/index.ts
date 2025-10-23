@@ -111,18 +111,31 @@ serve(async (req) => {
         console.log('7.5. Active users count:', activeUsers.length);
         console.log('7.6. All phones:', activeUsers.map(u => u.phone));
         
-        // استخراج الرقم بدون رمز الدولة
-        const phoneWithoutCountryCode = phone.replace(/^\+?\d{1,4}/, '');
-        console.log('8. Searching for phone:', phone, 'or short version:', phoneWithoutCountryCode);
+        // تنظيف الأرقام من جميع علامات + للمقارنة
+        const normalizePhone = (p: string) => p?.replace(/\+/g, '') || '';
+        const searchPhoneNormalized = normalizePhone(phone);
+        
+        console.log('8. Searching for phone:', phone, '| normalized:', searchPhoneNormalized);
         
         // البحث بعدة طرق
-        const userData = activeUsers.find(u => 
-          u.phone === phone || 
-          u.phone === phoneWithoutCountryCode ||
-          u.phone?.replace(/^\+?\d{1,4}/, '') === phoneWithoutCountryCode ||
-          phone.endsWith(u.phone || '') ||
-          u.phone?.replace(/\+/g, '') === phone.replace(/\+/g, '')
-        );
+        const userData = activeUsers.find(u => {
+          const userPhoneNormalized = normalizePhone(u.phone);
+          console.log('  - Comparing user phone:', u.phone, '| normalized:', userPhoneNormalized);
+          
+          // تطابق مباشر
+          if (u.phone === phone) return true;
+          
+          // مقارنة بدون علامات + (يحل مشكلة التكرار مثل +974+974)
+          if (userPhoneNormalized === searchPhoneNormalized) return true;
+          
+          // إذا كان أحد الأرقام يحتوي على الآخر (حالة التكرار)
+          if (userPhoneNormalized.includes(searchPhoneNormalized) || 
+              searchPhoneNormalized.includes(userPhoneNormalized)) {
+            return true;
+          }
+          
+          return false;
+        });
 
         if (userData && userData.companies) {
           companyUser = userData;
