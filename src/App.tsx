@@ -39,6 +39,7 @@ import { Capacitor } from '@capacitor/core';
 import { RoleProtectedRoute } from "./components/auth/RoleProtectedRoute";
 import { UserRoleProvider } from "./contexts/UserRoleContext";
 import { PermissionRedirect } from "./components/auth/PermissionRedirect";
+import DeepLinkController from "./components/mobile/DeepLinkController";
 
 const queryClient = new QueryClient();
 
@@ -248,7 +249,7 @@ function AppRouter() {
     // Mobile App Routes (Capacitor)
     return (
       <BrowserRouter>
-        
+        <DeepLinkController />
         <Routes>
           <Route path="/specialist-auth" element={<SpecialistAuth />} />
           <Route path="/specialist-orders" element={
@@ -288,8 +289,8 @@ function AppRouter() {
               <PushNotificationTest />
             </ProtectedRoute>
           } />
-          <Route path="/" element={<MobileLanding />} />
-          <Route path="*" element={<MobileLanding />} />
+          <Route path="/" element={<SpecialistAuth />} />
+          <Route path="*" element={<SpecialistAuth />} />
         </Routes>
       </BrowserRouter>
     );
