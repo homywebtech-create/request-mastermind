@@ -459,6 +459,33 @@ export default function Orders() {
 
       if (error) throw error;
 
+      // Notify the accepted specialist (if any) about status change → deep link to tracking page
+      try {
+        const { data: accepted, error: acceptedErr } = await supabase
+          .from('order_specialists')
+          .select('specialist_id')
+          .eq('order_id', orderId)
+          .eq('is_accepted', true)
+          .maybeSingle();
+
+        if (!acceptedErr && accepted?.specialist_id) {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              specialistIds: [accepted.specialist_id],
+              title: 'تحديث حالة الطلب',
+              body: `تم تحديث حالة طلبك إلى: ${newStatus}`,
+              data: {
+                orderId,
+                type: 'order_status_change',
+                status: newStatus,
+              },
+            },
+          });
+        }
+      } catch (e) {
+        console.warn('🔔 Push for status change failed (non-blocking):', e);
+      }
+
       toast({
         title: t.statusUpdated,
         description: t.statusUpdatedSuccess,

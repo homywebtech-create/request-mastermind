@@ -438,6 +438,38 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
+      // Fetch the specialist to notify
+      let specialistId: string | null = null;
+      try {
+        const { data: os, error: osErr } = await supabase
+          .from('order_specialists')
+          .select('specialist_id')
+          .eq('id', orderSpecialistId)
+          .single();
+        if (!osErr) specialistId = os?.specialist_id || null;
+      } catch (e) {
+        console.warn('Could not resolve specialist_id for accepted quote:', e);
+      }
+
+      // Send booking confirmation push → deep link to /order-tracking/:orderId
+      if (specialistId) {
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              specialistIds: [specialistId],
+              title: 'تأكيد الحجز',
+              body: 'تم تأكيد حجزك بنجاح',
+              data: {
+                orderId,
+                type: 'booking_confirmed',
+              },
+            },
+          });
+        } catch (e) {
+          console.warn('🔔 Push booking_confirmed failed (non-blocking):', e);
+        }
+      }
+
       toast({
         title: t.quoteAccepted,
         description: t.quoteAcceptedDesc,
