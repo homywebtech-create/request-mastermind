@@ -540,13 +540,6 @@ export default function CompanyPortal() {
                 <span className="hidden sm:inline">{language === 'ar' ? 'العقود' : 'Contracts'}</span>
               </Button>
               <Button
-                onClick={() => setShowOrderForm(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>طلب جديد / New Order</span>
-              </Button>
-              <Button
                 variant="outline"
                 onClick={() => navigate("/specialists")}
                 className="flex items-center gap-2"
@@ -616,7 +609,17 @@ export default function CompanyPortal() {
           </div>
         </div>
 
-        <OrdersTable 
+        <div className="flex justify-start">
+          <Button
+            onClick={() => setShowOrderForm(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>طلب جديد / New Order</span>
+          </Button>
+        </div>
+
+        <OrdersTable
           orders={orders}
           onUpdateStatus={handleUpdateStatus}
           onLinkCopied={handleLinkCopied}
