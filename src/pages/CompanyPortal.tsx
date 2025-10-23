@@ -21,6 +21,8 @@ interface Company {
   email: string;
   address: string;
   logo_url?: string;
+  currentUserName?: string;
+  currentUserPhone?: string;
 }
 
 interface Order {
@@ -159,7 +161,7 @@ export default function CompanyPortal() {
       // الحصول على معلومات الشركة
       const { data: profile } = await supabase
         .from("profiles")
-        .select("company_id")
+        .select("company_id, full_name, phone")
         .eq("user_id", user.id)
         .single();
 
@@ -181,7 +183,13 @@ export default function CompanyPortal() {
         .single();
 
       if (companyError) throw companyError;
-      setCompany(companyData);
+      
+      // إضافة معلومات المستخدم للشركة
+      setCompany({
+        ...companyData,
+        currentUserName: profile.full_name,
+        currentUserPhone: profile.phone,
+      });
 
       // جلب الطلبات
       fetchOrders(profile.company_id);
@@ -511,8 +519,17 @@ export default function CompanyPortal() {
                     {company.name_en}
                   </h2>
                 )}
+                {company.currentUserName && (
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                    <Users className="h-3 w-3" />
+                    <span>{company.currentUserName}</span>
+                    {company.currentUserPhone && (
+                      <span className="text-xs">({company.currentUserPhone})</span>
+                    )}
+                  </p>
+                )}
                 <p className="text-sm text-muted-foreground mt-1">
-                  {company.phone}
+                  {language === 'ar' ? 'رقم الشركة:' : 'Company:'}  {company.phone}
                 </p>
               </div>
             </div>
