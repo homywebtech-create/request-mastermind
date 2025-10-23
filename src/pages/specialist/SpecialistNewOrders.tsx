@@ -672,6 +672,17 @@ export default function SpecialistNewOrders() {
 
       if (error) throw error;
 
+      // Notify admin/company about new quote from specialist → routes to /specialist-orders
+      try {
+        // Get admin/company user IDs to notify (you could expand this to notify company users too)
+        // For now, we notify via order tracking - admin will see quote in "awaiting response"
+        console.log('📬 Specialist submitted quote for order:', quoteDialog.orderId);
+        // Optional: Send notification to admin/company if you have their specialist IDs
+        // await supabase.functions.invoke('send-push-notification', { ... });
+      } catch (e) {
+        console.warn('🔔 Could not send quote notification (non-blocking):', e);
+      }
+
       toast({
         title: "تم تقديم العرض",
         description: "تم إرسال عرض السعر الخاص بك بنجاح",

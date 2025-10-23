@@ -771,44 +771,23 @@ export default function CompanyBooking() {
         }
       }
 
-      // First, reject all unselected specialists for this order
-      if (finalSelectedIds.length > 0) {
-        const { error: rejectError } = await supabase
-          .from('order_specialists')
-          .update({ 
-            is_accepted: false,
-            rejected_at: new Date().toISOString(),
-            rejection_reason: 'تم اختيار عرض آخر'
-          })
-          .eq('order_id', orderId)
-          .not('specialist_id', 'in', `(${finalSelectedIds.join(',')})`);
-
-        if (rejectError) {
-          console.error('Error rejecting other specialists:', rejectError);
-        }
-      }
-
-      // THEN create schedules (this is optional and won't block the booking)
-      for (const specialistId of finalSelectedIds) {
-        try {
-          const response = await supabase.functions.invoke('manage-specialist-schedule', {
+      // Notify accepted specialists about booking confirmation → deep link to /order-tracking/:orderId
+      try {
+        if (finalSelectedIds.length > 0) {
+          await supabase.functions.invoke('send-push-notification', {
             body: {
-              specialist_id: specialistId,
-              order_id: orderId,
-              booking_date: bookingDate,
-              booking_time: selectedTime,
-              hours_count: hoursCount,
+              specialistIds: finalSelectedIds,
+              title: 'تأكيد الحجز',
+              body: `تم تأكيد حجزك - التاريخ: ${bookingDate}, الوقت: ${selectedTime}`,
+              data: {
+                orderId,
+                type: 'booking_confirmed',
+              },
             },
           });
-
-          if (response.error) {
-            console.error('Error creating schedule for specialist:', specialistId, response.error);
-          } else {
-            console.log('Schedule created for specialist:', specialistId, response.data);
-          }
-        } catch (scheduleError) {
-          console.error('Failed to create schedule for specialist:', specialistId, scheduleError);
         }
+      } catch (e) {
+        console.warn('🔔 Booking confirmation notification failed (non-blocking):', e);
       }
 
       console.log('Successfully accepted specialists:', selectedSpecialistIds);
