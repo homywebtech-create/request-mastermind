@@ -41,6 +41,7 @@ export default function CompanyAuth() {
       console.log("2. Entered number:", phoneNumber);
       console.log("3. Full number after merge:", cleanPhone);
 
+      // البحث في جدول الشركات أولاً
       const { data: allCompanies, error: fetchError } = await supabase
         .from("companies")
         .select("id, name, phone")
@@ -66,7 +67,58 @@ export default function CompanyAuth() {
         console.log("6. Trying search with number only:", phoneNumber);
       }
 
-      console.log("7. Company found:", company);
+      // إذا لم يتم العثور على الشركة، ابحث في company_users
+      let companyUser: any = null;
+      if (!company) {
+        console.log("7. Not found in companies, searching company_users...");
+        
+        const { data: allCompanyUsers, error: usersError } = await supabase
+          .from("company_users")
+          .select(`
+            id,
+            phone,
+            full_name,
+            is_active,
+            company_id,
+            companies!inner (
+              id,
+              name,
+              phone,
+              is_active
+            )
+          `)
+          .eq("is_active", true)
+          .eq("companies.is_active", true);
+
+        if (!usersError && allCompanyUsers) {
+          console.log("8. All company user numbers:", allCompanyUsers.map(u => u.phone));
+          
+          companyUser = allCompanyUsers.find(u => u.phone === cleanPhone);
+          
+          if (!companyUser) {
+            const phoneWithoutPlus = cleanPhone.replace('+', '');
+            companyUser = allCompanyUsers.find(u => u.phone?.replace('+', '') === phoneWithoutPlus);
+            console.log("9. Trying company user search without + sign");
+          }
+          
+          if (!companyUser) {
+            companyUser = allCompanyUsers.find(u => u.phone?.endsWith(phoneNumber));
+            console.log("10. Trying company user search with number only");
+          }
+
+          if (companyUser && companyUser.companies) {
+            // استخدم بيانات الشركة من company_user
+            company = {
+              id: companyUser.companies.id,
+              name: companyUser.companies.name,
+              phone: companyUser.phone // استخدم رقم المستخدم للتحقق
+            };
+            console.log("11. Company user found:", companyUser.full_name, "for company:", company.name);
+          }
+        }
+      }
+
+      console.log("12. Final company:", company);
 
       if (!company) {
         toast({
