@@ -45,169 +45,68 @@ export function CompanyUserForm({ companyId, user, onSuccess, onCancel }: Compan
     setLoading(true);
 
     try {
-      // Preserve current admin session before any auth operations
-      const { data: { session: adminSession } } = await supabase.auth.getSession();
-
       if (user) {
-        // Update existing user
-        const { error: updateError } = await supabase
-          .from("company_users")
-          .update({
-            full_name: formData.full_name,
-            phone: formData.phone,
-          })
-          .eq("id", user.id);
+        // Update existing user using edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error(language === "ar" ? "الجلسة غير صالحة" : "Invalid session");
+        }
 
-        if (updateError) throw updateError;
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-company-user`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              companyId,
+              userData: {
+                ...formData,
+                isUpdate: true,
+                userId: user.user_id,
+                companyUserId: user.id,
+              },
+              permissions: selectedPermissions,
+            }),
+          }
+        );
 
-        // Delete old permissions
-        await supabase
-          .from("company_user_permissions")
-          .delete()
-          .eq("company_user_id", user.id);
+        const result = await response.json();
 
-        // Insert new permissions
-        if (selectedPermissions.length > 0) {
-          const { error: permsError } = await supabase
-            .from("company_user_permissions")
-            .insert(
-              selectedPermissions.map(perm => ({
-                company_user_id: user.id,
-                permission: perm as any,
-              }))
-            );
-
-          if (permsError) throw permsError;
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update user');
         }
 
         toast.success(language === "ar" ? "تم تحديث المستخدم بنجاح" : "User updated successfully");
       } else {
-        let userId: string;
-        let isNewUser = false;
+        // Create new user using edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error(language === "ar" ? "الجلسة غير صالحة" : "Invalid session");
+        }
 
-        // First, try to create user in auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.full_name,
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-company-user`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
             },
-            emailRedirectTo: `${window.location.origin}/company-auth`
-          },
-        });
-
-        // If user already exists in auth
-        if (authError && authError.message.includes("already registered")) {
-          // Find the existing user in profiles
-          const { data: existingProfile } = await supabase
-            .from("profiles")
-            .select("user_id, company_id")
-            .eq("email", formData.email)
-            .single();
-
-          if (!existingProfile) {
-            toast.error(language === "ar" ? "خطأ في العثور على المستخدم" : "Error finding user");
-            setLoading(false);
-            return;
+            body: JSON.stringify({
+              companyId,
+              userData: formData,
+              permissions: selectedPermissions,
+            }),
           }
+        );
 
-          // Check if they're already in this company
-          const { data: existingCompanyUser } = await supabase
-            .from("company_users")
-            .select("id")
-            .eq("user_id", existingProfile.user_id)
-            .eq("company_id", companyId)
-            .maybeSingle();
+        const result = await response.json();
 
-          if (existingCompanyUser) {
-            toast.error(language === "ar" ? "هذا المستخدم موجود بالفعل في الفريق" : "User already exists in this team");
-            setLoading(false);
-            return;
-          }
-
-          userId = existingProfile.user_id;
-
-          // Update their profile to link to this company if not already linked
-          if (!existingProfile.company_id) {
-            await supabase
-              .from("profiles")
-              .update({ company_id: companyId })
-              .eq("user_id", userId);
-          }
-        } else if (authError) {
-          // Other auth errors
-          toast.error(authError.message);
-          setLoading(false);
-          return;
-        } else if (authData.user) {
-          // New user created successfully
-          userId = authData.user.id;
-          isNewUser = true;
-
-          // Update profile with company_id
-          await supabase
-            .from("profiles")
-            .update({ company_id: companyId })
-            .eq("user_id", userId);
-        } else {
-          toast.error(language === "ar" ? "فشل إنشاء المستخدم" : "Failed to create user");
-          setLoading(false);
-          return;
-        }
-
-        // Ensure we run the insert as admin
-        if (adminSession) {
-          await supabase.auth.setSession({
-            access_token: adminSession.access_token,
-            refresh_token: adminSession.refresh_token,
-          });
-        }
-
-        // Create company user record
-        console.log("About to insert company user:", {
-          company_id: companyId,
-          user_id: userId,
-          full_name: formData.full_name,
-          email: formData.email,
-          phone: formData.phone,
-          is_owner: false,
-          is_active: true,
-        });
-
-        const { data: companyUserData, error: companyUserError } = await supabase
-          .from("company_users")
-          .insert({
-            company_id: companyId,
-            user_id: userId,
-            full_name: formData.full_name,
-            email: formData.email,
-            phone: formData.phone,
-            is_owner: false,
-            is_active: true,
-          })
-          .select()
-          .single();
-
-        console.log("Insert result:", { data: companyUserData, error: companyUserError });
-
-        if (companyUserError) {
-          console.error("Company user error details:", companyUserError);
-          throw companyUserError;
-        }
-
-        // Insert permissions
-        if (selectedPermissions.length > 0) {
-          const { error: permsError } = await supabase
-            .from("company_user_permissions")
-            .insert(
-              selectedPermissions.map(perm => ({
-                company_user_id: companyUserData.id,
-                permission: perm as any,
-              }))
-            );
-
-          if (permsError) throw permsError;
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create user');
         }
 
         toast.success(language === "ar" ? "تم إضافة المستخدم بنجاح" : "User added successfully");
