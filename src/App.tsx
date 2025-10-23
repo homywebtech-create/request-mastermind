@@ -31,6 +31,8 @@ import ContractManagement from "./pages/ContractManagement";
 import AdminSpecialists from "./pages/AdminSpecialists";
 import PushNotificationTest from "./pages/PushNotificationTest";
 import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
+import AdminStatistics from "./pages/AdminStatistics";
+import CompanyStatistics from "./pages/company/CompanyStatistics";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -405,6 +407,14 @@ function AppRouter() {
           }
         />
         <Route
+          path="/admin/statistics"
+          element={
+            <RoleProtectedRoute requiredPermission="view_admin_statistics">
+              <AdminStatistics />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
           path="/company-booking/:orderId/:companyId"
           element={<CompanyBooking />}
         />
@@ -414,6 +424,7 @@ function AppRouter() {
         <Route path="/company-portal" element={<CompanyPortal />} />
         <Route path="/company/team" element={<CompanyTeamManagement />} />
         <Route path="/company/contracts" element={<CompanyContracts />} />
+        <Route path="/company/statistics" element={<CompanyStatistics />} />
         <Route path="/specialists" element={<Specialists />} />
         
         {/* Public specialist registration route */}

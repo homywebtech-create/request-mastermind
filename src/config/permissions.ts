@@ -37,7 +37,10 @@ export type Permission =
   | 'view_activity_logs'
   // Customers
   | 'view_customers'
-  | 'manage_customers';
+  | 'manage_customers'
+  // Statistics
+  | 'view_admin_statistics'
+  | 'view_company_statistics';
 
 // Role to permissions mapping
 const rolePermissions: Record<NonNullable<UserRole>, Permission[]> = {
@@ -69,6 +72,7 @@ const rolePermissions: Record<NonNullable<UserRole>, Permission[]> = {
     'view_activity_logs',
     'view_customers',
     'manage_customers',
+    'view_admin_statistics',
   ],
   
   // Manager - can manage most things except users
@@ -96,6 +100,7 @@ const rolePermissions: Record<NonNullable<UserRole>, Permission[]> = {
     'view_activity_logs',
     'view_customers',
     'manage_customers',
+    'view_admin_statistics',
   ],
   
   // Regular admin - basic management
@@ -112,6 +117,7 @@ const rolePermissions: Record<NonNullable<UserRole>, Permission[]> = {
     'view_contracts',
     'view_deletion_requests',
     'view_customers',
+    'view_admin_statistics',
   ],
   
   // Viewer - read-only access
@@ -130,6 +136,7 @@ const rolePermissions: Record<NonNullable<UserRole>, Permission[]> = {
     'view_deletion_requests',
     'view_activity_logs',
     'view_customers',
+    'view_admin_statistics',
   ],
   
   // Specialist role (not admin)
