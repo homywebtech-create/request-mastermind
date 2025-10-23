@@ -525,6 +525,14 @@ export default function CompanyPortal() {
               </Button>
               <Button
                 variant="outline"
+                onClick={() => navigate("/company/statistics")}
+                className="flex items-center gap-2"
+              >
+                <BarChart className="h-4 w-4" />
+                <span className="hidden sm:inline">{language === 'ar' ? 'الإحصائيات' : 'Statistics'}</span>
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => navigate("/company/contracts")}
                 className="flex items-center gap-2"
               >
@@ -606,18 +614,6 @@ export default function CompanyPortal() {
               isActive={filter === 'completed'}
             />
           </div>
-        </div>
-
-        {/* Statistics Button */}
-        <div className="flex justify-start">
-          <Button
-            onClick={() => navigate("/company/statistics")}
-            className="flex items-center gap-2"
-            size="lg"
-          >
-            <BarChart className="h-5 w-5" />
-            {language === 'ar' ? 'عرض الإحصائيات الشاملة' : 'View Full Statistics'}
-          </Button>
         </div>
 
         <OrdersTable 
