@@ -1115,6 +1115,10 @@ export type Database = {
         Args: { _end_time: string; _specialist_id: string; _start_time: string }
         Returns: boolean
       }
+      is_specialist_available_for_order: {
+        Args: { _order_id: string; _specialist_id: string }
+        Returns: boolean
+      }
       log_activity: {
         Args: {
           _action_type: string
