@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe } from "lucide-react";
+import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe, CheckCircle, XCircle, Clock, DollarSign, Package, BarChart3 } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -54,12 +54,29 @@ interface Company {
   name: string;
 }
 
+interface Stats {
+  totalOrders: number;
+  acceptedOrders: number;
+  rejectedOrders: number;
+  quotedOrders: number;
+  skippedOrders: number;
+  newOrders: number;
+}
+
 export default function SpecialistProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [specialist, setSpecialist] = useState<Specialist | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [newOrdersCount, setNewOrdersCount] = useState(0);
+  const [stats, setStats] = useState<Stats>({
+    totalOrders: 0,
+    acceptedOrders: 0,
+    rejectedOrders: 0,
+    quotedOrders: 0,
+    skippedOrders: 0,
+    newOrders: 0
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -68,6 +85,32 @@ export default function SpecialistProfile() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (!specialist?.id) return;
+
+    fetchStats(specialist.id);
+
+    const channel = supabase
+      .channel('specialist-stats')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_specialists',
+          filter: `specialist_id=eq.${specialist.id}`
+        },
+        () => {
+          fetchStats(specialist.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [specialist?.id]);
 
   const checkAuth = async () => {
     try {
@@ -156,6 +199,64 @@ export default function SpecialistProfile() {
     }
   };
 
+  const fetchStats = async (specId: string) => {
+    try {
+      const now = new Date().toISOString();
+
+      const { data: orderSpecialists } = await supabase
+        .from('order_specialists')
+        .select(`
+          *,
+          orders!inner (
+            expires_at
+          )
+        `)
+        .eq('specialist_id', specId);
+
+      if (!orderSpecialists) {
+        return;
+      }
+
+      // Filter for new orders (not expired, no quote, not rejected)
+      const newOrders = orderSpecialists.filter((os: any) => {
+        if (os.quoted_price || os.rejected_at) return false;
+        const expiresAt = os.orders?.expires_at;
+        if (!expiresAt) return true;
+        return new Date(expiresAt) > new Date(now);
+      }).length;
+
+      const quotedOrders = orderSpecialists.filter(os => 
+        os.quoted_price && os.is_accepted === null
+      ).length;
+
+      const acceptedOrders = orderSpecialists.filter(os => 
+        os.is_accepted === true
+      ).length;
+
+      const rejectedOrders = orderSpecialists.filter(os => 
+        os.is_accepted === false && 
+        os.quoted_price &&
+        os.rejection_reason !== 'Skipped by specialist'
+      ).length;
+
+      const skippedOrders = orderSpecialists.filter(os => 
+        os.is_accepted === false && 
+        os.rejection_reason === 'Skipped by specialist'
+      ).length;
+
+      setStats({
+        totalOrders: orderSpecialists.length,
+        newOrders,
+        quotedOrders,
+        acceptedOrders,
+        rejectedOrders,
+        skippedOrders
+      });
+    } catch (error: any) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/specialist-auth');
@@ -234,6 +335,85 @@ export default function SpecialistProfile() {
 
       {/* Profile Content */}
       <div className="max-w-screen-lg mx-auto p-4 space-y-4">
+        {/* Statistics Section */}
+        <Card className="p-4">
+          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            الإحصائيات
+          </h3>
+          <div className="space-y-3">
+            {[
+              {
+                title: "العروض الجديدة",
+                value: stats.newOrders,
+                icon: Package,
+                color: "from-blue-500 to-blue-600",
+                bgColor: "bg-blue-50 dark:bg-blue-950/30",
+                textColor: "text-blue-600 dark:text-blue-400"
+              },
+              {
+                title: "عروض مقدمة",
+                value: stats.quotedOrders,
+                icon: DollarSign,
+                color: "from-yellow-500 to-yellow-600",
+                bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
+                textColor: "text-yellow-600 dark:text-yellow-400"
+              },
+              {
+                title: "طلبات مقبولة",
+                value: stats.acceptedOrders,
+                icon: CheckCircle,
+                color: "from-green-500 to-green-600",
+                bgColor: "bg-green-50 dark:bg-green-950/30",
+                textColor: "text-green-600 dark:text-green-400"
+              },
+              {
+                title: "عروض مرفوضة",
+                value: stats.rejectedOrders,
+                icon: XCircle,
+                color: "from-red-500 to-red-600",
+                bgColor: "bg-red-50 dark:bg-red-950/30",
+                textColor: "text-red-600 dark:text-red-400"
+              },
+              {
+                title: "عروض متجاوزة",
+                value: stats.skippedOrders,
+                icon: Clock,
+                color: "from-gray-500 to-gray-600",
+                bgColor: "bg-gray-50 dark:bg-gray-950/30",
+                textColor: "text-gray-600 dark:text-gray-400"
+              }
+            ].map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${stat.bgColor}`}>
+                      <Icon className={`h-5 w-5 ${stat.textColor}`} />
+                    </div>
+                    <span className="text-sm font-medium">{stat.title}</span>
+                  </div>
+                  <span className="text-xl font-bold">{stat.value}</span>
+                </div>
+              );
+            })}
+            
+            {/* Total Summary */}
+            <div className="mt-4 p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+              <div className="text-center space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">إجمالي الطلبات</p>
+                <p className="text-3xl font-bold text-primary">{stats.totalOrders}</p>
+                <p className="text-xs text-muted-foreground">منذ بداية العمل</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Separator />
+
         {/* User Info Card */}
         <Card className="overflow-hidden">
           <div className="bg-gradient-to-r from-primary to-primary/80 h-24" />
