@@ -344,4 +344,130 @@ export const ar = {
     active: "نشط",
     inactive: "غير نشط",
   },
+
+  specialist: {
+    // Navigation
+    home: "الرئيسية",
+    newOrders: "طلبات جديدة",
+    myOrders: "طلباتي",
+    profile: "الحساب",
+    statistics: "الإحصائيات",
+    
+    // Profile sections
+    accountSettings: "الحساب والإعدادات",
+    accountInfo: "معلومات حسابك الشخصي",
+    personalInfo: "المعلومات الشخصية",
+    photosDocuments: "الصور والوثائق",
+    preferredLanguage: "اللغة المفضلة للطلبات",
+    languageDescription: "اختر اللغة التي تريد أن تظهر بها تفاصيل الطلبات والعروض",
+    importantLinks: "روابط مهمة",
+    comingSoon: "قريباً",
+    featureInDevelopment: "هذه الميزة قيد التطوير",
+    
+    // Profile fields
+    fullName: "الاسم الكامل",
+    phoneNumber: "رقم الهاتف",
+    company: "الشركة",
+    specialty: "التخصص",
+    experience: "سنوات الخبرة",
+    years: "سنوات",
+    rating: "التقييم",
+    reviews: "تقييم",
+    
+    // Additional info
+    countriesWorkedIn: "الدول التي عملت فيها",
+    languagesSpoken: "اللغات المتحدث بها",
+    idCardExpiry: "تاريخ انتهاء البطاقة",
+    allergies: "الحساسية",
+    petAllergy: "حساسية من الحيوانات",
+    cleaningAllergy: "حساسية من مواد التنظيف",
+    additionalNotes: "ملاحظات",
+    
+    // Photos
+    facePhoto: "صورة الوجه",
+    fullBodyPhoto: "صورة كاملة",
+    frontIdCard: "البطاقة الأمامية",
+    backIdCard: "البطاقة الخلفية",
+    
+    // Statistics
+    statisticsTitle: "الإحصائيات",
+    totalOrders: "إجمالي الطلبات",
+    sinceStart: "منذ بداية العمل",
+    newOffers: "العروض الجديدة",
+    submittedOffers: "عروض مقدمة",
+    acceptedOrders: "طلبات مقبولة",
+    rejectedOffers: "عروض مرفوضة",
+    skippedOffers: "عروض متجاوزة",
+    
+    // Orders
+    orderDetails: "تفاصيل الطلب",
+    customerName: "اسم العميل",
+    serviceType: "نوع الخدمة",
+    area: "المنطقة",
+    budget: "الميزانية",
+    hoursCount: "عدد الساعات",
+    bookingType: "نوع الحجز",
+    notes: "ملاحظات",
+    expiresIn: "ينتهي خلال",
+    expired: "منتهي",
+    timeRemaining: "الوقت المتبقي",
+    
+    // Actions
+    submitQuote: "تقديم عرض",
+    skipOrder: "تجاوز",
+    viewDetails: "عرض التفاصيل",
+    acceptQuote: "قبول العرض",
+    rejectQuote: "رفض العرض",
+    
+    // Quote form
+    quotePrice: "سعر العرض",
+    enterPrice: "أدخل السعر",
+    quoteNotes: "ملاحظات العرض",
+    enterNotes: "أدخل ملاحظات",
+    submit: "إرسال",
+    cancel: "إلغاء",
+    
+    // Messages
+    loading: "جاري التحميل...",
+    noOrders: "لا توجد طلبات",
+    noNewOrders: "لا توجد طلبات جديدة حالياً",
+    checkBackLater: "تحقق مرة أخرى لاحقاً",
+    quoteSubmitted: "تم تقديم العرض",
+    quoteSubmittedSuccess: "تم تقديم عرضك بنجاح",
+    orderSkipped: "تم تجاوز الطلب",
+    orderSkippedSuccess: "تم تجاوز هذا الطلب",
+    error: "خطأ",
+    quoteFailed: "فشل تقديم العرض",
+    skipFailed: "فشل تجاوز الطلب",
+    
+    // Logout
+    logoutTitle: "تسجيل الخروج",
+    logoutConfirm: "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    logout: "تسجيل الخروج",
+    
+    // Date & Time
+    today: "اليوم",
+    tomorrow: "غداً",
+    date: "التاريخ",
+    time: "الوقت",
+    bookingDate: "تاريخ الحجز",
+    
+    // Booking status
+    pending: "قيد الانتظار",
+    confirmed: "مؤكد",
+    inProgress: "قيد التنفيذ",
+    completed: "مكتمل",
+    cancelled: "ملغي",
+    
+    // Translate
+    translate: "ترجمة",
+    translating: "جاري الترجمة...",
+    translated: "مترجم",
+    showOriginal: "إظهار الأصلي",
+    
+    // New order notification
+    newOrderReceived: "طلب جديد!",
+    youHaveNewOrder: "لديك طلب جديد",
+    tapToView: "اضغط للعرض",
+  },
 };
