@@ -12,6 +12,7 @@ import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { SpecialistAvailabilityDialog } from "@/components/orders/SpecialistAvailabilityDialog";
 
 interface OrderFormData {
   customerName: string;
@@ -78,6 +79,11 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [unavailableDialog, setUnavailableDialog] = useState<{
+    open: boolean;
+    specialists: Array<{ id: string; name: string }>;
+  }>({ open: false, specialists: [] });
+  const [pendingOrderData, setPendingOrderData] = useState<OrderFormData | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -186,6 +192,54 @@ export default function Orders() {
     };
   };
 
+  const checkSpecialistAvailability = async (
+    specialistIds: string[],
+    orderData: OrderFormData
+  ): Promise<Array<{ id: string; name: string }>> => {
+    // If no specific company selected, skip availability check
+    if (!orderData.companyId) return [];
+
+    const unavailableSpecialists: Array<{ id: string; name: string }> = [];
+
+    // Create a temporary order to check availability
+    const tempOrderId = crypto.randomUUID();
+    
+    for (const specialistId of specialistIds) {
+      try {
+        // Check if specialist is available using the database function
+        const { data, error } = await supabase.rpc('is_specialist_available_for_order', {
+          _specialist_id: specialistId,
+          _order_id: tempOrderId
+        });
+
+        if (error) {
+          console.error('Error checking availability:', error);
+          continue;
+        }
+
+        // If not available, add to unavailable list
+        if (!data) {
+          const { data: specialist } = await supabase
+            .from('specialists')
+            .select('name')
+            .eq('id', specialistId)
+            .single();
+
+          if (specialist) {
+            unavailableSpecialists.push({
+              id: specialistId,
+              name: specialist.name
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Exception checking availability:', error);
+      }
+    }
+
+    return unavailableSpecialists;
+  };
+
   const handleCreateOrder = async (formData: OrderFormData) => {
     try {
       console.log('=== Creating Order ===');
@@ -196,6 +250,28 @@ export default function Orders() {
         budgetType: formData.budgetType,
         area: formData.area
       });
+
+      // Check specialist availability if specific company is selected
+      if (formData.companyId && !formData.sendToAll) {
+        const { data: companySpecialists } = await supabase
+          .from('specialists')
+          .select('id')
+          .eq('company_id', formData.companyId)
+          .eq('is_active', true);
+
+        const specialistIds = companySpecialists?.map(s => s.id) || [];
+        
+        if (specialistIds.length > 0) {
+          const unavailable = await checkSpecialistAvailability(specialistIds, formData);
+          
+          if (unavailable.length > 0) {
+            // Show dialog with options
+            setUnavailableDialog({ open: true, specialists: unavailable });
+            setPendingOrderData(formData);
+            return; // Stop here, let user decide
+          }
+        }
+      }
 
       const whatsapp = (formData.whatsappNumber || '').trim();
       if (!whatsapp) {
@@ -574,6 +650,29 @@ export default function Orders() {
           onFilterChange={setFilter}
         />
       )}
+
+      <SpecialistAvailabilityDialog
+        open={unavailableDialog.open}
+        onOpenChange={(open) => {
+          setUnavailableDialog({ ...unavailableDialog, open });
+          if (!open) {
+            setPendingOrderData(null);
+          }
+        }}
+        unavailableSpecialists={unavailableDialog.specialists}
+        onChooseOtherCompany={() => {
+          // Reset form to allow choosing another company
+          if (pendingOrderData) {
+            setPendingOrderData({ ...pendingOrderData, companyId: undefined, sendToAll: false });
+            toast({
+              title: language === 'ar' ? 'اختر شركة أخرى' : 'Choose Another Company',
+              description: language === 'ar' 
+                ? 'الرجاء اختيار شركة أخرى لديها محترفات متوفرات'
+                : 'Please choose another company with available specialists',
+            });
+          }
+        }}
+      />
     </div>
   );
 }
