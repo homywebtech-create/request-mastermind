@@ -426,6 +426,12 @@ export const en = {
     enterNotes: "Enter notes",
     submit: "Submit",
     cancel: "Cancel",
+    selectAppropriatePrice: "Select Appropriate Price",
+    customerBudget: "Customer Budget",
+    selectPriceThatSuitsYou: "Select the price that suits you",
+    customerPrice: "Customer Price",
+    skipThisOffer: "Skip This Offer",
+    customerDidNotSpecifyBudget: "Customer did not specify budget",
     
     // Messages
     loading: "Loading...",
@@ -469,5 +475,14 @@ export const en = {
     newOrderReceived: "New Order!",
     youHaveNewOrder: "You have a new order",
     tapToView: "Tap to view",
+    
+    // New Orders Page
+    newOffersTitle: "New Offers",
+    availableOffers: "available offer",
+    availableOffersPlural: "available offers",
+    newOrderArrived: "🔥 New Order Just Arrived!",
+    newOrderSubmitPrice: "New Offer - Submit Your Price",
+    service: "Service",
+    translatedContent: "Translated Content",
   },
 };

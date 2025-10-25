@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Package, FileText, Tag, Sparkles, Globe } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import { translateOrderDetails } from "@/lib/translateHelper";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n/index";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +63,10 @@ export default function SpecialistNewOrders() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
+  
+  // Language management
+  const { language, setLanguage } = useLanguage();
+  const t = useTranslation(language);
 
   useEffect(() => {
     let audioInitialized = false;
@@ -463,13 +469,30 @@ export default function SpecialistNewOrders() {
         
         const { data: specialist } = await supabase
           .from('specialists')
-          .select('id, preferred_language')
+          .select('id, name, preferred_language')
           .eq('phone', profile.phone)
           .single();
 
-        if (specialist) {
-          setSpecialistId(specialist.id);
-          setPreferredLanguage(specialist.preferred_language || 'ar');
+      if (specialist) {
+        setSpecialistId(specialist.id);
+        setSpecialistName(specialist.name);
+        const prefLang = specialist.preferred_language || 'ar';
+        setPreferredLanguage(prefLang);
+        
+        // Sync UI language with global state
+        // UI supports only 'ar' and 'en', content translation supports more languages
+        let uiLanguage: 'ar' | 'en' = 'ar';
+        if (prefLang === 'en' || prefLang === 'ar') {
+          uiLanguage = prefLang;
+        } else {
+          // For other languages (tl, hi, si, etc.), use English UI
+          uiLanguage = 'en';
+        }
+        setLanguage(uiLanguage);
+        
+        console.log('✅ Specialist profile loaded:', specialist.name);
+        console.log('🌐 Preferred content language:', prefLang);
+        console.log('🖥️ UI language:', uiLanguage);
           
           // Initialize Firebase Push Notifications
           try {
@@ -642,8 +665,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تحميل العروض",
+        title: t.specialist.error,
+        description: t.specialist.quoteFailed,
         variant: "destructive",
       });
     } finally {
@@ -692,8 +715,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error submitting quote:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تقديم العرض",
+        title: t.specialist.error,
+        description: t.specialist.quoteFailed,
         variant: "destructive",
       });
     } finally {
@@ -723,8 +746,8 @@ export default function SpecialistNewOrders() {
       if (error) throw error;
 
       toast({
-        title: "تم التجاوز",
-        description: "تم تجاوز هذا العرض",
+        title: t.specialist.orderSkipped,
+        description: t.specialist.orderSkippedSuccess,
       });
 
       await fetchOrders(specialistId);
@@ -732,8 +755,8 @@ export default function SpecialistNewOrders() {
     } catch (error: any) {
       console.error('Error skipping order:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تجاوز العرض",
+        title: t.specialist.error,
+        description: t.specialist.skipFailed,
         variant: "destructive",
       });
     } finally {
@@ -746,7 +769,7 @@ export default function SpecialistNewOrders() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
+          <p className="text-muted-foreground">{t.specialist.loading}</p>
         </div>
       </div>
     );
@@ -758,8 +781,10 @@ export default function SpecialistNewOrders() {
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
           <div className="mb-2">
-            <h1 className="text-2xl font-bold mb-1">عروض جديدة</h1>
-            <p className="text-sm opacity-90">{orders.length} عرض متاح{orders.length !== 1 ? '' : ''}</p>
+            <h1 className="text-2xl font-bold mb-1">{t.specialist.newOffersTitle}</h1>
+            <p className="text-sm opacity-90">
+              {orders.length} {orders.length === 1 ? t.specialist.availableOffers : t.specialist.availableOffersPlural}
+            </p>
           </div>
         </div>
       </div>
@@ -769,8 +794,8 @@ export default function SpecialistNewOrders() {
         {orders.length === 0 ? (
           <Card className="p-8 text-center">
             <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-lg font-medium text-muted-foreground">لا توجد عروض جديدة</p>
-            <p className="text-sm text-muted-foreground mt-2">سنخطرك عندما تتوفر عروض جديدة</p>
+            <p className="text-lg font-medium text-muted-foreground">{t.specialist.noNewOrders}</p>
+            <p className="text-sm text-muted-foreground mt-2">{t.specialist.checkBackLater}</p>
           </Card>
         ) : (
           orders.map((order) => {
@@ -804,7 +829,7 @@ export default function SpecialistNewOrders() {
                     <div className="flex items-center gap-2">
                       <Sparkles className={`h-5 w-5 ${order.isNew ? 'animate-bounce' : 'animate-pulse'}`} />
                       <span className="text-sm font-bold">
-                        {order.isNew ? '🔥 عرض جديد وصل الآن!' : 'عرض جديد - قدم سعرك'}
+                        {order.isNew ? t.specialist.newOrderArrived : t.specialist.newOrderSubmitPrice}
                       </span>
                     </div>
                     {order.timeRemaining !== undefined && order.timeRemaining > 0 && (
@@ -850,7 +875,7 @@ export default function SpecialistNewOrders() {
                       <Package className="h-5 w-5 text-primary" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 justify-between">
-                          <p className="text-xs text-muted-foreground">الخدمة</p>
+                          <p className="text-xs text-muted-foreground">{t.specialist.service}</p>
                           {order.translated && preferredLanguage !== 'ar' && (
                             <Globe className="h-3 w-3 text-blue-500" />
                           )}
@@ -866,7 +891,7 @@ export default function SpecialistNewOrders() {
                         <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 justify-between">
-                            <p className="text-xs text-muted-foreground">المنطقة</p>
+                            <p className="text-xs text-muted-foreground">{t.specialist.area}</p>
                             {order.translated && preferredLanguage !== 'ar' && (
                               <Globe className="h-3 w-3 text-blue-500" />
                             )}
@@ -883,7 +908,7 @@ export default function SpecialistNewOrders() {
                         <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 justify-between">
-                            <p className="text-xs text-muted-foreground">نوع الحجز</p>
+                            <p className="text-xs text-muted-foreground">{t.specialist.bookingType}</p>
                             {order.translated && preferredLanguage !== 'ar' && (
                               <Globe className="h-3 w-3 text-blue-500" />
                             )}
@@ -899,8 +924,10 @@ export default function SpecialistNewOrders() {
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
                         <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">المدة</p>
-                          <p className="font-bold text-sm">{order.hours_count} ساعات</p>
+                          <p className="text-xs text-muted-foreground">{t.specialist.hoursCount}</p>
+                          <p className="font-bold text-sm">
+                            {order.hours_count} {language === 'ar' ? 'ساعات' : 'hours'}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -911,7 +938,7 @@ export default function SpecialistNewOrders() {
                       <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 justify-between mb-1">
-                          <p className="text-xs text-amber-700 dark:text-amber-300 font-bold">ملاحظات</p>
+                          <p className="text-xs text-amber-700 dark:text-amber-300 font-bold">{t.specialist.notes}</p>
                           {order.translated && preferredLanguage !== 'ar' && (
                             <Globe className="h-3 w-3 text-blue-500" />
                           )}
@@ -936,16 +963,16 @@ export default function SpecialistNewOrders() {
                         className="w-full h-14 text-base font-bold shadow-lg"
                       >
                         <Tag className="h-5 w-5 ml-2" />
-                        قدم عرضك
+                        {t.specialist.submitQuote}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
                       <DialogHeader>
-                        <DialogTitle>اختر السعر المناسب</DialogTitle>
+                        <DialogTitle>{t.specialist.selectAppropriatePrice}</DialogTitle>
                         <DialogDescription>
                           {baseBudget > 0 
-                            ? `ميزانية العميل: ${baseBudget} ريال قطري - اختر السعر المناسب`
-                            : "اختر السعر الذي يناسبك"}
+                            ? `${t.specialist.customerBudget}: ${baseBudget} ${language === 'ar' ? 'ريال قطري' : 'QAR'} - ${t.specialist.selectPriceThatSuitsYou}`
+                            : t.specialist.selectPriceThatSuitsYou}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-3 py-4">
@@ -958,7 +985,7 @@ export default function SpecialistNewOrders() {
                               className="w-full h-auto py-4 flex flex-col gap-1"
                             >
                               <span className="text-lg font-bold">{priceOptions[0].label}</span>
-                              <span className="text-xs opacity-80">سعر العميل</span>
+                              <span className="text-xs opacity-80">{t.specialist.customerPrice}</span>
                             </Button>
                             
                             <div className="grid grid-cols-3 gap-2">
@@ -982,20 +1009,20 @@ export default function SpecialistNewOrders() {
                                 variant="ghost"
                                 className="w-full"
                               >
-                                تجاوز هذا العرض
+                                {t.specialist.skipThisOffer}
                               </Button>
                             </div>
                           </>
                         ) : (
                           <div className="text-center py-8">
-                            <p className="text-muted-foreground mb-4">لم يحدد العميل ميزانية</p>
+                            <p className="text-muted-foreground mb-4">{t.specialist.customerDidNotSpecifyBudget}</p>
                             <Button
                               onClick={handleSkipOrder}
                               disabled={isSubmitting}
                               variant="outline"
                               className="w-full"
                             >
-                              تجاوز هذا العرض
+                              {t.specialist.skipThisOffer}
                             </Button>
                           </div>
                         )}

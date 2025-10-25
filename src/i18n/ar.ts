@@ -426,6 +426,12 @@ export const ar = {
     enterNotes: "أدخل ملاحظات",
     submit: "إرسال",
     cancel: "إلغاء",
+    selectAppropriatePrice: "اختر السعر المناسب",
+    customerBudget: "ميزانية العميل",
+    selectPriceThatSuitsYou: "اختر السعر الذي يناسبك",
+    customerPrice: "سعر العميل",
+    skipThisOffer: "تجاوز هذا العرض",
+    customerDidNotSpecifyBudget: "لم يحدد العميل ميزانية",
     
     // Messages
     loading: "جاري التحميل...",
@@ -469,5 +475,14 @@ export const ar = {
     newOrderReceived: "طلب جديد!",
     youHaveNewOrder: "لديك طلب جديد",
     tapToView: "اضغط للعرض",
+    
+    // New Orders Page
+    newOffersTitle: "عروض جديدة",
+    availableOffers: "عرض متاح",
+    availableOffersPlural: "عروض متاحة",
+    newOrderArrived: "🔥 عرض جديد وصل الآن!",
+    newOrderSubmitPrice: "عرض جديد - قدم سعرك",
+    service: "الخدمة",
+    translatedContent: "محتوى مترجم",
   },
 };
