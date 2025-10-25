@@ -713,7 +713,28 @@ export default function CompanyBooking() {
         return;
       }
 
-      // Update order details - keep as pending to show in upcoming until tracking starts
+      // Determine the specialist to assign
+      let assignedSpecialistId = selectedSpecialistIds.length > 0 ? selectedSpecialistIds[0] : null;
+      
+      // If no specialists selected but there are quotes, auto-select the one with lowest price
+      if (!assignedSpecialistId) {
+        const { data: quotesData } = await supabase
+          .from('order_specialists')
+          .select('specialist_id, quoted_price')
+          .eq('order_id', orderId)
+          .not('quoted_price', 'is', null);
+
+        if (quotesData && quotesData.length > 0) {
+          const lowestQuote = quotesData.reduce((lowest, current) => {
+            const currentPrice = parseFloat(current.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
+            const lowestPrice = parseFloat(lowest.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
+            return currentPrice < lowestPrice ? current : lowest;
+          });
+          assignedSpecialistId = lowestQuote.specialist_id;
+        }
+      }
+
+      // Update order details - set status to accepted and assign specialist
       const { error: orderError } = await supabase
         .from('orders')
         .update({
@@ -724,39 +745,24 @@ export default function CompanyBooking() {
           booking_date: bookingDate,
           booking_date_type: 'custom',
           booking_time: selectedTime,
-          status: 'pending',
+          status: 'accepted',
+          specialist_id: assignedSpecialistId,
           tracking_stage: null,
           notes: isMonthlyService 
-            ? `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}`
+            ? `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}` 
             : `تم الموافقة على الشروط والأحكام: ${termsAccepted ? 'نعم' : 'لا'}`,
         })
         .eq('id', orderId);
 
       if (orderError) throw orderError;
 
-      // If no specialists selected but there are quotes, auto-select the one with lowest price
-      let finalSelectedIds = [...selectedSpecialistIds];
-      if (finalSelectedIds.length === 0) {
-        const { data: quotesData } = await supabase
-          .from('order_specialists')
-          .select('specialist_id, quoted_price')
-          .eq('order_id', orderId)
-          .not('quoted_price', 'is', null);
-
-        if (quotesData && quotesData.length > 0) {
-          // Find lowest price
-          const lowestQuote = quotesData.reduce((lowest, current) => {
-            const currentPrice = parseFloat(current.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
-            const lowestPrice = parseFloat(lowest.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
-            return currentPrice < lowestPrice ? current : lowest;
-          });
-          finalSelectedIds = [lowestQuote.specialist_id];
-        }
-      }
-
-      // Accept all selected specialists FIRST (before checking availability)
-      for (const specialistId of finalSelectedIds) {
-        const { error: acceptError } = await supabase
+      // Use the assigned specialist for all operations
+      const finalSelectedIds = assignedSpecialistId ? [assignedSpecialistId] : selectedSpecialistIds;
+      
+      // Accept the assigned specialist and reject others
+      if (assignedSpecialistId) {
+        // Accept the chosen specialist
+        await supabase
           .from('order_specialists')
           .update({ 
             is_accepted: true,
@@ -764,11 +770,18 @@ export default function CompanyBooking() {
             rejection_reason: null
           })
           .eq('order_id', orderId)
-          .eq('specialist_id', specialistId);
+          .eq('specialist_id', assignedSpecialistId);
 
-        if (acceptError) {
-          console.error('Error accepting specialist:', specialistId, acceptError);
-        }
+        // Reject all other specialists
+        await supabase
+          .from('order_specialists')
+          .update({ 
+            is_accepted: false,
+            rejected_at: new Date().toISOString(),
+            rejection_reason: 'تم اختيار محترفة أخرى'
+          })
+          .eq('order_id', orderId)
+          .neq('specialist_id', assignedSpecialistId);
       }
 
       // Notify accepted specialists about booking confirmation → deep link to /order-tracking/:orderId
