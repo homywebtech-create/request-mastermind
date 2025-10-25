@@ -804,10 +804,10 @@ export default function SpecialistNewOrders() {
             const baseBudget = !isNaN(numericBudget) && numericBudget > 0 ? numericBudget : 0;
             
             const priceOptions = baseBudget > 0 ? [
-              { label: `${baseBudget} QAR`, value: `${baseBudget} QAR` },
-              { label: `${baseBudget + 3} QAR`, value: `${baseBudget + 3} QAR` },
-              { label: `${baseBudget + 6} QAR`, value: `${baseBudget + 6} QAR` },
-              { label: `${baseBudget + 9} QAR`, value: `${baseBudget + 9} QAR` },
+              { label: `${baseBudget} ${t.specialist.currencyShort}`, value: `${baseBudget} ${t.specialist.currencyShort}` },
+              { label: `${baseBudget + 3} ${t.specialist.currencyShort}`, value: `${baseBudget + 3} ${t.specialist.currencyShort}` },
+              { label: `${baseBudget + 6} ${t.specialist.currencyShort}`, value: `${baseBudget + 6} ${t.specialist.currencyShort}` },
+              { label: `${baseBudget + 9} ${t.specialist.currencyShort}`, value: `${baseBudget + 9} ${t.specialist.currencyShort}` },
             ] : [];
 
             return (
@@ -971,7 +971,7 @@ export default function SpecialistNewOrders() {
                         <DialogTitle>{t.specialist.selectAppropriatePrice}</DialogTitle>
                         <DialogDescription>
                           {baseBudget > 0 
-                            ? `${t.specialist.customerBudget}: ${baseBudget} ${language === 'ar' ? 'ريال قطري' : 'QAR'} - ${t.specialist.selectPriceThatSuitsYou}`
+                            ? `${t.specialist.customerBudget}: ${baseBudget} ${t.specialist.currencyShort} - ${t.specialist.selectPriceThatSuitsYou}`
                             : t.specialist.selectPriceThatSuitsYou}
                         </DialogDescription>
                       </DialogHeader>

@@ -484,5 +484,7 @@ export const en = {
     newOrderSubmitPrice: "New Offer - Submit Your Price",
     service: "Service",
     translatedContent: "Translated Content",
+    currency: "Qatari Riyal",
+    currencyShort: "QAR",
   },
 };

@@ -484,5 +484,7 @@ export const ar = {
     newOrderSubmitPrice: "عرض جديد - قدم سعرك",
     service: "الخدمة",
     translatedContent: "محتوى مترجم",
+    currency: "ريال قطري",
+    currencyShort: "QAR",
   },
 };
