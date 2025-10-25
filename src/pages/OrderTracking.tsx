@@ -474,107 +474,180 @@ export default function OrderTracking() {
 
         {/* Moving Stage */}
         {stage === 'moving' && (
-          <Card className="p-6 space-y-4">
-            <h3 className="text-xl font-bold text-center mb-6">Moving to Customer</h3>
-            
-            {/* Customer Contact */}
-            <div className="bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border border-green-200 dark:border-green-800 p-4 rounded-lg">
-              <div className="flex items-center gap-3 mb-3">
-                <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">Customer Contact:</p>
-                  <p className="text-lg font-bold text-foreground">{order.customer?.whatsapp_number}</p>
-                </div>
+          <Card className="p-6 space-y-6">
+            <div className="text-center mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-3">
+                <Navigation className="h-8 w-8 text-primary animate-pulse" />
               </div>
-              <Button 
-                onClick={() => openWhatsApp(order.customer?.whatsapp_number || '')}
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                <Phone className="ml-2 h-5 w-5" />
-                Call Customer via WhatsApp
-              </Button>
+              <h3 className="text-2xl font-bold">Moving to Customer</h3>
+              <p className="text-sm text-muted-foreground mt-1">On my way to the location</p>
             </div>
 
-            <Button onClick={openMaps} className="w-full" size="lg">
-              <Navigation className="ml-2 h-5 w-5" />
-              Click to Navigate to Customer
+            {/* Navigation Button - Primary Action */}
+            <Button 
+              onClick={openMaps} 
+              className="w-full h-14 text-lg font-semibold shadow-lg"
+              size="lg"
+            >
+              <Navigation className="ml-2 h-6 w-6" />
+              Navigate to Customer Location
             </Button>
 
-            <Button onClick={shareLocation} variant="outline" className="w-full" size="lg">
+            {/* Share Location Button */}
+            <Button 
+              onClick={shareLocation} 
+              variant="outline" 
+              className="w-full h-12"
+              size="lg"
+            >
               <Share2 className="ml-2 h-5 w-5" />
-              Share My Location
+              Share My Location with Customer
             </Button>
 
-            <div className="pt-4 border-t">
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  When you arrive
+                </span>
+              </div>
+            </div>
+
+            {/* Arrival Confirmation - Protected by Timer */}
+            <div className="space-y-3">
+              {movingTimer > 0 && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <p className="text-amber-700 dark:text-amber-300">
+                      Please wait <span className="font-bold">{movingTimer}s</span> before confirming arrival
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               <Button
                 onClick={handleArrived}
                 disabled={movingTimer > 0}
-                className="w-full"
+                className="w-full h-14 text-lg font-semibold"
                 size="lg"
                 variant={movingTimer > 0 ? "secondary" : "default"}
               >
-                <CheckCircle className="ml-2 h-5 w-5" />
-                I Have Arrived
-                {movingTimer > 0 && (
-                  <span className="mr-2 text-sm">({movingTimer}s)</span>
-                )}
+                <CheckCircle className="ml-2 h-6 w-6" />
+                I Have Arrived at Location
               </Button>
+              
+              <p className="text-xs text-center text-muted-foreground">
+                You will be able to contact the customer after confirming arrival
+              </p>
             </div>
           </Card>
         )}
 
         {/* Arrived Stage */}
         {stage === 'arrived' && (
-          <Card className="p-6 space-y-4">
-            <h3 className="text-xl font-bold text-center mb-6">Arrived at Location</h3>
-            
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <div className="flex items-start gap-2">
-                <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-semibold">Customer Address:</p>
-                  <p className="text-sm text-muted-foreground">{order.building_info || 'No details available'}</p>
-                </div>
+          <Card className="p-6 space-y-6">
+            <div className="text-center mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 dark:bg-green-950/30 mb-3">
+                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
+              <h3 className="text-2xl font-bold">Arrived at Location</h3>
+              <p className="text-sm text-muted-foreground mt-1">Contact customer if needed</p>
             </div>
 
-            {/* Customer Contact */}
-            <div className="bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border border-green-200 dark:border-green-800 p-4 rounded-lg">
-              <div className="flex items-center gap-3 mb-3">
-                <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">Customer Contact:</p>
-                  <p className="text-lg font-bold text-foreground">{order.customer?.whatsapp_number}</p>
+            {/* Building Info */}
+            {order.building_info && (
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm mb-1">Building Information:</p>
+                    <p className="text-sm text-foreground">{order.building_info}</p>
+                  </div>
                 </div>
               </div>
+            )}
+
+            {/* Customer Contact - Now Visible */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50/50 dark:from-green-950/30 dark:to-emerald-950/10 border-2 border-green-300 dark:border-green-700 p-5 rounded-xl space-y-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                  <Phone className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide">Customer Contact</p>
+                  <p className="text-xl font-bold text-foreground mt-0.5 font-mono">
+                    {order.customer?.whatsapp_number}
+                  </p>
+                </div>
+              </div>
+              
               <Button 
-                onClick={() => window.location.href = `https://wa.me/${order.customer?.whatsapp_number.replace(/\+/g, '')}`}
-                className="w-full bg-green-600 hover:bg-green-700"
+                onClick={() => openWhatsApp(order.customer?.whatsapp_number || '')}
+                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold"
+                size="lg"
               >
                 <Phone className="ml-2 h-5 w-5" />
                 Call Customer via WhatsApp
               </Button>
+              
+              <p className="text-xs text-center text-green-700 dark:text-green-300">
+                Notify customer about your arrival or ask for directions
+              </p>
             </div>
 
-            <Button onClick={openMaps} variant="outline" className="w-full">
-              <Navigation className="ml-2 h-5 w-5" />
+            {/* View Map Button */}
+            <Button 
+              onClick={openMaps} 
+              variant="outline" 
+              className="w-full h-11"
+            >
+              <MapPin className="ml-2 h-5 w-5" />
               View Location on Map
             </Button>
 
-            <div className="pt-4 border-t">
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Ready to start work?
+                </span>
+              </div>
+            </div>
+
+            {/* Start Work Button */}
+            <div className="space-y-3">
+              {arrivedTimer > 0 && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <p className="text-amber-700 dark:text-amber-300">
+                      Please wait <span className="font-bold">{arrivedTimer}s</span> before starting work
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               <Button
                 onClick={handleStartWork}
                 disabled={arrivedTimer > 0}
-                className="w-full"
+                className="w-full h-14 text-lg font-semibold"
                 size="lg"
                 variant={arrivedTimer > 0 ? "secondary" : "default"}
               >
-                <Play className="ml-2 h-5 w-5" />
-                Start Work
-                {arrivedTimer > 0 && (
-                  <span className="mr-2 text-sm">({arrivedTimer}s)</span>
-                )}
+                <Play className="ml-2 h-6 w-6" />
+                Start Work Timer
               </Button>
+              
+              <p className="text-xs text-center text-muted-foreground">
+                Work timer will start automatically after 5 minutes
+              </p>
             </div>
           </Card>
         )}
