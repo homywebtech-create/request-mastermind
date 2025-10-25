@@ -745,7 +745,7 @@ export default function CompanyBooking() {
           booking_date: bookingDate,
           booking_date_type: 'custom',
           booking_time: selectedTime,
-          status: 'accepted',
+          status: 'confirmed',
           specialist_id: assignedSpecialistId,
           tracking_stage: null,
           notes: isMonthlyService 
