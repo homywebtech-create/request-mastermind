@@ -1,4 +1,4 @@
-import { Home, Package, BarChart3, Settings } from "lucide-react";
+import { Home, Package, Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -26,12 +26,6 @@ export default function BottomNavigation({ newOrdersCount = 0 }: BottomNavigatio
       path: "/specialist-orders/new",
       isActive: location.pathname === "/specialist-orders/new",
       badge: newOrdersCount
-    },
-    {
-      icon: BarChart3,
-      label: isAr ? "الإحصائيات" : "Stats",
-      path: "/specialist-orders/stats",
-      isActive: location.pathname === "/specialist-orders/stats"
     },
     {
       icon: Settings,
