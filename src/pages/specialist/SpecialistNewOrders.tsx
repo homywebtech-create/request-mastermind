@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Package, FileText, Tag, Sparkles, Globe } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
-import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { translateOrderDetails } from "@/lib/translateHelper";
 import {
   Dialog,
@@ -758,18 +757,9 @@ export default function SpecialistNewOrders() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">عروض جديدة</h1>
-              <p className="text-sm opacity-90">{orders.length} عرض متاح{orders.length !== 1 ? '' : ''}</p>
-            </div>
-            {specialistId && (
-              <LanguageSelector 
-                specialistId={specialistId} 
-                currentLanguage={preferredLanguage}
-                onLanguageChange={(lang) => setPreferredLanguage(lang)}
-              />
-            )}
+          <div className="mb-2">
+            <h1 className="text-2xl font-bold mb-1">عروض جديدة</h1>
+            <p className="text-sm opacity-90">{orders.length} عرض متاح{orders.length !== 1 ? '' : ''}</p>
           </div>
         </div>
       </div>

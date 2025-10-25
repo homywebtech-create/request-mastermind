@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Navigation, Calendar, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
-import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { translateOrderDetails } from "@/lib/translateHelper";
 import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
@@ -331,18 +330,9 @@ export default function SpecialistHome() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
-              <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
-            </div>
-            {specialistId && (
-              <LanguageSelector 
-                specialistId={specialistId} 
-                currentLanguage={preferredLanguage}
-                onLanguageChange={(lang) => setPreferredLanguage(lang)}
-              />
-            )}
+          <div>
+            <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
+            <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
           </div>
         </div>
       </div>
