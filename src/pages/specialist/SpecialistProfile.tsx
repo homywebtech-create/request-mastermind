@@ -633,39 +633,6 @@ export default function SpecialistProfile() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Preferred Language Section */}
-          <AccordionItem value="language" className="border rounded-lg bg-card">
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <Globe className="h-5 w-5 text-primary" />
-                </div>
-                <span className="font-semibold">{isAr ? "لغة الطلبات" : "Orders Language"}</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <div className="pt-2 space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {isAr ? "اختر اللغة التي تريد أن تظهر بها تفاصيل الطلب والعروض" : "Choose the language you want order details and offers to appear in"}
-                </p>
-                <Select
-                  value={specialist?.preferred_language || 'ar'}
-                  onValueChange={handleLanguageChange}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languageOptions.map((lang) => (
-                      <SelectItem key={lang.value} value={lang.value}>
-                        {lang.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
 
           {/* Quick Actions Section */}
           <AccordionItem value="actions" className="border rounded-lg bg-card">
