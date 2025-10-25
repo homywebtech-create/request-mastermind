@@ -4,12 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe, CheckCircle, XCircle, Clock, DollarSign, Package, BarChart3 } from "lucide-react";
+import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe, CheckCircle, XCircle, Clock, DollarSign, Package, BarChart3, Image as ImageIcon } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +20,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ar } from "@/i18n/ar";
 import { en } from "@/i18n/en";
@@ -188,7 +193,6 @@ export default function SpecialistProfile() {
         return;
       }
 
-      // Filter out expired orders
       const validOrders = orderSpecialists.filter((os: any) => {
         const expiresAt = os.orders?.expires_at;
         if (!expiresAt) return true;
@@ -220,7 +224,6 @@ export default function SpecialistProfile() {
         return;
       }
 
-      // Filter for new orders (not expired, no quote, not rejected)
       const newOrders = orderSpecialists.filter((os: any) => {
         if (os.quoted_price || os.rejected_at) return false;
         const expiresAt = os.orders?.expires_at;
@@ -322,7 +325,7 @@ export default function SpecialistProfile() {
         <div className="max-w-screen-lg mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold mb-1">{t.accountSettings}</h1>
+              <h1 className="text-2xl font-bold mb-1">{isAr ? "الإعدادات" : "Settings"}</h1>
               <p className="text-sm opacity-90">{t.accountInfo}</p>
             </div>
             {specialist && (
@@ -336,361 +339,404 @@ export default function SpecialistProfile() {
         </div>
       </div>
 
-      {/* Profile Content */}
-      <div className="max-w-screen-lg mx-auto p-4 space-y-4">
-        {/* Statistics Section */}
-        <Card className="p-4">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            {t.statisticsTitle}
-          </h3>
-          <div className="space-y-3">
-            {[
-              {
-                title: t.newOffers,
-                value: stats.newOrders,
-                icon: Package,
-                color: "from-blue-500 to-blue-600",
-                bgColor: "bg-blue-50 dark:bg-blue-950/30",
-                textColor: "text-blue-600 dark:text-blue-400"
-              },
-              {
-                title: t.submittedOffers,
-                value: stats.quotedOrders,
-                icon: DollarSign,
-                color: "from-yellow-500 to-yellow-600",
-                bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
-                textColor: "text-yellow-600 dark:text-yellow-400"
-              },
-              {
-                title: t.acceptedOrders,
-                value: stats.acceptedOrders,
-                icon: CheckCircle,
-                color: "from-green-500 to-green-600",
-                bgColor: "bg-green-50 dark:bg-green-950/30",
-                textColor: "text-green-600 dark:text-green-400"
-              },
-              {
-                title: t.rejectedOffers,
-                value: stats.rejectedOrders,
-                icon: XCircle,
-                color: "from-red-500 to-red-600",
-                bgColor: "bg-red-50 dark:bg-red-950/30",
-                textColor: "text-red-600 dark:text-red-400"
-              },
-              {
-                title: t.skippedOffers,
-                value: stats.skippedOrders,
-                icon: Clock,
-                color: "from-gray-500 to-gray-600",
-                bgColor: "bg-gray-50 dark:bg-gray-950/30",
-                textColor: "text-gray-600 dark:text-gray-400"
-              }
-            ].map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                      <Icon className={`h-5 w-5 ${stat.textColor}`} />
+      {/* Settings Content */}
+      <div className="max-w-screen-lg mx-auto p-4">
+        <Accordion type="single" collapsible className="space-y-4">
+          {/* Statistics Section */}
+          <AccordionItem value="statistics" className="border rounded-lg bg-card">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">{isAr ? "الإحصائيات" : "Statistics"}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-4">
+              <div className="space-y-3 pt-2">
+                {[
+                  {
+                    title: t.newOffers,
+                    value: stats.newOrders,
+                    icon: Package,
+                    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+                    textColor: "text-blue-600 dark:text-blue-400"
+                  },
+                  {
+                    title: t.submittedOffers,
+                    value: stats.quotedOrders,
+                    icon: DollarSign,
+                    bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
+                    textColor: "text-yellow-600 dark:text-yellow-400"
+                  },
+                  {
+                    title: t.acceptedOrders,
+                    value: stats.acceptedOrders,
+                    icon: CheckCircle,
+                    bgColor: "bg-green-50 dark:bg-green-950/30",
+                    textColor: "text-green-600 dark:text-green-400"
+                  },
+                  {
+                    title: t.rejectedOffers,
+                    value: stats.rejectedOrders,
+                    icon: XCircle,
+                    bgColor: "bg-red-50 dark:bg-red-950/30",
+                    textColor: "text-red-600 dark:text-red-400"
+                  },
+                  {
+                    title: t.skippedOffers,
+                    value: stats.skippedOrders,
+                    icon: Clock,
+                    bgColor: "bg-gray-50 dark:bg-gray-950/30",
+                    textColor: "text-gray-600 dark:text-gray-400"
+                  }
+                ].map((stat, index) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${stat.bgColor}`}>
+                          <Icon className={`h-5 w-5 ${stat.textColor}`} />
+                        </div>
+                        <span className="text-sm font-medium">{stat.title}</span>
+                      </div>
+                      <span className="text-xl font-bold">{stat.value}</span>
                     </div>
-                    <span className="text-sm font-medium">{stat.title}</span>
+                  );
+                })}
+                
+                {/* Total Summary */}
+                <div className="mt-4 p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                  <div className="text-center space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">{t.totalOrders}</p>
+                    <p className="text-3xl font-bold text-primary">{stats.totalOrders}</p>
+                    <p className="text-xs text-muted-foreground">{t.sinceStart}</p>
                   </div>
-                  <span className="text-xl font-bold">{stat.value}</span>
                 </div>
-              );
-            })}
-            
-            {/* Total Summary */}
-            <div className="mt-4 p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-              <div className="text-center space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">{t.totalOrders}</p>
-                <p className="text-3xl font-bold text-primary">{stats.totalOrders}</p>
-                <p className="text-xs text-muted-foreground">{t.sinceStart}</p>
               </div>
-            </div>
-          </div>
-        </Card>
+            </AccordionContent>
+          </AccordionItem>
 
-        <Separator />
-
-        {/* Personal Info Card */}
-        <Card className="p-4">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            {t.personalInfo}
-          </h3>
-          <div className="space-y-4">
-            {/* Name and Rating */}
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-8 w-8 text-primary" />
+          {/* Personal Info Section */}
+          <AccordionItem value="personal-info" className="border rounded-lg bg-card">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <User className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">{isAr ? "المعلومات الشخصية" : "Personal Info"}</span>
               </div>
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">{t.fullName}</p>
-                <p className="text-xl font-bold">{profile?.full_name}</p>
-                {specialist && specialist.rating && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                    <span className="font-medium">{specialist.rating.toFixed(1)}</span>
-                    <span className="text-xs text-muted-foreground">
-                      ({specialist.reviews_count} {t.reviews})
-                    </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-4">
+              <div className="space-y-4 pt-2">
+                {/* Name and Rating */}
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-8 w-8 text-primary" />
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Contact & Work Info */}
-            <div className="grid grid-cols-2 gap-3">
-              {profile?.phone && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <Phone className="h-5 w-5 text-primary mb-2" />
-                  <p className="text-xs text-muted-foreground">{t.phoneNumber}</p>
-                  <p className="font-medium text-sm">{profile.phone}</p>
-                </div>
-              )}
-
-              {company && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <Building2 className="h-5 w-5 text-primary mb-2" />
-                  <p className="text-xs text-muted-foreground">{t.company}</p>
-                  <p className="font-medium text-sm">{company.name}</p>
-                </div>
-              )}
-
-              {specialist?.specialty && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <Briefcase className="h-5 w-5 text-primary mb-2" />
-                  <p className="text-xs text-muted-foreground">{t.specialty}</p>
-                  <p className="font-medium text-sm">{specialist.specialty}</p>
-                </div>
-              )}
-
-              {specialist?.experience_years && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <Calendar className="h-5 w-5 text-primary mb-2" />
-                  <p className="text-xs text-muted-foreground">{t.experience}</p>
-                  <p className="font-medium text-sm">{specialist.experience_years} {t.years}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Additional Details */}
-            <div className="space-y-3">
-              {specialist?.countries_worked_in && specialist.countries_worked_in.length > 0 && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
-                    <MapPin className="h-4 w-4" />
-                    {t.countriesWorkedIn}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {specialist.countries_worked_in.map((country, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">{country}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {specialist?.languages_spoken && specialist.languages_spoken.length > 0 && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
-                    <Languages className="h-4 w-4" />
-                    {t.languagesSpoken}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {specialist.languages_spoken.map((lang, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">{lang}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {specialist?.id_card_expiry_date && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4" />
-                    {t.idCardExpiry}
-                  </p>
-                  <p className="font-medium text-sm">{new Date(specialist.id_card_expiry_date).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}</p>
-                </div>
-              )}
-
-              {(specialist?.has_pet_allergy || specialist?.has_cleaning_allergy) && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
-                    <AlertCircle className="h-4 w-4" />
-                    {t.allergies}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {specialist.has_pet_allergy && (
-                      <Badge variant="secondary" className="text-xs">{t.petAllergy}</Badge>
-                    )}
-                    {specialist.has_cleaning_allergy && (
-                      <Badge variant="secondary" className="text-xs">{t.cleaningAllergy}</Badge>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">{t.fullName}</p>
+                    <p className="text-xl font-bold">{profile?.full_name}</p>
+                    {specialist && specialist.rating && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <span className="font-medium">{specialist.rating.toFixed(1)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({specialist.reviews_count} {t.reviews})
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
-              )}
 
-              {specialist?.notes && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4" />
-                    {t.additionalNotes}
-                  </p>
-                  <p className="text-sm whitespace-pre-wrap">
-                    {specialist.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </Card>
+                {/* Contact & Work Info */}
+                <div className="grid grid-cols-2 gap-3">
+                  {profile?.phone && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <Phone className="h-5 w-5 text-primary mb-2" />
+                      <p className="text-xs text-muted-foreground">{t.phoneNumber}</p>
+                      <p className="font-medium text-sm">{profile.phone}</p>
+                    </div>
+                  )}
 
-        {/* Photos Section */}
-        {(specialist?.face_photo_url || specialist?.full_body_photo_url || specialist?.id_card_front_url || specialist?.id_card_back_url) && (
-          <Card className="p-4">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              {t.photosDocuments}
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              {specialist.face_photo_url && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">{t.facePhoto}</p>
-                  <img 
-                    src={specialist.face_photo_url} 
-                    alt="Face" 
-                    className="w-full h-40 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
-              {specialist.full_body_photo_url && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">{t.fullBodyPhoto}</p>
-                  <img 
-                    src={specialist.full_body_photo_url} 
-                    alt="Full body" 
-                    className="w-full h-40 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
-              {specialist.id_card_front_url && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">{t.frontIdCard}</p>
-                  <img 
-                    src={specialist.id_card_front_url} 
-                    alt="ID front" 
-                    className="w-full h-40 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
-              {specialist.id_card_back_url && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">{t.backIdCard}</p>
-                  <img 
-                    src={specialist.id_card_back_url} 
-                    alt="ID back" 
-                    className="w-full h-40 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
-            </div>
-          </Card>
-        )}
+                  {company && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <Building2 className="h-5 w-5 text-primary mb-2" />
+                      <p className="text-xs text-muted-foreground">{t.company}</p>
+                      <p className="font-medium text-sm">{company.name}</p>
+                    </div>
+                  )}
 
-        {/* Language Preference */}
-        <Card className="p-4">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <Globe className="h-5 w-5 text-primary" />
-            {t.preferredLanguage}
-          </h3>
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground mb-3">
-              {t.languageDescription}
-            </p>
-            <Select 
-              value={specialist?.preferred_language || 'ar'} 
-              onValueChange={handleLanguageChange}
-            >
-              <SelectTrigger className="w-full h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {languageOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </Card>
+                  {specialist?.specialty && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <Briefcase className="h-5 w-5 text-primary mb-2" />
+                      <p className="text-xs text-muted-foreground">{t.specialty}</p>
+                      <p className="font-medium text-sm">{specialist.specialty}</p>
+                    </div>
+                  )}
 
-        {/* Quick Actions */}
-        <Card className="p-4">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            {t.importantLinks}
-          </h3>
-          <div className="space-y-2">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-auto py-3"
-              onClick={() => toast({ title: t.comingSoon, description: t.featureInDevelopment })}
-            >
-              <FileText className="h-4 w-4 ml-2" />
-              {isAr ? 'القوانين والشروط' : 'Terms & Conditions'}
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-auto py-3"
-              onClick={() => toast({ title: t.comingSoon, description: t.featureInDevelopment })}
-            >
-              <Building2 className="h-4 w-4 ml-2" />
-              {isAr ? 'المحفظة' : 'Portfolio'}
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-auto py-3"
-              onClick={() => navigate('/push-test')}
-            >
-              <TestTube className="h-4 w-4 ml-2" />
-              {isAr ? 'اختبار الإشعارات' : 'Test Notifications'}
-            </Button>
-          </div>
-        </Card>
+                  {specialist?.experience_years && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <Calendar className="h-5 w-5 text-primary mb-2" />
+                      <p className="text-xs text-muted-foreground">{t.experience}</p>
+                      <p className="font-medium text-sm">{specialist.experience_years} {t.years}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Additional Details */}
+                <div className="space-y-3">
+                  {specialist?.countries_worked_in && specialist.countries_worked_in.length > 0 && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
+                        <MapPin className="h-4 w-4" />
+                        {t.countriesWorkedIn}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {specialist.countries_worked_in.map((country, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">{country}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {specialist?.languages_spoken && specialist.languages_spoken.length > 0 && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
+                        <Languages className="h-4 w-4" />
+                        {t.languagesSpoken}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {specialist.languages_spoken.map((lang, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">{lang}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {specialist?.id_card_expiry_date && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
+                        <Calendar className="h-4 w-4" />
+                        {t.idCardExpiry}
+                      </p>
+                      <p className="text-sm font-medium">{new Date(specialist.id_card_expiry_date).toLocaleDateString()}</p>
+                    </div>
+                  )}
+
+                  {(specialist?.has_pet_allergy || specialist?.has_cleaning_allergy) && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
+                        <AlertCircle className="h-4 w-4" />
+                        {t.allergies}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {specialist.has_pet_allergy && (
+                          <Badge variant="secondary" className="text-xs">{isAr ? "حساسية حيوانات" : "Pet Allergy"}</Badge>
+                        )}
+                        {specialist.has_cleaning_allergy && (
+                          <Badge variant="secondary" className="text-xs">{isAr ? "حساسية مواد تنظيف" : "Cleaning Products Allergy"}</Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {specialist?.notes && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4" />
+                        {t.notes}
+                      </p>
+                      <p className="text-sm">{specialist.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Photos & Documents Section */}
+          <AccordionItem value="photos-docs" className="border rounded-lg bg-card">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <ImageIcon className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">{isAr ? "الصور والمستندات" : "Photos & Documents"}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-4">
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <p className="text-sm font-medium mb-2">{t.facePhoto}</p>
+                  {specialist?.face_photo_url ? (
+                    <img 
+                      src={specialist.face_photo_url} 
+                      alt={t.facePhoto}
+                      className="w-full h-40 object-cover rounded-lg border"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                      {isAr ? "لا توجد صورة" : "No photo"}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium mb-2">{t.fullBodyPhoto}</p>
+                  {specialist?.full_body_photo_url ? (
+                    <img 
+                      src={specialist.full_body_photo_url} 
+                      alt={t.fullBodyPhoto}
+                      className="w-full h-40 object-cover rounded-lg border"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                      {isAr ? "لا توجد صورة" : "No photo"}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium mb-2">{t.frontIdCard}</p>
+                  {specialist?.id_card_front_url ? (
+                    <img 
+                      src={specialist.id_card_front_url} 
+                      alt={t.frontIdCard}
+                      className="w-full h-40 object-cover rounded-lg border"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                      {isAr ? "لا توجد صورة" : "No photo"}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium mb-2">{t.backIdCard}</p>
+                  {specialist?.id_card_back_url ? (
+                    <img 
+                      src={specialist.id_card_back_url} 
+                      alt={t.backIdCard}
+                      className="w-full h-40 object-cover rounded-lg border"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                      {isAr ? "لا توجد صورة" : "No photo"}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Preferred Language Section */}
+          <AccordionItem value="language" className="border rounded-lg bg-card">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Globe className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">{isAr ? "لغة الطلبات" : "Orders Language"}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-4">
+              <div className="pt-2 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {isAr ? "اختر اللغة التي تريد أن تظهر بها تفاصيل الطلب والعروض" : "Choose the language you want order details and offers to appear in"}
+                </p>
+                <Select
+                  value={specialist?.preferred_language || 'ar'}
+                  onValueChange={handleLanguageChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languageOptions.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Quick Actions Section */}
+          <AccordionItem value="actions" className="border rounded-lg bg-card">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <FileText className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">{isAr ? "روابط سريعة" : "Quick Links"}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-4">
+              <div className="space-y-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                  onClick={() => navigate('/terms')}
+                >
+                  <FileText className="h-5 w-5" />
+                  {isAr ? "الشروط والأحكام" : "Terms & Conditions"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                  onClick={() => navigate('/specialist-portfolio')}
+                >
+                  <Star className="h-5 w-5" />
+                  {isAr ? "معرض الأعمال" : "Portfolio"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                  onClick={() => navigate('/notification-test')}
+                >
+                  <TestTube className="h-5 w-5" />
+                  {isAr ? "اختبار الإشعارات" : "Test Notifications"}
+                </Button>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Logout Button */}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button 
-              variant="destructive" 
-              className="w-full h-14 text-base font-bold"
-            >
-              <LogOut className="h-5 w-5 ml-2" />
-              {t.logout}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t.logoutTitle}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t.logoutConfirm}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout}>
+        <div className="mt-6">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                className="w-full gap-2"
+                size="lg"
+              >
+                <LogOut className="h-5 w-5" />
                 {t.logout}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{isAr ? "تسجيل الخروج" : "Logout"}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {isAr ? "هل أنت متأكد من تسجيل الخروج؟" : "Are you sure you want to logout?"}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleLogout}>
+                  {isAr ? "تسجيل الخروج" : "Logout"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       <BottomNavigation newOrdersCount={newOrdersCount} />
