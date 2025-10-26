@@ -273,12 +273,16 @@ export default function CompanyPortal() {
     );
     
     // Awaiting Response (بانتظار الرد): تم تقديم عرض من محترفات الشركة ولم يتم قبوله بعد
+    // ولكن لم يبدأ التتبع بعد (استثناء الطلبات التي في مرحلة التنفيذ)
     const awaitingOrders = ordersList.filter(o => {
       const companySpecialists = o.order_specialists?.filter(os => 
         os.specialists?.company_id === company?.id
       );
-      return companySpecialists && 
-             companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+      const hasQuoteNotAccepted = companySpecialists && 
+                                   companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+      const notInProgress = !o.tracking_stage && o.status !== 'completed';
+      
+      return hasQuoteNotAccepted && notInProgress;
     });
     
     // Upcoming (القادمة): تم قبول عرض محترفة من الشركة لكن لم يبدأ التتبع بعد
