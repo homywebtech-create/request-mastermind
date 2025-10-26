@@ -885,144 +885,17 @@ export default function SpecialistOrders() {
           </div>
         )}
         
-        {/* Accepted Order Section - Show simple card with booking info */}
-        {order.order_specialist?.is_accepted === true && (
-          <div className="px-6 pb-6 space-y-4">
-            {/* Acceptance Confirmation Badge */}
-            <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-600 hover:bg-green-600">
-                  <CheckCircle className="h-3 w-3 ml-1" />
-                  تم قبول عرضك
-                </Badge>
-                {order.order_specialist?.quoted_price && (
-                  <Badge variant="outline" className="border-green-600 text-green-600">
-                    {order.order_specialist.quoted_price}
-                  </Badge>
-                )}
-              </div>
-              {order.order_number && (
-                <Badge variant="outline" className="text-xs font-bold">
-                  {order.order_number}
-                </Badge>
-              )}
-            </div>
-
-            {/* Order Details - Similar to New Orders Card */}
-            <div className="space-y-3">
-              {/* Customer Info */}
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                  <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm">{order.customer?.name || 'لا يوجد اسم'}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {order.created_at && format(parseISO(order.created_at), "d MMMM، h:mm a", { locale: ar })}
-                  </p>
-                </div>
-              </div>
-
-              {/* Service Type */}
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                  <Package className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-muted-foreground mb-1">نوع الخدمة</p>
-                  <p className="font-bold text-sm">{order.service_type || 'غير محدد'}</p>
-                </div>
-              </div>
-
-              {/* Location */}
-              {order.customer?.area && (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
-                    <MapPin className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-1">الموقع</p>
-                    <p className="font-bold text-sm">{order.customer.area}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Hours Count */}
-              {order.hours_count && (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-orange-50 dark:bg-orange-900/30">
-                  <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/50">
-                    <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-1">عدد الساعات</p>
-                    <p className="font-bold text-sm">{order.hours_count}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Booking Date */}
-              {order.booking_date ? (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/30">
-                  <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/50">
-                    <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-1">موعد الحجز</p>
-                    <p className="font-bold text-sm">
-                      {format(parseISO(order.booking_date), "d MMMM yyyy - h:mm a", { locale: ar })}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 text-center">
-                  <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                    ⏳ في انتظار تحديد موعد الحجز من العميل
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Action Button - Opens Order Tracking */}
-            {order.booking_date && (
-              <div className="space-y-2">
-                <Button
-                  onClick={() => navigate(`/order-tracking/${order.id}`)}
-                  disabled={!canMoveNow()}
-                  className={cn(
-                    "w-full h-auto py-4 px-6",
-                    canMoveNow() 
-                      ? "bg-green-600 hover:bg-green-700 animate-pulse shadow-lg" 
-                      : ""
-                  )}
-                  size="lg"
-                >
-                  <div className="flex items-center justify-between w-full gap-4">
-                    <div className="flex items-center gap-3">
-                      <Navigation className="h-5 w-5" />
-                      <span className="font-bold">
-                        {canMoveNow() ? "انطلق الآن" : "عرض تفاصيل الطلب"}
-                      </span>
-                    </div>
-                    {!canMoveNow() && getTimeUntilMovement() && (
-                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted">
-                        <Clock className="h-4 w-4" />
-                        <span className="font-bold text-xs font-mono">
-                          {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}ي `}
-                          {String(getTimeUntilMovement()!.hours).padStart(2, '0')}:
-                          {String(getTimeUntilMovement()!.minutes).padStart(2, '0')}:
-                          {String(getTimeUntilMovement()!.seconds).padStart(2, '0')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </Button>
-                {!canMoveNow() && (
-                  <p className="text-xs text-center text-muted-foreground">
-                    ⏰ سيتم فتح الطلب قبل الموعد بساعة واحدة
-                  </p>
-                )}
-              </div>
-            )}
+        {/* Action buttons for Accepted and Quoted Orders */}
+        {(order.order_specialist?.is_accepted === true || (hasQuote && !isRejected)) && (
+          <div className="px-6 pb-6">
+            <Button
+              onClick={() => navigate(`/order-tracking/${order.id}`)}
+              className="w-full gap-2 h-12 text-base font-bold shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
+              <FileText className="h-5 w-5" />
+              {order.order_specialist?.is_accepted === true ? 'عرض تفاصيل الطلب المؤكد' : 'عرض تفاصيل العرض'}
+            </Button>
           </div>
         )}
       </Card>
