@@ -129,10 +129,17 @@ export default function Orders() {
           notes,
           order_link,
           created_at,
+          updated_at,
+          last_sent_at,
           send_to_all_companies,
+          booking_type,
+          hours_count,
           customers (
             name,
-            whatsapp_number
+            whatsapp_number,
+            area,
+            budget,
+            budget_type
           ),
           companies (
             name
@@ -147,7 +154,12 @@ export default function Orders() {
               name,
               phone,
               nationality,
-              image_url
+              image_url,
+              company_id,
+              companies (
+                id,
+                name
+              )
             )
           )
         `)

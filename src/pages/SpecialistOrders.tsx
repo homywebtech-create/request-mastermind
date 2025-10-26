@@ -573,6 +573,19 @@ export default function SpecialistOrders() {
   );
   
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📊 [FILTER] Orders breakdown:');
+  console.log('Total orders:', orders.length);
+  console.log('New orders:', newOrders.length);
+  console.log('Quoted orders:', quotedOrders.length);
+  console.log('Accepted orders:', acceptedOrders.length, acceptedOrders.map(o => ({
+    id: o.id,
+    order_number: o.order_number,
+    is_accepted: o.order_specialist?.is_accepted,
+    quoted_price: o.order_specialist?.quoted_price
+  })));
+  console.log('Skipped orders:', skippedOrders.length);
+  console.log('Rejected orders:', rejectedOrders.length);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('🎯 [FILTER] Total orders:', orders.length);
   console.log('🎯 [FILTER] Filtered counts:', {
     new: newOrders.length,
