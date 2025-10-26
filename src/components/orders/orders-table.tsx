@@ -1247,11 +1247,12 @@ Thank you for contacting us! 🌟`;
                       
                       <TableCell>
                         <div className="flex items-center gap-2 flex-wrap">
-                          {isPending && canManageOrders && (
+                          {/* Show resend button for pending orders and orders without quotes */}
+                          {canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView)) && (
                             <>
                               <Button
                                 size="sm"
-                                variant={isDelayed ? "destructive" : "outline"}
+                                variant={isDelayed ? "destructive" : "default"}
                                 onClick={() => openResendDialog(order)}
                                 disabled={Boolean(isRecentlySent) || Boolean(isOrderProcessing)}
                                 className="flex items-center gap-1"
@@ -1269,16 +1270,18 @@ Thank you for contacting us! 🌟`;
                                 )}
                               </Button>
 
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openSendDialog(order)}
-                                disabled={Boolean(isOrderProcessing)}
-                                className="flex items-center gap-1"
-                              >
-                                <Building2 className="h-3 w-3" />
-                                {t.change}
-                              </Button>
+                              {isPending && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openSendDialog(order)}
+                                  disabled={Boolean(isOrderProcessing)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Building2 className="h-3 w-3" />
+                                  {t.change}
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
