@@ -53,6 +53,7 @@ interface Order {
   gps_latitude: number | null;
   gps_longitude: number | null;
   building_info: string | null;
+  order_number: string | null;
   customer: {
     name: string;
     whatsapp_number: string;
@@ -346,6 +347,7 @@ export default function SpecialistOrders() {
           gps_latitude,
           gps_longitude,
           building_info,
+          order_number,
           customer:customers (
             name,
             whatsapp_number,
@@ -653,9 +655,16 @@ export default function SpecialistOrders() {
                   <span className="text-sm font-bold">طلب جديد - قدم سعرك</span>
                 </div>
               )}
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-2xl font-bold text-foreground">{order.customer?.name}</h3>
-                {getStatusBadge(order.status, hasQuote)}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-2xl font-bold text-foreground">{order.customer?.name}</h3>
+                  {getStatusBadge(order.status, hasQuote)}
+                </div>
+                {order.order_number && (
+                  <Badge variant="outline" className="text-xs font-bold">
+                    {order.order_number}
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
@@ -869,14 +878,21 @@ export default function SpecialistOrders() {
         {order.order_specialist?.is_accepted === true && (
           <div className="px-6 pb-6 space-y-4">
             {/* Acceptance Confirmation Badge */}
-            <div className="flex items-center gap-2 mb-3">
-              <Badge className="bg-green-600 hover:bg-green-600">
-                <CheckCircle className="h-3 w-3 ml-1" />
-                تم قبول عرضك
-              </Badge>
-              {order.order_specialist?.quoted_price && (
-                <Badge variant="outline" className="border-green-600 text-green-600">
-                  {order.order_specialist.quoted_price}
+            <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-green-600 hover:bg-green-600">
+                  <CheckCircle className="h-3 w-3 ml-1" />
+                  تم قبول عرضك
+                </Badge>
+                {order.order_specialist?.quoted_price && (
+                  <Badge variant="outline" className="border-green-600 text-green-600">
+                    {order.order_specialist.quoted_price}
+                  </Badge>
+                )}
+              </div>
+              {order.order_number && (
+                <Badge variant="outline" className="text-xs font-bold">
+                  {order.order_number}
                 </Badge>
               )}
             </div>
