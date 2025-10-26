@@ -630,9 +630,13 @@ export default function SpecialistNewOrders() {
 
       setNewOrderIds(newOrderIdsSet);
       
-      // Translate orders if needed
-      const translatedOrders = await Promise.all(ordersWithSpec.map(async (order) => {
-        if (preferredLanguage && preferredLanguage !== 'ar') {
+      // Show orders immediately without translation
+      setOrders(ordersWithSpec || []);
+      setIsLoading(false);
+      
+      // Translate in background if needed (non-blocking)
+      if (preferredLanguage && preferredLanguage !== 'ar' && ordersWithSpec.length > 0) {
+        Promise.all(ordersWithSpec.map(async (order) => {
           const translated = await translateOrderDetails({
             serviceType: order.service_type,
             notes: order.notes || undefined,
@@ -649,11 +653,12 @@ export default function SpecialistNewOrders() {
               booking_type: translated.bookingType,
             }
           };
-        }
-        return order;
-      }));
-      
-      setOrders(translatedOrders || []);
+        })).then(translatedOrders => {
+          setOrders(translatedOrders);
+        }).catch(error => {
+          console.error('Translation error (non-critical):', error);
+        });
+      }
       
       // Auto-remove "new" flag after 30 seconds
       if (newOrderIdsSet.size > 0) {
@@ -669,7 +674,6 @@ export default function SpecialistNewOrders() {
         description: t.specialist.quoteFailed,
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

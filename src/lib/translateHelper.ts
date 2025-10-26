@@ -4,7 +4,66 @@ interface TranslationCache {
   [key: string]: string;
 }
 
-const translationCache: TranslationCache = {};
+// Persistent cache using localStorage with fallback to memory
+const CACHE_KEY = 'translation_cache_v1';
+const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+class TranslationCacheManager {
+  private memoryCache: TranslationCache = {};
+  
+  constructor() {
+    this.loadFromStorage();
+  }
+  
+  private loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(CACHE_KEY);
+      if (stored) {
+        const { cache, timestamp } = JSON.parse(stored);
+        // Check if cache is still valid
+        if (Date.now() - timestamp < CACHE_EXPIRY) {
+          this.memoryCache = cache;
+          console.log('✅ [TRANSLATION] Loaded cache from storage:', Object.keys(cache).length, 'entries');
+        } else {
+          console.log('ℹ️ [TRANSLATION] Cache expired, clearing');
+          localStorage.removeItem(CACHE_KEY);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ [TRANSLATION] Failed to load cache from storage:', error);
+    }
+  }
+  
+  private saveToStorage() {
+    try {
+      const data = {
+        cache: this.memoryCache,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.warn('⚠️ [TRANSLATION] Failed to save cache to storage:', error);
+    }
+  }
+  
+  get(key: string): string | undefined {
+    return this.memoryCache[key];
+  }
+  
+  set(key: string, value: string) {
+    this.memoryCache[key] = value;
+    // Debounced save to storage (save every 10 entries)
+    if (Object.keys(this.memoryCache).length % 10 === 0) {
+      this.saveToStorage();
+    }
+  }
+  
+  flush() {
+    this.saveToStorage();
+  }
+}
+
+const cacheManager = new TranslationCacheManager();
 
 export async function translateText(
   text: string,
@@ -18,8 +77,9 @@ export async function translateText(
 
   // Check cache first
   const cacheKey = `${sourceLanguage}:${targetLanguage}:${text}`;
-  if (translationCache[cacheKey]) {
-    return translationCache[cacheKey];
+  const cached = cacheManager.get(cacheKey);
+  if (cached) {
+    return cached;
   }
 
   try {
@@ -32,7 +92,7 @@ export async function translateText(
     const translatedText = data.translatedText || text;
     
     // Cache the translation
-    translationCache[cacheKey] = translatedText;
+    cacheManager.set(cacheKey, translatedText);
     
     return translatedText;
   } catch (error) {
@@ -56,27 +116,30 @@ export async function translateOrderDetails(
   }
 
   try {
-    const translated = { ...orderDetails };
+    // Translate all fields in parallel for better performance
+    const [serviceType, notes, area, bookingType] = await Promise.all([
+      orderDetails.serviceType ? translateText(orderDetails.serviceType, targetLanguage) : undefined,
+      orderDetails.notes ? translateText(orderDetails.notes, targetLanguage) : undefined,
+      orderDetails.area ? translateText(orderDetails.area, targetLanguage) : undefined,
+      orderDetails.bookingType ? translateText(orderDetails.bookingType, targetLanguage) : undefined,
+    ]);
 
-    if (orderDetails.serviceType) {
-      translated.serviceType = await translateText(orderDetails.serviceType, targetLanguage);
-    }
-    
-    if (orderDetails.notes) {
-      translated.notes = await translateText(orderDetails.notes, targetLanguage);
-    }
-    
-    if (orderDetails.area) {
-      translated.area = await translateText(orderDetails.area, targetLanguage);
-    }
-    
-    if (orderDetails.bookingType) {
-      translated.bookingType = await translateText(orderDetails.bookingType, targetLanguage);
-    }
-
-    return translated;
+    return {
+      ...orderDetails,
+      ...(serviceType && { serviceType }),
+      ...(notes && { notes }),
+      ...(area && { area }),
+      ...(bookingType && { bookingType }),
+    };
   } catch (error) {
     console.error('Error translating order details:', error);
     return orderDetails;
   }
+}
+
+// Flush cache when user closes the page
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    cacheManager.flush();
+  });
 }

@@ -189,11 +189,15 @@ export default function SpecialistHome() {
             quoted_price: orderSpec.quoted_price
           } : undefined
         };
-      });
+      }) || [];
 
-      // Translate orders if needed
-      const translatedOrders = await Promise.all((ordersWithQuotes || []).map(async (order) => {
-        if (preferredLanguage && preferredLanguage !== 'ar') {
+      // Show orders immediately without translation
+      setOrders(ordersWithQuotes);
+      setIsLoading(false);
+
+      // Translate in background if needed (non-blocking)
+      if (preferredLanguage && preferredLanguage !== 'ar' && ordersWithQuotes.length > 0) {
+        Promise.all(ordersWithQuotes.map(async (order) => {
           const translated = await translateOrderDetails({
             serviceType: order.service_type,
             area: order.customer?.area || undefined,
@@ -206,11 +210,12 @@ export default function SpecialistHome() {
               area: translated.area,
             }
           };
-        }
-        return order;
-      }));
-
-      setOrders(translatedOrders || []);
+        })).then(translatedOrders => {
+          setOrders(translatedOrders);
+        }).catch(error => {
+          console.error('Translation error (non-critical):', error);
+        });
+      }
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
@@ -218,7 +223,6 @@ export default function SpecialistHome() {
         description: "فشل تحميل الطلبات",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

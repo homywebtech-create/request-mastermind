@@ -40,6 +40,7 @@ import { RoleProtectedRoute } from "./components/auth/RoleProtectedRoute";
 import { UserRoleProvider } from "./contexts/UserRoleContext";
 import { PermissionRedirect } from "./components/auth/PermissionRedirect";
 import DeepLinkController from "./components/mobile/DeepLinkController";
+import { AppLoader } from "./components/ui/app-loader";
 
 const queryClient = new QueryClient();
 
@@ -76,11 +77,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <AppLoader message="جاري التحميل..." />;
   }
 
   if (!user) {
@@ -233,11 +230,7 @@ function MobileLanding() {
   }, [user, loading, deepLink, navigate, hasNavigated, pendingRouteChecked]);
 
   if (loading || !hasNavigated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <AppLoader message="جاري الاتصال..." />;
   }
 
   return null;
@@ -289,7 +282,7 @@ function AppRouter() {
               <PushNotificationTest />
             </ProtectedRoute>
           } />
-          <Route path="/" element={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>} />
+          <Route path="/" element={<AppLoader />} />
           <Route path="*" element={<SpecialistAuth />} />
         </Routes>
       </BrowserRouter>

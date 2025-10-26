@@ -23,6 +23,7 @@ import {
 import { countries } from "@/data/countries";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
+import { AppLoader } from "@/components/ui/app-loader";
 
 export default function SpecialistAuth() {
   const [step, setStep] = useState<'phone' | 'code'>('phone');
@@ -40,30 +41,25 @@ export default function SpecialistAuth() {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Use getUser() instead of getSession() - it's faster and cached
+        const { data: { user } } = await supabase.auth.getUser();
         
-        if (session?.user) {
+        if (user) {
           console.log('✅ Existing session found, redirecting to dashboard');
           
-          // Verify the user is a specialist
+          // Quick check - just verify user has a profile
+          // The main app will handle detailed specialist verification
           const { data: profile } = await supabase
             .from('profiles')
             .select('phone')
-            .eq('user_id', session.user.id)
-            .single();
+            .eq('user_id', user.id)
+            .maybeSingle();
 
           if (profile?.phone) {
-            const { data: specialist } = await supabase
-              .from('specialists')
-              .select('id, is_active')
-              .eq('phone', profile.phone)
-              .single();
-
-            if (specialist?.is_active) {
-              // Centralized routing: go to root and let MobileLanding handle target page
-              navigate('/', { replace: true });
-              return;
-            }
+            // Don't check specialist status here - let the app handle it
+            // This reduces initial load time
+            navigate('/', { replace: true });
+            return;
           }
         }
       } catch (error) {
@@ -315,14 +311,7 @@ export default function SpecialistAuth() {
 
   // Show loading while checking session
   if (isCheckingSession) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">جاري التحقق من الجلسة...</p>
-        </div>
-      </div>
-    );
+    return <AppLoader message="جاري التحقق من الجلسة..." />;
   }
 
   return (
