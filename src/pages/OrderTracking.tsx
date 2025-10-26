@@ -600,25 +600,24 @@ export default function OrderTracking() {
         {/* Arrived Stage - Simplified */}
         {stage === 'arrived' && (
           <Card className="overflow-hidden border-2 border-green-300 dark:border-green-700 shadow-2xl">
-            {/* Stage Header */}
-            <div className="bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 p-6">
-              <div className="flex items-center justify-center mb-3">
-                <div className="p-4 rounded-full bg-white/20 backdrop-blur-sm">
-                  <CheckCircle className="h-10 w-10 text-white" />
+            {/* Stage Header - Compact */}
+            <div className="bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 py-3 px-4">
+              <div className="flex items-center justify-center gap-3">
+                <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
+                  <CheckCircle className="h-6 w-6 text-white" />
                 </div>
+                <h3 className="text-xl font-bold text-white">وصلت إلى الموقع</h3>
               </div>
-              <h3 className="text-3xl font-black text-white text-center">وصلت إلى الموقع</h3>
-              <p className="text-center text-green-50 text-sm mt-2">تواصل مع العميل وابدأ العمل</p>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Customer Contact */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 p-5 rounded-xl">
+            <div className="p-4 space-y-3">
+              {/* Customer Contact - Simplified */}
+              <div className="bg-green-50 dark:from-green-950/40 border border-green-200 dark:border-green-700 p-3 rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
-                  <Phone className="h-6 w-6 text-green-700 dark:text-green-300" />
+                  <Phone className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="text-xs font-bold text-green-700 dark:text-green-300">رقم العميل</p>
-                    <p className="text-lg font-black text-green-900 dark:text-green-100 font-mono">
+                    <p className="text-xs text-green-700 dark:text-green-300">رقم العميل</p>
+                    <p className="text-sm font-semibold text-green-900 dark:text-green-100 font-mono">
                       {order.customer?.whatsapp_number}
                     </p>
                   </div>
@@ -626,22 +625,21 @@ export default function OrderTracking() {
                 
                 <Button 
                   onClick={() => openWhatsApp(order.customer?.whatsapp_number || '')}
-                  className="w-full h-14 text-lg font-black bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg"
-                  size="lg"
+                  className="w-full bg-green-600 hover:bg-green-700"
                 >
-                  <Phone className="h-6 w-6 ml-2" />
+                  <Phone className="h-4 w-4 ml-2" />
                   <span>الاتصال بالعميل عبر واتساب</span>
                 </Button>
               </div>
 
-              {/* Building Info */}
+              {/* Building Info - Compact */}
               {order.building_info && (
-                <div className="bg-muted/50 border-2 border-muted p-4 rounded-xl">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-blue-600" />
                     <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase mb-1">معلومات المبنى</p>
-                      <p className="text-sm font-medium text-foreground leading-relaxed">
+                      <p className="text-xs text-muted-foreground">معلومات المبنى</p>
+                      <p className="text-sm font-medium">
                         {order.building_info}
                       </p>
                     </div>
@@ -649,44 +647,37 @@ export default function OrderTracking() {
                 </div>
               )}
 
-              {/* Timer Protection */}
+              {/* Timer Protection - Compact */}
               {arrivedTimer > 0 ? (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700 p-5 rounded-xl mt-6">
-                  <div className="flex items-center gap-4">
-                    <Clock className="h-8 w-8 text-amber-700 dark:text-amber-300 animate-pulse flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                        سيتم تفعيل زر بدء العمل بعد
-                      </p>
-                      <p className="text-3xl font-black text-amber-700 dark:text-amber-300 mt-1 tabular-nums">
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                  <div className="flex items-center gap-3 justify-center">
+                    <Clock className="h-5 w-5 text-amber-600 animate-pulse" />
+                    <div className="text-center">
+                      <p className="text-xs text-amber-700">سيتم تفعيل زر بدء العمل بعد</p>
+                      <p className="text-lg font-bold text-amber-600 tabular-nums">
                         00:00:{arrivedTimer.toString().padStart(2, '0')}
                       </p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border-2 border-purple-300 dark:border-purple-700 p-4 rounded-xl mt-6">
-                  <div className="flex items-center gap-3 justify-center">
-                    <Play className="h-6 w-6 text-purple-600 dark:text-purple-400 animate-pulse" />
-                    <p className="text-sm font-bold text-purple-800 dark:text-purple-200">
+                <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 justify-center">
+                    <Play className="h-4 w-4 text-purple-600" />
+                    <p className="text-sm font-medium text-purple-700">
                       يمكنك الآن بدء ساعة العمل
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Start Work Button */}
+              {/* Start Work Button - Simplified */}
               <Button
                 onClick={handleStartWork}
                 disabled={arrivedTimer > 0}
-                className={`w-full h-16 text-xl font-black shadow-xl transition-all duration-300 ${
-                  arrivedTimer > 0 
-                    ? 'opacity-50 cursor-not-allowed' 
-                    : 'hover:scale-[1.02] bg-gradient-to-r from-primary via-primary/90 to-primary/80'
-                }`}
-                size="lg"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
               >
-                <Play className="h-7 w-7 ml-2" />
+                <Play className="h-4 w-4 ml-2" />
                 <span>بدء ساعة العمل</span>
               </Button>
             </div>
