@@ -282,7 +282,7 @@ function AppRouter() {
               <PushNotificationTest />
             </ProtectedRoute>
           } />
-          <Route path="/" element={<AppLoader />} />
+          <Route path="/" element={<MobileLanding />} />
           <Route path="*" element={<SpecialistAuth />} />
         </Routes>
       </BrowserRouter>
