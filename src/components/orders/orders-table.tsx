@@ -1055,8 +1055,10 @@ Thank you for contacting us! 🌟`;
                   const customerBudget = order.customers?.budget || '-';
                   const isPending = order.status === 'pending' && (order.company_id || order.send_to_all_companies);
                   const minutesSinceSent = getTimeSinceSent(order);
-                  const isDelayed = isOverThreeMinutes(order) && isPending;
-                  const isRecentlySent = isWithinThreeMinutes(order) && isPending;
+                  // Show delayed status for all orders that can be resent, not just pending ones
+                  const canShowResendButton = canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView));
+                  const isDelayed = isOverThreeMinutes(order) && canShowResendButton;
+                  const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton;
                   const isOrderProcessing = isProcessing(order.id);
                   
                   return (
