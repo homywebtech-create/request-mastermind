@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map } from "lucide-react";
+import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map, Calendar, Star } from "lucide-react";
 import { App as CapacitorApp } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Badge } from "@/components/ui/badge";
-import { differenceInMinutes, parseISO } from "date-fns";
+import { differenceInMinutes, parseISO, format } from "date-fns";
+import { ar } from "date-fns/locale";
 import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import {
   Dialog,
@@ -863,13 +864,52 @@ export default function SpecialistOrders() {
           </div>
         )}
         
+        {/* Accepted Order Section - Show full details with booking info */}
         {order.order_specialist?.is_accepted === true && (
           <div className="px-6 pb-6 space-y-4">
-            {canMoveNow() ? (
-              <div className="space-y-4">
+            {/* Acceptance Confirmation Banner */}
+            <div className="flex items-start gap-3 p-5 rounded-xl bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border-2 border-green-500 shadow-md">
+              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-green-700 dark:text-green-300 mb-2 font-bold">✓ تم قبول عرضك</p>
+                <p className="text-xs text-muted-foreground">
+                  السعر المتفق عليه: <span className="font-bold text-green-700 dark:text-green-300">{order.order_specialist?.quoted_price}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Booking Details */}
+            {order.booking_date && (
+              <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-50/50 dark:from-blue-950/30 dark:to-blue-950/10 border border-blue-200 dark:border-blue-800 space-y-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <span className="font-bold text-sm text-blue-700 dark:text-blue-300">موعد الحجز</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">التاريخ والوقت:</span>
+                    <span className="font-bold text-sm">
+                      {format(parseISO(order.booking_date), "d MMMM yyyy - h:mm a", { locale: ar })}
+                    </span>
+                  </div>
+                  {order.booking_date_type && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">نوع الموعد:</span>
+                      <span className="font-bold text-sm">{order.booking_date_type}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Movement Button */}
+            {order.booking_date ? (
+              canMoveNow() ? (
                 <Button
                   onClick={() => navigate(`/order-tracking/${order.id}`)}
-                  className="w-full bg-green-600 hover:bg-green-700 h-auto py-5 px-6 shadow-lg hover:shadow-xl transition-all"
+                  className="w-full bg-green-600 hover:bg-green-700 h-auto py-5 px-6 shadow-lg hover:shadow-xl transition-all animate-pulse"
                   size="lg"
                 >
                   <div className="flex items-center justify-between w-full gap-4">
@@ -877,44 +917,62 @@ export default function SpecialistOrders() {
                       <Navigation className="h-6 w-6" />
                       <span className="text-lg font-bold">انطلق الآن</span>
                     </div>
-                    {getTimeUntilMovement() && order.booking_date && (
+                    {getTimeUntilMovement() && (
                       <div className="flex items-center gap-2 bg-blue-500/30 px-4 py-2 rounded-full border-2 border-blue-400/50 backdrop-blur-sm">
                         <Clock className="h-4 w-4 text-white" />
-                        <span className="font-bold text-sm text-white font-mono">
-                          {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
-                          {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${String(getTimeUntilMovement()!.hours).padStart(2, '0')}:`}
-                          {String(getTimeUntilMovement()!.minutes).padStart(2, '0')}:
-                          {String(getTimeUntilMovement()!.seconds).padStart(2, '0')}
-                        </span>
+                        <span className="font-bold text-sm text-white font-mono">00:00:00</span>
                       </div>
                     )}
                   </div>
                 </Button>
-              </div>
-            ) : (
-              <Button
-                disabled
-                className="w-full h-auto py-5 px-6 shadow-md"
-                variant="outline"
-                size="lg"
-              >
-                <div className="flex items-center justify-between w-full gap-4">
-                  <div className="flex items-center gap-3">
-                    <Navigation className="h-6 w-6" />
-                    <span className="font-bold text-lg">انطلق الآن</span>
-                  </div>
-                  {getTimeUntilMovement() && order.booking_date && (
-                    <div className="flex items-center gap-2 bg-red-50 px-4 py-2 rounded-full border-2 border-red-200">
-                      <Clock className="h-4 w-4 text-red-600" />
-                      <span className="font-bold text-sm text-red-600 font-mono">
-                        {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
-                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${String(getTimeUntilMovement()!.hours).padStart(2, '0')}:`}
-                        {String(getTimeUntilMovement()!.minutes).padStart(2, '0')}:
-                        {String(getTimeUntilMovement()!.seconds).padStart(2, '0')}
-                      </span>
+              ) : (
+                <div className="space-y-3">
+                  <Button
+                    disabled
+                    className="w-full h-auto py-5 px-6 shadow-md"
+                    variant="outline"
+                    size="lg"
+                  >
+                    <div className="flex items-center justify-between w-full gap-4">
+                      <div className="flex items-center gap-3">
+                        <Navigation className="h-6 w-6" />
+                        <span className="font-bold text-lg">انطلق الآن</span>
+                      </div>
+                      {getTimeUntilMovement() && (
+                        <div className="flex items-center gap-2 bg-red-50 px-4 py-2 rounded-full border-2 border-red-200">
+                          <Clock className="h-4 w-4 text-red-600" />
+                          <span className="font-bold text-sm text-red-600 font-mono">
+                            {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}ي `}
+                            {String(getTimeUntilMovement()!.hours).padStart(2, '0')}:
+                            {String(getTimeUntilMovement()!.minutes).padStart(2, '0')}:
+                            {String(getTimeUntilMovement()!.seconds).padStart(2, '0')}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </Button>
+                  <p className="text-xs text-center text-muted-foreground">
+                    ⏰ سيتم فتح الطلب قبل الموعد بساعة واحدة
+                  </p>
                 </div>
+              )
+            ) : (
+              <div className="p-5 rounded-xl bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 text-center">
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 font-bold">
+                  ⏳ في انتظار تحديد موعد الحجز من العميل
+                </p>
+              </div>
+            )}
+
+            {/* Contact Customer Button */}
+            {order.customer?.whatsapp_number && (
+              <Button
+                onClick={() => openWhatsAppHelper(order.customer!.whatsapp_number)}
+                variant="outline"
+                className="w-full h-auto py-4 gap-3"
+              >
+                <Phone className="h-5 w-5" />
+                <span>تواصل مع العميل</span>
               </Button>
             )}
           </div>
