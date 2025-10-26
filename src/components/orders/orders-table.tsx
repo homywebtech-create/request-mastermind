@@ -332,14 +332,14 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     const localSentTime = recentlySentOrders.get(order.id);
     if (localSentTime) {
       const diffInMinutes = Math.floor((Date.now() - localSentTime) / (1000 * 60));
-      return diffInMinutes;
+      return Math.max(0, diffInMinutes); // Never return negative
     }
     
     // Fall back to database time
     const now = new Date();
     const sentTime = order.last_sent_at ? new Date(order.last_sent_at) : new Date(order.created_at);
     const diffInMinutes = Math.floor((now.getTime() - sentTime.getTime()) / (1000 * 60));
-    return diffInMinutes;
+    return Math.max(0, diffInMinutes); // Never return negative
   };
 
   const isOverThreeMinutes = (order: Order) => {
@@ -1259,7 +1259,7 @@ Thank you for contacting us! 🌟`;
                                 disabled={Boolean(isRecentlySent) || Boolean(isOrderProcessing)}
                                 className="flex items-center gap-1"
                               >
-                                {isOrderProcessing ? (
+                                 {isOrderProcessing ? (
                                   <>
                                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                     {t.sending}
@@ -1267,7 +1267,7 @@ Thank you for contacting us! 🌟`;
                                 ) : (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {isRecentlySent ? t.resendIn.replace('{minutes}', (3 - minutesSinceSent).toString()) : t.resend}
+                                    {minutesSinceSent > 0 ? t.resendIn.replace('{minutes}', minutesSinceSent.toString()) : t.resend}
                                   </>
                                 )}
                               </Button>
