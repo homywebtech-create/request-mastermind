@@ -327,28 +327,6 @@ export default function CompanyBooking() {
     return monthDate <= bookedUntilDate;
   };
 
-  // Check if a specialist is booked on a specific date
-  const isSpecialistBookedOnDate = (date: Date | null, specialist: Specialist) => {
-    if (!date || !specialist.booked_until) return false;
-    
-    const bookedUntilDate = new Date(specialist.booked_until);
-    bookedUntilDate.setHours(23, 59, 59, 999); // End of booked day
-    
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0); // Start of selected day
-    
-    // If the selected date is before or equal to the booked until date, it's booked
-    return checkDate <= bookedUntilDate;
-  };
-
-  // Check if specialist has any available dates in the next 15 days
-  const hasAvailableDates = (specialist: Specialist) => {
-    if (!specialist.booked_until) return true;
-    
-    const dates = generateAvailableDates();
-    return dates.some(date => !isSpecialistBookedOnDate(date, specialist));
-  };
-
   // Generate available dates for the next 15 days
   const generateAvailableDates = () => {
     const dates = [];
@@ -1452,62 +1430,41 @@ export default function CompanyBooking() {
                   }}>
                     <div className="relative overflow-hidden">
                       <div className="flex gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:bg-primary/50 [&::-webkit-scrollbar-thumb]:rounded-full -mx-1 px-1">
-                          {availableDates.map((date) => {
-                            const dateValue = date.toISOString().split('T')[0];
-                            const isSelected = bookingDateType === dateValue;
-                            const isToday = date.toDateString() === new Date().toDateString();
-                            // Check if any selected specialist is booked on this date
-                            const isDateBookedByAnySpecialist = selectedSpecialistIds.length > 0 &&
-                              selectedSpecialistIds.every(specId => {
-                                const spec = specialists.find(s => s.id === specId);
-                                return spec && isSpecialistBookedOnDate(date, spec);
-                              });
-                            
-                            return (
-                              <label
-                                key={dateValue}
-                                className={cn(
-                                  'flex flex-col items-center justify-center border rounded-md sm:rounded-lg cursor-pointer transition-colors flex-shrink-0 w-[68px] sm:w-20 md:w-28 min-h-[68px] sm:min-h-[80px] md:min-h-[90px] snap-start p-1.5 sm:p-2',
-                                  isDateBookedByAnySpecialist && 'opacity-40 cursor-not-allowed bg-muted border-muted',
-                                  !isDateBookedByAnySpecialist && isSelected && 'border-primary bg-primary/10 scale-105 shadow-md',
-                                  !isDateBookedByAnySpecialist && !isSelected && 'border-border hover:border-primary/50'
-                                )}
-                              >
-                                <RadioGroupItem 
-                                  value={dateValue} 
-                                  id={dateValue} 
-                                  className="sr-only" 
-                                  disabled={isDateBookedByAnySpecialist}
-                                />
-                                <div className="flex flex-col items-center gap-0.5">
-                                  <div className={cn(
-                                    "text-[10px] sm:text-xs font-medium",
-                                    isToday && 'text-primary font-bold',
-                                    isDateBookedByAnySpecialist && 'text-muted-foreground'
-                                  )}>
-                                    {formatDateDisplay(date).split(' ')[0]}
-                                  </div>
-                                  <div className={cn(
-                                    "text-xs sm:text-sm font-bold mt-0.5",
-                                    isDateBookedByAnySpecialist && 'text-muted-foreground'
-                                  )}>
-                                    {date.getDate()}
-                                  </div>
-                                  <div className={cn(
-                                    "text-[9px] sm:text-[10px] text-muted-foreground",
-                                    isDateBookedByAnySpecialist && 'opacity-50'
-                                  )}>
-                                    {formatDateDisplay(date).split(' ').slice(1).join(' ')}
-                                  </div>
-                                  {isDateBookedByAnySpecialist && (
-                                    <div className="text-[9px] text-destructive font-semibold mt-0.5">
-                                      🔒 {language === 'ar' ? 'محجوز' : 'Booked'}
-                                    </div>
-                                  )}
+                        {availableDates.map((date) => {
+                          const dateValue = date.toISOString().split('T')[0];
+                          const isSelected = bookingDateType === dateValue;
+                          const isToday = date.toDateString() === new Date().toDateString();
+                          
+                          return (
+                            <label
+                              key={dateValue}
+                              className={cn(
+                                'flex flex-col items-center justify-center border rounded-md sm:rounded-lg cursor-pointer transition-colors flex-shrink-0 w-[68px] sm:w-20 md:w-28 min-h-[68px] sm:min-h-[80px] md:min-h-[90px] snap-start p-1.5 sm:p-2',
+                                isSelected
+                                  ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                                  : isToday
+                                  ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+                                  : 'border-border bg-card hover:border-primary/40'
+                              )}
+                            >
+                              <RadioGroupItem value={dateValue} id={dateValue} className="sr-only" />
+                              <div className="text-center space-y-0.5">
+                                <div className={cn(
+                                  "text-[9px] sm:text-[10px] md:text-xs font-medium leading-tight",
+                                  isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                                )}>
+                                  {formatDateDisplay(date)}
                                 </div>
-                              </label>
-                            );
-                          })}
+                                <div className={cn(
+                                  "text-lg sm:text-xl md:text-2xl font-bold leading-none",
+                                  isSelected && "text-primary-foreground"
+                                )}>
+                                  {date.getDate()}
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })}
                       </div>
                       <div className="text-center mt-2 text-[10px] sm:text-xs text-muted-foreground">
                         {language === 'ar' ? '← اسحب لرؤية المزيد من التواريخ →' : '← Scroll for more dates →'}
@@ -1697,12 +1654,18 @@ export default function CompanyBooking() {
                                     {/* Available Times/Months Preview - Show only when NOT selected */}
                                     {!isSelected && (
                                       <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                                          <Clock className="h-4 w-4" />
+                                          <span>
+                                            {isMonthlyService 
+                                              ? t.availableMonths
+                                              : (language === 'ar' ? 'الأوقات المتاحة' : 'Available Times')
+                                            }
+                                          </span>
+                                        </div>
                                         {isMonthlyService ? (
+                                          // Show available months for monthly service
                                           <>
-                                            <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                                              <Clock className="h-4 w-4" />
-                                              <span>{t.availableMonths}</span>
-                                            </div>
                                             <div className="flex gap-2 flex-wrap">
                                               {generateAvailableMonths(specialist).slice(0, 3).map((monthDate) => {
                                                 const monthValue = monthDate.toISOString().split('T')[0];
@@ -1741,65 +1704,28 @@ export default function CompanyBooking() {
                                             </p>
                                           </>
                                         ) : (
-                                          // For regular services, check if specialist is booked on selected date
-                                          (() => {
-                                            const selectedDate = bookingDateType ? new Date(bookingDateType) : null;
-                                            const isBookedOnDate = isSpecialistBookedOnDate(selectedDate, specialist);
-                                            
-                                            if (isBookedOnDate && specialist.booked_until) {
-                                              return (
-                                                <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950/30 border-2 border-orange-300 dark:border-orange-800">
-                                                  <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300 font-semibold mb-2">
-                                                    <span className="text-xl">🔒</span>
-                                                    <span className="text-sm">
-                                                      {language === 'ar' ? 'محجوزة حتى' : 'Booked until'}:
-                                                    </span>
-                                                  </div>
-                                                  <p className="text-sm text-orange-800 dark:text-orange-200 font-bold">
-                                                    {new Date(specialist.booked_until).toLocaleDateString(
-                                                      language === 'ar' ? 'ar-EG' : 'en-US',
-                                                      { year: 'numeric', month: 'long', day: 'numeric' }
-                                                    )}
-                                                  </p>
-                                                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
-                                                    {language === 'ar' 
-                                                      ? 'الرجاء اختيار تاريخ آخر أو محترفة أخرى'
-                                                      : 'Please choose another date or another specialist'
-                                                    }
-                                                  </p>
+                                          // Show time slots for regular service
+                                          <>
+                                            <div className="flex gap-2 flex-wrap">
+                                              {timeSlots.slice(0, 4).map((slot) => (
+                                                <div
+                                                  key={slot}
+                                                  className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs font-medium animate-fade-in"
+                                                >
+                                                  {slot}
                                                 </div>
-                                              );
-                                            }
-                                            
-                                            // Show available times for regular service
-                                            return (
-                                              <>
-                                                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                                                  <Clock className="h-4 w-4" />
-                                                  <span>
-                                                    {language === 'ar' ? 'الأوقات المتاحة' : 'Available Times'}
-                                                  </span>
-                                                </div>
-                                                <div className="flex gap-2 flex-wrap">
-                                                  {timeSlots.slice(0, 4).map((slot) => (
-                                                    <div
-                                                      key={slot}
-                                                      className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs font-medium animate-fade-in"
-                                                    >
-                                                      {slot}
-                                                    </div>
-                                                  ))}
-                                                  <div className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
-                                                    +{timeSlots.length - 4} {language === 'ar' ? 'المزيد' : 'more'}
-                                                  </div>
-                                                </div>
-                                                <p className="text-xs text-primary font-medium animate-pulse">
-                                                  {language === 'ar' ? '👆 اضغط للمزيد من الأوقات' : '👆 Click for more times'}
-                                                </p>
-                                              </>
-                                            );
-                                          })()
+                                              ))}
+                                              <div className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
+                                                +{timeSlots.length - 4} {language === 'ar' ? 'المزيد' : 'more'}
+                                              </div>
+                                            </div>
+                                            <p className="text-xs text-primary font-medium animate-pulse">
+                                              {language === 'ar' ? '👆 اضغط للمزيد من الأوقات' : '👆 Click for more times'}
+                                            </p>
+                                          </>
                                         )}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
