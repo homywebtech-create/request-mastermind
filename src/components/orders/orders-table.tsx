@@ -343,11 +343,11 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   };
 
   const isOverThreeMinutes = (order: Order) => {
-    return getTimeSinceSent(order) > 3;
+    return getTimeSinceSent(order) >= 3;
   };
 
   const isWithinThreeMinutes = (order: Order) => {
-    return getTimeSinceSent(order) <= 3;
+    return getTimeSinceSent(order) < 3;
   };
 
   const isProcessing = (orderId: string) => {
@@ -1256,7 +1256,7 @@ Thank you for contacting us! 🌟`;
                                 size="sm"
                                 variant={isDelayed ? "destructive" : "default"}
                                 onClick={() => openResendDialog(order)}
-                                disabled={Boolean(isOrderProcessing)}
+                                disabled={isRecentlySent || isOrderProcessing}
                                 className="flex items-center gap-1"
                               >
                                  {isOrderProcessing ? (
@@ -1264,10 +1264,15 @@ Thank you for contacting us! 🌟`;
                                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                     {t.sending}
                                   </>
+                                ) : isRecentlySent ? (
+                                  <>
+                                    <Send className="h-3 w-3" />
+                                    {t.resendIn.replace('{minutes}', Math.max(0, 3 - minutesSinceSent).toString())}
+                                  </>
                                 ) : (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {t.resend} ({minutesSinceSent} {minutesSinceSent === 1 ? 'min' : 'min'})
+                                    {t.resend} ({minutesSinceSent} min)
                                   </>
                                 )}
                               </Button>
