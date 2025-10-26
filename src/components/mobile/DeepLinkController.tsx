@@ -122,6 +122,33 @@ const DeepLinkController = () => {
       }) as (event: CustomEvent) => void;
 
       window.addEventListener('notificationNavigate', notificationNavigateListener as EventListener);
+      
+      // 5) Listen for notification route from native MainActivity
+      const notificationRouteListener = ((event: CustomEvent) => {
+        const route = event.detail?.route;
+        if (!route) return;
+        
+        console.log('📱 [DeepLinkController] Native notification route received:', route);
+        
+        // Navigate immediately if user is logged in
+        if (user && !loading) {
+          console.log('✅ [DeepLinkController] Navigating to:', route);
+          navigate(route, { replace: true });
+        } else {
+          console.log('💾 [DeepLinkController] Saving route for post-login navigation');
+          deepLinkRef.current = route;
+        }
+      }) as (event: CustomEvent) => void;
+
+      window.addEventListener('notificationRoute', notificationRouteListener as EventListener);
+      
+      // Clean up both listeners
+      return () => {
+        if (notificationNavigateListener) {
+          window.removeEventListener('notificationNavigate', notificationNavigateListener as EventListener);
+        }
+        window.removeEventListener('notificationRoute', notificationRouteListener as EventListener);
+      };
     };
 
     setup();
@@ -130,9 +157,7 @@ const DeepLinkController = () => {
       try {
         appUrlOpenListener?.remove();
       } catch {}
-      if (notificationNavigateListener) {
-        window.removeEventListener('notificationNavigate', notificationNavigateListener as EventListener);
-      }
+      // Listeners are cleaned up in their own setup
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile, user, loading, navigate]);

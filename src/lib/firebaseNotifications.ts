@@ -124,12 +124,17 @@ export class FirebaseNotificationManager {
           
           console.log('✅ [SAVED] Route saved to preferences');
           
-          // CRITICAL: Emit event for immediate navigation when app is running
-          window.dispatchEvent(new CustomEvent('notificationNavigate', { 
-            detail: { route } 
-          }));
-          console.log('📤 [EVENT] Navigation event dispatched for route:', route);
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            // CRITICAL: Emit event for immediate navigation when app is running
+            // Use the correct route path based on where we want to navigate
+            const targetRoute = route === '/specialist-orders/new' 
+              ? '/specialist/new-orders' 
+              : route;
+            
+            window.dispatchEvent(new CustomEvent('notificationNavigate', { 
+              detail: { route: targetRoute } 
+            }));
+            console.log('📤 [EVENT] Navigation event dispatched for route:', targetRoute);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         });
 
         // Step 6: Listen for registration errors
