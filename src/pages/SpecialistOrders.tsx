@@ -221,7 +221,11 @@ export default function SpecialistOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         (payload) => {
-          console.log('Order specialist updated:', payload);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('🔄 [REALTIME] Order specialist updated:');
+          console.log('Old:', payload.old);
+          console.log('New:', payload.new);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           // Refresh orders immediately when an order is updated
           fetchOrders(specialistId);
           
@@ -242,7 +246,11 @@ export default function SpecialistOrders() {
           table: 'orders'
         },
         (payload) => {
-          console.log('Order table updated:', payload);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('🔄 [REALTIME] Order table updated:');
+          console.log('Order ID:', payload.new?.id);
+          console.log('New status:', payload.new?.status);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           // Refresh orders when order details change
           fetchOrders(specialistId);
         }
@@ -366,11 +374,16 @@ export default function SpecialistOrders() {
         };
       });
 
-      console.log('📊 All orders with status:', ordersWithQuotes?.map(o => ({
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📊 [FETCH] All orders fetched:', ordersWithQuotes?.length);
+      console.log('📊 [FETCH] Orders detail:', ordersWithQuotes?.map(o => ({
         id: o.id,
+        status: o.status,
         is_accepted: o.order_specialist?.is_accepted,
-        quoted_price: o.order_specialist?.quoted_price
+        quoted_price: o.order_specialist?.quoted_price,
+        order_specialist_id: o.order_specialist?.id
       })));
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       setOrders(ordersWithQuotes || []);
     } catch (error: any) {
@@ -544,13 +557,22 @@ export default function SpecialistOrders() {
     o.order_specialist?.rejection_reason !== 'Skipped by specialist'
   );
   
-  console.log('🎯 Filtered orders:', {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🎯 [FILTER] Total orders:', orders.length);
+  console.log('🎯 [FILTER] Filtered counts:', {
     new: newOrders.length,
     quoted: quotedOrders.length,
     accepted: acceptedOrders.length,
     skipped: skippedOrders.length,
     rejected: rejectedOrders.length
   });
+  console.log('🎯 [FILTER] Accepted orders detail:', acceptedOrders.map(o => ({
+    id: o.id,
+    status: o.status,
+    is_accepted: o.order_specialist?.is_accepted,
+    order_specialist_id: o.order_specialist?.id
+  })));
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   const renderOrderCard = (order: Order, showQuoteButton: boolean = false) => {
     const hasQuote = !!order.order_specialist?.quoted_price;
