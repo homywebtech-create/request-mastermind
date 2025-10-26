@@ -266,6 +266,26 @@ export default function CompanyBooking() {
     return slots;
   };
 
+  // Check if time slot is available (not in the past + 2 hours buffer)
+  const isTimeSlotAvailable = (timeSlot: string, selectedDate: Date | null) => {
+    if (!selectedDate) return false;
+    
+    const now = new Date();
+    const [startTime] = timeSlot.split('-');
+    const [hours, minutes] = startTime.split(':').map(Number);
+    
+    // Create a date object for the slot
+    const slotDateTime = new Date(selectedDate);
+    slotDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Add 2 hours buffer to current time
+    const bufferTime = new Date(now);
+    bufferTime.setHours(bufferTime.getHours() + 2);
+    
+    // Slot is available if it's after current time + 2 hours buffer
+    return slotDateTime >= bufferTime;
+  };
+
   // Generate available months for the next 12 months (for monthly contracts)
   const generateAvailableMonths = (specialist?: Specialist) => {
     const months = [];
@@ -1776,23 +1796,33 @@ export default function CompanyBooking() {
                                       ) : (
                                         // Show time slots for regular service
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                          {timeSlots.map((slot) => (
-                                            <label
-                                              key={slot}
-                                              className={cn(
-                                                'flex items-center justify-center border-2 rounded-lg p-2.5 cursor-pointer transition-all',
-                                                selectedTime === slot
-                                                  ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
-                                                  : 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
-                                              )}
-                                            >
-                                              <RadioGroupItem value={slot} id={slot} className="sr-only" />
-                                              <div className="flex items-center gap-1.5">
-                                                <Clock className="h-4 w-4" />
-                                                <span className="font-semibold text-xs">{slot}</span>
-                                              </div>
-                                            </label>
-                                          ))}
+                                          {timeSlots.map((slot) => {
+                                            const isAvailable = isTimeSlotAvailable(slot, bookingDateType ? new Date(bookingDateType) : null);
+                                            return (
+                                              <label
+                                                key={slot}
+                                                className={cn(
+                                                  'flex items-center justify-center border-2 rounded-lg p-2.5 transition-all',
+                                                  !isAvailable && 'opacity-40 cursor-not-allowed bg-muted',
+                                                  isAvailable && 'cursor-pointer',
+                                                  selectedTime === slot && isAvailable
+                                                    ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
+                                                    : isAvailable && 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
+                                                )}
+                                              >
+                                                <RadioGroupItem 
+                                                  value={slot} 
+                                                  id={slot} 
+                                                  className="sr-only" 
+                                                  disabled={!isAvailable}
+                                                />
+                                                <div className="flex items-center gap-1.5">
+                                                  <Clock className="h-4 w-4" />
+                                                  <span className="font-semibold text-xs">{slot}</span>
+                                                </div>
+                                              </label>
+                                            );
+                                          })}
                                         </div>
                                       )}
                                     </RadioGroup>
