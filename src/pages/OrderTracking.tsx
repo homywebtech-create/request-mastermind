@@ -542,7 +542,7 @@ export default function OrderTracking() {
           </div>
         )}
 
-        {/* Moving Stage - Redesigned */}
+        {/* Moving Stage - Simplified */}
         {stage === 'moving' && (
           <Card className="overflow-hidden border-2 border-blue-300 dark:border-blue-700 shadow-2xl">
             {/* Stage Header */}
@@ -556,110 +556,73 @@ export default function OrderTracking() {
               <p className="text-center text-blue-50 text-sm mt-2">استخدم أدوات التنقل للوصول إلى الموقع</p>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-4">
               {/* Primary Action - Navigate */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">الإجراء الرئيسي</h4>
-                <Button 
-                  onClick={openMaps} 
-                  className="w-full h-16 text-xl font-black shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-r from-primary via-primary/90 to-primary/80"
-                  size="lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-white/20">
-                      <Navigation className="h-7 w-7" />
-                    </div>
-                    <span>التنقل إلى موقع العميل</span>
-                  </div>
-                </Button>
-              </div>
+              <Button 
+                onClick={openMaps} 
+                className="w-full h-16 text-xl font-black shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-r from-primary via-primary/90 to-primary/80"
+                size="lg"
+              >
+                <Navigation className="h-7 w-7 ml-2" />
+                <span>التنقل إلى موقع العميل</span>
+              </Button>
 
               {/* Secondary Action - Share Location */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">إجراء ثانوي</h4>
-                <Button 
-                  onClick={shareLocation} 
-                  variant="outline" 
-                  className="w-full h-14 text-base font-semibold border-2 hover:bg-muted/50"
-                  size="lg"
-                >
-                  <Share2 className="ml-2 h-5 w-5" />
-                  مشاركة موقعي مع العميل
-                </Button>
-              </div>
+              <Button 
+                onClick={shareLocation} 
+                variant="outline" 
+                className="w-full h-14 text-base font-semibold border-2"
+                size="lg"
+              >
+                <Share2 className="ml-2 h-5 w-5" />
+                مشاركة موقعي مع العميل
+              </Button>
 
-              {/* Divider */}
-              <div className="relative py-4">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t-2 border-dashed border-muted-foreground/30" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-background px-4 py-1 text-xs font-bold text-muted-foreground uppercase tracking-wider rounded-full border-2 border-muted-foreground/20">
-                    عند الوصول
-                  </span>
-                </div>
-              </div>
-
-              {/* Arrival Confirmation - with Timer Protection */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">تأكيد الوصول</h4>
-                
-                {movingTimer > 0 ? (
-                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700 p-5 rounded-xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="p-3 rounded-full bg-amber-200 dark:bg-amber-800 animate-pulse">
-                        <Clock className="h-6 w-6 text-amber-700 dark:text-amber-300" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                          الرجاء الانتظار قبل تأكيد الوصول
-                        </p>
-                        <p className="text-2xl font-black text-amber-700 dark:text-amber-300 mt-1 tabular-nums">
-                          {movingTimer} ثانية متبقية
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 p-5 rounded-xl">
-                    <div className="flex items-center gap-3 mb-3">
-                      <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 animate-pulse" />
-                      <p className="text-sm font-bold text-green-800 dark:text-green-200">
-                        يمكنك الآن تأكيد الوصول
+              {/* Timer Protection */}
+              {movingTimer > 0 ? (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700 p-5 rounded-xl mt-6">
+                  <div className="flex items-center gap-4">
+                    <Clock className="h-8 w-8 text-amber-700 dark:text-amber-300 animate-pulse flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                        سيتم تفعيل زر تأكيد الوصول بعد
+                      </p>
+                      <p className="text-3xl font-black text-amber-700 dark:text-amber-300 mt-1 tabular-nums">
+                        00:00:{movingTimer.toString().padStart(2, '0')}
                       </p>
                     </div>
                   </div>
-                )}
-                
-                <Button
-                  onClick={handleArrived}
-                  disabled={movingTimer > 0}
-                  className={`w-full h-16 text-xl font-black shadow-xl transition-all duration-300 ${
-                    movingTimer > 0 
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:scale-[1.02] bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:from-green-600 hover:via-green-700 hover:to-green-800'
-                  }`}
-                  size="lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-white/20">
-                      <CheckCircle className="h-7 w-7" />
-                    </div>
-                    <span>لقد وصلت إلى الموقع</span>
-                  </div>
-                </Button>
-                
-                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg">
-                  <p className="text-xs text-center text-blue-700 dark:text-blue-300 font-medium">
-                    💡 ستتمكن من الاتصال بالعميل بعد تأكيد الوصول
-                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 p-4 rounded-xl mt-6">
+                  <div className="flex items-center gap-3 justify-center">
+                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 animate-pulse" />
+                    <p className="text-sm font-bold text-green-800 dark:text-green-200">
+                      يمكنك الآن تأكيد الوصول
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Arrival Confirmation Button */}
+              <Button
+                onClick={handleArrived}
+                disabled={movingTimer > 0}
+                className={`w-full h-16 text-xl font-black shadow-xl transition-all duration-300 ${
+                  movingTimer > 0 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:scale-[1.02] bg-gradient-to-r from-green-500 via-green-600 to-green-700'
+                }`}
+                size="lg"
+              >
+                <CheckCircle className="h-7 w-7 ml-2" />
+                <span>لقد وصلت إلى الموقع</span>
+              </Button>
             </div>
           </Card>
         )}
 
-        {/* Arrived Stage - Enhanced */}
+        {/* Arrived Stage - Simplified */}
         {stage === 'arrived' && (
           <Card className="overflow-hidden border-2 border-green-300 dark:border-green-700 shadow-2xl">
             {/* Stage Header */}
@@ -670,134 +633,87 @@ export default function OrderTracking() {
                 </div>
               </div>
               <h3 className="text-3xl font-black text-white text-center">وصلت إلى الموقع</h3>
-              <p className="text-center text-green-50 text-sm mt-2">تواصل مع العميل عند الحاجة</p>
+              <p className="text-center text-green-50 text-sm mt-2">تواصل مع العميل وابدأ العمل</p>
             </div>
 
-            <div className="p-6 space-y-5">
-              {/* Customer Contact - Prominently Displayed */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">معلومات الاتصال</h4>
-                
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 p-6 rounded-xl shadow-lg">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="p-4 rounded-full bg-green-200 dark:bg-green-800 flex-shrink-0">
-                      <Phone className="h-8 w-8 text-green-700 dark:text-green-300" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wide mb-1">
-                        رقم العميل
-                      </p>
-                      <p className="text-2xl font-black text-green-900 dark:text-green-100 font-mono tracking-wider">
-                        {order.customer?.whatsapp_number}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    onClick={() => openWhatsApp(order.customer?.whatsapp_number || '')}
-                    className="w-full h-16 text-xl font-black bg-gradient-to-r from-green-600 via-green-700 to-green-800 hover:from-green-700 hover:via-green-800 hover:to-green-900 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
-                    size="lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-white/20">
-                        <Phone className="h-7 w-7" />
-                      </div>
-                      <span>الاتصال بالعميل عبر واتساب</span>
-                    </div>
-                  </Button>
-                  
-                  <div className="mt-4 bg-white/50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                    <p className="text-xs text-center text-green-800 dark:text-green-200 font-medium">
-                      📞 أخطر العميل بوصولك أو اسأل عن تفاصيل الطابق/الشقة
+            <div className="p-6 space-y-4">
+              {/* Customer Contact */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 p-5 rounded-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <Phone className="h-6 w-6 text-green-700 dark:text-green-300" />
+                  <div>
+                    <p className="text-xs font-bold text-green-700 dark:text-green-300">رقم العميل</p>
+                    <p className="text-lg font-black text-green-900 dark:text-green-100 font-mono">
+                      {order.customer?.whatsapp_number}
                     </p>
                   </div>
                 </div>
+                
+                <Button 
+                  onClick={() => openWhatsApp(order.customer?.whatsapp_number || '')}
+                  className="w-full h-14 text-lg font-black bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg"
+                  size="lg"
+                >
+                  <Phone className="h-6 w-6 ml-2" />
+                  <span>الاتصال بالعميل عبر واتساب</span>
+                </Button>
               </div>
 
               {/* Building Info */}
               {order.building_info && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">معلومات المبنى</h4>
-                  
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/30 border-2 border-blue-300 dark:border-blue-700 p-5 rounded-xl shadow-md">
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-full bg-blue-200 dark:bg-blue-800 flex-shrink-0">
-                        <MapPin className="h-6 w-6 text-blue-700 dark:text-blue-300" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase mb-2">
-                          تفاصيل العنوان
-                        </p>
-                        <p className="text-base font-medium text-blue-900 dark:text-blue-100 leading-relaxed">
-                          {order.building_info}
-                        </p>
-                      </div>
+                <div className="bg-muted/50 border-2 border-muted p-4 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase mb-1">معلومات المبنى</p>
+                      <p className="text-sm font-medium text-foreground leading-relaxed">
+                        {order.building_info}
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Divider */}
-              <div className="relative py-4">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t-2 border-dashed border-muted-foreground/30" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-background px-4 py-1 text-xs font-bold text-muted-foreground uppercase tracking-wider rounded-full border-2 border-muted-foreground/20">
-                    بدء العمل
-                  </span>
-                </div>
-              </div>
-
-              {/* Start Work Timer - with Timer Protection */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">بدء ساعة العمل</h4>
-                
-                {arrivedTimer > 0 ? (
-                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700 p-5 rounded-xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="p-3 rounded-full bg-amber-200 dark:bg-amber-800 animate-pulse">
-                        <Clock className="h-6 w-6 text-amber-700 dark:text-amber-300" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                          الرجاء الانتظار قبل بدء ساعة العمل
-                        </p>
-                        <p className="text-2xl font-black text-amber-700 dark:text-amber-300 mt-1 tabular-nums">
-                          {arrivedTimer} ثانية متبقية
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border-2 border-purple-300 dark:border-purple-700 p-5 rounded-xl">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Play className="h-6 w-6 text-purple-600 dark:text-purple-400 animate-pulse" />
-                      <p className="text-sm font-bold text-purple-800 dark:text-purple-200">
-                        يمكنك الآن بدء ساعة العمل
+              {/* Timer Protection */}
+              {arrivedTimer > 0 ? (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700 p-5 rounded-xl mt-6">
+                  <div className="flex items-center gap-4">
+                    <Clock className="h-8 w-8 text-amber-700 dark:text-amber-300 animate-pulse flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                        سيتم تفعيل زر بدء العمل بعد
+                      </p>
+                      <p className="text-3xl font-black text-amber-700 dark:text-amber-300 mt-1 tabular-nums">
+                        00:00:{arrivedTimer.toString().padStart(2, '0')}
                       </p>
                     </div>
                   </div>
-                )}
-                
-                <Button
-                  onClick={handleStartWork}
-                  disabled={arrivedTimer > 0}
-                  className={`w-full h-16 text-xl font-black shadow-xl transition-all duration-300 ${
-                    arrivedTimer > 0 
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:scale-[1.02] bg-gradient-to-r from-primary via-primary/90 to-primary/80'
-                  }`}
-                  size="lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-white/20">
-                      <Play className="h-7 w-7" />
-                    </div>
-                    <span>بدء ساعة العمل</span>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border-2 border-purple-300 dark:border-purple-700 p-4 rounded-xl mt-6">
+                  <div className="flex items-center gap-3 justify-center">
+                    <Play className="h-6 w-6 text-purple-600 dark:text-purple-400 animate-pulse" />
+                    <p className="text-sm font-bold text-purple-800 dark:text-purple-200">
+                      يمكنك الآن بدء ساعة العمل
+                    </p>
                   </div>
-                </Button>
-              </div>
+                </div>
+              )}
+
+              {/* Start Work Button */}
+              <Button
+                onClick={handleStartWork}
+                disabled={arrivedTimer > 0}
+                className={`w-full h-16 text-xl font-black shadow-xl transition-all duration-300 ${
+                  arrivedTimer > 0 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:scale-[1.02] bg-gradient-to-r from-primary via-primary/90 to-primary/80'
+                }`}
+                size="lg"
+              >
+                <Play className="h-7 w-7 ml-2" />
+                <span>بدء ساعة العمل</span>
+              </Button>
             </div>
           </Card>
         )}
