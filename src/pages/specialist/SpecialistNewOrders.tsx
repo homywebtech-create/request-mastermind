@@ -352,6 +352,9 @@ export default function SpecialistNewOrders() {
           console.log('Order ID:', (payload.new as any)?.order_id);
           console.log('Full Payload:', JSON.stringify(payload, null, 2));
           
+          // Add small delay to ensure data is available in database
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           await fetchOrders(specialistId);
           await fetchNewOrdersCount(specialistId);
           await triggerNotification('new');
@@ -412,6 +415,9 @@ export default function SpecialistNewOrders() {
           
           console.log('✅ تأكيد: الطلب مخصص لهذا المحترف');
           console.log('🔁🔁🔁 إعادة إرسال مؤكدة! تشغيل الإشعار...');
+          
+          // Add small delay to ensure data is available in database
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           await fetchOrders(specialistId);
           await fetchNewOrdersCount(specialistId);

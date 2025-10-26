@@ -168,6 +168,9 @@ export default function SpecialistOrders() {
         async (payload) => {
           console.log('New order detected:', payload);
           
+          // Add small delay to ensure data is available in database
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           // Refresh orders when a new order is assigned to this specialist
           fetchOrders(specialistId);
           
@@ -229,8 +232,12 @@ export default function SpecialistOrders() {
           console.log('Old:', payload.old);
           console.log('New:', payload.new);
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          // Refresh orders immediately when an order is updated
-          fetchOrders(specialistId);
+          
+          // Add small delay to ensure data is available in database
+          setTimeout(() => {
+            // Refresh orders when an order is updated
+            fetchOrders(specialistId);
+          }, 500);
           
           // Show notification for accepted orders
           if (payload.new && (payload.new as any).is_accepted === true) {
@@ -254,8 +261,12 @@ export default function SpecialistOrders() {
           console.log('Order ID:', payload.new?.id);
           console.log('New status:', payload.new?.status);
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          // Refresh orders when order details change
-          fetchOrders(specialistId);
+          
+          // Add small delay to ensure data is available in database
+          setTimeout(() => {
+            // Refresh orders when order details change
+            fetchOrders(specialistId);
+          }, 500);
         }
       )
       .subscribe();
