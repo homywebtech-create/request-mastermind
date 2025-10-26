@@ -1256,7 +1256,7 @@ Thank you for contacting us! 🌟`;
                                 size="sm"
                                 variant={isDelayed ? "destructive" : "default"}
                                 onClick={() => openResendDialog(order)}
-                                disabled={Boolean(isRecentlySent) || Boolean(isOrderProcessing)}
+                                disabled={Boolean(isOrderProcessing)}
                                 className="flex items-center gap-1"
                               >
                                  {isOrderProcessing ? (
@@ -1267,7 +1267,7 @@ Thank you for contacting us! 🌟`;
                                 ) : (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {minutesSinceSent > 0 ? t.resendIn.replace('{minutes}', minutesSinceSent.toString()) : t.resend}
+                                    {t.resend} ({minutesSinceSent} {minutesSinceSent === 1 ? 'min' : 'min'})
                                   </>
                                 )}
                               </Button>
