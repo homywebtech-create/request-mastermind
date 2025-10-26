@@ -542,84 +542,59 @@ export default function OrderTracking() {
           </div>
         )}
 
-        {/* Moving Stage - Simplified */}
+        {/* Moving Stage - Compact */}
         {stage === 'moving' && (
-          <Card className="overflow-hidden border-2 border-blue-300 dark:border-blue-700 shadow-2xl">
-            {/* Stage Header */}
-            <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 p-6">
-              <div className="flex items-center justify-center mb-3">
-                <div className="p-4 rounded-full bg-white/20 backdrop-blur-sm">
-                  <Navigation className="h-10 w-10 text-white animate-pulse" />
+          <div className="space-y-4 pb-24">
+            {/* Compact Status Card */}
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
+              <div className="p-4 text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full">
+                  <Navigation className="h-6 w-6" />
                 </div>
+                <h2 className="text-lg font-bold">في الطريق إلى العميل</h2>
+                <p className="text-sm text-blue-50">العميل بانتظارك كن هناك في الوقت</p>
               </div>
-              <h3 className="text-3xl font-black text-white text-center">في الطريق إلى العميل</h3>
-              <p className="text-center text-blue-50 text-sm mt-2">استخدم أدوات التنقل للوصول إلى الموقع</p>
+            </Card>
+
+            {/* Compact Navigation Icons */}
+            <div className="flex gap-3 justify-center">
+              <Button
+                size="icon"
+                className="h-14 w-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg"
+                onClick={openMaps}
+                title="موقع العميل"
+              >
+                <MapPin className="h-6 w-6" />
+              </Button>
+
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-14 w-14 rounded-full shadow-lg"
+                onClick={shareLocation}
+                title="شارك الموقع"
+              >
+                <Share2 className="h-6 w-6" />
+              </Button>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Primary Action - Navigate */}
-              <Button 
-                onClick={openMaps} 
-                className="w-full h-16 text-xl font-black shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-r from-primary via-primary/90 to-primary/80"
-                size="lg"
-              >
-                <Navigation className="h-7 w-7 ml-2" />
-                <span>التنقل إلى موقع العميل</span>
-              </Button>
-
-              {/* Secondary Action - Share Location */}
-              <Button 
-                onClick={shareLocation} 
-                variant="outline" 
-                className="w-full h-14 text-base font-semibold border-2"
-                size="lg"
-              >
-                <Share2 className="ml-2 h-5 w-5" />
-                مشاركة موقعي مع العميل
-              </Button>
-
-              {/* Timer Protection */}
-              {movingTimer > 0 ? (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700 p-5 rounded-xl mt-6">
-                  <div className="flex items-center gap-4">
-                    <Clock className="h-8 w-8 text-amber-700 dark:text-amber-300 animate-pulse flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                        سيتم تفعيل زر تأكيد الوصول بعد
-                      </p>
-                      <p className="text-3xl font-black text-amber-700 dark:text-amber-300 mt-1 tabular-nums">
-                        00:00:{movingTimer.toString().padStart(2, '0')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 p-4 rounded-xl mt-6">
-                  <div className="flex items-center gap-3 justify-center">
-                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 animate-pulse" />
-                    <p className="text-sm font-bold text-green-800 dark:text-green-200">
-                      يمكنك الآن تأكيد الوصول
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Arrival Confirmation Button */}
+            {/* Fixed Arrival Button */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50">
               <Button
                 onClick={handleArrived}
                 disabled={movingTimer > 0}
-                className={`w-full h-16 text-xl font-black shadow-xl transition-all duration-300 ${
+                className={`w-full h-14 text-lg font-bold shadow-lg transition-all ${
                   movingTimer > 0 
-                    ? 'opacity-50 cursor-not-allowed' 
-                    : 'hover:scale-[1.02] bg-gradient-to-r from-green-500 via-green-600 to-green-700'
+                    ? 'opacity-50 cursor-not-allowed bg-gray-400' 
+                    : 'bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:shadow-xl'
                 }`}
                 size="lg"
               >
-                <CheckCircle className="h-7 w-7 ml-2" />
+                <CheckCircle className="h-6 w-6 ml-2" />
                 <span>لقد وصلت إلى الموقع</span>
               </Button>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Arrived Stage - Simplified */}
