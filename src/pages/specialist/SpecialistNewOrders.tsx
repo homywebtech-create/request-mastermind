@@ -817,159 +817,205 @@ export default function SpecialistNewOrders() {
             return (
               <Card 
                 key={order.id}
-                className={`overflow-hidden border-2 shadow-lg ${
+                className={`overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 ${
                   order.isNew 
-                    ? 'border-primary animate-pulse-glow ring-4 ring-primary/20' 
-                    : 'border-primary'
+                    ? 'border-4 border-amber-400 animate-pulse-glow ring-8 ring-amber-400/30 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20' 
+                    : 'border-2 border-primary/30'
                 }`}
               >
-                {/* New Order Indicator with Timer */}
-                <div className={`p-4 ${
+                {/* New Order Indicator with Timer - Enhanced */}
+                <div className={`p-5 relative overflow-hidden ${
                   order.isNew
-                    ? 'bg-gradient-to-r from-primary via-amber-500 to-primary animate-gradient'
-                    : 'bg-gradient-to-r from-primary via-primary/80 to-primary/60'
+                    ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 animate-gradient'
+                    : 'bg-gradient-to-r from-primary to-primary/70'
                 }`}>
-                  <div className="flex items-center justify-between text-primary-foreground">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className={`h-5 w-5 ${order.isNew ? 'animate-bounce' : 'animate-pulse'}`} />
-                      <span className="text-sm font-bold">
-                        {order.isNew ? t.specialist.newOrderArrived : t.specialist.newOrderSubmitPrice}
-                      </span>
+                  {order.isNew && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                  )}
+                  <div className="flex items-center justify-between text-primary-foreground relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${order.isNew ? 'bg-white/30 animate-bounce' : 'bg-white/20'}`}>
+                        <Sparkles className={`h-6 w-6 ${order.isNew ? 'animate-spin' : ''}`} />
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold tracking-wide">
+                          {order.isNew ? '🎉 طلب جديد وصل الآن!' : 'عرض عمل متاح'}
+                        </p>
+                        {order.isNew && (
+                          <p className="text-xs opacity-90">أرسل عرض السعر الآن</p>
+                        )}
+                      </div>
                     </div>
                     {order.timeRemaining !== undefined && order.timeRemaining > 0 && (
-                      <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${
+                      <div className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl shadow-lg ${
                         order.timeRemaining <= 60 
-                          ? 'bg-red-500 animate-pulse' 
+                          ? 'bg-red-600 animate-pulse' 
                           : order.timeRemaining <= 120 
-                            ? 'bg-amber-500' 
-                            : 'bg-white/20'
+                            ? 'bg-amber-600' 
+                            : 'bg-white/30 backdrop-blur-sm'
                       }`}>
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm font-bold">
+                        <Clock className="h-5 w-5" />
+                        <span className="text-xl font-black tabular-nums">
                           {Math.floor(order.timeRemaining / 60)}:{String(order.timeRemaining % 60).padStart(2, '0')}
                         </span>
+                        <span className="text-[10px] opacity-90">متبقي</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="p-5 space-y-4">
-                  {/* Customer Info */}
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">
-                      {order.customer?.name}
-                    </h3>
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        {new Date(order.created_at).toLocaleDateString('ar-QA', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
+                <div className="p-6 space-y-5">
+                  {/* Customer Info - Enhanced */}
+                  <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                        <span className="text-2xl">👤</span>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-black text-foreground">
+                          {order.customer?.name}
+                        </h3>
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            {new Date(order.created_at).toLocaleDateString('ar-QA', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                   {/* Order Details */}
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                      <Package className="h-5 w-5 text-primary" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 justify-between">
-                          <p className="text-xs text-muted-foreground">{t.specialist.service}</p>
-                          {order.translated && preferredLanguage !== 'ar' && (
-                            <Globe className="h-3 w-3 text-blue-500" />
-                          )}
+                  {/* Order Details - Redesigned with better spacing */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">تفاصيل الطلب</h4>
+                    
+                    <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-4 rounded-xl border-2 border-primary/30 shadow-md">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-full bg-primary/20">
+                          <Package className="h-6 w-6 text-primary" />
                         </div>
-                        <p className="font-bold text-sm">
-                          {order.translated?.service_type || order.service_type}
-                        </p>
-                      </div>
-                    </div>
-
-                    {order.customer?.area && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                        <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 justify-between">
-                            <p className="text-xs text-muted-foreground">{t.specialist.area}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase">نوع الخدمة</p>
                             {order.translated && preferredLanguage !== 'ar' && (
                               <Globe className="h-3 w-3 text-blue-500" />
                             )}
                           </div>
-                          <p className="font-bold text-sm">
-                            {order.translated?.area || order.customer.area}
+                          <p className="font-black text-lg leading-tight">
+                            {order.translated?.service_type || order.service_type}
                           </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {order.customer?.area && (
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/40 p-4 rounded-xl border-2 border-blue-300 dark:border-blue-700 shadow-md">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 rounded-full bg-blue-200 dark:bg-blue-800">
+                            <MapPin className="h-6 w-6 text-blue-700 dark:text-blue-300" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase">الموقع</p>
+                              {order.translated && preferredLanguage !== 'ar' && (
+                                <Globe className="h-3 w-3 text-blue-500" />
+                              )}
+                            </div>
+                            <p className="font-black text-lg leading-tight text-blue-900 dark:text-blue-100">
+                              {order.translated?.area || order.customer.area}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {order.booking_type && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
-                        <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 justify-between">
-                            <p className="text-xs text-muted-foreground">{t.specialist.bookingType}</p>
-                            {order.translated && preferredLanguage !== 'ar' && (
-                              <Globe className="h-3 w-3 text-blue-500" />
-                            )}
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/40 dark:to-purple-900/40 p-4 rounded-xl border-2 border-purple-300 dark:border-purple-700 shadow-md">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 rounded-full bg-purple-200 dark:bg-purple-800">
+                            <Package className="h-6 w-6 text-purple-700 dark:text-purple-300" />
                           </div>
-                          <p className="font-bold text-sm">
-                            {order.translated?.booking_type || order.booking_type}
-                          </p>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase">نوع الحجز</p>
+                              {order.translated && preferredLanguage !== 'ar' && (
+                                <Globe className="h-3 w-3 text-blue-500" />
+                              )}
+                            </div>
+                            <p className="font-black text-lg leading-tight text-purple-900 dark:text-purple-100">
+                              {order.translated?.booking_type || order.booking_type}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {order.hours_count && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
-                        <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                        <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">{t.specialist.hoursCount}</p>
-                          <p className="font-bold text-sm">
-                            {order.hours_count} {language === 'ar' ? 'ساعات' : 'hours'}
-                          </p>
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/40 dark:to-orange-900/40 p-4 rounded-xl border-2 border-orange-300 dark:border-orange-700 shadow-md">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 rounded-full bg-orange-200 dark:bg-orange-800">
+                            <Clock className="h-6 w-6 text-orange-700 dark:text-orange-300" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase mb-1">عدد الساعات</p>
+                            <p className="font-black text-lg text-orange-900 dark:text-orange-100">
+                              {order.hours_count} {language === 'ar' ? 'ساعات' : 'hours'}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
 
                   {order.notes && (
-                    <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                      <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 justify-between mb-1">
-                          <p className="text-xs text-amber-700 dark:text-amber-300 font-bold">{t.specialist.notes}</p>
-                          {order.translated && preferredLanguage !== 'ar' && (
-                            <Globe className="h-3 w-3 text-blue-500" />
-                          )}
+                    <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-900/40 p-5 rounded-xl border-2 border-amber-300 dark:border-amber-700 shadow-lg">
+                      <div className="flex items-start gap-4">
+                        <div className="p-3 rounded-full bg-amber-200 dark:bg-amber-800 flex-shrink-0">
+                          <FileText className="h-6 w-6 text-amber-700 dark:text-amber-300" />
                         </div>
-                        <p className="text-sm leading-relaxed">
-                          {order.translated?.notes || order.notes}
-                        </p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <p className="text-sm font-bold text-amber-800 dark:text-amber-200 uppercase">ملاحظات العميل</p>
+                            {order.translated && preferredLanguage !== 'ar' && (
+                              <Globe className="h-4 w-4 text-blue-500" />
+                            )}
+                          </div>
+                          <p className="text-base leading-relaxed font-medium text-amber-900 dark:text-amber-100">
+                            {order.translated?.notes || order.notes}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
+                </div>
 
-                  {/* Submit Quote Button */}
-                  <Dialog 
-                    open={quoteDialog.open && quoteDialog.orderId === order.id} 
-                    onOpenChange={(open) => {
-                      if (!open) setQuoteDialog({ open: false, orderId: null });
-                    }}
-                  >
-                    <DialogTrigger asChild>
-                      <Button
-                        onClick={() => setQuoteDialog({ open: true, orderId: order.id })}
-                        className="w-full h-14 text-base font-bold shadow-lg"
-                      >
-                        <Tag className="h-5 w-5 ml-2" />
-                        {t.specialist.submitQuote}
-                      </Button>
-                    </DialogTrigger>
+                  {/* Submit Quote Button - Enhanced */}
+                  <div className="pt-4 border-t-2 border-dashed border-muted-foreground/20">
+                    <Dialog 
+                      open={quoteDialog.open && quoteDialog.orderId === order.id} 
+                      onOpenChange={(open) => {
+                        if (!open) setQuoteDialog({ open: false, orderId: null });
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <Button
+                          onClick={() => setQuoteDialog({ open: true, orderId: order.id })}
+                          className="w-full h-16 text-xl font-black shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary hover:to-primary/90"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-full bg-white/20">
+                              <Tag className="h-7 w-7" />
+                            </div>
+                            <span>{t.specialist.submitQuote}</span>
+                          </div>
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
                       <DialogHeader>
                         <DialogTitle>{t.specialist.selectAppropriatePrice}</DialogTitle>
