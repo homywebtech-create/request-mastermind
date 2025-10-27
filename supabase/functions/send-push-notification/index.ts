@@ -195,7 +195,7 @@ serve(async (req) => {
                   direct_boot_ok: true,
                   notification: {
                     channel_id: 'new-orders-v4',
-                    sound: 'notification_sound',
+                    sound: 'default',
                   },
                 },
               },
@@ -211,7 +211,7 @@ serve(async (req) => {
                 apns: {
                   payload: {
                     aps: {
-                      sound: 'notification_sound.mp3',
+                      sound: 'default',
                     },
                   },
                 },
