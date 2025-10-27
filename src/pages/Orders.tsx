@@ -172,6 +172,11 @@ export default function Orders() {
 
       console.log('🔍 Admin Orders - Sample:', data?.[0]);
       console.log('📋 Order number check:', data?.[0]?.order_number);
+      console.log('🕐 last_sent_at check:', {
+        'ORD-0005': data?.find(o => o.order_number === 'ORD-0005')?.last_sent_at,
+        'ORD-0004': data?.find(o => o.order_number === 'ORD-0004')?.last_sent_at,
+        'ORD-0003': data?.find(o => o.order_number === 'ORD-0003')?.last_sent_at,
+      });
 
       setOrders((data || []) as Order[]);
       console.log('✅ [FETCH] Orders fetched:', data?.length, 'orders');
