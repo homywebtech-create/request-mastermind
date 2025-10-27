@@ -195,11 +195,14 @@ export default function Orders() {
 
   // Separate useEffect for Realtime subscription
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log('⚠️ [REALTIME] User not available, skipping subscription');
+      return;
+    }
 
-    console.log('🔵 [REALTIME] Setting up subscription...');
+    console.log('🔵 [REALTIME] Setting up subscription for user:', user.id);
     const channel = supabase
-      .channel('orders-changes')
+      .channel('orders-realtime-channel')
       .on(
         'postgres_changes',
         {
@@ -208,21 +211,34 @@ export default function Orders() {
           table: 'orders'
         },
         (payload) => {
-          console.log('🔴 [REALTIME] Order updated:', payload);
+          console.log('🔴 [REALTIME] Order updated - Full payload:', payload);
+          console.log('🔴 [REALTIME] Order ID:', payload.new?.id);
+          console.log('🔴 [REALTIME] New last_sent_at:', payload.new?.last_sent_at);
+          
           // Update the order in state immediately
           if (payload.new && 'last_sent_at' in payload.new) {
-            setOrders(prevOrders => 
-              prevOrders.map(order => 
+            console.log('🟢 [REALTIME] Updating order in state...');
+            setOrders(prevOrders => {
+              const updated = prevOrders.map(order => 
                 order.id === payload.new.id 
                   ? { ...order, last_sent_at: payload.new.last_sent_at as string }
                   : order
-              )
-            );
+              );
+              console.log('🟢 [REALTIME] State updated successfully');
+              return updated;
+            });
+          } else {
+            console.warn('⚠️ [REALTIME] No last_sent_at in payload');
           }
         }
       )
       .subscribe((status) => {
         console.log('🔵 [REALTIME] Subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ [REALTIME] Successfully subscribed to orders updates!');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ [REALTIME] Channel error!');
+        }
       });
 
     return () => {
