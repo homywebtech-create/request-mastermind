@@ -116,7 +116,8 @@ export default function Orders() {
 
   const fetchOrders = async () => {
     try {
-      console.log('🔄 [FETCH] Fetching orders...');
+      const timestamp = Date.now();
+      console.log('🔄 [FETCH] Starting fetchOrders at', timestamp);
       setLoading(true);
       
       const { data, error } = await supabase
@@ -179,10 +180,8 @@ export default function Orders() {
       });
 
       setOrders((data || []) as Order[]);
-      console.log('✅ [FETCH] Orders fetched:', data?.length, 'orders');
-      if (data && data.length > 0) {
-        console.log('📊 [FETCH] Sample order last_sent_at:', data[0].order_number, data[0].last_sent_at);
-      }
+      console.log('✅ [FETCH] Orders set. Total:', data?.length);
+      console.log('📊 [FETCH] ORD-0005 last_sent_at:', data?.find(o => o.order_number === 'ORD-0005')?.last_sent_at);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
