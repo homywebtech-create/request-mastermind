@@ -1294,7 +1294,7 @@ Thank you for contacting us! 🌟`;
                           {order.tracking_stage && (
                             <TrackingStageBadge stage={order.tracking_stage} />
                           )}
-                          {isPending && (
+                          {isPending && minutesSinceSent < 999999 && (
                             <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : 'text-muted-foreground'}`}>
                               {isDelayed 
                                 ? t.noResponseSince.replace('{minutes}', minutesSinceSent.toString())
@@ -1330,7 +1330,7 @@ Thank you for contacting us! 🌟`;
                                 ) : (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {t.resend} ({minutesSinceSent} min)
+                                    {minutesSinceSent >= 999999 ? t.resend : `${t.resend} (${minutesSinceSent} min)`}
                                   </>
                                 )}
                               </Button>
