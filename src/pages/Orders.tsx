@@ -660,6 +660,7 @@ export default function Orders() {
           orders={orders}
           onUpdateStatus={handleUpdateStatus}
           onLinkCopied={handleLinkCopied}
+          onRefreshOrders={fetchOrders}
           filter={filter}
           onFilterChange={setFilter}
         />

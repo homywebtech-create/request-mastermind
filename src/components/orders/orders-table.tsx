@@ -106,13 +106,14 @@ interface OrdersTableProps {
   orders: Order[];
   onUpdateStatus: (orderId: string, status: string) => void;
   onLinkCopied: (orderId: string) => void;
+  onRefreshOrders?: () => Promise<void>;
   filter: string;
   onFilterChange: (filter: string) => void;
   isCompanyView?: boolean;
   companyId?: string;
 }
 
-export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
+export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrders, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -644,6 +645,11 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(orderId);
       
+      // Refresh orders to get updated last_sent_at from database
+      if (onRefreshOrders) {
+        await onRefreshOrders();
+      }
+      
       toast({
         title: t.sendSuccessful,
         description: t.sentToSpecialists.replace('{count}', (allSpecialists?.length || 0).toString()),
@@ -739,6 +745,11 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
       
+      // Refresh orders to get updated last_sent_at from database
+      if (onRefreshOrders) {
+        await onRefreshOrders();
+      }
+      
       toast({
         title: t.sendSuccessful,
         description: t.sentToSpecialists.replace('{count}', (companySpecialists?.length || 0).toString()),
@@ -812,6 +823,11 @@ Thank you for contacting us! 🌟`;
 
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
+      
+      // Refresh orders to get updated last_sent_at from database
+      if (onRefreshOrders) {
+        await onRefreshOrders();
+      }
       
       toast({
         title: t.sendSuccessful,
