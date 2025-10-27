@@ -114,8 +114,6 @@ interface OrdersTableProps {
 }
 
 export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrders, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
-  console.log('🔷 [COMPONENT] OrdersTable rendered. onRefreshOrders exists:', !!onRefreshOrders);
-  
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -576,7 +574,6 @@ Thank you for contacting us! 🌟`;
   }, [selectedCompanyId]);
 
   const handleSendToAll = async (orderId: string) => {
-    console.log('🔷 [HANDLE] handleSendToAll called. onRefreshOrders exists:', !!onRefreshOrders);
     setOrderProcessing(orderId, true);
     try {
       // 1) Read existing assignments
@@ -662,17 +659,8 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(orderId);
       
-      console.log('🔄 [REFRESH] Calling onRefreshOrders...');
-      // Small delay to ensure database replication
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Refresh orders to get updated last_sent_at from database
-      if (onRefreshOrders) {
-        await onRefreshOrders();
-        console.log('✅ [REFRESH] onRefreshOrders completed');
-      } else {
-        console.warn('⚠️ [REFRESH] onRefreshOrders is not provided');
-      }
+      // Realtime will update the UI automatically when database updates
+      console.log('✅ [REFRESH] Relying on realtime subscription for update');
       
       toast({
         title: t.sendSuccessful,
@@ -778,13 +766,8 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
       
-      // Small delay to ensure database replication
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Refresh orders to get updated last_sent_at from database
-      if (onRefreshOrders) {
-        await onRefreshOrders();
-      }
+      // Realtime will update the UI automatically
+      console.log('✅ [REFRESH] Relying on realtime subscription for update');
       
       toast({
         title: t.sendSuccessful,
@@ -869,13 +852,8 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
       
-      // Small delay to ensure database replication
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Refresh orders to get updated last_sent_at from database
-      if (onRefreshOrders) {
-        await onRefreshOrders();
-      }
+      // Realtime will update the UI automatically
+      console.log('✅ [REFRESH] Relying on realtime subscription for update');
       
       toast({
         title: t.sendSuccessful,

@@ -187,12 +187,22 @@ export default function Orders() {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'orders'
         },
-        () => {
-          fetchOrders();
+        (payload) => {
+          console.log('🔴 [REALTIME] Order updated:', payload);
+          // Update the order in state immediately
+          if (payload.new && 'last_sent_at' in payload.new) {
+            setOrders(prevOrders => 
+              prevOrders.map(order => 
+                order.id === payload.new.id 
+                  ? { ...order, last_sent_at: payload.new.last_sent_at as string }
+                  : order
+              )
+            );
+          }
         }
       )
       .subscribe();
@@ -665,17 +675,14 @@ export default function Orders() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <>
-          {console.log('🔷 [PARENT] Passing fetchOrders to OrdersTable. Exists:', !!fetchOrders, 'Type:', typeof fetchOrders)}
-          <OrdersTable
-            orders={orders}
-            onUpdateStatus={handleUpdateStatus}
-            onLinkCopied={handleLinkCopied}
-            onRefreshOrders={fetchOrders}
-            filter={filter}
-            onFilterChange={setFilter}
-          />
-        </>
+        <OrdersTable
+          orders={orders}
+          onUpdateStatus={handleUpdateStatus}
+          onLinkCopied={handleLinkCopied}
+          onRefreshOrders={fetchOrders}
+          filter={filter}
+          onFilterChange={setFilter}
+        />
       )}
 
       <SpecialistAvailabilityDialog
