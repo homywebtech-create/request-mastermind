@@ -331,8 +331,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
   const getTimeSinceSent = (order: Order) => {
     // Check local state first for immediate UI updates
     const localSentTime = recentlySentOrders.get(order.id);
+    console.log('🔵 [TIME] Checking order', order.order_number, '- localSentTime:', localSentTime, 'last_sent_at:', order.last_sent_at);
     if (localSentTime) {
       const diffInMinutes = Math.floor((Date.now() - localSentTime) / (1000 * 60));
+      console.log('🔵 [TIME] Using LOCAL time:', diffInMinutes, 'min');
       return Math.max(0, diffInMinutes);
     }
     
@@ -340,6 +342,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
     const now = new Date();
     const sentTime = order.last_sent_at ? new Date(order.last_sent_at) : new Date(order.created_at);
     const diffInMinutes = Math.floor((now.getTime() - sentTime.getTime()) / (1000 * 60));
+    console.log('🔵 [TIME] Using DATABASE time:', diffInMinutes, 'min');
     return Math.max(0, diffInMinutes);
   };
 
@@ -360,8 +363,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
   };
 
   const markOrderAsSent = (orderId: string) => {
+    console.log('🔴 [RESEND] Marking order as sent:', orderId, 'at', Date.now());
     const newMap = new Map(recentlySentOrders);
     newMap.set(orderId, Date.now());
+    console.log('🔴 [RESEND] New map size:', newMap.size, 'entries:', Array.from(newMap.entries()));
     setRecentlySentOrders(newMap);
   };
 
@@ -1080,6 +1085,8 @@ Thank you for contacting us! 🌟`;
                   const isDelayed = isReallyDelayed(order) && canShowResendButton; // 15+ minutes without response
                   const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton; // < 3 minutes (waiting period)
                   const isOrderProcessing = isProcessing(order.id);
+                  
+                  console.log('🟢 [BUTTON] Order', order.order_number, '- minutesSinceSent:', minutesSinceSent, 'isRecentlySent:', isRecentlySent, 'isWithin3Min:', isWithinThreeMinutes(order));
                   
                   return (
                     <TableRow 
