@@ -181,7 +181,23 @@ export default function Orders() {
     }
   }, []); // Empty dependencies to make it stable
 
-  const setupRealtimeSubscription = () => {
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+
+    if (user) {
+      fetchUserProfile();
+      fetchOrders();
+    }
+  }, [user, authLoading, fetchOrders]);
+
+  // Separate useEffect for Realtime subscription
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('🔵 [REALTIME] Setting up subscription...');
     const channel = supabase
       .channel('orders-changes')
       .on(
@@ -205,25 +221,15 @@ export default function Orders() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔵 [REALTIME] Subscription status:', status);
+      });
 
     return () => {
+      console.log('🔵 [REALTIME] Cleaning up subscription');
       supabase.removeChannel(channel);
     };
-  };
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-      return;
-    }
-
-    if (user) {
-      fetchUserProfile();
-      fetchOrders();
-      setupRealtimeSubscription();
-    }
-  }, [user, authLoading, fetchOrders]);
+  }, [user]);
 
   const checkSpecialistAvailability = async (
     specialistIds: string[],
