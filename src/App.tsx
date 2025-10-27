@@ -41,7 +41,6 @@ import { UserRoleProvider } from "./contexts/UserRoleContext";
 import { PermissionRedirect } from "./components/auth/PermissionRedirect";
 import DeepLinkController from "./components/mobile/DeepLinkController";
 import { AppLoader } from "./components/ui/app-loader";
-import { useInitialPermissions } from "./hooks/useInitialPermissions";
 
 const queryClient = new QueryClient();
 
@@ -95,9 +94,6 @@ function MobileLanding() {
   const [deepLink, setDeepLink] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [pendingRouteChecked, setPendingRouteChecked] = useState(false);
-  
-  // Request all necessary permissions on first launch
-  useInitialPermissions();
 
   // Extract route from deep link URL (supports custom schemes + path-based)
   const extractRoute = (url: string): string | null => {
