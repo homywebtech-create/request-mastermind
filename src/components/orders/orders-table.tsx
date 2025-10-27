@@ -34,6 +34,7 @@ interface Order {
   order_link?: string;
   created_at: string;
   last_sent_at?: string;
+  expires_at?: string | null;
   send_to_all_companies?: boolean;
   booking_type?: string | null;
   booking_date?: string | null;
@@ -305,7 +306,9 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
     }).format(new Date(dateString));
   };
 
-  // Timer effect to update recently sent orders
+  // Timer effect to update recently sent orders and countdown
+  const [, setTick] = useState(0);
+  
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -323,7 +326,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
       if (updated) {
         setRecentlySentOrders(newMap);
       }
-    }, 10000); // Check every 10 seconds
+      
+      // Trigger re-render for countdown timer
+      setTick(prev => prev + 1);
+    }, 1000); // Update every second for countdown
     
     return () => clearInterval(interval);
   }, [recentlySentOrders]);
@@ -358,6 +364,30 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
 
   const isReallyDelayed = (order: Order) => {
     return getTimeSinceSent(order) >= 15;
+  };
+
+  // Check if order can be resent based on expiry time
+  const canResendOrder = (order: Order) => {
+    if (!order.expires_at) return true; // If no expiry set, allow resend
+    const expiryTime = new Date(order.expires_at).getTime();
+    const now = Date.now();
+    return now >= expiryTime;
+  };
+
+  // Get time remaining until order expires (for countdown)
+  const getTimeUntilExpiry = (order: Order): { minutes: number; seconds: number } | null => {
+    if (!order.expires_at) return null;
+    const expiryTime = new Date(order.expires_at).getTime();
+    const now = Date.now();
+    const diff = expiryTime - now;
+    
+    if (diff <= 0) return null;
+    
+    const totalSeconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    return { minutes, seconds };
   };
 
   const isProcessing = (orderId: string) => {
@@ -1118,6 +1148,8 @@ Thank you for contacting us! 🌟`;
                   const isDelayed = isReallyDelayed(order) && canShowResendButton; // 15+ minutes without response
                   const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton; // < 3 minutes (waiting period)
                   const isOrderProcessing = isProcessing(order.id);
+                  const canResend = canResendOrder(order);
+                  const timeUntilExpiry = getTimeUntilExpiry(order);
                   
                   return (
                     <TableRow 
@@ -1310,30 +1342,32 @@ Thank you for contacting us! 🌟`;
                           {/* Show resend button for pending orders and orders without quotes */}
                           {canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView)) && (
                             <>
-                              <Button
-                                size="sm"
-                                variant={isRecentlySent ? "destructive" : "default"}
-                                onClick={() => openResendDialog(order)}
-                                disabled={isRecentlySent || isOrderProcessing}
-                                className="flex items-center gap-1"
-                              >
-                                 {isOrderProcessing ? (
-                                  <>
-                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                    {t.sending}
-                                  </>
-                                ) : isRecentlySent ? (
-                                  <>
-                                    <Send className="h-3 w-3" />
-                                    {t.resendIn.replace('{minutes}', Math.max(1, 3 - minutesSinceSent).toString())}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Send className="h-3 w-3" />
-                                    {minutesSinceSent >= 999999 ? t.resend : `${t.resend} (${minutesSinceSent} min)`}
-                                  </>
+                              <div className="flex flex-col gap-1">
+                                <Button
+                                  size="sm"
+                                  variant={!canResend ? "destructive" : "default"}
+                                  onClick={() => openResendDialog(order)}
+                                  disabled={!canResend || isOrderProcessing}
+                                  className="flex items-center gap-1"
+                                >
+                                   {isOrderProcessing ? (
+                                    <>
+                                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                      {t.sending}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className="h-3 w-3" />
+                                      {minutesSinceSent >= 999999 ? t.resend : `${t.resend} (${minutesSinceSent} min)`}
+                                    </>
+                                  )}
+                                </Button>
+                                {!canResend && timeUntilExpiry && (
+                                  <div className="text-xs text-destructive font-medium text-center">
+                                    {timeUntilExpiry.minutes}:{timeUntilExpiry.seconds.toString().padStart(2, '0')}
+                                  </div>
                                 )}
-                              </Button>
+                              </div>
 
                               {isPending && (
                                 <Button
