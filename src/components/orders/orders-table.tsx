@@ -612,17 +612,26 @@ Thank you for contacting us! 🌟`;
       }
 
       // 4) Update order broadcast flags and timestamp
-      const { error } = await supabase
+      const timestamp = new Date().toISOString();
+      console.log('🔄 [UPDATE] Updating order', orderId, 'with last_sent_at:', timestamp);
+      
+      const { data: updateData, error } = await supabase
         .from('orders')
         .update({
           send_to_all_companies: true,
           company_id: null,
           specialist_id: null,
-          last_sent_at: new Date().toISOString(),
+          last_sent_at: timestamp,
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select('last_sent_at');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [UPDATE] Error updating order:', error);
+        throw error;
+      }
+      
+      console.log('✅ [UPDATE] Order updated successfully. New last_sent_at:', updateData?.[0]?.last_sent_at);
 
       // Send Firebase push notifications to all specialists
       try {
@@ -650,9 +659,11 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(orderId);
       
+      console.log('🔄 [REFRESH] Calling onRefreshOrders...');
       // Refresh orders to get updated last_sent_at from database
       if (onRefreshOrders) {
         await onRefreshOrders();
+        console.log('✅ [REFRESH] onRefreshOrders completed');
       }
       
       toast({
@@ -712,17 +723,26 @@ Thank you for contacting us! 🌟`;
       }
 
       // Update order timestamp and flags
-      const { error } = await supabase
+      const timestamp = new Date().toISOString();
+      console.log('🔄 [UPDATE] Updating order', order.id, 'with last_sent_at:', timestamp);
+      
+      const { data: updateData, error } = await supabase
         .from('orders')
         .update({
           send_to_all_companies: false,
           company_id: order.company_id,
           specialist_id: null,
-          last_sent_at: new Date().toISOString(),
+          last_sent_at: timestamp,
         })
-        .eq('id', order.id);
+        .eq('id', order.id)
+        .select('last_sent_at');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [UPDATE] Error updating order:', error);
+        throw error;
+      }
+      
+      console.log('✅ [UPDATE] Order updated successfully. New last_sent_at:', updateData?.[0]?.last_sent_at);
 
       // Send Firebase push notifications to company specialists
       try {
@@ -794,14 +814,23 @@ Thank you for contacting us! 🌟`;
       }
 
       // Update timestamp to trigger notifications
-      const { error } = await supabase
+      const timestamp = new Date().toISOString();
+      console.log('🔄 [UPDATE] Updating order', order.id, 'with last_sent_at:', timestamp);
+      
+      const { data: updateData, error } = await supabase
         .from('orders')
         .update({
-          last_sent_at: new Date().toISOString(),
+          last_sent_at: timestamp,
         })
-        .eq('id', order.id);
+        .eq('id', order.id)
+        .select('last_sent_at');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [UPDATE] Error updating order:', error);
+        throw error;
+      }
+      
+      console.log('✅ [UPDATE] Order updated successfully. New last_sent_at:', updateData?.[0]?.last_sent_at);
 
       // Send Firebase push notifications to same specialists
       try {
