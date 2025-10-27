@@ -633,6 +633,17 @@ Thank you for contacting us! 🌟`;
       
       console.log('✅ [UPDATE] Order updated successfully. New last_sent_at:', updateData?.[0]?.last_sent_at);
 
+      // Update local orders state immediately
+      const updatedOrders = orders.map(order => 
+        order.id === orderId 
+          ? { ...order, last_sent_at: updateData?.[0]?.last_sent_at || timestamp }
+          : order
+      );
+      // Force re-render by creating new array reference
+      if (onRefreshOrders) {
+        await onRefreshOrders();
+      }
+
       // Send Firebase push notifications to all specialists
       try {
         console.log('📤 [FCM] إرسال إشعارات Firebase...');
@@ -766,8 +777,10 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
       
-      // Realtime will update the UI automatically
-      console.log('✅ [REFRESH] Relying on realtime subscription for update');
+      // Refresh orders to get updated last_sent_at
+      if (onRefreshOrders) {
+        await onRefreshOrders();
+      }
       
       toast({
         title: t.sendSuccessful,
@@ -852,8 +865,10 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
       
-      // Realtime will update the UI automatically
-      console.log('✅ [REFRESH] Relying on realtime subscription for update');
+      // Refresh orders to get updated last_sent_at
+      if (onRefreshOrders) {
+        await onRefreshOrders();
+      }
       
       toast({
         title: t.sendSuccessful,
