@@ -328,18 +328,20 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   }, [recentlySentOrders]);
 
   const getTimeSinceSent = (order: Order) => {
-    // Check local state first
+    // Check local state first for immediate UI updates
     const localSentTime = recentlySentOrders.get(order.id);
     if (localSentTime) {
       const diffInMinutes = Math.floor((Date.now() - localSentTime) / (1000 * 60));
-      return Math.max(0, diffInMinutes); // Never return negative
+      console.log('📍 [RESEND] Using LOCAL time for order', order.order_number, ':', diffInMinutes, 'min');
+      return Math.max(0, diffInMinutes);
     }
     
     // Fall back to database time
     const now = new Date();
     const sentTime = order.last_sent_at ? new Date(order.last_sent_at) : new Date(order.created_at);
     const diffInMinutes = Math.floor((now.getTime() - sentTime.getTime()) / (1000 * 60));
-    return Math.max(0, diffInMinutes); // Never return negative
+    console.log('📍 [RESEND] Using DATABASE time for order', order.order_number, ':', diffInMinutes, 'min', 'last_sent_at:', order.last_sent_at);
+    return Math.max(0, diffInMinutes);
   };
 
   const isOverThreeMinutes = (order: Order) => {
@@ -359,9 +361,11 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   };
 
   const markOrderAsSent = (orderId: string) => {
+    console.log('📍 [RESEND] Marking order as sent:', orderId, 'at', new Date().toISOString());
     const newMap = new Map(recentlySentOrders);
     newMap.set(orderId, Date.now());
     setRecentlySentOrders(newMap);
+    console.log('📍 [RESEND] Updated recentlySentOrders map size:', newMap.size);
   };
 
   const setOrderProcessing = (orderId: string, processing: boolean) => {
@@ -641,9 +645,9 @@ Thank you for contacting us! 🌟`;
         console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
       }
 
-      // Mark order as sent locally
+      // Mark order as sent locally for immediate UI update
       markOrderAsSent(orderId);
-
+      
       toast({
         title: t.sendSuccessful,
         description: t.sentToSpecialists.replace('{count}', (allSpecialists?.length || 0).toString()),
@@ -736,9 +740,9 @@ Thank you for contacting us! 🌟`;
         console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
       }
 
-      // Mark order as sent locally
+      // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
-
+      
       toast({
         title: t.sendSuccessful,
         description: t.sentToSpecialists.replace('{count}', (companySpecialists?.length || 0).toString()),
@@ -810,9 +814,9 @@ Thank you for contacting us! 🌟`;
         console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
       }
 
-      // Mark order as sent locally
+      // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
-
+      
       toast({
         title: t.sendSuccessful,
         description: t.sentToSpecialists.replace('{count}', currentSpecialists.length.toString()),
