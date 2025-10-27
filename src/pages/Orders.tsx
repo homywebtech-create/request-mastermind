@@ -172,14 +172,14 @@ export default function Orders() {
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
-        title: t.errorLoading,
+        title: 'خطأ في التحميل',
         description: error.message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast, t]);
+  }, []); // Empty dependencies to make it stable
 
   const setupRealtimeSubscription = () => {
     const channel = supabase
@@ -665,14 +665,17 @@ export default function Orders() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <OrdersTable
-          orders={orders}
-          onUpdateStatus={handleUpdateStatus}
-          onLinkCopied={handleLinkCopied}
-          onRefreshOrders={fetchOrders}
-          filter={filter}
-          onFilterChange={setFilter}
-        />
+        <>
+          {console.log('🔷 [PARENT] Passing fetchOrders to OrdersTable. Exists:', !!fetchOrders, 'Type:', typeof fetchOrders)}
+          <OrdersTable
+            orders={orders}
+            onUpdateStatus={handleUpdateStatus}
+            onLinkCopied={handleLinkCopied}
+            onRefreshOrders={fetchOrders}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
+        </>
       )}
 
       <SpecialistAvailabilityDialog
