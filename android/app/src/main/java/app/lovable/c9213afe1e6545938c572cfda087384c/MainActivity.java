@@ -130,7 +130,7 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
             
             // Default new orders channel with rich notification features
             NotificationChannel channel = new NotificationChannel(
-                "new-orders-v3",
+                "new-orders-v4",
                 "New Orders",
                 NotificationManager.IMPORTANCE_HIGH
             );
@@ -149,13 +149,13 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                 .build();
 
-            Uri soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
+            Uri soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE);
             channel.setSound(soundUri, audioAttributes);
             notificationManager.createNotificationChannel(channel);
 
             // Call-style channel for urgent bookings with maximum interruption
             NotificationChannel callChannel = new NotificationChannel(
-                "booking-calls-v2",
+                "booking-calls-v3",
                 "Booking Calls",
                 NotificationManager.IMPORTANCE_HIGH
             );
