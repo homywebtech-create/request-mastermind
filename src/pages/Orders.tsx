@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useToast } from "@/hooks/use-toast";
@@ -114,7 +114,7 @@ export default function Orders() {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const timestamp = Date.now();
       console.log('🔄 [FETCH] Starting fetchOrders at', timestamp);
@@ -192,7 +192,7 @@ export default function Orders() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, t]);
 
   const setupRealtimeSubscription = () => {
     const channel = supabase

@@ -114,6 +114,8 @@ interface OrdersTableProps {
 }
 
 export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrders, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
+  console.log('🔷 [COMPONENT] OrdersTable rendered. onRefreshOrders exists:', !!onRefreshOrders);
+  
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -574,6 +576,7 @@ Thank you for contacting us! 🌟`;
   }, [selectedCompanyId]);
 
   const handleSendToAll = async (orderId: string) => {
+    console.log('🔷 [HANDLE] handleSendToAll called. onRefreshOrders exists:', !!onRefreshOrders);
     setOrderProcessing(orderId, true);
     try {
       // 1) Read existing assignments
