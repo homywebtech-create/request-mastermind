@@ -87,19 +87,6 @@ export default function Orders() {
   }>({ open: false, specialists: [] });
   const [pendingOrderData, setPendingOrderData] = useState<OrderFormData | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-      return;
-    }
-
-    if (user) {
-      fetchUserProfile();
-      fetchOrders();
-      setupRealtimeSubscription();
-    }
-  }, [user, authLoading]);
-
   const fetchUserProfile = async () => {
     if (!user) return;
     
@@ -214,6 +201,19 @@ export default function Orders() {
       supabase.removeChannel(channel);
     };
   };
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+
+    if (user) {
+      fetchUserProfile();
+      fetchOrders();
+      setupRealtimeSubscription();
+    }
+  }, [user, authLoading, fetchOrders]);
 
   const checkSpecialistAvailability = async (
     specialistIds: string[],
