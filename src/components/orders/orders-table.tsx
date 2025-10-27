@@ -659,6 +659,9 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(orderId);
       
+      // Small delay to ensure database replication
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       console.log('🔄 [REFRESH] Calling onRefreshOrders...');
       // Refresh orders to get updated last_sent_at from database
       if (onRefreshOrders) {
@@ -770,6 +773,9 @@ Thank you for contacting us! 🌟`;
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
       
+      // Small delay to ensure database replication
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Refresh orders to get updated last_sent_at from database
       if (onRefreshOrders) {
         await onRefreshOrders();
@@ -857,6 +863,9 @@ Thank you for contacting us! 🌟`;
 
       // Mark order as sent locally for immediate UI update
       markOrderAsSent(order.id);
+      
+      // Small delay to ensure database replication
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Refresh orders to get updated last_sent_at from database
       if (onRefreshOrders) {
