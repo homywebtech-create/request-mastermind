@@ -350,6 +350,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     return getTimeSinceSent(order) < 3;
   };
 
+  const isReallyDelayed = (order: Order) => {
+    return getTimeSinceSent(order) >= 15;
+  };
+
   const isProcessing = (orderId: string) => {
     return processingOrders.has(orderId);
   };
@@ -1057,14 +1061,14 @@ Thank you for contacting us! 🌟`;
                   const minutesSinceSent = getTimeSinceSent(order);
                   // Show delayed status for all orders that can be resent, not just pending ones
                   const canShowResendButton = canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView));
-                  const isDelayed = isOverThreeMinutes(order) && canShowResendButton;
-                  const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton;
+                  const isDelayed = isReallyDelayed(order) && canShowResendButton; // 15+ minutes without response
+                  const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton; // < 3 minutes (waiting period)
                   const isOrderProcessing = isProcessing(order.id);
                   
                   return (
                     <TableRow 
                       key={order.id}
-                      className={isDelayed ? "bg-destructive/10 border-destructive/20" : isRecentlySent ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" : ""}
+                      className={isDelayed ? "bg-destructive/10 border-destructive/20" : ""}
                     >
                       <TableCell>
                         <Badge variant="secondary" className="font-mono">
@@ -1237,7 +1241,7 @@ Thank you for contacting us! 🌟`;
                             <TrackingStageBadge stage={order.tracking_stage} />
                           )}
                           {isPending && (
-                            <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : isRecentlySent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                            <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : 'text-muted-foreground'}`}>
                               {isDelayed 
                                 ? t.noResponseSince.replace('{minutes}', minutesSinceSent.toString())
                                 : t.sentWaiting.replace('{minutes}', minutesSinceSent.toString())
@@ -1254,7 +1258,7 @@ Thank you for contacting us! 🌟`;
                             <>
                               <Button
                                 size="sm"
-                                variant={isDelayed ? "destructive" : "default"}
+                                variant={isRecentlySent ? "destructive" : "default"}
                                 onClick={() => openResendDialog(order)}
                                 disabled={isRecentlySent || isOrderProcessing}
                                 className="flex items-center gap-1"
@@ -1267,7 +1271,7 @@ Thank you for contacting us! 🌟`;
                                 ) : isRecentlySent ? (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {t.resendIn.replace('{minutes}', Math.max(0, 3 - minutesSinceSent).toString())}
+                                    {t.resendIn.replace('{minutes}', Math.max(1, 3 - minutesSinceSent).toString())}
                                   </>
                                 ) : (
                                   <>
