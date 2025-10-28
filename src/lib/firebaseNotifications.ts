@@ -108,13 +108,11 @@ export class FirebaseNotificationManager {
 
         // Step 5: Listen for notification action (tap)
         await PushNotifications.addListener('pushNotificationActionPerformed', async (notification) => {
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('👆 [NOTIFICATION TAP] User tapped notification');
-          console.log('📦 Full notification data:', JSON.stringify(notification, null, 2));
+          console.log('👆 [TAP] تم النقر على الإشعار:', notification);
           
           // Get the route from notification data
           const route = notification.notification.data?.route || '/specialist-orders/new';
-          console.log('🔀 [NAVIGATION] Target route:', route);
+          console.log('🔀 حفظ وجهة التنقل:', route);
           
           const { Preferences } = await import('@capacitor/preferences');
           await Preferences.set({
@@ -122,19 +120,7 @@ export class FirebaseNotificationManager {
             value: route,
           });
           
-          console.log('✅ [SAVED] Route saved to preferences');
-          
-            // CRITICAL: Emit event for immediate navigation when app is running
-            // Use the correct route path based on where we want to navigate
-            const targetRoute = route === '/specialist-orders/new' 
-              ? '/specialist/new-orders' 
-              : route;
-            
-            window.dispatchEvent(new CustomEvent('notificationNavigate', { 
-              detail: { route: targetRoute } 
-            }));
-            console.log('📤 [EVENT] Navigation event dispatched for route:', targetRoute);
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          console.log('✅ تم حفظ وجهة التنقل - سيتم التوجيه بعد استعادة الجلسة');
         });
 
         // Step 6: Listen for registration errors

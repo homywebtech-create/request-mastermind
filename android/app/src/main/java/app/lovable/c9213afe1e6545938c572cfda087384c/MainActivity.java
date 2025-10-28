@@ -22,11 +22,9 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         registerPlugin(NotificationPermissionPlugin.class);
         registerPlugin(BatteryOptimizationPlugin.class);
-        registerPlugin(NotificationRoutePlugin.class);
         createNotificationChannel();
         checkAndRequestPermissions();
         ensureWakeAndShowIfFromNotification(getIntent());
-        handleNotificationRoute(getIntent());
     }
 
     @Override
@@ -34,33 +32,6 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         ensureWakeAndShowIfFromNotification(intent);
-        handleNotificationRoute(intent);
-    }
-    
-    private void handleNotificationRoute(Intent intent) {
-        if (intent == null) return;
-        
-        boolean fromNotification = intent.getBooleanExtra("fromNotification", false);
-        String route = intent.getStringExtra("route");
-        
-        android.util.Log.d("MainActivity", "📍 handleNotificationRoute - fromNotification: " + fromNotification + ", route: " + route);
-        
-        if (fromNotification && route != null && !route.isEmpty()) {
-            // Map old routes to new routes
-            String targetRoute = route;
-            if (route.equals("/specialist-orders/new")) {
-                targetRoute = "/specialist/new-orders";
-            }
-            
-            final String finalRoute = targetRoute;
-            
-            // Post delay to ensure JS is ready
-            new android.os.Handler().postDelayed(() -> {
-                getBridge().triggerJSEvent("notificationRoute", "window", 
-                    "{\"route\":\"" + finalRoute + "\"}");
-                android.util.Log.d("MainActivity", "✅ Sent notificationRoute event with route: " + finalRoute);
-            }, 500);
-        }
     }
     
 private void ensureWakeAndShowIfFromNotification(Intent intent) {
@@ -130,7 +101,7 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
             
             // Default new orders channel with rich notification features
             NotificationChannel channel = new NotificationChannel(
-                "new-orders-v4",
+                "new-orders-v3",
                 "New Orders",
                 NotificationManager.IMPORTANCE_HIGH
             );
@@ -149,13 +120,13 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                 .build();
 
-            Uri soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE);
+            Uri soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
             channel.setSound(soundUri, audioAttributes);
             notificationManager.createNotificationChannel(channel);
 
             // Call-style channel for urgent bookings with maximum interruption
             NotificationChannel callChannel = new NotificationChannel(
-                "booking-calls-v3",
+                "booking-calls-v2",
                 "Booking Calls",
                 NotificationManager.IMPORTANCE_HIGH
             );
@@ -177,25 +148,6 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
             Uri alarmSound = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE);
             callChannel.setSound(alarmSound, alarmAttributes);
             notificationManager.createNotificationChannel(callChannel);
-        }
-    }
-    
-    @CapacitorPlugin(name = "NotificationRoute")
-    public static class NotificationRoutePlugin extends Plugin {
-        @PluginMethod
-        public void getNotificationRoute(PluginCall call) {
-            Intent intent = getActivity().getIntent();
-            if (intent != null) {
-                boolean fromNotification = intent.getBooleanExtra("fromNotification", false);
-                String route = intent.getStringExtra("route");
-                
-                com.getcapacitor.JSObject ret = new com.getcapacitor.JSObject();
-                ret.put("fromNotification", fromNotification);
-                ret.put("route", route != null ? route : "");
-                call.resolve(ret);
-            } else {
-                call.reject("No intent found");
-            }
         }
     }
     

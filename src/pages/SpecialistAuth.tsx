@@ -23,7 +23,6 @@ import {
 import { countries } from "@/data/countries";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
-import { AppLoader } from "@/components/ui/app-loader";
 
 export default function SpecialistAuth() {
   const [step, setStep] = useState<'phone' | 'code'>('phone');
@@ -41,25 +40,30 @@ export default function SpecialistAuth() {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // Use getUser() instead of getSession() - it's faster and cached
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (user) {
+        if (session?.user) {
           console.log('✅ Existing session found, redirecting to dashboard');
           
-          // Quick check - just verify user has a profile
-          // The main app will handle detailed specialist verification
+          // Verify the user is a specialist
           const { data: profile } = await supabase
             .from('profiles')
             .select('phone')
-            .eq('user_id', user.id)
-            .maybeSingle();
+            .eq('user_id', session.user.id)
+            .single();
 
           if (profile?.phone) {
-            // Don't check specialist status here - let the app handle it
-            // This reduces initial load time
-            navigate('/', { replace: true });
-            return;
+            const { data: specialist } = await supabase
+              .from('specialists')
+              .select('id, is_active')
+              .eq('phone', profile.phone)
+              .single();
+
+            if (specialist?.is_active) {
+              // Redirect to specialist dashboard
+              navigate('/specialist-orders', { replace: true });
+              return;
+            }
           }
         }
       } catch (error) {
@@ -215,17 +219,7 @@ export default function SpecialistAuth() {
         }
       });
 
-      // Handle HTTP errors (non-2xx responses)
-      if (error) {
-        const errorMessage = data?.error || error.message || "Failed to verify code";
-        toast({
-          title: t.common.error,
-          description: errorMessage,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
+      if (error) throw error;
 
       if (data?.error) {
         toast({
@@ -292,11 +286,23 @@ export default function SpecialistAuth() {
         // Continue anyway - non-critical
       }
 
-      // Centralized routing: pending route is handled by MobileLanding at "/" after login.
+      // Check for pending route from notification click
+      if (Capacitor.getPlatform() !== 'web') {
+        const { Preferences } = await import('@capacitor/preferences');
+        const { value: pendingRoute } = await Preferences.get({ key: 'pendingRoute' });
+        
+        if (pendingRoute) {
+          console.log('🔗 [AUTH] Found pending route after login:', pendingRoute);
+          await Preferences.remove({ key: 'pendingRoute' });
+          console.log("✅ Login successful - navigating to pending route:", pendingRoute);
+          navigate(pendingRoute, { replace: true });
+          return;
+        }
+      }
 
-      // Navigate to root; MobileLanding will route to deep link or default page.
-      console.log("✅ Login successful - navigating to root for centralized routing");
-      navigate("/", { replace: true });
+      // Navigate to orders page (deep links are handled by App.tsx)
+      console.log("✅ Login successful - navigating to orders");
+      navigate("/specialist-orders", { replace: true });
     } catch (error: any) {
       console.error('Error verifying code:', error);
       toast({
@@ -311,7 +317,14 @@ export default function SpecialistAuth() {
 
   // Show loading while checking session
   if (isCheckingSession) {
-    return <AppLoader message="جاري التحقق من الجلسة..." />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">جاري التحقق من الجلسة...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

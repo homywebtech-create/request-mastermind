@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +12,6 @@ import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
-import { SpecialistAvailabilityDialog } from "@/components/orders/SpecialistAvailabilityDialog";
 
 interface OrderFormData {
   customerName: string;
@@ -41,8 +40,6 @@ interface Order {
   notes?: string;
   order_link?: string;
   created_at: string;
-  updated_at?: string;
-  last_sent_at?: string;
   send_to_all_companies?: boolean;
   customers: {
     name: string;
@@ -81,11 +78,19 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [unavailableDialog, setUnavailableDialog] = useState<{
-    open: boolean;
-    specialists: Array<{ id: string; name: string }>;
-  }>({ open: false, specialists: [] });
-  const [pendingOrderData, setPendingOrderData] = useState<OrderFormData | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+
+    if (user) {
+      fetchUserProfile();
+      fetchOrders();
+      setupRealtimeSubscription();
+    }
+  }, [user, authLoading]);
 
   const fetchUserProfile = async () => {
     if (!user) return;
@@ -101,10 +106,8 @@ export default function Orders() {
     }
   };
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = async () => {
     try {
-      const timestamp = Date.now();
-      console.log('🔄 [FETCH] Starting fetchOrders at', timestamp);
       setLoading(true);
       
       const { data, error } = await supabase
@@ -120,17 +123,10 @@ export default function Orders() {
           notes,
           order_link,
           created_at,
-          updated_at,
-          last_sent_at,
           send_to_all_companies,
-          booking_type,
-          hours_count,
           customers (
             name,
-            whatsapp_number,
-            area,
-            budget,
-            budget_type
+            whatsapp_number
           ),
           companies (
             name
@@ -145,12 +141,7 @@ export default function Orders() {
               name,
               phone,
               nationality,
-              image_url,
-              company_id,
-              companies (
-                id,
-                name
-              )
+              image_url
             )
           )
         `)
@@ -160,139 +151,39 @@ export default function Orders() {
 
       console.log('🔍 Admin Orders - Sample:', data?.[0]);
       console.log('📋 Order number check:', data?.[0]?.order_number);
-      console.log('🕐 last_sent_at check:', {
-        'ORD-0005': data?.find(o => o.order_number === 'ORD-0005')?.last_sent_at,
-        'ORD-0004': data?.find(o => o.order_number === 'ORD-0004')?.last_sent_at,
-        'ORD-0003': data?.find(o => o.order_number === 'ORD-0003')?.last_sent_at,
-      });
 
       setOrders((data || []) as Order[]);
-      console.log('✅ [FETCH] Orders set. Total:', data?.length);
-      console.log('📊 [FETCH] ORD-0005 last_sent_at:', data?.find(o => o.order_number === 'ORD-0005')?.last_sent_at);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
-        title: 'خطأ في التحميل',
+        title: t.errorLoading,
         description: error.message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependencies to make it stable
+  };
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-      return;
-    }
-
-    if (user) {
-      fetchUserProfile();
-      fetchOrders();
-    }
-  }, [user, authLoading, fetchOrders]);
-
-  // Separate useEffect for Realtime subscription
-  useEffect(() => {
-    if (!user) {
-      console.log('⚠️ [REALTIME] User not available, skipping subscription');
-      return;
-    }
-
-    console.log('🔵 [REALTIME] Setting up subscription for user:', user.id);
+  const setupRealtimeSubscription = () => {
     const channel = supabase
-      .channel('orders-realtime-channel')
+      .channel('orders-changes')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'orders'
         },
-        (payload) => {
-          console.log('🔴 [REALTIME] Order updated - Full payload:', payload);
-          console.log('🔴 [REALTIME] Order ID:', payload.new?.id);
-          console.log('🔴 [REALTIME] New last_sent_at:', payload.new?.last_sent_at);
-          
-          // Update the order in state immediately
-          if (payload.new && 'last_sent_at' in payload.new) {
-            console.log('🟢 [REALTIME] Updating order in state...');
-            setOrders(prevOrders => {
-              const updated = prevOrders.map(order => 
-                order.id === payload.new.id 
-                  ? { ...order, last_sent_at: payload.new.last_sent_at as string }
-                  : order
-              );
-              console.log('🟢 [REALTIME] State updated successfully');
-              return updated;
-            });
-          } else {
-            console.warn('⚠️ [REALTIME] No last_sent_at in payload');
-          }
+        () => {
+          fetchOrders();
         }
       )
-      .subscribe((status) => {
-        console.log('🔵 [REALTIME] Subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ [REALTIME] Successfully subscribed to orders updates!');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ [REALTIME] Channel error!');
-        }
-      });
+      .subscribe();
 
     return () => {
-      console.log('🔵 [REALTIME] Cleaning up subscription');
       supabase.removeChannel(channel);
     };
-  }, [user]);
-
-  const checkSpecialistAvailability = async (
-    specialistIds: string[],
-    orderData: OrderFormData
-  ): Promise<Array<{ id: string; name: string }>> => {
-    // If no specific company selected, skip availability check
-    if (!orderData.companyId) return [];
-
-    const unavailableSpecialists: Array<{ id: string; name: string }> = [];
-
-    // Create a temporary order to check availability
-    const tempOrderId = crypto.randomUUID();
-    
-    for (const specialistId of specialistIds) {
-      try {
-        // Check if specialist is available using the database function
-        const { data, error } = await supabase.rpc('is_specialist_available_for_order', {
-          _specialist_id: specialistId,
-          _order_id: tempOrderId
-        });
-
-        if (error) {
-          console.error('Error checking availability:', error);
-          continue;
-        }
-
-        // If not available, add to unavailable list
-        if (!data) {
-          const { data: specialist } = await supabase
-            .from('specialists')
-            .select('name')
-            .eq('id', specialistId)
-            .single();
-
-          if (specialist) {
-            unavailableSpecialists.push({
-              id: specialistId,
-              name: specialist.name
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Exception checking availability:', error);
-      }
-    }
-
-    return unavailableSpecialists;
   };
 
   const handleCreateOrder = async (formData: OrderFormData) => {
@@ -305,28 +196,6 @@ export default function Orders() {
         budgetType: formData.budgetType,
         area: formData.area
       });
-
-      // Check specialist availability if specific company is selected
-      if (formData.companyId && !formData.sendToAll) {
-        const { data: companySpecialists } = await supabase
-          .from('specialists')
-          .select('id')
-          .eq('company_id', formData.companyId)
-          .eq('is_active', true);
-
-        const specialistIds = companySpecialists?.map(s => s.id) || [];
-        
-        if (specialistIds.length > 0) {
-          const unavailable = await checkSpecialistAvailability(specialistIds, formData);
-          
-          if (unavailable.length > 0) {
-            // Show dialog with options
-            setUnavailableDialog({ open: true, specialists: unavailable });
-            setPendingOrderData(formData);
-            return; // Stop here, let user decide
-          }
-        }
-      }
 
       const whatsapp = (formData.whatsappNumber || '').trim();
       if (!whatsapp) {
@@ -590,33 +459,6 @@ export default function Orders() {
 
       if (error) throw error;
 
-      // Notify the accepted specialist (if any) about status change → deep link to tracking page
-      try {
-        const { data: accepted, error: acceptedErr } = await supabase
-          .from('order_specialists')
-          .select('specialist_id')
-          .eq('order_id', orderId)
-          .eq('is_accepted', true)
-          .maybeSingle();
-
-        if (!acceptedErr && accepted?.specialist_id) {
-          await supabase.functions.invoke('send-push-notification', {
-            body: {
-              specialistIds: [accepted.specialist_id],
-              title: 'تحديث حالة الطلب',
-              body: `تم تحديث حالة طلبك إلى: ${newStatus}`,
-              data: {
-                orderId,
-                type: 'order_status_change',
-                status: newStatus,
-              },
-            },
-          });
-        }
-      } catch (e) {
-        console.warn('🔔 Push for status change failed (non-blocking):', e);
-      }
-
       toast({
         title: t.statusUpdated,
         description: t.statusUpdatedSuccess,
@@ -701,34 +543,10 @@ export default function Orders() {
           orders={orders}
           onUpdateStatus={handleUpdateStatus}
           onLinkCopied={handleLinkCopied}
-          onRefreshOrders={fetchOrders}
           filter={filter}
           onFilterChange={setFilter}
         />
       )}
-
-      <SpecialistAvailabilityDialog
-        open={unavailableDialog.open}
-        onOpenChange={(open) => {
-          setUnavailableDialog({ ...unavailableDialog, open });
-          if (!open) {
-            setPendingOrderData(null);
-          }
-        }}
-        unavailableSpecialists={unavailableDialog.specialists}
-        onChooseOtherCompany={() => {
-          // Reset form to allow choosing another company
-          if (pendingOrderData) {
-            setPendingOrderData({ ...pendingOrderData, companyId: undefined, sendToAll: false });
-            toast({
-              title: language === 'ar' ? 'اختر شركة أخرى' : 'Choose Another Company',
-              description: language === 'ar' 
-                ? 'الرجاء اختيار شركة أخرى لديها محترفات متوفرات'
-                : 'Please choose another company with available specialists',
-            });
-          }
-        }}
-      />
     </div>
   );
 }

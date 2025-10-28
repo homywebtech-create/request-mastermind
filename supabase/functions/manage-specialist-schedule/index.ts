@@ -42,19 +42,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse booking date and time
-    // Handle time ranges (e.g., "14:00-14:30") by taking the start time
-    const timeString = booking_time.includes('-') 
-      ? booking_time.split('-')[0].trim() 
-      : booking_time;
-    const [hours, minutes] = timeString.split(':').map(Number);
-    
-    if (isNaN(hours) || isNaN(minutes)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid time value' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
+    const [hours, minutes] = booking_time.split(':').map(Number);
     const startDateTime = new Date(booking_date);
     startDateTime.setHours(hours, minutes, 0, 0);
 

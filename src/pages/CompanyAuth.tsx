@@ -41,7 +41,6 @@ export default function CompanyAuth() {
       console.log("2. Entered number:", phoneNumber);
       console.log("3. Full number after merge:", cleanPhone);
 
-      // البحث في جدول الشركات أولاً
       const { data: allCompanies, error: fetchError } = await supabase
         .from("companies")
         .select("id, name, phone")
@@ -62,68 +61,12 @@ export default function CompanyAuth() {
         console.log("5. Trying search without + sign:", phoneWithoutPlus);
       }
 
-      // إذا لم يتم العثور على الشركة، ابحث في company_users (الآن يمكن للجميع القراءة)
       if (!company) {
-        console.log("6. Not found in companies, searching company_users...");
-        
-        const { data: allCompanyUsers, error: usersError } = await supabase
-          .from("company_users")
-          .select(`
-            id,
-            phone,
-            full_name,
-            is_active,
-            company_id,
-            companies (
-              id,
-              name,
-              is_active
-            )
-          `)
-          .eq("is_active", true);
-
-        console.log("7. Query error:", usersError);
-        console.log("7. All company users count:", allCompanyUsers?.length);
-
-        if (!usersError && allCompanyUsers) {
-          console.log("7. All company user numbers:", allCompanyUsers.map(u => u.phone));
-          
-          // فلتر الشركات النشطة فقط
-          const activeUsers = allCompanyUsers.filter(u => u.companies?.is_active === true);
-          console.log("8. Active company users count:", activeUsers.length);
-          
-          // دالة لتنظيف رقم الهاتف
-          const normalizePhone = (phone: string) => phone?.replace(/\+/g, '') || '';
-          const searchPhoneClean = normalizePhone(cleanPhone);
-          
-          // جرب البحث المباشر أولاً
-          let companyUser = activeUsers.find(u => u.phone === cleanPhone);
-          
-          // إذا لم ينجح، قارن الأرقام بدون علامة + (لمعالجة حالات التكرار مثل +974+974)
-          if (!companyUser) {
-            console.log("9. Trying normalized phone search. Search:", searchPhoneClean);
-            companyUser = activeUsers.find(u => {
-              const userPhoneClean = normalizePhone(u.phone);
-              console.log("   - Comparing:", userPhoneClean, "with", searchPhoneClean);
-              // تحقق من التطابق الكامل أو إذا كان أحدهما يحتوي على الآخر (لحالة التكرار)
-              return userPhoneClean === searchPhoneClean || 
-                     userPhoneClean.includes(searchPhoneClean) ||
-                     searchPhoneClean.includes(userPhoneClean);
-            });
-          }
-
-          if (companyUser && companyUser.companies) {
-            company = {
-              id: companyUser.companies.id,
-              name: companyUser.companies.name,
-              phone: cleanPhone
-            };
-            console.log("10. Company user found:", companyUser.full_name, "for company:", company.name);
-          }
-        }
+        company = allCompanies?.find(c => c.phone?.endsWith(phoneNumber));
+        console.log("6. Trying search with number only:", phoneNumber);
       }
 
-      console.log("11. Final company:", company);
+      console.log("7. Company found:", company);
 
       if (!company) {
         toast({
@@ -142,8 +85,7 @@ export default function CompanyAuth() {
         return;
       }
 
-      console.log("12. Company found:", company.name);
-
+      console.log("8. Company found:", company.name);
 
       const { data, error } = await supabase.functions.invoke("request-verification-code", {
         body: { phone: company.phone },

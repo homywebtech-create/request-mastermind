@@ -48,11 +48,6 @@ const permissions = [
     labelAr: "عرض التقارير",
     labelEn: "View Reports",
   },
-  {
-    value: "view_statistics",
-    labelAr: "عرض الإحصائيات",
-    labelEn: "View Statistics",
-  },
 ];
 
 export function CompanyPermissionsSelector({

@@ -16,9 +16,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { openWhatsApp, openMaps as openMapsHelper } from "@/lib/externalLinks";
 
-type Stage = 'initial' | 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
+type Stage = 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
 interface Order {
   id: string;
@@ -45,7 +44,7 @@ interface Order {
 export default function OrderTracking() {
   const { orderId } = useParams();
   const [order, setOrder] = useState<Order | null>(null);
-  const [stage, setStage] = useState<Stage>('initial');
+  const [stage, setStage] = useState<Stage>('moving');
   const [movingTimer, setMovingTimer] = useState(60); // 60 seconds
   const [arrivedTimer, setArrivedTimer] = useState(60); // 60 seconds
   const [isLoading, setIsLoading] = useState(true);
@@ -93,8 +92,8 @@ export default function OrderTracking() {
           setStage(currentOrder.tracking_stage as Stage);
         }
       } else {
-        // Start with 'initial' stage - just showing order info
-        setStage('initial');
+        // Start with 'moving' stage in UI only (not in DB yet)
+        setStage('moving');
       }
     };
 
@@ -222,7 +221,7 @@ export default function OrderTracking() {
     }
   };
 
-  const openMaps = async () => {
+  const openMaps = () => {
     if (!order?.gps_latitude || !order?.gps_longitude) {
       toast({
         title: "Error",
@@ -233,25 +232,14 @@ export default function OrderTracking() {
     }
 
     // Open maps with coordinates - will open in default map app on phone
-    await openMapsHelper(order.gps_latitude, order.gps_longitude);
-  };
-
-  const handleStartMoving = async () => {
-    setStage('moving');
-    await updateOrderStage('moving');
-    toast({
-      title: "بدء التحرك",
-      description: "تم تسجيل بدء التحرك نحو العميل",
-    });
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
+    window.open(mapsUrl, '_blank');
   };
 
   const updateOrderStage = async (newStage: Stage) => {
     if (!orderId) return;
 
     try {
-      // Don't update DB for 'initial' stage
-      if (newStage === 'initial') return;
-
       // Only update status to completed when payment is received
       const statusUpdate = newStage === 'payment_received' 
         ? 'completed' 
@@ -472,213 +460,120 @@ export default function OrderTracking() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-6">
-      <div className="max-w-2xl mx-auto space-y-6 p-4">
-        {/* Order Info Card - Mobile Optimized */}
-        <Card className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-md">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">👤</span>
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-foreground">{order.customer?.name}</h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">{order.customer?.area}</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Order Info Card */}
+        <Card className="p-6">
+          <h2 className="text-2xl font-bold mb-4">{order.customer?.name}</h2>
+          <div className="space-y-2 text-sm">
+            <p><span className="font-semibold">Service:</span> {order.service_type}</p>
+            <p><span className="font-semibold">Area:</span> {order.customer?.area}</p>
+            <p><span className="font-semibold">Hours:</span> {order.hours_count}</p>
           </div>
-          
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <div className="bg-background/50 p-2.5 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-0.5">الخدمة</p>
-              <p className="font-semibold text-sm leading-tight">{order.service_type}</p>
-            </div>
-            <div className="bg-background/50 p-2.5 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-0.5">المدة</p>
-              <p className="font-semibold text-sm leading-tight">{order.hours_count} ساعات</p>
-            </div>
-          </div>
-          
-          {order.notes && (
-            <div className="mt-3 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">ملاحظات</p>
-              <p className="text-xs text-foreground leading-relaxed">{order.notes}</p>
-            </div>
-          )}
         </Card>
 
-        {/* Initial Stage - New: Just order info with start button */}
-        {stage === 'initial' && (
-          <div className="space-y-4">
-            {/* Map Location Button */}
-            <Button 
-              onClick={openMaps} 
-              className="w-full h-14 text-lg font-bold shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-blue-500 to-blue-600"
-              size="lg"
-            >
-              <MapPin className="h-6 w-6 ml-2" />
-              <span>عرض موقع العميل على الخريطة</span>
-            </Button>
-
-            {/* Start Moving Button */}
-            <Button 
-              onClick={handleStartMoving} 
-              className="w-full h-16 text-xl font-black shadow-xl hover:shadow-2xl transition-all bg-gradient-to-r from-green-500 to-green-600 hover:scale-[1.02]"
-              size="lg"
-            >
-              <ArrowRight className="h-7 w-7 ml-2" />
-              <span>ابدأ التحرك للعمل</span>
-            </Button>
-
-            {/* Back Button */}
-            <Button 
-              onClick={() => navigate(-1)} 
-              variant="outline"
-              className="w-full h-12 text-base font-semibold"
-            >
-              رجوع
-            </Button>
-          </div>
-        )}
-
-        {/* Moving Stage - Compact */}
+        {/* Moving Stage */}
         {stage === 'moving' && (
-          <div className="space-y-4 pb-24">
-            {/* Compact Status Card */}
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
-              <div className="p-4 text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full">
-                  <Navigation className="h-6 w-6" />
+          <Card className="p-6 space-y-4">
+            <h3 className="text-xl font-bold text-center mb-6">Moving to Customer</h3>
+            
+            {/* Customer Contact */}
+            <div className="bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">Customer Contact:</p>
+                  <p className="text-lg font-bold text-foreground">{order.customer?.whatsapp_number}</p>
                 </div>
-                <h2 className="text-lg font-bold">في الطريق إلى العميل</h2>
-                <p className="text-sm text-blue-50">العميل بانتظارك كن هناك في الوقت</p>
               </div>
-            </Card>
-
-            {/* Compact Navigation Icons */}
-            <div className="flex gap-3 justify-center">
-              <Button
-                size="icon"
-                className="h-14 w-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg"
-                onClick={openMaps}
-                title="موقع العميل"
+              <Button 
+                onClick={() => window.open(`https://wa.me/${order.customer?.whatsapp_number.replace(/\+/g, '')}`, '_blank')}
+                className="w-full bg-green-600 hover:bg-green-700"
               >
-                <MapPin className="h-6 w-6" />
-              </Button>
-
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-14 w-14 rounded-full shadow-lg"
-                onClick={shareLocation}
-                title="شارك الموقع"
-              >
-                <Share2 className="h-6 w-6" />
+                <Phone className="ml-2 h-5 w-5" />
+                Call Customer via WhatsApp
               </Button>
             </div>
 
-            {/* Fixed Arrival Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50">
+            <Button onClick={openMaps} className="w-full" size="lg">
+              <Navigation className="ml-2 h-5 w-5" />
+              Click to Navigate to Customer
+            </Button>
+
+            <Button onClick={shareLocation} variant="outline" className="w-full" size="lg">
+              <Share2 className="ml-2 h-5 w-5" />
+              Share My Location
+            </Button>
+
+            <div className="pt-4 border-t">
               <Button
                 onClick={handleArrived}
                 disabled={movingTimer > 0}
-                className={`w-full h-14 text-lg font-bold shadow-lg transition-all ${
-                  movingTimer > 0 
-                    ? 'opacity-50 cursor-not-allowed bg-gray-400' 
-                    : 'bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:shadow-xl'
-                }`}
+                className="w-full"
                 size="lg"
+                variant={movingTimer > 0 ? "secondary" : "default"}
               >
-                <CheckCircle className="h-6 w-6 ml-2" />
-                <span>لقد وصلت إلى الموقع</span>
+                <CheckCircle className="ml-2 h-5 w-5" />
+                I Have Arrived
+                {movingTimer > 0 && (
+                  <span className="mr-2 text-sm">({movingTimer}s)</span>
+                )}
               </Button>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* Arrived Stage - Simplified */}
+        {/* Arrived Stage */}
         {stage === 'arrived' && (
-          <Card className="overflow-hidden border-2 border-green-300 dark:border-green-700 shadow-2xl">
-            {/* Stage Header - Compact */}
-            <div className="bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 py-3 px-4">
-              <div className="flex items-center justify-center gap-3">
-                <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
-                  <CheckCircle className="h-6 w-6 text-white" />
+          <Card className="p-6 space-y-4">
+            <h3 className="text-xl font-bold text-center mb-6">Arrived at Location</h3>
+            
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <div className="flex items-start gap-2">
+                <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold">Customer Address:</p>
+                  <p className="text-sm text-muted-foreground">{order.building_info || 'No details available'}</p>
                 </div>
-                <h3 className="text-xl font-bold text-white">وصلت إلى الموقع</h3>
               </div>
             </div>
 
-            <div className="p-4 space-y-3">
-              {/* Customer Contact - Simplified */}
-              <div className="bg-green-50 dark:from-green-950/40 border border-green-200 dark:border-green-700 p-3 rounded-lg">
-                <div className="flex items-center gap-3 mb-3">
-                  <Phone className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-xs text-green-700 dark:text-green-300">رقم العميل</p>
-                    <p className="text-sm font-semibold text-green-900 dark:text-green-100 font-mono">
-                      {order.customer?.whatsapp_number}
-                    </p>
-                  </div>
+            {/* Customer Contact */}
+            <div className="bg-gradient-to-br from-green-50 to-green-50/50 dark:from-green-950/30 dark:to-green-950/10 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">Customer Contact:</p>
+                  <p className="text-lg font-bold text-foreground">{order.customer?.whatsapp_number}</p>
                 </div>
-                
-                <Button 
-                  onClick={() => openWhatsApp(order.customer?.whatsapp_number || '')}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <Phone className="h-4 w-4 ml-2" />
-                  <span>الاتصال بالعميل عبر واتساب</span>
-                </Button>
               </div>
+              <Button 
+                onClick={() => window.open(`https://wa.me/${order.customer?.whatsapp_number.replace(/\+/g, '')}`, '_blank')}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <Phone className="ml-2 h-5 w-5" />
+                Call Customer via WhatsApp
+              </Button>
+            </div>
 
-              {/* Building Info - Compact */}
-              {order.building_info && (
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-4 w-4 text-blue-600" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">معلومات المبنى</p>
-                      <p className="text-sm font-medium">
-                        {order.building_info}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <Button onClick={openMaps} variant="outline" className="w-full">
+              <Navigation className="ml-2 h-5 w-5" />
+              View Location on Map
+            </Button>
 
-              {/* Timer Protection - Compact */}
-              {arrivedTimer > 0 ? (
-                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
-                  <div className="flex items-center gap-3 justify-center">
-                    <Clock className="h-5 w-5 text-amber-600 animate-pulse" />
-                    <div className="text-center">
-                      <p className="text-xs text-amber-700">سيتم تفعيل زر بدء العمل بعد</p>
-                      <p className="text-lg font-bold text-amber-600 tabular-nums">
-                        00:00:{arrivedTimer.toString().padStart(2, '0')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 justify-center">
-                    <Play className="h-4 w-4 text-purple-600" />
-                    <p className="text-sm font-medium text-purple-700">
-                      يمكنك الآن بدء ساعة العمل
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Start Work Button - Simplified */}
+            <div className="pt-4 border-t">
               <Button
                 onClick={handleStartWork}
                 disabled={arrivedTimer > 0}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                className="w-full"
+                size="lg"
+                variant={arrivedTimer > 0 ? "secondary" : "default"}
               >
-                <Play className="h-4 w-4 ml-2" />
-                <span>بدء ساعة العمل</span>
+                <Play className="ml-2 h-5 w-5" />
+                Start Work
+                {arrivedTimer > 0 && (
+                  <span className="mr-2 text-sm">({arrivedTimer}s)</span>
+                )}
               </Button>
             </div>
           </Card>
@@ -1000,8 +895,8 @@ export default function OrderTracking() {
           </Card>
         )}
 
-        {/* Back Button - Hide when payment is received or in initial stage */}
-        {stage !== 'payment_received' && stage !== 'initial' && (
+        {/* Back Button - Hide when payment is received */}
+        {stage !== 'payment_received' && (
           <Button
             onClick={() => navigate(-1)}
             variant="outline"

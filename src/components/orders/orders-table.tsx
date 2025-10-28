@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy } from "lucide-react";
-import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -20,7 +19,6 @@ import { useTranslation } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
-import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 
 interface Order {
   id: string;
@@ -34,7 +32,6 @@ interface Order {
   order_link?: string;
   created_at: string;
   last_sent_at?: string;
-  expires_at?: string | null;
   send_to_all_companies?: boolean;
   booking_type?: string | null;
   booking_date?: string | null;
@@ -107,14 +104,13 @@ interface OrdersTableProps {
   orders: Order[];
   onUpdateStatus: (orderId: string, status: string) => void;
   onLinkCopied: (orderId: string) => void;
-  onRefreshOrders?: () => Promise<void>;
   filter: string;
   onFilterChange: (filter: string) => void;
   isCompanyView?: boolean;
   companyId?: string;
 }
 
-export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrders, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
+export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -123,13 +119,6 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
   const { user } = useAuth();
   const { role } = useUserRole();
   const { hasPermission } = useUserPermissions(user?.id, role);
-  const { hasPermission: hasCompanyPermission } = useCompanyUserPermissions(user?.id);
-  
-  // Determine if user can manage orders based on view type
-  const canManageOrders = isCompanyView 
-    ? hasCompanyPermission('manage_orders')
-    : hasPermission('manage_orders');
-  
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [resendDialogOpen, setResendDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -163,15 +152,11 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
     if (filter === 'awaiting-response') {
       if (isCompanyView && companyId) {
         // For companies: show orders where company specialists have quoted but not accepted yet
-        // AND exclude orders that have started tracking (in progress)
         const companySpecialists = order.order_specialists?.filter(os => 
           os.specialists?.company_id === companyId
         );
-        const hasQuoteNotAccepted = companySpecialists && 
-                                     companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
-        const notInProgress = !order.tracking_stage && order.status !== 'completed';
-        
-        return hasQuoteNotAccepted && notInProgress;
+        return companySpecialists && 
+               companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
       } else {
         // For admin: show orders with quotes but NO quote accepted yet
         const hasAnyAccepted = order.order_specialists?.some(os => os.is_accepted === true);
@@ -306,9 +291,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
     }).format(new Date(dateString));
   };
 
-  // Timer effect to update recently sent orders and countdown
-  const [, setTick] = useState(0);
-  
+  // Timer effect to update recently sent orders
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -326,68 +309,32 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, onRefreshOrd
       if (updated) {
         setRecentlySentOrders(newMap);
       }
-      
-      // Trigger re-render for countdown timer
-      setTick(prev => prev + 1);
-    }, 1000); // Update every second for countdown
+    }, 10000); // Check every 10 seconds
     
     return () => clearInterval(interval);
   }, [recentlySentOrders]);
 
   const getTimeSinceSent = (order: Order) => {
-    // Check local state first for immediate UI updates
+    // Check local state first
     const localSentTime = recentlySentOrders.get(order.id);
     if (localSentTime) {
       const diffInMinutes = Math.floor((Date.now() - localSentTime) / (1000 * 60));
-      return Math.max(0, diffInMinutes);
+      return diffInMinutes;
     }
     
-    // If last_sent_at is null/undefined, the order hasn't been sent yet - return a large number
-    if (!order.last_sent_at) {
-      return 999999; // Very large number to indicate never sent
-    }
-    
-    // Use database time
+    // Fall back to database time
     const now = new Date();
-    const sentTime = new Date(order.last_sent_at);
+    const sentTime = order.last_sent_at ? new Date(order.last_sent_at) : new Date(order.created_at);
     const diffInMinutes = Math.floor((now.getTime() - sentTime.getTime()) / (1000 * 60));
-    return Math.max(0, diffInMinutes);
+    return diffInMinutes;
   };
 
   const isOverThreeMinutes = (order: Order) => {
-    return getTimeSinceSent(order) >= 3;
+    return getTimeSinceSent(order) > 3;
   };
 
   const isWithinThreeMinutes = (order: Order) => {
-    return getTimeSinceSent(order) < 3;
-  };
-
-  const isReallyDelayed = (order: Order) => {
-    return getTimeSinceSent(order) >= 15;
-  };
-
-  // Check if order can be resent based on expiry time
-  const canResendOrder = (order: Order) => {
-    if (!order.expires_at) return true; // If no expiry set, allow resend
-    const expiryTime = new Date(order.expires_at).getTime();
-    const now = Date.now();
-    return now >= expiryTime;
-  };
-
-  // Get time remaining until order expires (for countdown)
-  const getTimeUntilExpiry = (order: Order): { minutes: number; seconds: number } | null => {
-    if (!order.expires_at) return null;
-    const expiryTime = new Date(order.expires_at).getTime();
-    const now = Date.now();
-    const diff = expiryTime - now;
-    
-    if (diff <= 0) return null;
-    
-    const totalSeconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    
-    return { minutes, seconds };
+    return getTimeSinceSent(order) <= 3;
   };
 
   const isProcessing = (orderId: string) => {
@@ -461,12 +408,17 @@ You can use this link to track your order status at any time.
 
 Thank you for contacting us! 🌟`;
     
-    openWhatsAppHelper(cleanNumber, message);
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
     onLinkCopied(order.id);
   };
 
   const openWhatsApp = (phoneNumber: string) => {
-    openWhatsAppHelper(phoneNumber);
+    const cleanNumber = phoneNumber.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${cleanNumber}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleAcceptQuote = async (orderSpecialistId: string, orderId: string) => {
@@ -481,38 +433,6 @@ Thank you for contacting us! 🌟`;
         .eq('id', orderSpecialistId);
 
       if (error) throw error;
-
-      // Fetch the specialist to notify
-      let specialistId: string | null = null;
-      try {
-        const { data: os, error: osErr } = await supabase
-          .from('order_specialists')
-          .select('specialist_id')
-          .eq('id', orderSpecialistId)
-          .single();
-        if (!osErr) specialistId = os?.specialist_id || null;
-      } catch (e) {
-        console.warn('Could not resolve specialist_id for accepted quote:', e);
-      }
-
-      // Send booking confirmation push → deep link to /order-tracking/:orderId
-      if (specialistId) {
-        try {
-          await supabase.functions.invoke('send-push-notification', {
-            body: {
-              specialistIds: [specialistId],
-              title: 'تأكيد الحجز',
-              body: 'تم تأكيد حجزك بنجاح',
-              data: {
-                orderId,
-                type: 'booking_confirmed',
-              },
-            },
-          });
-        } catch (e) {
-          console.warn('🔔 Push booking_confirmed failed (non-blocking):', e);
-        }
-      }
 
       toast({
         title: t.quoteAccepted,
@@ -642,34 +562,17 @@ Thank you for contacting us! 🌟`;
       }
 
       // 4) Update order broadcast flags and timestamp
-      const timestamp = new Date().toISOString();
-      console.log('🔄 [UPDATE] Updating order', orderId, 'with last_sent_at:', timestamp);
-      
-      const { data: updateData, error } = await supabase
+      const { error } = await supabase
         .from('orders')
         .update({
           send_to_all_companies: true,
           company_id: null,
           specialist_id: null,
-          last_sent_at: timestamp,
+          last_sent_at: new Date().toISOString(),
         })
-        .eq('id', orderId)
-        .select('last_sent_at');
+        .eq('id', orderId);
 
-      if (error) {
-        console.error('❌ [UPDATE] Error updating order:', error);
-        throw error;
-      }
-      
-      console.log('✅ [UPDATE] Order updated successfully. New last_sent_at:', updateData?.[0]?.last_sent_at);
-
-      // Mark order as sent locally FIRST for immediate UI update
-      markOrderAsSent(orderId);
-      
-      // Then refresh orders to get updated last_sent_at from database
-      if (onRefreshOrders) {
-        await onRefreshOrders();
-      }
+      if (error) throw error;
 
       // Send Firebase push notifications to all specialists
       try {
@@ -694,7 +597,9 @@ Thank you for contacting us! 🌟`;
         console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
       }
 
-      
+      // Mark order as sent locally
+      markOrderAsSent(orderId);
+
       toast({
         title: t.sendSuccessful,
         description: t.sentToSpecialists.replace('{count}', (allSpecialists?.length || 0).toString()),
@@ -752,26 +657,17 @@ Thank you for contacting us! 🌟`;
       }
 
       // Update order timestamp and flags
-      const timestamp = new Date().toISOString();
-      console.log('🔄 [UPDATE] Updating order', order.id, 'with last_sent_at:', timestamp);
-      
-      const { data: updateData, error } = await supabase
+      const { error } = await supabase
         .from('orders')
         .update({
           send_to_all_companies: false,
           company_id: order.company_id,
           specialist_id: null,
-          last_sent_at: timestamp,
+          last_sent_at: new Date().toISOString(),
         })
-        .eq('id', order.id)
-        .select('last_sent_at');
+        .eq('id', order.id);
 
-      if (error) {
-        console.error('❌ [UPDATE] Error updating order:', error);
-        throw error;
-      }
-      
-      console.log('✅ [UPDATE] Order updated successfully. New last_sent_at:', updateData?.[0]?.last_sent_at);
+      if (error) throw error;
 
       // Send Firebase push notifications to company specialists
       try {
@@ -796,14 +692,9 @@ Thank you for contacting us! 🌟`;
         console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
       }
 
-      // Mark order as sent locally for immediate UI update
+      // Mark order as sent locally
       markOrderAsSent(order.id);
-      
-      // Refresh orders to get updated last_sent_at
-      if (onRefreshOrders) {
-        await onRefreshOrders();
-      }
-      
+
       toast({
         title: t.sendSuccessful,
         description: t.sentToSpecialists.replace('{count}', (companySpecialists?.length || 0).toString()),
@@ -843,23 +734,14 @@ Thank you for contacting us! 🌟`;
       }
 
       // Update timestamp to trigger notifications
-      const timestamp = new Date().toISOString();
-      console.log('🔄 [UPDATE] Updating order', order.id, 'with last_sent_at:', timestamp);
-      
-      const { data: updateData, error } = await supabase
+      const { error } = await supabase
         .from('orders')
         .update({
-          last_sent_at: timestamp,
+          last_sent_at: new Date().toISOString(),
         })
-        .eq('id', order.id)
-        .select('last_sent_at');
+        .eq('id', order.id);
 
-      if (error) {
-        console.error('❌ [UPDATE] Error updating order:', error);
-        throw error;
-      }
-      
-      console.log('✅ [UPDATE] Order updated successfully. New last_sent_at:', updateData?.[0]?.last_sent_at);
+      if (error) throw error;
 
       // Send Firebase push notifications to same specialists
       try {
@@ -884,14 +766,9 @@ Thank you for contacting us! 🌟`;
         console.error('⚠️ [FCM] استثناء في إرسال الإشعارات:', fcmError);
       }
 
-      // Mark order as sent locally for immediate UI update
+      // Mark order as sent locally
       markOrderAsSent(order.id);
-      
-      // Refresh orders to get updated last_sent_at
-      if (onRefreshOrders) {
-        await onRefreshOrders();
-      }
-      
+
       toast({
         title: t.sendSuccessful,
         description: t.sentToSpecialists.replace('{count}', currentSpecialists.length.toString()),
@@ -986,11 +863,6 @@ Thank you for contacting us! 🌟`;
 
       // Mark order as sent locally
       markOrderAsSent(selectedOrder.id);
-
-      // Refresh orders to get updated last_sent_at
-      if (onRefreshOrders) {
-        await onRefreshOrders();
-      }
 
       // Send Firebase push notifications
       try {
@@ -1143,18 +1015,14 @@ Thank you for contacting us! 🌟`;
                   const customerBudget = order.customers?.budget || '-';
                   const isPending = order.status === 'pending' && (order.company_id || order.send_to_all_companies);
                   const minutesSinceSent = getTimeSinceSent(order);
-                  // Show delayed status for all orders that can be resent, not just pending ones
-                  const canShowResendButton = canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView));
-                  const isDelayed = isReallyDelayed(order) && canShowResendButton; // 15+ minutes without response
-                  const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton; // < 3 minutes (waiting period)
+                  const isDelayed = isOverThreeMinutes(order) && isPending;
+                  const isRecentlySent = isWithinThreeMinutes(order) && isPending;
                   const isOrderProcessing = isProcessing(order.id);
-                  const canResend = canResendOrder(order);
-                  const timeUntilExpiry = getTimeUntilExpiry(order);
                   
                   return (
                     <TableRow 
                       key={order.id}
-                      className={isDelayed ? "bg-destructive/10 border-destructive/20" : ""}
+                      className={isDelayed ? "bg-destructive/10 border-destructive/20" : isRecentlySent ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" : ""}
                     >
                       <TableCell>
                         <Badge variant="secondary" className="font-mono">
@@ -1228,37 +1096,32 @@ Thank you for contacting us! 🌟`;
                                       </div>
                                     </div>
                                     <div className="mt-2 flex gap-2">
-                                      {/* Only show these buttons to users with appropriate permissions */}
-                                      {(canManageOrders || !isCompanyView) && (
-                                        <>
-                                          <Button
-                                            size="sm"
-                                            variant="default"
-                                            className="flex-1"
-                            onClick={() => {
-                              const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
-                              window.location.href = url;
-                            }}
-                                          >
-                                            <Building2 className="h-3 w-3 mr-2" />
-                                            {t.enterCompanyPage}
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                              const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
-                                              navigator.clipboard.writeText(url);
-                                              toast({
-                                                title: t.linkCopiedSuccess,
-                                                description: t.linkCopiedSuccessDesc,
-                                              });
-                                            }}
-                                          >
-                                            <Copy className="h-3 w-3" />
-                                          </Button>
-                                        </>
-                                      )}
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        className="flex-1"
+                                        onClick={() => {
+                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                                          window.open(url, '_blank');
+                                        }}
+                                      >
+                                        <Building2 className="h-3 w-3 mr-2" />
+                                        {t.enterCompanyPage}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                                          navigator.clipboard.writeText(url);
+                                          toast({
+                                            title: t.linkCopiedSuccess,
+                                            description: t.linkCopiedSuccessDesc,
+                                          });
+                                        }}
+                                      >
+                                        <Copy className="h-3 w-3" />
+                                      </Button>
                                     </div>
                                   </div>
                                 ))}
@@ -1326,8 +1189,8 @@ Thank you for contacting us! 🌟`;
                           {order.tracking_stage && (
                             <TrackingStageBadge stage={order.tracking_stage} />
                           )}
-                          {isPending && minutesSinceSent < 999999 && (
-                            <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {isPending && (
+                            <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : isRecentlySent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                               {isDelayed 
                                 ? t.noResponseSince.replace('{minutes}', minutesSinceSent.toString())
                                 : t.sentWaiting.replace('{minutes}', minutesSinceSent.toString())
@@ -1339,48 +1202,38 @@ Thank you for contacting us! 🌟`;
                       
                       <TableCell>
                         <div className="flex items-center gap-2 flex-wrap">
-                          {/* Show resend button for pending orders and orders without quotes */}
-                          {canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView)) && (
+                          {isPending && (
                             <>
-                              <div className="flex flex-col gap-1">
-                                <Button
-                                  size="sm"
-                                  variant={!canResend ? "destructive" : "default"}
-                                  onClick={() => openResendDialog(order)}
-                                  disabled={!canResend || isOrderProcessing}
-                                  className="flex items-center gap-1"
-                                >
-                                   {isOrderProcessing ? (
-                                    <>
-                                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                      {t.sending}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Send className="h-3 w-3" />
-                                      {minutesSinceSent >= 999999 ? t.resend : `${t.resend} (${minutesSinceSent} min)`}
-                                    </>
-                                  )}
-                                </Button>
-                                {!canResend && timeUntilExpiry && (
-                                  <div className="text-xs text-destructive font-medium text-center">
-                                    {timeUntilExpiry.minutes}:{timeUntilExpiry.seconds.toString().padStart(2, '0')}
-                                  </div>
+                              <Button
+                                size="sm"
+                                variant={isDelayed ? "destructive" : "outline"}
+                                onClick={() => openResendDialog(order)}
+                                disabled={Boolean(isRecentlySent) || Boolean(isOrderProcessing)}
+                                className="flex items-center gap-1"
+                              >
+                                {isOrderProcessing ? (
+                                  <>
+                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    {t.sending}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Send className="h-3 w-3" />
+                                    {isRecentlySent ? t.resendIn.replace('{minutes}', (3 - minutesSinceSent).toString()) : t.resend}
+                                  </>
                                 )}
-                              </div>
+                              </Button>
 
-                              {isPending && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openSendDialog(order)}
-                                  disabled={Boolean(isOrderProcessing)}
-                                  className="flex items-center gap-1"
-                                >
-                                  <Building2 className="h-3 w-3" />
-                                  {t.change}
-                                </Button>
-                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openSendDialog(order)}
+                                disabled={Boolean(isOrderProcessing)}
+                                className="flex items-center gap-1"
+                              >
+                                <Building2 className="h-3 w-3" />
+                                {t.change}
+                              </Button>
                             </>
                           )}
                         </div>
