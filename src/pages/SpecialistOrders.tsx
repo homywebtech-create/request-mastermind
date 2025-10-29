@@ -54,6 +54,10 @@ interface Order {
   gps_longitude: number | null;
   building_info: string | null;
   order_number: string | null;
+  cancelled_by?: string | null;
+  cancelled_by_role?: string | null;
+  cancellation_reason?: string | null;
+  cancelled_at?: string | null;
   customer: {
     name: string;
     whatsapp_number: string;
@@ -359,6 +363,10 @@ export default function SpecialistOrders() {
           gps_longitude,
           building_info,
           order_number,
+          cancelled_by,
+          cancelled_by_role,
+          cancellation_reason,
+          cancelled_at,
           customer:customers (
             name,
             whatsapp_number,
@@ -1184,16 +1192,49 @@ export default function SpecialistOrders() {
                           <p className="text-sm font-bold text-red-700 dark:text-red-300 mb-2">
                             ✕ تم إلغاء هذا الطلب
                           </p>
-                          {order.notes && (
+                          
+                          {/* Who cancelled */}
+                          {order.cancelled_by && (
+                            <div className="mt-2 p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                              <p className="text-xs text-red-700 dark:text-red-300 mb-1 font-bold">
+                                تم الإلغاء بواسطة:
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-red-900 dark:text-red-200 font-medium">
+                                  {order.cancelled_by}
+                                </p>
+                                <Badge variant="outline" className="text-xs">
+                                  {order.cancelled_by_role === 'customer' && 'عميل'}
+                                  {order.cancelled_by_role === 'specialist' && 'محترف'}
+                                  {order.cancelled_by_role === 'company' && 'شركة'}
+                                  {order.cancelled_by_role === 'admin' && 'مدير'}
+                                  {!order.cancelled_by_role && 'غير محدد'}
+                                </Badge>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Cancellation reason */}
+                          {(order.cancellation_reason || order.notes) && (
                             <div className="mt-2 p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
                               <p className="text-xs text-red-700 dark:text-red-300 mb-1 font-bold">
                                 سبب الإلغاء:
                               </p>
                               <p className="text-sm text-red-900 dark:text-red-200">
-                                {order.notes}
+                                {order.cancellation_reason || order.notes}
                               </p>
                             </div>
                           )}
+                          
+                          {/* Cancelled at */}
+                          {order.cancelled_at && (
+                            <div className="mt-2">
+                              <p className="text-xs text-muted-foreground">
+                                تاريخ الإلغاء: <span className="font-medium">{new Date(order.cancelled_at).toLocaleString('ar-SA')}</span>
+                              </p>
+                            </div>
+                          )}
+                          
                           {order.order_specialist?.quoted_price && (
                             <div className="mt-2">
                               <p className="text-xs text-muted-foreground">

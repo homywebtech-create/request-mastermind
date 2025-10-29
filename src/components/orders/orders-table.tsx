@@ -38,6 +38,10 @@ interface Order {
   booking_type?: string | null;
   booking_date?: string | null;
   hours_count?: string | null;
+  cancelled_by?: string | null;
+  cancelled_by_role?: string | null;
+  cancellation_reason?: string | null;
+  cancelled_at?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -232,6 +236,17 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
         // For admin: show completed orders
         return order.tracking_stage === 'payment_received' ||
                order.status === 'completed';
+      }
+    }
+    
+    if (filter === 'cancelled') {
+      if (isCompanyView && companyId) {
+        // For companies: show cancelled orders related to this company
+        return order.status === 'cancelled' && 
+               (order.company_id === companyId || order.send_to_all_companies);
+      } else {
+        // For admin: show all cancelled orders
+        return order.status === 'cancelled';
       }
     }
     
@@ -1136,7 +1151,81 @@ Thank you for contacting us! 🌟`;
                       </TableCell>
 
                       <TableCell>
-                        {filter === 'awaiting-response' ? (
+                        {filter === 'cancelled' ? (
+                          // Show cancellation details for cancelled orders
+                          <div className="bg-destructive/5 rounded-md p-3 border border-destructive/20 space-y-2">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-destructive" />
+                                <span className="text-sm font-semibold text-destructive">
+                                  {language === 'ar' ? 'تم الإلغاء بواسطة:' : 'Cancelled by:'}
+                                </span>
+                              </div>
+                              <div className="text-sm font-medium">
+                                {order.cancelled_by || (language === 'ar' ? 'غير محدد' : 'Not specified')}
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {order.cancelled_by_role === 'customer' && (language === 'ar' ? 'عميل' : 'Customer')}
+                                {order.cancelled_by_role === 'specialist' && (language === 'ar' ? 'محترف' : 'Specialist')}
+                                {order.cancelled_by_role === 'company' && (language === 'ar' ? 'شركة' : 'Company')}
+                                {order.cancelled_by_role === 'admin' && (language === 'ar' ? 'مدير' : 'Admin')}
+                                {!order.cancelled_by_role && (language === 'ar' ? 'غير محدد' : 'Not specified')}
+                              </Badge>
+                            </div>
+                            
+                            {order.cancellation_reason && (
+                              <div className="space-y-1 pt-2 border-t border-destructive/10">
+                                <div className="text-xs font-medium text-muted-foreground">
+                                  {language === 'ar' ? 'السبب:' : 'Reason:'}
+                                </div>
+                                <p className="text-sm">{order.cancellation_reason}</p>
+                              </div>
+                            )}
+                            
+                            {order.cancelled_at && (
+                              <div className="text-xs text-muted-foreground pt-1 border-t border-destructive/10">
+                                {language === 'ar' ? 'تاريخ الإلغاء: ' : 'Cancelled at: '}
+                                {formatDate(order.cancelled_at)}
+                              </div>
+                            )}
+                            
+                            {/* Show company info */}
+                            {order.companies && (
+                              <div className="space-y-1 pt-2 border-t border-destructive/10">
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-xs font-medium">
+                                    {language === 'ar' ? 'الشركة: ' : 'Company: '}
+                                    {order.companies.name}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Show accepted specialist if any */}
+                            {(() => {
+                              const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
+                              if (acceptedSpecialist?.specialists) {
+                                return (
+                                  <div className="space-y-1 pt-2 border-t border-destructive/10">
+                                    <div className="flex items-center gap-2">
+                                      <User className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs font-medium">
+                                        {language === 'ar' ? 'المحترف: ' : 'Specialist: '}
+                                        {acceptedSpecialist.specialists.name}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <Phone className="h-3 w-3" />
+                                      <span dir="ltr">{acceptedSpecialist.specialists.phone}</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                        ) : filter === 'awaiting-response' ? (
                           // Show companies with lowest quotes for awaiting response filter
                           (() => {
                             const companyQuotes = getCompanyQuotes(order);
@@ -1214,18 +1303,18 @@ Thank you for contacting us! 🌟`;
                                     <div className="flex items-center gap-2">
                                       <Building2 className="h-4 w-4 text-primary" />
                                       <span className="text-sm font-semibold text-primary">
-                                        {acceptedSpecialist.specialists.companies?.name || 'Company'}
+                                        {acceptedSpecialist.specialists?.companies?.name || 'Company'}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <User className="h-4 w-4 text-muted-foreground" />
                                       <span className="text-sm font-medium">
-                                        {acceptedSpecialist.specialists.name}
+                                        {acceptedSpecialist.specialists?.name}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Phone className="h-3 w-3" />
-                                      <span dir="ltr">{acceptedSpecialist.specialists.phone}</span>
+                                      <span dir="ltr">{acceptedSpecialist.specialists?.phone}</span>
                                     </div>
                                     {acceptedSpecialist.quoted_price && (
                                       <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">

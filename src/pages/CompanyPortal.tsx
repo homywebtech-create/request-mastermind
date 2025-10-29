@@ -40,6 +40,10 @@ interface Order {
   send_to_all_companies?: boolean;
   booking_type?: string | null;
   hours_count?: string | null;
+  cancelled_by?: string | null;
+  cancelled_by_role?: string | null;
+  cancellation_reason?: string | null;
+  cancelled_at?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -227,6 +231,10 @@ export default function CompanyPortal() {
           send_to_all_companies,
           booking_type,
           hours_count,
+          cancelled_by,
+          cancelled_by_role,
+          cancellation_reason,
+          cancelled_at,
           customers (name, whatsapp_number, area, budget, budget_type),
           companies (name),
           order_specialists (

@@ -518,6 +518,10 @@ export type Database = {
           booking_time: string | null
           booking_type: string | null
           building_info: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_role: string | null
           company_id: string | null
           created_at: string
           created_by: string | null
@@ -550,6 +554,10 @@ export type Database = {
           booking_time?: string | null
           booking_type?: string | null
           building_info?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_role?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -582,6 +590,10 @@ export type Database = {
           booking_time?: string | null
           booking_type?: string | null
           building_info?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_role?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
