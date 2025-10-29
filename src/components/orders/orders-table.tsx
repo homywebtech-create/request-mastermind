@@ -1278,7 +1278,7 @@ Thank you for contacting us! 🌟`;
                                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                     {t.sending}
                                   </>
-                                 ) : isRecentlySent ? (
+                                ) : isRecentlySent ? (
                                   <>
                                     <Send className="h-3 w-3" />
                                     {getRemainingTime(order)}
@@ -1286,7 +1286,7 @@ Thank you for contacting us! 🌟`;
                                 ) : (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {t.resend} ({minutesSinceSent} min)
+                                    {t.resend}
                                   </>
                                 )}
                               </Button>
