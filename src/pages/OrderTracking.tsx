@@ -530,15 +530,6 @@ export default function OrderTracking() {
               <ArrowRight className="h-7 w-7 ml-2" />
               <span>ابدأ التحرك للعمل</span>
             </Button>
-
-            {/* Back Button */}
-            <Button 
-              onClick={() => navigate(-1)} 
-              variant="outline"
-              className="w-full h-12 text-base font-semibold"
-            >
-              رجوع
-            </Button>
           </div>
         )}
 
@@ -1029,16 +1020,6 @@ export default function OrderTracking() {
           </Card>
         )}
 
-        {/* Back Button - Hide when payment is received or in initial stage */}
-        {stage !== 'payment_received' && stage !== 'initial' && (
-          <Button
-            onClick={() => navigate(-1)}
-            variant="outline"
-            className="w-full"
-          >
-            Back
-          </Button>
-        )}
       </div>
     </div>
   );
