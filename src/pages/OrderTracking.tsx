@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star } from "lucide-react";
+import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star, ChevronDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { openWhatsApp, openMaps as openMapsHelper } from "@/lib/externalLinks";
 
 type Stage = 'initial' | 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
@@ -793,62 +798,87 @@ export default function OrderTracking() {
                 </Dialog>
               )}
 
-              <Button
-                onClick={handleEmergency}
-                variant="destructive"
-                className="w-full"
-              >
-                <AlertTriangle className="ml-2 h-5 w-5" />
-                Emergency - Call Company
-              </Button>
+              {/* Emergency Actions - Collapsible Section */}
+              <Collapsible className="w-full border-t pt-4 mt-4">
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="w-full text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <AlertTriangle className="ml-2 h-3 w-3" />
+                    حالات الطوارئ فقط
+                    <ChevronDown className="mr-2 h-3 w-3" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 pt-3">
+                  <p className="text-xs text-center text-muted-foreground mb-3 px-4">
+                    ⚠️ تحذير: هذه الأزرار للحالات الطارئة فقط
+                  </p>
+                  
+                  <Button
+                    onClick={handleEmergency}
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 text-xs"
+                  >
+                    <AlertTriangle className="ml-2 h-3.5 w-3.5" />
+                    اتصال طوارئ بالشركة
+                  </Button>
 
-              <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive hover:text-white">
-                    <XCircle className="ml-2 h-5 w-5" />
-                    Cancel Work
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Cancellation Reason</DialogTitle>
-                    <DialogDescription>
-                      Please select a reason for cancelling the work
-                    </DialogDescription>
-                  </DialogHeader>
-                  <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <RadioGroupItem value="customer_requested" id="customer_requested" />
-                      <Label htmlFor="customer_requested">Customer Requested Cancellation</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <RadioGroupItem value="not_family" id="not_family" />
-                      <Label htmlFor="not_family">Customer is Not Family</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <RadioGroupItem value="other" id="other" />
-                      <Label htmlFor="other">Other Reasons</Label>
-                    </div>
-                  </RadioGroup>
-                  
-                  {cancelReason === 'other' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="other_reason">Write the Reason</Label>
-                      <Textarea
-                        id="other_reason"
-                        value={otherReason}
-                        onChange={(e) => setOtherReason(e.target.value)}
-                        placeholder="Write cancellation reason here..."
-                        rows={4}
-                      />
-                    </div>
-                  )}
-                  
-                  <Button onClick={handleCancelWork} variant="destructive" className="w-full">
-                    Confirm Cancellation
-                  </Button>
-                </DialogContent>
-              </Dialog>
+                  <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="w-full text-destructive/70 hover:text-destructive hover:bg-destructive/5 text-xs"
+                      >
+                        <XCircle className="ml-2 h-3.5 w-3.5" />
+                        إلغاء العمل
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Cancellation Reason</DialogTitle>
+                        <DialogDescription>
+                          Please select a reason for cancelling the work
+                        </DialogDescription>
+                      </DialogHeader>
+                      <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          <RadioGroupItem value="customer_requested" id="customer_requested" />
+                          <Label htmlFor="customer_requested">Customer Requested Cancellation</Label>
+                        </div>
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          <RadioGroupItem value="not_family" id="not_family" />
+                          <Label htmlFor="not_family">Customer is Not Family</Label>
+                        </div>
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          <RadioGroupItem value="other" id="other" />
+                          <Label htmlFor="other">Other Reasons</Label>
+                        </div>
+                      </RadioGroup>
+                      
+                      {cancelReason === 'other' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="other_reason">Write the Reason</Label>
+                          <Textarea
+                            id="other_reason"
+                            value={otherReason}
+                            onChange={(e) => setOtherReason(e.target.value)}
+                            placeholder="Write cancellation reason here..."
+                            rows={4}
+                          />
+                        </div>
+                      )}
+                      
+                      <Button onClick={handleCancelWork} variant="destructive" className="w-full">
+                        Confirm Cancellation
+                      </Button>
+                    </DialogContent>
+                  </Dialog>
+                </CollapsibleContent>
+              </Collapsible>
 
               {workingTime >= totalWorkSeconds && (
                 <>
