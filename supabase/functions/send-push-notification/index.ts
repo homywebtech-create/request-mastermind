@@ -185,8 +185,8 @@ serve(async (req) => {
         // Choose Android channel: use call-style for new orders/tests, standard otherwise
         const androidChannelId =
           (notificationType === 'new_order' || notificationType === 'resend_order' || notificationType === 'test')
-            ? 'booking-calls-v4'
-            : 'new-orders-v5';
+            ? 'booking-calls-v6'
+            : 'new-orders-v6';
 
         // IMPORTANT: Include BOTH notification and data for Android
         // - notification: Ensures FCM displays notification when app is CLOSED
