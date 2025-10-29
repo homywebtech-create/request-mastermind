@@ -6,7 +6,7 @@ interface StatsCardProps {
   title: string;
   value: number;
   icon: React.ReactNode;
-  variant?: 'default' | 'success' | 'warning' | 'pending' | 'awaiting';
+  variant?: 'default' | 'success' | 'warning' | 'pending' | 'awaiting' | 'destructive';
   className?: string;
   isActive?: boolean;
 }
@@ -17,6 +17,7 @@ const variantStyles = {
   warning: "border-warning/20 bg-warning-light",
   pending: "border-pending/20 bg-pending-light",
   awaiting: "border-awaiting/20 bg-awaiting-light",
+  destructive: "border-destructive/20 bg-destructive/5",
 };
 
 const activeVariantStyles = {
@@ -25,6 +26,7 @@ const activeVariantStyles = {
   warning: "border-warning border-4 shadow-lg shadow-warning/20",
   pending: "border-pending border-4 shadow-lg shadow-pending/20",
   awaiting: "border-awaiting border-4 shadow-lg shadow-awaiting/20",
+  destructive: "border-destructive border-4 shadow-lg shadow-destructive/20",
 };
 
 const activeIconColors = {
@@ -33,6 +35,7 @@ const activeIconColors = {
   warning: "text-warning",
   pending: "text-pending",
   awaiting: "text-awaiting",
+  destructive: "text-destructive",
 };
 
 export function StatsCard({ title, value, icon, variant = 'default', className, isActive = false }: StatsCardProps) {

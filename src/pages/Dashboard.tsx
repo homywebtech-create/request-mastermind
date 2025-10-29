@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -72,6 +72,7 @@ interface OrderStats {
   upcoming: number;
   inProgress: number;
   completed: number;
+  cancelled: number;
 }
 
 export default function Dashboard() {
@@ -88,6 +89,7 @@ export default function Dashboard() {
     upcoming: 0,
     inProgress: 0,
     completed: 0,
+    cancelled: 0,
   });
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -337,6 +339,9 @@ export default function Dashboard() {
       return trackingStage === 'payment_received' || o.status === 'completed';
     });
     
+    // Cancelled: Orders that are cancelled
+    const cancelledOrders = ordersList.filter(o => o.status === 'cancelled');
+    
     setStats({
       total: ordersList.filter(o => o.company_id || o.send_to_all_companies).length,
       pending: pendingOrders.length,
@@ -344,6 +349,7 @@ export default function Dashboard() {
       upcoming: upcomingOrders.length,
       inProgress: inProgressOrders.length,
       completed: completedOrders.length,
+      cancelled: cancelledOrders.length,
     });
   };
 
@@ -843,7 +849,7 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
           {userHasPermission('view_new_requests') && (
             <div onClick={() => setFilter('pending')} className="cursor-pointer">
               <StatsCard
@@ -899,6 +905,15 @@ export default function Dashboard() {
               />
             </div>
           )}
+          <div onClick={() => setFilter('cancelled')} className="cursor-pointer">
+            <StatsCard
+              title={language === 'ar' ? 'ملغاة' : 'Cancelled'}
+              value={stats.cancelled}
+              icon={<XCircle className="h-4 w-4" />}
+              variant="destructive"
+              isActive={filter === 'cancelled'}
+            />
+          </div>
         </div>
 
         {userHasPermission('create_order') && (

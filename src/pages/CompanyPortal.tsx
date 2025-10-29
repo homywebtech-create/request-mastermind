@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck, BarChart } from "lucide-react";
+import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck, BarChart, XCircle } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { OrderForm } from "@/components/orders/order-form";
@@ -78,6 +78,7 @@ interface OrderStats {
   upcoming: number;
   inProgress: number;
   completed: number;
+  cancelled: number;
 }
 
 export default function CompanyPortal() {
@@ -98,6 +99,7 @@ export default function CompanyPortal() {
     upcoming: 0,
     inProgress: 0,
     completed: 0,
+    cancelled: 0,
   });
 
   useEffect(() => {
@@ -317,6 +319,12 @@ export default function CompanyPortal() {
              (trackingStage === 'payment_received' || o.status === 'completed');
     });
     
+    // Cancelled (ملغاة): الطلبات الملغاة للشركة
+    const cancelledOrders = ordersList.filter(o => 
+      o.status === 'cancelled' && 
+      (o.company_id === company?.id || o.send_to_all_companies)
+    );
+    
     setStats({
       total: ordersList.length,
       pending: pendingOrders.length,
@@ -324,6 +332,7 @@ export default function CompanyPortal() {
       upcoming: upcomingOrders.length,
       inProgress: inProgressOrders.length,
       completed: completedOrders.length,
+      cancelled: cancelledOrders.length,
     });
   };
 
@@ -601,7 +610,7 @@ export default function CompanyPortal() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
           <div onClick={() => setFilter('new')} className="cursor-pointer">
             <StatsCard
               title="New Orders"
@@ -645,6 +654,15 @@ export default function CompanyPortal() {
               icon={<CheckCircle className="h-4 w-4" />}
               variant="success"
               isActive={filter === 'completed'}
+            />
+          </div>
+          <div onClick={() => setFilter('cancelled')} className="cursor-pointer">
+            <StatsCard
+              title={language === 'ar' ? 'ملغاة' : 'Cancelled'}
+              value={stats.cancelled}
+              icon={<XCircle className="h-4 w-4" />}
+              variant="destructive"
+              isActive={filter === 'cancelled'}
             />
           </div>
         </div>
