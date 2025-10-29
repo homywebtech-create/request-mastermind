@@ -64,6 +64,7 @@ export function GoogleMapLocationPicker({
   const t = translations[language];
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState<string>('');
+  const [isKeyLoading, setIsKeyLoading] = useState(true);
   
   // Fetch API key from edge function
   useEffect(() => {
@@ -77,10 +78,44 @@ export function GoogleMapLocationPicker({
         }
       } catch (error) {
         console.error('Error fetching Google Maps API key:', error);
+      } finally {
+        setIsKeyLoading(false);
       }
     };
     fetchApiKey();
   }, []);
+  
+  // Don't load Google Maps until API key is ready
+  if (isKeyLoading) {
+    return (
+      <div className="flex items-center justify-center h-[500px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+          <p className="text-muted-foreground">{t.loading}</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Render the map component only after API key is loaded
+  return <GoogleMapContent 
+    apiKey={apiKey}
+    onLocationSelect={onLocationSelect}
+    initialLat={initialLat}
+    initialLng={initialLng}
+    language={language}
+  />;
+}
+
+function GoogleMapContent({ 
+  apiKey,
+  onLocationSelect, 
+  initialLat, 
+  initialLng, 
+  language 
+}: GoogleMapLocationPickerProps & { apiKey: string }) {
+  const t = translations[language];
+  const { toast } = useToast();
   
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey,
