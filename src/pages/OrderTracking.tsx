@@ -57,6 +57,8 @@ export default function OrderTracking() {
   const [isPaused, setIsPaused] = useState(false);
   const [workingTime, setWorkingTime] = useState(0);
   const [totalWorkSeconds, setTotalWorkSeconds] = useState(0);
+  const [timeExpired, setTimeExpired] = useState(false);
+  const [alertInterval, setAlertInterval] = useState<NodeJS.Timeout | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -153,15 +155,26 @@ export default function OrderTracking() {
     }
   }, [stage, arrivedStartTime]);
 
-  // Timer for working stage (count up)
+  // Timer for working stage (countdown from totalWorkSeconds to 0)
   useEffect(() => {
-    if (stage === 'working' && !isPaused) {
+    if (stage === 'working' && !isPaused && workingTime < totalWorkSeconds) {
       const timer = setInterval(() => {
-        setWorkingTime(prev => prev + 1);
+        setWorkingTime(prev => {
+          const newTime = prev + 1;
+          
+          // Check if time has expired
+          if (newTime >= totalWorkSeconds && !timeExpired) {
+            setTimeExpired(true);
+            // Start alert with sound and vibration
+            startTimeExpiredAlert();
+          }
+          
+          return newTime;
+        });
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [stage, isPaused]);
+  }, [stage, isPaused, workingTime, totalWorkSeconds, timeExpired]);
 
   // Calculate total work seconds from hours_count
   useEffect(() => {
@@ -170,6 +183,48 @@ export default function OrderTracking() {
       setTotalWorkSeconds(hours * 3600); // Convert hours to seconds
     }
   }, [order]);
+
+  const startTimeExpiredAlert = () => {
+    // Play notification sound
+    const audio = new Audio('/notification-sound.mp3');
+    audio.loop = true;
+    audio.play().catch(err => console.error('Audio play error:', err));
+
+    // Vibrate (if supported)
+    if (navigator.vibrate) {
+      const vibratePattern = [500, 200, 500, 200, 500];
+      const interval = setInterval(() => {
+        navigator.vibrate(vibratePattern);
+      }, 2000);
+      setAlertInterval(interval);
+    }
+
+    toast({
+      title: "انتهى وقت العمل",
+      description: "الوقت المحدد للعمل قد انتهى. يرجى إنهاء العمل",
+      duration: 10000,
+    });
+  };
+
+  const stopTimeExpiredAlert = () => {
+    // Stop any playing audio
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+
+    // Stop vibration
+    if (navigator.vibrate) {
+      navigator.vibrate(0);
+    }
+
+    // Clear interval
+    if (alertInterval) {
+      clearInterval(alertInterval);
+      setAlertInterval(null);
+    }
+  };
 
   const fetchOrder = async () => {
     if (!orderId) return;
@@ -434,6 +489,10 @@ export default function OrderTracking() {
   };
 
   const handleRequestInvoice = async () => {
+    // Stop alert when requesting invoice
+    stopTimeExpiredAlert();
+    setTimeExpired(false);
+    
     await updateOrderStage('invoice_requested');
     setStage('invoice_details');
     toast({
@@ -499,6 +558,10 @@ export default function OrderTracking() {
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getRemainingTime = () => {
+    return Math.max(0, totalWorkSeconds - workingTime);
   };
 
   if (isLoading) {
@@ -756,19 +819,21 @@ export default function OrderTracking() {
         {/* Working Stage */}
         {stage === 'working' && (
           <Card className="p-6 space-y-6">
-            <h3 className="text-xl font-bold text-center">Working</h3>
+            <h3 className="text-xl font-bold text-center">العمل جارٍ</h3>
             
-            {/* Work Timer */}
+            {/* Work Timer - Countdown */}
             <div className="text-center space-y-2">
-              <div className="text-4xl font-bold text-primary">
-                {formatTime(workingTime)}
+              <div className={`text-4xl font-bold tabular-nums ${
+                timeExpired ? 'text-red-600 animate-pulse' : 'text-primary'
+              }`}>
+                {formatTime(getRemainingTime())}
               </div>
               <div className="text-sm text-muted-foreground">
-                of {formatTime(totalWorkSeconds)}
+                من {formatTime(totalWorkSeconds)}
               </div>
-              {workingTime >= totalWorkSeconds && (
-                <div className="text-sm font-semibold text-green-600">
-                  ⏰ Time Limit Reached
+              {timeExpired && (
+                <div className="text-base font-semibold text-red-600 animate-pulse">
+                  ⏰ انتهى وقت العمل - يرجى إنهاء العمل
                 </div>
               )}
             </div>
@@ -776,10 +841,25 @@ export default function OrderTracking() {
             {/* Progress Bar */}
             <div className="w-full bg-muted rounded-full h-2">
               <div
-                className="bg-primary h-2 rounded-full transition-all"
+                className={`h-2 rounded-full transition-all ${
+                  timeExpired ? 'bg-red-600' : 'bg-primary'
+                }`}
                 style={{ width: `${Math.min((workingTime / totalWorkSeconds) * 100, 100)}%` }}
               />
             </div>
+
+            {/* Time Expired Alert Dialog */}
+            {timeExpired && (
+              <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 p-4 animate-pulse">
+                <div className="text-center space-y-3">
+                  <div className="text-4xl">⏰</div>
+                  <h4 className="text-lg font-bold text-red-800">انتهى وقت العمل المحدد</h4>
+                  <p className="text-sm text-red-700">
+                    الوقت المخصص للعمل قد انتهى. يرجى إنهاء العمل والانتقال للفاتورة
+                  </p>
+                </div>
+              </Card>
+            )}
 
             {/* Action Buttons */}
             <div className="space-y-3">
@@ -792,35 +872,47 @@ export default function OrderTracking() {
                 {isPaused ? (
                   <>
                     <Play className="ml-2 h-5 w-5" />
-                    Resume Work
+                    استئناف العمل
                   </>
                 ) : (
                   <>
                     <Pause className="ml-2 h-5 w-5" />
-                    Pause
+                    إيقاف مؤقت
                   </>
                 )}
               </Button>
 
-              {/* Early Finish Button - only show if not at time limit yet */}
-              {workingTime < totalWorkSeconds && (
+              {/* Finish Work Button - Show prominently when time expired */}
+              {timeExpired ? (
+                <Button 
+                  onClick={() => {
+                    stopTimeExpiredAlert();
+                    setShowEarlyFinishDialog(true);
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold animate-pulse"
+                >
+                  <CheckCircle className="ml-2 h-6 w-6" />
+                  إنهاء العمل الآن
+                </Button>
+              ) : (
+                /* Early Finish Button - only show if not at time limit yet */
                 <Dialog open={showEarlyFinishDialog} onOpenChange={setShowEarlyFinishDialog}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white">
                       <CheckCircle className="ml-2 h-5 w-5" />
-                      Finish Work Early
+                      إنهاء العمل مبكراً
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Finish Work Early?</DialogTitle>
+                      <DialogTitle>إنهاء العمل مبكراً؟</DialogTitle>
                       <DialogDescription>
-                        Are you sure you want to finish the work before the scheduled time?
+                        هل أنت متأكد من رغبتك في إنهاء العمل قبل الوقت المحدد؟
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <p className="text-sm text-muted-foreground">
-                        By confirming, you will mark the work as completed and request the invoice.
+                        بالتأكيد، سيتم تسجيل العمل كمنجز وطلب الفاتورة.
                       </p>
                       <div className="flex gap-3">
                         <Button 
@@ -828,13 +920,13 @@ export default function OrderTracking() {
                           variant="outline" 
                           className="flex-1"
                         >
-                          Cancel
+                          إلغاء
                         </Button>
                         <Button 
                           onClick={confirmEarlyFinish} 
                           className="flex-1"
                         >
-                          Yes, I'm Sure
+                          نعم، متأكد
                         </Button>
                       </div>
                     </div>
