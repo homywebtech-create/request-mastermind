@@ -279,33 +279,77 @@ export default function OrderTracking() {
   };
 
   const shareLocation = async () => {
-    if (navigator.share && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            await navigator.share({
-              title: 'My Current Location',
-              text: `My location: https://www.google.com/maps/search/?api=1&query=${position.coords.latitude},${position.coords.longitude}`,
-            });
-          } catch (error) {
-            console.error('Error sharing:', error);
-          }
-        },
-        () => {
-          toast({
-            title: "Error",
-            description: "Failed to get your location",
-            variant: "destructive",
-          });
-        }
-      );
-    } else {
+    if (!navigator.geolocation) {
       toast({
-        title: "Error",
-        description: "Sharing not available on this device",
+        title: "خطأ",
+        description: "تحديد الموقع غير متاح على هذا الجهاز",
         variant: "destructive",
       });
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const locationUrl = `https://www.google.com/maps/search/?api=1&query=${position.coords.latitude},${position.coords.longitude}`;
+        
+        try {
+          // Try Web Share API first (if available)
+          if (navigator.share) {
+            await navigator.share({
+              title: 'موقعي الحالي',
+              text: 'موقعي: ' + locationUrl,
+            });
+          } 
+          // Fallback: Copy to clipboard
+          else if (navigator.clipboard) {
+            await navigator.clipboard.writeText(locationUrl);
+            toast({
+              title: "تم النسخ",
+              description: "تم نسخ رابط الموقع، يمكنك مشاركته الآن",
+            });
+          } else {
+            // Last fallback: open WhatsApp with location
+            window.open(`https://wa.me/?text=${encodeURIComponent('موقعي: ' + locationUrl)}`, '_blank');
+          }
+        } catch (error) {
+          console.error('Error sharing:', error);
+          // If sharing fails, try clipboard as fallback
+          try {
+            if (navigator.clipboard) {
+              await navigator.clipboard.writeText(locationUrl);
+              toast({
+                title: "تم النسخ",
+                description: "تم نسخ رابط الموقع إلى الحافظة",
+              });
+            } else {
+              toast({
+                title: "رابط الموقع",
+                description: locationUrl,
+              });
+            }
+          } catch (clipError) {
+            toast({
+              title: "رابط موقعك",
+              description: locationUrl,
+              duration: 10000,
+            });
+          }
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        toast({
+          title: "خطأ",
+          description: "فشل الحصول على موقعك. تأكد من تفعيل خدمات الموقع",
+          variant: "destructive",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   const handleArrived = async () => {
