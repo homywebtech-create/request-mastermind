@@ -19,10 +19,9 @@ if (storedLanguage) {
   document.documentElement.lang = 'en';
 }
 
-// Clean any hash from URL before React loads
+// Clean any hash from URL without reloading
 if (window.location.hash) {
-  const cleanUrl = window.location.origin + window.location.pathname + window.location.search;
-  window.location.href = cleanUrl;
+  window.history.replaceState(null, '', window.location.pathname + window.location.search);
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
