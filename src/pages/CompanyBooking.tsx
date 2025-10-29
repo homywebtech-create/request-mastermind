@@ -372,6 +372,14 @@ export default function CompanyBooking() {
     fetchData();
   }, [orderId, companyId]);
 
+  // Auto-select today's date when component mounts
+  useEffect(() => {
+    if (!bookingDateType && availableDates.length > 0) {
+      const today = availableDates[0].toISOString().split('T')[0];
+      setBookingDateType(today);
+    }
+  }, [availableDates]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -1594,22 +1602,6 @@ export default function CompanyBooking() {
                                             {specialist.nationality}
                                           </p>
                                         )}
-                                         {/* Booking Status Badge */}
-                                         {isBooked && specialist.booked_until && (
-                                           <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600 dark:text-orange-400">
-                                             {isMonthlyService ? (
-                                               <>
-                                                 {language === 'ar' ? 'محجوزة لمدة' : 'Booked for'}: {
-                                                   Math.ceil((new Date(specialist.booked_until).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30))
-                                                 } {language === 'ar' ? 'شهر' : t.months}
-                                               </>
-                                             ) : (
-                                               <>
-                                                 {language === 'ar' ? 'محجوزة حتى' : 'Booked until'}: {new Date(specialist.booked_until).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}
-                                               </>
-                                             )}
-                                           </Badge>
-                                         )}
                                       </div>
                                       <div className="text-right flex-shrink-0">
                                         <Badge 
@@ -1632,13 +1624,6 @@ export default function CompanyBooking() {
                                     </div>
 
                                     <div className="flex items-center gap-3 mb-3 flex-wrap">
-                                      {/* Nationality */}
-                                      {specialist.nationality && (
-                                        <p className="text-sm text-muted-foreground">
-                                          {specialist.nationality}
-                                        </p>
-                                      )}
-                                      
                                       {/* Rating Display */}
                                       <div 
                                         className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity bg-muted/50 px-2 py-1 rounded-md"
