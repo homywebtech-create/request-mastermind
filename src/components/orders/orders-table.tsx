@@ -139,6 +139,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   // Track recently sent orders with timestamps
   const [recentlySentOrders, setRecentlySentOrders] = useState<Map<string, number>>(new Map());
   const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
@@ -308,6 +309,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
+      setCurrentTime(now);
       const newMap = new Map(recentlySentOrders);
       let updated = false;
       
@@ -322,7 +324,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
       if (updated) {
         setRecentlySentOrders(newMap);
       }
-    }, 10000); // Check every 10 seconds
+    }, 1000); // Check every second for smoother countdown
     
     return () => clearInterval(interval);
   }, [recentlySentOrders]);
@@ -331,23 +333,35 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     // Check local state first
     const localSentTime = recentlySentOrders.get(order.id);
     if (localSentTime) {
-      const diffInMinutes = Math.floor((Date.now() - localSentTime) / (1000 * 60));
-      return Math.max(0, diffInMinutes); // Never return negative
+      const diffInSeconds = Math.floor((currentTime - localSentTime) / 1000);
+      return Math.max(0, diffInSeconds); // Return seconds
     }
     
     // Fall back to database time
-    const now = new Date();
     const sentTime = order.last_sent_at ? new Date(order.last_sent_at) : new Date(order.created_at);
-    const diffInMinutes = Math.floor((now.getTime() - sentTime.getTime()) / (1000 * 60));
-    return Math.max(0, diffInMinutes); // Never return negative
+    const diffInSeconds = Math.floor((currentTime - sentTime.getTime()) / 1000);
+    return Math.max(0, diffInSeconds); // Return seconds
+  };
+
+  const getMinutesSinceSent = (order: Order) => {
+    return Math.floor(getTimeSinceSent(order) / 60);
+  };
+
+  const getRemainingTime = (order: Order) => {
+    const secondsSinceSent = getTimeSinceSent(order);
+    const totalSeconds = 3 * 60; // 3 minutes in seconds
+    const remainingSeconds = Math.max(0, totalSeconds - secondsSinceSent);
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const isOverThreeMinutes = (order: Order) => {
-    return getTimeSinceSent(order) >= 3;
+    return getTimeSinceSent(order) >= 180; // 3 minutes = 180 seconds
   };
 
   const isWithinThreeMinutes = (order: Order) => {
-    return getTimeSinceSent(order) < 3;
+    return getTimeSinceSent(order) < 180; // 3 minutes = 180 seconds
   };
 
   const isProcessing = (orderId: string) => {
@@ -1054,7 +1068,7 @@ Thank you for contacting us! 🌟`;
                   const customerArea = order.customers?.area || '-';
                   const customerBudget = order.customers?.budget || '-';
                   const isPending = order.status === 'pending' && (order.company_id || order.send_to_all_companies);
-                  const minutesSinceSent = getTimeSinceSent(order);
+                  const minutesSinceSent = getMinutesSinceSent(order);
                   // Show delayed status for all orders that can be resent, not just pending ones
                   const canShowResendButton = canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView));
                   const isDelayed = isOverThreeMinutes(order) && canShowResendButton;
@@ -1254,7 +1268,7 @@ Thank you for contacting us! 🌟`;
                             <>
                               <Button
                                 size="sm"
-                                variant={isDelayed ? "destructive" : "default"}
+                                variant={isRecentlySent ? "destructive" : "default"}
                                 onClick={() => openResendDialog(order)}
                                 disabled={isRecentlySent || isOrderProcessing}
                                 className="flex items-center gap-1"
@@ -1264,10 +1278,10 @@ Thank you for contacting us! 🌟`;
                                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                     {t.sending}
                                   </>
-                                ) : isRecentlySent ? (
+                                 ) : isRecentlySent ? (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {t.resendIn.replace('{minutes}', Math.max(0, 3 - minutesSinceSent).toString())}
+                                    {getRemainingTime(order)}
                                   </>
                                 ) : (
                                   <>
