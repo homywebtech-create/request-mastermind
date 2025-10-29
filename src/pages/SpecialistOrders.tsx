@@ -72,7 +72,7 @@ export default function SpecialistOrders() {
   const [quoteDialog, setQuoteDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [activeFilter, setActiveFilter] = useState<'new' | 'quoted' | 'accepted' | 'skipped' | 'rejected'>('new');
+  const [activeFilter, setActiveFilter] = useState<'new' | 'quoted' | 'accepted' | 'skipped' | 'rejected' | 'cancelled'>('new');
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
@@ -572,6 +572,9 @@ export default function SpecialistOrders() {
     o.order_specialist?.rejection_reason !== 'Skipped by specialist'
   );
   
+  // Cancelled orders: orders with status 'cancelled'
+  const cancelledOrders = orders.filter(o => o.status === 'cancelled');
+  
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('📊 [FILTER] Orders breakdown:');
   console.log('Total orders:', orders.length);
@@ -585,6 +588,7 @@ export default function SpecialistOrders() {
   })));
   console.log('Skipped orders:', skippedOrders.length);
   console.log('Rejected orders:', rejectedOrders.length);
+  console.log('Cancelled orders:', cancelledOrders.length);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('🎯 [FILTER] Total orders:', orders.length);
   console.log('🎯 [FILTER] Filtered counts:', {
@@ -592,7 +596,8 @@ export default function SpecialistOrders() {
     quoted: quotedOrders.length,
     accepted: acceptedOrders.length,
     skipped: skippedOrders.length,
-    rejected: rejectedOrders.length
+    rejected: rejectedOrders.length,
+    cancelled: cancelledOrders.length
   });
   console.log('🎯 [FILTER] Accepted orders detail:', acceptedOrders.map(o => ({
     id: o.id,
@@ -950,6 +955,13 @@ export default function SpecialistOrders() {
       count: rejectedOrders.length,
       icon: XCircle,
       color: 'red'
+    },
+    {
+      id: 'cancelled' as const,
+      title: 'ملغاة',
+      count: cancelledOrders.length,
+      icon: XCircle,
+      color: 'slate'
     }
   ];
 
@@ -1113,6 +1125,88 @@ export default function SpecialistOrders() {
               </Card>
             ) : (
               rejectedOrders.map((order) => renderOrderCard(order))
+            )
+          )}
+
+          {activeFilter === 'cancelled' && (
+            cancelledOrders.length === 0 ? (
+              <Card className="p-12 text-center">
+                <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-lg text-muted-foreground">لا توجد طلبات ملغاة</p>
+              </Card>
+            ) : (
+              cancelledOrders.map((order) => (
+                <Card key={order.id} className="overflow-hidden border-red-200 dark:border-red-800">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-red-100 to-red-50 dark:from-red-950/50 dark:to-red-900/30 p-4">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-2xl font-bold text-foreground">{order.customer?.name}</h3>
+                        <Badge variant="destructive">ملغي</Badge>
+                      </div>
+                      {order.order_number && (
+                        <Badge variant="outline" className="text-xs font-bold">
+                          {order.order_number}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Information */}
+                  <div className="p-6 space-y-4">
+                    {/* Service and Area Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex items-center gap-3 p-4 rounded-xl bg-muted">
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">نوع الخدمة</p>
+                          <p className="font-bold text-sm">{order.service_type}</p>
+                        </div>
+                      </div>
+                      {order.customer?.area && (
+                        <div className="flex items-center gap-3 p-4 rounded-xl bg-muted">
+                          <MapPin className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">المنطقة</p>
+                            <p className="font-bold text-sm">{order.customer.area}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Cancellation Info */}
+                    <div className="p-5 rounded-xl bg-gradient-to-br from-red-50 to-red-50/50 dark:from-red-950/30 dark:to-red-950/10 border-2 border-red-200 dark:border-red-800">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/50">
+                          <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-red-700 dark:text-red-300 mb-2">
+                            ✕ تم إلغاء هذا الطلب
+                          </p>
+                          {order.notes && (
+                            <div className="mt-2 p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                              <p className="text-xs text-red-700 dark:text-red-300 mb-1 font-bold">
+                                سبب الإلغاء:
+                              </p>
+                              <p className="text-sm text-red-900 dark:text-red-200">
+                                {order.notes}
+                              </p>
+                            </div>
+                          )}
+                          {order.order_specialist?.quoted_price && (
+                            <div className="mt-2">
+                              <p className="text-xs text-muted-foreground">
+                                عرضك كان: <span className="font-bold">{order.order_specialist.quoted_price}</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))
             )
           )}
         </div>
