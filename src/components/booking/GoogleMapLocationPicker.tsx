@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
+import { GoogleMap, LoadScript, Marker, Autocomplete } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MapPin, Navigation, Search, Loader2 } from 'lucide-react';
@@ -74,7 +74,13 @@ export function GoogleMapLocationPicker({
         if (error) {
           console.error('Error fetching Google Maps API key:', error);
         } else if (data?.apiKey) {
-          setApiKey(data.apiKey);
+          // Extract just the API key if it's a full URL
+          let key = data.apiKey;
+          if (key.includes('key=')) {
+            const match = key.match(/key=([^&]+)/);
+            if (match) key = match[1];
+          }
+          setApiKey(key);
         }
       } catch (error) {
         console.error('Error fetching Google Maps API key:', error);
@@ -85,8 +91,7 @@ export function GoogleMapLocationPicker({
     fetchApiKey();
   }, []);
   
-  // Don't load Google Maps until API key is ready
-  if (isKeyLoading) {
+  if (isKeyLoading || !apiKey) {
     return (
       <div className="flex items-center justify-center h-[500px]">
         <div className="text-center">
@@ -97,38 +102,44 @@ export function GoogleMapLocationPicker({
     );
   }
   
-  // Render the map component only after API key is loaded
-  return <GoogleMapContent 
-    apiKey={apiKey}
-    onLocationSelect={onLocationSelect}
-    initialLat={initialLat}
-    initialLng={initialLng}
-    language={language}
-  />;
+  return (
+    <LoadScript
+      googleMapsApiKey={apiKey}
+      libraries={libraries}
+      language={language}
+      loadingElement={
+        <div className="flex items-center justify-center h-[500px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+            <p className="text-muted-foreground">{t.loading}</p>
+          </div>
+        </div>
+      }
+    >
+      <GoogleMapContent 
+        onLocationSelect={onLocationSelect}
+        initialLat={initialLat}
+        initialLng={initialLng}
+        language={language}
+      />
+    </LoadScript>
+  );
 }
 
 function GoogleMapContent({ 
-  apiKey,
   onLocationSelect, 
   initialLat, 
   initialLng, 
   language 
-}: GoogleMapLocationPickerProps & { apiKey: string }) {
+}: GoogleMapLocationPickerProps) {
   const t = translations[language];
   const { toast } = useToast();
-  
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey,
-    libraries,
-    language: language,
-  });
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [center, setCenter] = useState({ lat: initialLat, lng: initialLng });
   const [markerPosition, setMarkerPosition] = useState({ lat: initialLat, lng: initialLng });
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-
   // Get current location on mount
   useEffect(() => {
     if (navigator.geolocation) {
@@ -282,25 +293,6 @@ function GoogleMapContent({
       }
     }
   };
-
-  if (loadError) {
-    return (
-      <div className="text-center p-8 text-destructive">
-        <p>{t.error}: فشل تحميل خريطة Google</p>
-      </div>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center h-[500px]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
-          <p className="text-muted-foreground">{t.loading}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
