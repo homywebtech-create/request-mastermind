@@ -735,9 +735,12 @@ export default function CompanyBooking() {
 
       // Determine the specialist to assign
       let assignedSpecialistId = selectedSpecialistIds.length > 0 ? selectedSpecialistIds[0] : null;
+      console.log('🔍 Booking Confirmation - Selected Specialist ID:', assignedSpecialistId);
+      console.log('🔍 Booking Confirmation - Selected Specialist IDs:', selectedSpecialistIds);
       
       // If no specialists selected but there are quotes, auto-select the one with lowest price
       if (!assignedSpecialistId) {
+        console.log('⚠️ No specialist selected, looking for lowest quote...');
         const { data: quotesData } = await supabase
           .from('order_specialists')
           .select('specialist_id, quoted_price')
@@ -751,7 +754,12 @@ export default function CompanyBooking() {
             return currentPrice < lowestPrice ? current : lowest;
           });
           assignedSpecialistId = lowestQuote.specialist_id;
+          console.log('✅ Auto-selected specialist with lowest quote:', assignedSpecialistId);
+        } else {
+          console.log('❌ No quotes found to auto-select from');
         }
+      } else {
+        console.log('✅ Using manually selected specialist:', assignedSpecialistId);
       }
 
       // Update order details - set status to accepted and assign specialist
@@ -781,8 +789,10 @@ export default function CompanyBooking() {
       
       // Accept the assigned specialist and reject others
       if (assignedSpecialistId) {
+        console.log('📝 Updating order_specialists for order:', orderId, 'specialist:', assignedSpecialistId);
+        
         // Accept the chosen specialist
-        await supabase
+        const { error: acceptError } = await supabase
           .from('order_specialists')
           .update({ 
             is_accepted: true,
@@ -791,9 +801,15 @@ export default function CompanyBooking() {
           })
           .eq('order_id', orderId)
           .eq('specialist_id', assignedSpecialistId);
+        
+        if (acceptError) {
+          console.error('❌ Error accepting specialist:', acceptError);
+        } else {
+          console.log('✅ Successfully accepted specialist');
+        }
 
         // Reject all other specialists
-        await supabase
+        const { error: rejectError } = await supabase
           .from('order_specialists')
           .update({ 
             is_accepted: false,
@@ -802,6 +818,14 @@ export default function CompanyBooking() {
           })
           .eq('order_id', orderId)
           .neq('specialist_id', assignedSpecialistId);
+        
+        if (rejectError) {
+          console.error('❌ Error rejecting other specialists:', rejectError);
+        } else {
+          console.log('✅ Successfully rejected other specialists');
+        }
+      } else {
+        console.log('⚠️ No assigned specialist ID - skipping acceptance/rejection updates');
       }
 
       // Notify accepted specialists about booking confirmation → deep link to /order-tracking/:orderId
