@@ -83,10 +83,9 @@ export default function SpecialistHome() {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
-          table: 'orders',
-          filter: `specialist_id=eq.${specialistId}`
+          table: 'orders'
         },
         () => {
           console.log('🔄 [Realtime] orders changed, refreshing data...');
