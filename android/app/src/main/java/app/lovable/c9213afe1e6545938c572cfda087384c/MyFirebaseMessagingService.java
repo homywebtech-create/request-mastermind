@@ -103,8 +103,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // Use custom notification sound from res/raw
-        Uri customSoundUri = Uri.parse("android.resource://" + getPackageName() + "/raw/notification_sound");
+        // Use device's default phone ringtone
+        Uri defaultRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
 
         // Long vibration pattern (10 seconds of continuous vibration)
         long[] vibrationPattern = new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000};
@@ -120,7 +120,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL) // Always use CALL category for maximum interruption
             .setAutoCancel(true)
-            .setSound(customSoundUri) // Explicitly set custom sound
+            .setSound(defaultRingtoneUri) // Use device's default phone ringtone
             .setVibrate(vibrationPattern) // Explicitly set vibration
             .setContentIntent(pendingIntent)
             .setFullScreenIntent(fullScreenPendingIntent, true) // Wake screen
@@ -146,9 +146,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             // Unified audio attributes for both channels
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                 .build();
-            Uri customSoundUri = Uri.parse("android.resource://" + getPackageName() + "/raw/notification_sound");
+            Uri defaultRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
             long[] vibrationPattern = new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000};
 
             // Default channel with maximum interruption
@@ -165,7 +165,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             channel.setBypassDnd(true);
             channel.enableLights(true);
             channel.setLightColor(0xFFFF0000);
-            channel.setSound(customSoundUri, audioAttributes);
+            channel.setSound(defaultRingtoneUri, audioAttributes);
             notificationManager.createNotificationChannel(channel);
 
             // Call-style channel with identical settings for consistency
@@ -182,7 +182,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             callChannel.setBypassDnd(true);
             callChannel.enableLights(true);
             callChannel.setLightColor(0xFFFF0000);
-            callChannel.setSound(customSoundUri, audioAttributes);
+            callChannel.setSound(defaultRingtoneUri, audioAttributes);
             notificationManager.createNotificationChannel(callChannel);
 
             Log.d(TAG, "✅ Notification channels ensured with consistent sound + vibration (" + CHANNEL_ID + ", " + CALL_CHANNEL_ID + ")");
