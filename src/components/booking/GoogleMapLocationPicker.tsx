@@ -70,20 +70,38 @@ export function GoogleMapLocationPicker({
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
+        console.log('🗺️ Fetching Google Maps API key...');
         const { data, error } = await supabase.functions.invoke('get-google-maps-key');
         if (error) {
-          console.error('Error fetching Google Maps API key:', error);
+          console.error('❌ Error fetching Google Maps API key:', error);
+          toast({
+            title: t.error,
+            description: 'فشل تحميل مفتاح Google Maps',
+            variant: 'destructive',
+          });
         } else if (data?.apiKey) {
           // Extract just the API key if it's a full URL
           let key = data.apiKey;
+          console.log('📥 Received API key:', key.substring(0, 50) + '...');
+          
           if (key.includes('key=')) {
             const match = key.match(/key=([^&]+)/);
-            if (match) key = match[1];
+            if (match) {
+              key = match[1];
+              console.log('✅ Extracted API key:', key.substring(0, 20) + '...');
+            }
           }
+          
           setApiKey(key);
+          console.log('✅ API key set successfully');
         }
       } catch (error) {
-        console.error('Error fetching Google Maps API key:', error);
+        console.error('❌ Exception fetching Google Maps API key:', error);
+        toast({
+          title: t.error,
+          description: 'فشل تحميل مفتاح Google Maps',
+          variant: 'destructive',
+        });
       } finally {
         setIsKeyLoading(false);
       }
@@ -91,12 +109,24 @@ export function GoogleMapLocationPicker({
     fetchApiKey();
   }, []);
   
-  if (isKeyLoading || !apiKey) {
+  if (isKeyLoading) {
     return (
       <div className="flex items-center justify-center h-[500px]">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
           <p className="text-muted-foreground">{t.loading}</p>
+          <p className="text-xs text-muted-foreground mt-2">جاري تحميل مفتاح Google Maps...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!apiKey) {
+    return (
+      <div className="flex items-center justify-center h-[500px]">
+        <div className="text-center">
+          <p className="text-destructive font-medium">لم يتم العثور على مفتاح Google Maps</p>
+          <p className="text-sm text-muted-foreground mt-2">يرجى التأكد من إضافة GOOGLE_MAPS_API_KEY في الإعدادات</p>
         </div>
       </div>
     );
@@ -107,11 +137,21 @@ export function GoogleMapLocationPicker({
       googleMapsApiKey={apiKey}
       libraries={libraries}
       language={language}
+      onLoad={() => console.log('✅ Google Maps script loaded successfully')}
+      onError={(error) => {
+        console.error('❌ Google Maps script loading error:', error);
+        toast({
+          title: t.error,
+          description: 'فشل تحميل خريطة Google Maps. تحقق من صحة API Key',
+          variant: 'destructive',
+        });
+      }}
       loadingElement={
         <div className="flex items-center justify-center h-[500px]">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
             <p className="text-muted-foreground">{t.loading}</p>
+            <p className="text-xs text-muted-foreground mt-2">جاري تحميل Google Maps...</p>
           </div>
         </div>
       }
