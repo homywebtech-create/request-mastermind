@@ -75,6 +75,7 @@ export default function SpecialistHome() {
           filter: `specialist_id=eq.${specialistId}`
         },
         () => {
+          console.log('🔄 [Realtime] order_specialists changed, refreshing data...');
           fetchOrders(specialistId);
           fetchNewOrdersCount(specialistId);
         }
@@ -84,17 +85,29 @@ export default function SpecialistHome() {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'orders'
+          table: 'orders',
+          filter: `specialist_id=eq.${specialistId}`
         },
         () => {
+          console.log('🔄 [Realtime] orders changed, refreshing data...');
           fetchOrders(specialistId);
           fetchNewOrdersCount(specialistId);
         }
       )
       .subscribe();
 
+    // Listen for navigation events from push notifications
+    const handleNavigationEvent = () => {
+      console.log('📱 [Navigation Event] Detected, refreshing orders...');
+      fetchOrders(specialistId);
+      fetchNewOrdersCount(specialistId);
+    };
+
+    window.addEventListener('specialist-navigate', handleNavigationEvent);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('specialist-navigate', handleNavigationEvent);
     };
   }, [specialistId]);
 

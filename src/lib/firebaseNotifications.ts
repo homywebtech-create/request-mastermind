@@ -130,10 +130,15 @@ export class FirebaseNotificationManager {
               ? '/specialist/new-orders' 
               : route;
             
+            // Dispatch multiple events for different listeners
             window.dispatchEvent(new CustomEvent('notificationNavigate', { 
               detail: { route: targetRoute } 
             }));
-            console.log('📤 [EVENT] Navigation event dispatched for route:', targetRoute);
+            window.dispatchEvent(new CustomEvent('specialist-navigate', { 
+              detail: { route: targetRoute } 
+            }));
+            window.dispatchEvent(new Event('specialist-orders-refresh'));
+            console.log('📤 [EVENT] Navigation events dispatched for route:', targetRoute);
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         });
 
