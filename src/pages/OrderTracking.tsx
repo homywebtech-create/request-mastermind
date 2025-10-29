@@ -1020,69 +1020,77 @@ export default function OrderTracking() {
 
         {/* Invoice Details Stage */}
         {stage === 'invoice_details' && (
-          <Card className="p-6 space-y-6">
-            <h3 className="text-xl font-bold text-center">Invoice Details</h3>
-            
-            <div className="space-y-4">
-              <div className="text-center text-6xl mb-4">💰</div>
-              
-              <div className="bg-muted p-4 rounded-lg space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Service Type:</span>
-                  <span className="font-semibold">{order.service_type}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Hours:</span>
-                  <span className="font-semibold">{order.hours_count}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Customer Budget:</span>
-                  <span className="font-semibold">
-                    {order.customer?.budget || 'Not specified'} 
-                    {order.customer?.budget_type && ` (${order.customer.budget_type})`}
-                  </span>
-                </div>
-                
-                <div className="border-t pt-3 mt-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Quoted Price:</span>
-                    <span className="font-semibold">{invoiceAmount} KWD</span>
+          <div className="min-h-screen flex flex-col">
+            <Card className="flex-1 flex flex-col m-4">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 text-center">
+                <div className="text-4xl mb-2">💰</div>
+                <h3 className="text-lg font-bold text-white">تفاصيل الفاتورة</h3>
+              </div>
+
+              {/* Invoice Content - Scrollable if needed */}
+              <div className="flex-1 overflow-auto p-4">
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 rounded-lg space-y-2.5 shadow-inner">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">نوع الخدمة</span>
+                    <span className="font-semibold">{order.service_type}</span>
                   </div>
                   
-                  {discount > 0 && (
-                    <div className="flex justify-between items-center text-green-600 mt-2">
-                      <span>Discount:</span>
-                      <span className="font-semibold">-{discount} KWD</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="border-t pt-3 mt-3">
-                  <div className="flex justify-between items-center text-lg">
-                    <span className="font-bold">Total Amount:</span>
-                    <span className="font-bold text-primary text-2xl">
-                      {(invoiceAmount - discount).toFixed(2)} KWD
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">عدد الساعات</span>
+                    <span className="font-semibold">{order.hours_count}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">ميزانية العميل</span>
+                    <span className="font-semibold">
+                      {order.customer?.budget || 'غير محدد'} 
+                      {order.customer?.budget_type && ` (${order.customer.budget_type})`}
                     </span>
                   </div>
+                  
+                  <div className="border-t border-slate-300 dark:border-slate-700 pt-2.5 mt-2.5">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">السعر المعروض</span>
+                      <span className="font-semibold">{invoiceAmount.toFixed(2)} د.ك</span>
+                    </div>
+                    
+                    {discount > 0 && (
+                      <div className="flex justify-between items-center text-green-600 mt-2 text-sm">
+                        <span>الخصم</span>
+                        <span className="font-semibold">-{discount.toFixed(2)} د.ك</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="border-t-2 border-slate-400 dark:border-slate-600 pt-2.5 mt-2.5">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-base">المبلغ الإجمالي</span>
+                      <span className="font-black text-primary text-2xl">
+                        {(invoiceAmount - discount).toFixed(2)} <span className="text-lg">د.ك</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
+                
+                <p className="text-xs text-center text-muted-foreground mt-3">
+                  الرجاء تحصيل هذا المبلغ من العميل
+                </p>
               </div>
-              
-              <p className="text-sm text-center text-muted-foreground">
-                Please collect this amount from the customer
-              </p>
-            </div>
 
-            <Button
-              onClick={handlePaymentReceived}
-              className="w-full"
-              size="lg"
-            >
-              <CheckCircle className="ml-2 h-5 w-5" />
-              Confirm Payment Received
-            </Button>
-          </Card>
+              {/* Fixed Button at Bottom */}
+              <div className="p-4 border-t bg-background">
+                <Button
+                  onClick={handlePaymentReceived}
+                  className="w-full h-12 text-base font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  size="lg"
+                >
+                  <CheckCircle className="ml-2 h-5 w-5" />
+                  تأكيد استلام الدفع
+                </Button>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* Customer Rating Stage */}
