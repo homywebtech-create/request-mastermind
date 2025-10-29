@@ -158,10 +158,11 @@ export default function SpecialistHome() {
 
   const fetchOrders = async (specId: string) => {
     try {
+      console.log('🔍 [SpecialistHome] Fetching orders for specialist:', specId);
       setIsLoading(true);
 
       // Get all orders assigned to this specialist based on order.specialist_id field
-      const { data: ordersData } = await supabase
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select(`
           id,
@@ -183,7 +184,18 @@ export default function SpecialistHome() {
         .neq('status', 'pending') // Hide pending orders (not yet accepted)
         .order('booking_date', { ascending: true });
 
+      console.log('📊 [SpecialistHome] Orders query result:', { 
+        count: ordersData?.length || 0, 
+        error: ordersError,
+        orders: ordersData 
+      });
+
+      if (ordersError) {
+        console.error('❌ [SpecialistHome] Error fetching orders:', ordersError);
+      }
+
       if (!ordersData || ordersData.length === 0) {
+        console.log('⚠️ [SpecialistHome] No orders found');
         setOrders([]);
         setIsLoading(false);
         return;
@@ -350,9 +362,26 @@ export default function SpecialistHome() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <div>
-            <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
-            <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
+              <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
+            </div>
+            <Button
+              onClick={() => {
+                console.log('🔄 [MANUAL] Manual refresh triggered');
+                if (specialistId) {
+                  fetchOrders(specialistId);
+                  fetchNewOrdersCount(specialistId);
+                }
+              }}
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+            >
+              <Clock className="h-4 w-4" />
+              {isAr ? 'تحديث' : 'Refresh'}
+            </Button>
           </div>
         </div>
       </div>
