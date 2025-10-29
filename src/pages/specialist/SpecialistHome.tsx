@@ -148,20 +148,7 @@ export default function SpecialistHome() {
     try {
       setIsLoading(true);
 
-      const { data: orderSpecialists } = await supabase
-        .from('order_specialists')
-        .select('order_id, quoted_price')
-        .eq('specialist_id', specId)
-        .eq('is_accepted', true);
-
-      if (!orderSpecialists || orderSpecialists.length === 0) {
-        setOrders([]);
-        setIsLoading(false);
-        return;
-      }
-
-      const orderIds = orderSpecialists.map(os => os.order_id);
-
+      // Get all orders assigned to this specialist based on order.specialist_id field
       const { data: ordersData } = await supabase
         .from('orders')
         .select(`
@@ -171,25 +158,42 @@ export default function SpecialistHome() {
           gps_latitude,
           gps_longitude,
           building_info,
+          status,
+          specialist_id,
           customer:customers (
             name,
             area
           )
         `)
-        .in('id', orderIds)
+        .eq('specialist_id', specId)
         .gte('booking_date', new Date().toISOString().split('T')[0]) // Only show today and future orders
         .neq('status', 'completed') // Hide completed orders
+        .neq('status', 'pending') // Hide pending orders (not yet accepted)
         .order('booking_date', { ascending: true });
 
-      const ordersWithQuotes = ordersData?.map(order => {
-        const orderSpec = orderSpecialists.find(os => os.order_id === order.id);
+      if (!ordersData || ordersData.length === 0) {
+        setOrders([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Get quoted prices for these orders
+      const orderIds = ordersData.map(o => o.id);
+      const { data: orderSpecialists } = await supabase
+        .from('order_specialists')
+        .select('order_id, quoted_price')
+        .eq('specialist_id', specId)
+        .in('order_id', orderIds);
+
+      const ordersWithQuotes = ordersData.map(order => {
+        const orderSpec = orderSpecialists?.find(os => os.order_id === order.id);
         return {
           ...order,
           order_specialist: orderSpec ? {
             quoted_price: orderSpec.quoted_price
           } : undefined
         };
-      }) || [];
+      });
 
       // Show orders immediately without translation
       setOrders(ordersWithQuotes);
