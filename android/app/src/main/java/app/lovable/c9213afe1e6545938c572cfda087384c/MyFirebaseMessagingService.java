@@ -15,8 +15,8 @@ import android.util.Log;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "FCMService";
-    private static final String CHANNEL_ID = "new-orders-v4";
-    private static final String CALL_CHANNEL_ID = "booking-calls-v3";
+    private static final String CHANNEL_ID = "new-orders-v5";
+    private static final String CALL_CHANNEL_ID = "booking-calls-v4";
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
