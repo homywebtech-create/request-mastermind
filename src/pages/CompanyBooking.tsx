@@ -286,6 +286,19 @@ export default function CompanyBooking() {
     return slotDateTime >= bufferTime;
   };
 
+  // Check if specialist has any available time slots on a specific date
+  const hasAvailableTimeSlotsOnDate = (specialist: Specialist, date: Date | null) => {
+    if (!date) return false;
+    
+    // Get all time slots
+    const allSlots = generateTimeSlots();
+    
+    // Check if at least one slot is available (not in the past)
+    const hasAvailableSlot = allSlots.some(slot => isTimeSlotAvailable(slot, date));
+    
+    return hasAvailableSlot;
+  };
+
   // Generate available months for the next 12 months (for monthly contracts)
   const generateAvailableMonths = (specialist?: Specialist) => {
     const months = [];
@@ -1541,7 +1554,10 @@ export default function CompanyBooking() {
                             const totalPrice = pricePerHour * hoursCount;
                             const isLowest = totalPrice === lowestPrice;
                             const isSelected = selectedSpecialistIds.includes(specialist.id);
-                            const isBooked = specialist.booked_until && new Date(specialist.booked_until) > new Date();
+                            // Check if specialist has available time slots on selected date
+                            const selectedDateObj = bookingDateType ? new Date(bookingDateType) : null;
+                            const hasAvailableSlots = hasAvailableTimeSlotsOnDate(specialist, selectedDateObj);
+                            const isBooked = !hasAvailableSlots;
 
                             return (
                               <div
