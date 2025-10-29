@@ -469,6 +469,18 @@ Thank you for contacting us! 🌟`;
         console.warn('Could not resolve specialist_id for accepted quote:', e);
       }
 
+      // Update specialist_id in orders table
+      if (specialistId) {
+        const { error: orderError } = await supabase
+          .from('orders')
+          .update({ specialist_id: specialistId })
+          .eq('id', orderId);
+        
+        if (orderError) {
+          console.error('Error updating order specialist_id:', orderError);
+        }
+      }
+
       // Send booking confirmation push → deep link to /order-tracking/:orderId
       if (specialistId) {
         try {
