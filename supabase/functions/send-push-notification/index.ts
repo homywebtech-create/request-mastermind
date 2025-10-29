@@ -144,10 +144,14 @@ serve(async (req) => {
           // Order update notifications → Order tracking page (if orderId exists)
           targetRoute = data.orderId ? `/order-tracking/${data.orderId}` : '/specialist-orders';
           console.log(`📍 [ROUTE] Order update → ${targetRoute}`);
-        } else if (notificationType === 'booking_confirmed' || notificationType === 'booking_update') {
-          // Booking-related → Order tracking page (if orderId exists)
+        } else if (notificationType === 'booking_confirmed') {
+          // Booking confirmation → Show in accepted orders list (Home page)
+          targetRoute = '/specialist-orders';
+          console.log(`📍 [ROUTE] Booking confirmed → ${targetRoute} (show in accepted orders)`);
+        } else if (notificationType === 'booking_update') {
+          // Booking update → Order tracking page (if orderId exists)
           targetRoute = data.orderId ? `/order-tracking/${data.orderId}` : '/specialist-orders';
-          console.log(`📍 [ROUTE] Booking notification → ${targetRoute}`);
+          console.log(`📍 [ROUTE] Booking update → ${targetRoute}`);
         } else if (notificationType === 'order_expired') {
           // Order expired → Stay on new orders page to see other opportunities
           targetRoute = '/specialist/new-orders';
