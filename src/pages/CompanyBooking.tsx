@@ -829,6 +829,18 @@ export default function CompanyBooking() {
           console.log('✅ Successfully accepted specialist');
         }
 
+        // Update specialist_id in orders table to reflect the assignment
+        const { error: orderUpdateError } = await supabase
+          .from('orders')
+          .update({ specialist_id: assignedSpecialistId })
+          .eq('id', orderId);
+        
+        if (orderUpdateError) {
+          console.error('❌ Error updating order specialist_id:', orderUpdateError);
+        } else {
+          console.log('✅ Successfully updated order specialist_id');
+        }
+
         // Reject all other specialists
         const { error: rejectError } = await supabase
           .from('order_specialists')
@@ -879,30 +891,22 @@ export default function CompanyBooking() {
 
       const selectedSpecs = specialists.filter(s => selectedSpecialistIds.includes(s.id));
       const specialistNames = selectedSpecs.map(s => s.name).join('، ');
-      
-      // Prepare WhatsApp message
-      const message = encodeURIComponent(
-        `تم تأكيد الحجز ✅\n\n` +
-        `المحترفات: ${specialistNames}\n` +
-        `التاريخ: ${bookingDate}\n` +
-        `الوقت: ${selectedTime}\n` +
-        `نوع الحجز: ${isMonthlyService ? contractDuration : bookingType}\n` +
-        `عدد المحترفات: ${selectedSpecialistIds.length}\n\n` +
-        `سيتم التواصل معك قريباً لتأكيد التفاصيل.`
-      );
-
-      // Redirect to WhatsApp
-      if (company?.phone) {
-        openWhatsApp(company.phone, message);
-      }
 
       toast({
         title: t.saved,
         description: 'تم تأكيد الحجز بنجاح',
       });
 
-      // Navigate back after a short delay
-      setTimeout(() => navigate(-1), 2000);
+      // Detect if device is mobile or desktop
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile && company?.phone) {
+        // Mobile: Open WhatsApp without message (will be sent via API later)
+        openWhatsApp(company.phone);
+      } else {
+        // Desktop: Navigate back to admin dashboard
+        setTimeout(() => navigate(-1), 1500);
+      }
     } catch (error: any) {
       console.error('Error saving booking:', error);
       toast({
