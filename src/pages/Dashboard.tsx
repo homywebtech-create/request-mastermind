@@ -39,7 +39,12 @@ interface Order {
   updated_at: string;
   send_to_all_companies?: boolean;
   booking_type?: string | null;
+  booking_date?: string | null;
+  booking_date_type?: string | null;
   hours_count?: string | null;
+  building_info?: string | null;
+  gps_latitude?: number | null;
+  gps_longitude?: number | null;
   cancelled_by?: string | null;
   cancelled_by_role?: string | null;
   cancellation_reason?: string | null;
@@ -268,7 +273,12 @@ export default function Dashboard() {
         updated_at,
         send_to_all_companies,
         booking_type,
+        booking_date,
+        booking_date_type,
         hours_count,
+        building_info,
+        gps_latitude,
+        gps_longitude,
         cancelled_by,
         cancelled_by_role,
         cancellation_reason,

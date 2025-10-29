@@ -37,7 +37,11 @@ interface Order {
   send_to_all_companies?: boolean;
   booking_type?: string | null;
   booking_date?: string | null;
+  booking_date_type?: string | null;
   hours_count?: string | null;
+  building_info?: string | null;
+  gps_latitude?: number | null;
+  gps_longitude?: number | null;
   cancelled_by?: string | null;
   cancelled_by_role?: string | null;
   cancellation_reason?: string | null;
@@ -1074,8 +1078,10 @@ Thank you for contacting us! 🌟`;
                 <TableHead className="text-left">{t.area}</TableHead>
                 <TableHead className="text-left">{t.customerBudget}</TableHead>
                 <TableHead className="text-left">{t.service}</TableHead>
+                <TableHead className="text-left">{language === 'ar' ? 'تفاصيل الحجز' : 'Booking Details'}</TableHead>
+                <TableHead className="text-left">{language === 'ar' ? 'الموقع' : 'Location'}</TableHead>
                 <TableHead className="text-left">
-                  {filter === 'awaiting-response' ? t.companyQuotes : t.notes}
+                  {filter === 'awaiting-response' ? t.companyQuotes : (filter === 'cancelled' ? (language === 'ar' ? 'تفاصيل الإلغاء' : 'Cancellation Details') : t.notes)}
                 </TableHead>
                 <TableHead className="text-left">{t.dateAndStatus}</TableHead>
                 <TableHead className="text-left">{t.actions}</TableHead>
@@ -1084,7 +1090,7 @@ Thank you for contacting us! 🌟`;
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     {t.noOrders}
                   </TableCell>
                 </TableRow>
@@ -1148,6 +1154,74 @@ Thank you for contacting us! 🌟`;
                       
                       <TableCell>
                         <Badge variant="outline">{order.service_type}</Badge>
+                      </TableCell>
+
+                      {/* Booking Details Column */}
+                      <TableCell>
+                        <div className="space-y-1 min-w-[180px]">
+                          {order.booking_date && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="h-3 w-3 text-muted-foreground" />
+                              <span className="font-medium">
+                                {new Date(order.booking_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          {order.booking_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {order.booking_type === 'morning' && (language === 'ar' ? 'صباحي' : 'Morning')}
+                              {order.booking_type === 'afternoon' && (language === 'ar' ? 'ظهري' : 'Afternoon')}
+                              {order.booking_type === 'evening' && (language === 'ar' ? 'مسائي' : 'Evening')}
+                              {!['morning', 'afternoon', 'evening'].includes(order.booking_type) && order.booking_type}
+                            </Badge>
+                          )}
+                          {order.hours_count && (
+                            <div className="text-xs text-muted-foreground">
+                              {order.hours_count} {language === 'ar' ? 'ساعة' : 'hours'}
+                            </div>
+                          )}
+                          {order.booking_date_type && (
+                            <Badge variant="secondary" className="text-xs">
+                              {order.booking_date_type === 'specific' && (language === 'ar' ? 'تاريخ محدد' : 'Specific Date')}
+                              {order.booking_date_type === 'flexible' && (language === 'ar' ? 'مرن' : 'Flexible')}
+                            </Badge>
+                          )}
+                          {!order.booking_date && !order.booking_type && (
+                            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not specified'}</span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Location Column */}
+                      <TableCell>
+                        <div className="space-y-1 min-w-[150px]">
+                          {order.building_info && (
+                            <div className="text-sm">
+                              <span className="font-medium">{order.building_info}</span>
+                            </div>
+                          )}
+                          {order.gps_latitude && order.gps_longitude && (
+                            <a
+                              href={`https://www.google.com/maps?q=${order.gps_latitude},${order.gps_longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              {language === 'ar' ? 'عرض الخريطة' : 'View Map'}
+                            </a>
+                          )}
+                          {!order.building_info && !order.gps_latitude && (
+                            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not specified'}</span>
+                          )}
+                        </div>
                       </TableCell>
 
                       <TableCell>
