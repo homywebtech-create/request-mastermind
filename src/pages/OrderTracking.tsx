@@ -743,25 +743,18 @@ export default function OrderTracking() {
             </div>
 
             <div className="p-4 space-y-3">
-              {/* Customer Contact - Simplified */}
-              <div className="bg-green-50 dark:from-green-950/40 border border-green-200 dark:border-green-700 p-3 rounded-lg">
-                <div className="flex items-center gap-3 mb-3">
-                  <Phone className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-xs text-green-700 dark:text-green-300">رقم العميل</p>
-                    <p className="text-sm font-semibold text-green-900 dark:text-green-100 font-mono">
-                      {order.customer?.whatsapp_number}
-                    </p>
-                  </div>
+              {/* Customer Contact - Icon Only */}
+              <div className="flex items-center justify-center gap-4">
+                <div className="flex flex-col items-center gap-1">
+                  <Button 
+                    onClick={() => window.location.href = `tel:${order.customer?.whatsapp_number || ''}`}
+                    size="icon"
+                    className="h-14 w-14 bg-green-600 hover:bg-green-700 rounded-full shadow-lg"
+                  >
+                    <Phone className="h-6 w-6" />
+                  </Button>
+                  <span className="text-xs font-medium text-green-700">اتصال بالعميل</span>
                 </div>
-                
-                <Button 
-                  onClick={() => openWhatsApp(order.customer?.whatsapp_number || '')}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <Phone className="h-4 w-4 ml-2" />
-                  <span>الاتصال بالعميل عبر واتساب</span>
-                </Button>
               </div>
 
               {/* Building Info - Compact */}
@@ -780,7 +773,7 @@ export default function OrderTracking() {
               )}
 
               {/* Timer Protection - Compact */}
-              {arrivedTimer > 0 ? (
+              {arrivedTimer > 0 && (
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
                   <div className="flex items-center gap-3 justify-center">
                     <Clock className="h-5 w-5 text-amber-600 animate-pulse" />
@@ -790,15 +783,6 @@ export default function OrderTracking() {
                         00:00:{arrivedTimer.toString().padStart(2, '0')}
                       </p>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 justify-center">
-                    <Play className="h-4 w-4 text-purple-600" />
-                    <p className="text-sm font-medium text-purple-700">
-                      يمكنك الآن بدء ساعة العمل
-                    </p>
                   </div>
                 </div>
               )}
