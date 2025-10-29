@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, XCircle, Clock, DollarSign, Package } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import LanguageSelector from "@/components/specialist/LanguageSelector";
 
 interface Stats {
   totalOrders: number;
@@ -27,6 +28,7 @@ export default function SpecialistStats() {
   const [isLoading, setIsLoading] = useState(true);
   const [specialistId, setSpecialistId] = useState('');
   const [specialistName, setSpecialistName] = useState('');
+  const [preferredLanguage, setPreferredLanguage] = useState('ar');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -80,12 +82,13 @@ export default function SpecialistStats() {
         
         const { data: specialist } = await supabase
           .from('specialists')
-          .select('id')
+          .select('id, preferred_language')
           .eq('phone', profile.phone)
           .single();
 
         if (specialist) {
           setSpecialistId(specialist.id);
+          setPreferredLanguage(specialist.preferred_language || 'ar');
         }
       }
     } catch (error) {
@@ -97,10 +100,16 @@ export default function SpecialistStats() {
   const fetchStats = async (specId: string) => {
     try {
       setIsLoading(true);
+      const now = new Date().toISOString();
 
       const { data: orderSpecialists } = await supabase
         .from('order_specialists')
-        .select('*')
+        .select(`
+          *,
+          orders!inner (
+            expires_at
+          )
+        `)
         .eq('specialist_id', specId);
 
       if (!orderSpecialists) {
@@ -108,9 +117,13 @@ export default function SpecialistStats() {
         return;
       }
 
-      const newOrders = orderSpecialists.filter(os => 
-        !os.quoted_price && !os.rejected_at
-      ).length;
+      // Filter for new orders (not expired, no quote, not rejected)
+      const newOrders = orderSpecialists.filter((os: any) => {
+        if (os.quoted_price || os.rejected_at) return false;
+        const expiresAt = os.orders?.expires_at;
+        if (!expiresAt) return true;
+        return new Date(expiresAt) > new Date(now);
+      }).length;
 
       const quotedOrders = orderSpecialists.filter(os => 
         os.quoted_price && os.is_accepted === null
@@ -210,8 +223,19 @@ export default function SpecialistStats() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
-          <h1 className="text-2xl font-bold mb-1">الإحصائيات</h1>
-          <p className="text-sm opacity-90">إجمالي الطلبات: {stats.totalOrders}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">الإحصائيات</h1>
+              <p className="text-sm opacity-90">إجمالي الطلبات: {stats.totalOrders}</p>
+            </div>
+            {specialistId && (
+              <LanguageSelector 
+                specialistId={specialistId} 
+                currentLanguage={preferredLanguage}
+                onLanguageChange={(lang) => setPreferredLanguage(lang)}
+              />
+            )}
+          </div>
         </div>
       </div>
 

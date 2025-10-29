@@ -19,6 +19,7 @@ import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { useLanguage } from '@/hooks/useLanguage';
 import { TermsAndConditions } from '@/components/booking/TermsAndConditions';
 import { MonthlyContract } from '@/components/booking/MonthlyContract';
+import { openWhatsApp } from '@/lib/externalLinks';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -263,6 +264,26 @@ export default function CompanyBooking() {
       slots.push(`${startTime2}-${endTime2}`);
     }
     return slots;
+  };
+
+  // Check if time slot is available (not in the past + 2 hours buffer)
+  const isTimeSlotAvailable = (timeSlot: string, selectedDate: Date | null) => {
+    if (!selectedDate) return false;
+    
+    const now = new Date();
+    const [startTime] = timeSlot.split('-');
+    const [hours, minutes] = startTime.split(':').map(Number);
+    
+    // Create a date object for the slot
+    const slotDateTime = new Date(selectedDate);
+    slotDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Add 2 hours buffer to current time
+    const bufferTime = new Date(now);
+    bufferTime.setHours(bufferTime.getHours() + 2);
+    
+    // Slot is available if it's after current time + 2 hours buffer
+    return slotDateTime >= bufferTime;
   };
 
   // Generate available months for the next 12 months (for monthly contracts)
@@ -712,7 +733,28 @@ export default function CompanyBooking() {
         return;
       }
 
-      // Update order details - keep as pending to show in upcoming until tracking starts
+      // Determine the specialist to assign
+      let assignedSpecialistId = selectedSpecialistIds.length > 0 ? selectedSpecialistIds[0] : null;
+      
+      // If no specialists selected but there are quotes, auto-select the one with lowest price
+      if (!assignedSpecialistId) {
+        const { data: quotesData } = await supabase
+          .from('order_specialists')
+          .select('specialist_id, quoted_price')
+          .eq('order_id', orderId)
+          .not('quoted_price', 'is', null);
+
+        if (quotesData && quotesData.length > 0) {
+          const lowestQuote = quotesData.reduce((lowest, current) => {
+            const currentPrice = parseFloat(current.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
+            const lowestPrice = parseFloat(lowest.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
+            return currentPrice < lowestPrice ? current : lowest;
+          });
+          assignedSpecialistId = lowestQuote.specialist_id;
+        }
+      }
+
+      // Update order details - set status to accepted and assign specialist
       const { error: orderError } = await supabase
         .from('orders')
         .update({
@@ -723,39 +765,24 @@ export default function CompanyBooking() {
           booking_date: bookingDate,
           booking_date_type: 'custom',
           booking_time: selectedTime,
-          status: 'pending',
+          status: 'in-progress',
+          specialist_id: assignedSpecialistId,
           tracking_stage: null,
           notes: isMonthlyService 
-            ? `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}`
+            ? `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}` 
             : `تم الموافقة على الشروط والأحكام: ${termsAccepted ? 'نعم' : 'لا'}`,
         })
         .eq('id', orderId);
 
       if (orderError) throw orderError;
 
-      // If no specialists selected but there are quotes, auto-select the one with lowest price
-      let finalSelectedIds = [...selectedSpecialistIds];
-      if (finalSelectedIds.length === 0) {
-        const { data: quotesData } = await supabase
-          .from('order_specialists')
-          .select('specialist_id, quoted_price')
-          .eq('order_id', orderId)
-          .not('quoted_price', 'is', null);
-
-        if (quotesData && quotesData.length > 0) {
-          // Find lowest price
-          const lowestQuote = quotesData.reduce((lowest, current) => {
-            const currentPrice = parseFloat(current.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
-            const lowestPrice = parseFloat(lowest.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || 'Infinity');
-            return currentPrice < lowestPrice ? current : lowest;
-          });
-          finalSelectedIds = [lowestQuote.specialist_id];
-        }
-      }
-
-      // Accept all selected specialists FIRST (before checking availability)
-      for (const specialistId of finalSelectedIds) {
-        const { error: acceptError } = await supabase
+      // Use the assigned specialist for all operations
+      const finalSelectedIds = assignedSpecialistId ? [assignedSpecialistId] : selectedSpecialistIds;
+      
+      // Accept the assigned specialist and reject others
+      if (assignedSpecialistId) {
+        // Accept the chosen specialist
+        await supabase
           .from('order_specialists')
           .update({ 
             is_accepted: true,
@@ -763,51 +790,37 @@ export default function CompanyBooking() {
             rejection_reason: null
           })
           .eq('order_id', orderId)
-          .eq('specialist_id', specialistId);
+          .eq('specialist_id', assignedSpecialistId);
 
-        if (acceptError) {
-          console.error('Error accepting specialist:', specialistId, acceptError);
-        }
-      }
-
-      // First, reject all unselected specialists for this order
-      if (finalSelectedIds.length > 0) {
-        const { error: rejectError } = await supabase
+        // Reject all other specialists
+        await supabase
           .from('order_specialists')
           .update({ 
             is_accepted: false,
             rejected_at: new Date().toISOString(),
-            rejection_reason: 'تم اختيار عرض آخر'
+            rejection_reason: 'تم اختيار محترفة أخرى'
           })
           .eq('order_id', orderId)
-          .not('specialist_id', 'in', `(${finalSelectedIds.join(',')})`);
-
-        if (rejectError) {
-          console.error('Error rejecting other specialists:', rejectError);
-        }
+          .neq('specialist_id', assignedSpecialistId);
       }
 
-      // THEN create schedules (this is optional and won't block the booking)
-      for (const specialistId of finalSelectedIds) {
-        try {
-          const response = await supabase.functions.invoke('manage-specialist-schedule', {
+      // Notify accepted specialists about booking confirmation → deep link to /order-tracking/:orderId
+      try {
+        if (finalSelectedIds.length > 0) {
+          await supabase.functions.invoke('send-push-notification', {
             body: {
-              specialist_id: specialistId,
-              order_id: orderId,
-              booking_date: bookingDate,
-              booking_time: selectedTime,
-              hours_count: hoursCount,
+              specialistIds: finalSelectedIds,
+              title: 'تأكيد الحجز',
+              body: `تم تأكيد حجزك - التاريخ: ${bookingDate}, الوقت: ${selectedTime}`,
+              data: {
+                orderId,
+                type: 'booking_confirmed',
+              },
             },
           });
-
-          if (response.error) {
-            console.error('Error creating schedule for specialist:', specialistId, response.error);
-          } else {
-            console.log('Schedule created for specialist:', specialistId, response.data);
-          }
-        } catch (scheduleError) {
-          console.error('Failed to create schedule for specialist:', specialistId, scheduleError);
         }
+      } catch (e) {
+        console.warn('🔔 Booking confirmation notification failed (non-blocking):', e);
       }
 
       console.log('Successfully accepted specialists:', selectedSpecialistIds);
@@ -835,7 +848,7 @@ export default function CompanyBooking() {
 
       // Redirect to WhatsApp
       if (company?.phone) {
-        window.open(`https://wa.me/${company.phone}?text=${message}`, '_blank');
+        openWhatsApp(company.phone, message);
       }
 
       toast({
@@ -1225,7 +1238,7 @@ export default function CompanyBooking() {
                           `الميزانية المقترحة: ${editedBudget}\n\n` +
                           `أرجو التواصل معي لتأكيد السعر الجديد.`
                         );
-                        window.open(`https://wa.me/${company.phone}?text=${message}`, '_blank');
+                        openWhatsApp(company.phone, message);
                       }
                     }}
                   >
@@ -1783,23 +1796,33 @@ export default function CompanyBooking() {
                                       ) : (
                                         // Show time slots for regular service
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                          {timeSlots.map((slot) => (
-                                            <label
-                                              key={slot}
-                                              className={cn(
-                                                'flex items-center justify-center border-2 rounded-lg p-2.5 cursor-pointer transition-all',
-                                                selectedTime === slot
-                                                  ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
-                                                  : 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
-                                              )}
-                                            >
-                                              <RadioGroupItem value={slot} id={slot} className="sr-only" />
-                                              <div className="flex items-center gap-1.5">
-                                                <Clock className="h-4 w-4" />
-                                                <span className="font-semibold text-xs">{slot}</span>
-                                              </div>
-                                            </label>
-                                          ))}
+                                          {timeSlots.map((slot) => {
+                                            const isAvailable = isTimeSlotAvailable(slot, bookingDateType ? new Date(bookingDateType) : null);
+                                            return (
+                                              <label
+                                                key={slot}
+                                                className={cn(
+                                                  'flex items-center justify-center border-2 rounded-lg p-2.5 transition-all',
+                                                  !isAvailable && 'opacity-40 cursor-not-allowed bg-muted',
+                                                  isAvailable && 'cursor-pointer',
+                                                  selectedTime === slot && isAvailable
+                                                    ? 'border-primary bg-primary text-primary-foreground shadow-md scale-105'
+                                                    : isAvailable && 'border-border bg-background hover:border-primary/50 hover:shadow-sm'
+                                                )}
+                                              >
+                                                <RadioGroupItem 
+                                                  value={slot} 
+                                                  id={slot} 
+                                                  className="sr-only" 
+                                                  disabled={!isAvailable}
+                                                />
+                                                <div className="flex items-center gap-1.5">
+                                                  <Clock className="h-4 w-4" />
+                                                  <span className="font-semibold text-xs">{slot}</span>
+                                                </div>
+                                              </label>
+                                            );
+                                          })}
                                         </div>
                                       )}
                                     </RadioGroup>

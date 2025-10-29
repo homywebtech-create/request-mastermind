@@ -39,6 +39,8 @@ import { Capacitor } from '@capacitor/core';
 import { RoleProtectedRoute } from "./components/auth/RoleProtectedRoute";
 import { UserRoleProvider } from "./contexts/UserRoleContext";
 import { PermissionRedirect } from "./components/auth/PermissionRedirect";
+import DeepLinkController from "./components/mobile/DeepLinkController";
+import { AppLoader } from "./components/ui/app-loader";
 
 const queryClient = new QueryClient();
 
@@ -68,102 +70,14 @@ const isCapacitorApp = (() => {
 })();
 
 // Global deep link and notification click handler (always mounted on mobile)
-function DeepLinkHandler() {
-  const navigate = useNavigate();
-  const { user, loading } = useAuth();
-
-  // Extract route from deep link URL
-  const extractRoute = (url: string | null | undefined): string | null => {
-    if (!url) return null;
-    try {
-      const parsed = new URL(url);
-      const route = parsed.searchParams.get('route');
-      return route ? decodeURIComponent(route) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  // Navigate or stash pending route based on auth
-  const handleRoute = async (route: string | null) => {
-    if (!route) return;
-
-    // Mark that a deep link navigation is happening to avoid default redirects
-    sessionStorage.setItem('deeplink:navigated', '1');
-
-    if (loading) {
-      const { Preferences } = await import('@capacitor/preferences');
-      await Preferences.set({ key: 'pendingRoute', value: route });
-      return;
-    }
-
-    if (user) {
-      navigate(route, { replace: true });
-    } else {
-      const { Preferences } = await import('@capacitor/preferences');
-      await Preferences.set({ key: 'pendingRoute', value: route });
-      navigate('/specialist-auth', { replace: true });
-    }
-  };
-
-  // Handle deep links on cold start and when app is opened via URL
-  useEffect(() => {
-    if (Capacitor.getPlatform() === 'web') return;
-
-    let appUrlOpenListener: any;
-
-    // Cold start deep link
-    CapApp.getLaunchUrl().then((launchUrl) => {
-      handleRoute(extractRoute(launchUrl?.url));
-    });
-
-    // Warm start deep link
-    (async () => {
-      appUrlOpenListener = await CapApp.addListener('appUrlOpen', (data) => {
-        handleRoute(extractRoute(data?.url));
-      });
-    })();
-
-    return () => {
-      if (appUrlOpenListener) appUrlOpenListener.remove();
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // When auth becomes ready, process any pending route saved by pushNotificationActionPerformed
-  useEffect(() => {
-    if (loading) return;
-
-    (async () => {
-      if (Capacitor.getPlatform() === 'web') return;
-      const { Preferences } = await import('@capacitor/preferences');
-      const { value } = await Preferences.get({ key: 'pendingRoute' });
-      if (value) {
-        await Preferences.remove({ key: 'pendingRoute' });
-        sessionStorage.setItem('deeplink:navigated', '1');
-        if (user) {
-          navigate(value, { replace: true });
-        } else {
-          await Preferences.set({ key: 'pendingRoute', value });
-          navigate('/specialist-auth', { replace: true });
-        }
-      }
-    })();
-  }, [user, loading, navigate]);
-
-  return null;
-}
+/* DeepLinkHandler removed: MobileLanding now handles all deep-link and pending-route navigation as a single source of truth to avoid race conditions and duplication. */
 
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <AppLoader message="جاري التحميل..." />;
   }
 
   if (!user) {
@@ -179,14 +93,39 @@ function MobileLanding() {
   const { user, loading } = useAuth();
   const [deepLink, setDeepLink] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
+  const [pendingRouteChecked, setPendingRouteChecked] = useState(false);
 
-  // Extract route from deep link URL
+  // Extract route from deep link URL (supports custom schemes + path-based)
   const extractRoute = (url: string): string | null => {
     try {
-      const parsed = new URL(url);
-      const route = parsed.searchParams.get('route');
-      return route ? decodeURIComponent(route) : null;
+      // 1) Prefer explicit query param ?route=...
+      const qIndex = url.indexOf('?');
+      if (qIndex !== -1) {
+        const qs = url.substring(qIndex + 1);
+        const params = new URLSearchParams(qs);
+        const r = params.get('route');
+        if (r) return decodeURIComponent(r);
+      }
+
+      // 2) Fallback: custom scheme with path (e.g., request-mastermind://open/path or ...//order-tracking/123)
+      const pathMatch = url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^/]*(\/.+)?$/);
+      if (pathMatch && pathMatch[1]) {
+        return pathMatch[1];
+      }
+
+      // 3) Last attempt: use URL with a dummy base
+      const parsed = new URL(url, 'https://deep.link');
+      const fromRoute = parsed.searchParams.get('route');
+      if (fromRoute) return decodeURIComponent(fromRoute);
+      if (parsed.pathname && parsed.pathname !== '/') return parsed.pathname + parsed.search;
+
+      return null;
     } catch {
+      // Final fallback: regex for route query
+      try {
+        const m = decodeURIComponent(url).match(/(?:\?|&)route=([^&]+)/);
+        if (m) return decodeURIComponent(m[1]);
+      } catch {}
       return null;
     }
   };
@@ -232,38 +171,66 @@ function MobileLanding() {
     };
   }, []);
 
-  // Handle navigation once auth is ready
+  // Check for pending routes FIRST (from notification tap while logged out)
   useEffect(() => {
-    if (loading || hasNavigated) return;
+    if (Capacitor.getPlatform() === 'web') {
+      setPendingRouteChecked(true);
+      return;
+    }
 
-    console.log('🧭 [APP] Handling navigation - user:', !!user, 'deepLink:', deepLink);
+    const checkPendingRoute = async () => {
+      console.log('🔍 [PENDING] Checking for pending route from notification...');
+      
+      const { Preferences } = await import('@capacitor/preferences');
+      const { value } = await Preferences.get({ key: 'pendingRoute' });
+      
+      if (value) {
+        console.log('✅ [PENDING] Found pending route:', value);
+        setDeepLink(value);
+        await Preferences.remove({ key: 'pendingRoute' });
+      } else {
+        console.log('ℹ️ [PENDING] No pending route found');
+      }
+      
+      setPendingRouteChecked(true);
+    };
+
+    checkPendingRoute();
+  }, []);
+
+  // Handle navigation once auth is ready AND pending route is checked
+  useEffect(() => {
+    if (loading || hasNavigated || !pendingRouteChecked) {
+      console.log('⏸️ [NAV] Waiting...', { loading, hasNavigated, pendingRouteChecked });
+      return;
+    }
+
+    console.log('🧭 [NAV] Ready to navigate - user:', !!user, 'deepLink:', deepLink);
 
     if (deepLink) {
       if (user) {
-        console.log('✅ [APP] Navigating to deep link:', deepLink);
+        console.log('✅ [NAV] User + deep link → navigating to:', deepLink);
         navigate(deepLink, { replace: true });
       } else {
-        console.log('🔐 [APP] Deep link present but not authenticated, going to auth');
+        console.log('🔐 [NAV] Deep link but not authenticated → going to auth');
         navigate('/specialist-auth', { replace: true });
       }
     } else {
       // Normal navigation
       if (user) {
+        console.log('🏠 [NAV] User logged in → default to /specialist-orders');
         navigate('/specialist-orders', { replace: true });
       } else {
+        console.log('🔐 [NAV] Not logged in → going to /specialist-auth');
         navigate('/specialist-auth', { replace: true });
       }
     }
 
     setHasNavigated(true);
-  }, [user, loading, deepLink, navigate, hasNavigated]);
+  }, [user, loading, deepLink, navigate, hasNavigated, pendingRouteChecked]);
 
   if (loading || !hasNavigated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <AppLoader message="جاري الاتصال..." />;
   }
 
   return null;
@@ -275,7 +242,7 @@ function AppRouter() {
     // Mobile App Routes (Capacitor)
     return (
       <BrowserRouter>
-        <DeepLinkHandler />
+        <DeepLinkController />
         <Routes>
           <Route path="/specialist-auth" element={<SpecialistAuth />} />
           <Route path="/specialist-orders" element={
@@ -316,7 +283,7 @@ function AppRouter() {
             </ProtectedRoute>
           } />
           <Route path="/" element={<MobileLanding />} />
-          <Route path="*" element={<MobileLanding />} />
+          <Route path="*" element={<SpecialistAuth />} />
         </Routes>
       </BrowserRouter>
     );

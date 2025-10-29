@@ -67,23 +67,98 @@ serve(async (req) => {
       .update({ verified: true })
       .eq('id', verification.id);
 
-    // Get company info
-    const { data: company, error: companyError } = await supabaseAdmin
+    // البحث عن الشركة أو المستخدم
+    let company: any = null;
+    let companyUser: any = null;
+
+    // البحث في جدول الشركات أولاً
+    const { data: companyData, error: companyError } = await supabaseAdmin
       .from('companies')
       .select('id, name')
       .eq('phone', phone)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (companyError || !company) {
-      console.error('Company not found:', companyError);
+    if (companyData) {
+      company = companyData;
+      console.log('6. Company found:', company.name);
+    } else {
+      // البحث في جدول company_users
+      console.log('6. Not found in companies, searching company_users...');
+      
+      // جلب جميع مستخدمي الشركات النشطين
+      const { data: allUsers, error: usersError } = await supabaseAdmin
+        .from('company_users')
+        .select(`
+          id,
+          phone,
+          full_name,
+          company_id,
+          companies (
+            id,
+            name,
+            is_active
+          )
+        `)
+        .eq('is_active', true);
+
+      console.log('7. Query error:', usersError);
+      console.log('7. All users count:', allUsers?.length);
+
+      if (!usersError && allUsers) {
+        // فلتر الشركات النشطة فقط
+        const activeUsers = allUsers.filter(u => u.companies?.is_active === true);
+        console.log('7.5. Active users count:', activeUsers.length);
+        console.log('7.6. All phones:', activeUsers.map(u => u.phone));
+        
+        // تنظيف الأرقام من جميع علامات + للمقارنة
+        const normalizePhone = (p: string) => p?.replace(/\+/g, '') || '';
+        const searchPhoneNormalized = normalizePhone(phone);
+        
+        console.log('8. Searching for phone:', phone, '| normalized:', searchPhoneNormalized);
+        
+        // البحث بعدة طرق
+        const userData = activeUsers.find(u => {
+          const userPhoneNormalized = normalizePhone(u.phone);
+          console.log('  - Comparing user phone:', u.phone, '| normalized:', userPhoneNormalized);
+          
+          // تطابق مباشر
+          if (u.phone === phone) return true;
+          
+          // مقارنة بدون علامات + (يحل مشكلة التكرار مثل +974+974)
+          if (userPhoneNormalized === searchPhoneNormalized) return true;
+          
+          // إذا كان أحد الأرقام يحتوي على الآخر (حالة التكرار)
+          if (userPhoneNormalized.includes(searchPhoneNormalized) || 
+              searchPhoneNormalized.includes(userPhoneNormalized)) {
+            return true;
+          }
+          
+          return false;
+        });
+
+        if (userData && userData.companies) {
+          companyUser = userData;
+          company = {
+            id: userData.companies.id,
+            name: userData.companies.name
+          };
+          console.log('9. Company user found:', companyUser.full_name, 'for company:', company.name);
+        } else {
+          console.log('9. No matching user found');
+        }
+      }
+    }
+
+    if (!company) {
+      console.error('Company or company user not found');
       return new Response(
         JSON.stringify({ error: 'Company not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('6. Company found:', company.name);
+    console.log('8. Final company:', company.name);
 
     // Generate company credentials with cryptographically secure password
     const companyEmail = `${phone.replace('+', '')}@company.local`;
@@ -95,7 +170,7 @@ serve(async (req) => {
       .replace(/\//g, '_')
       .slice(0, 32);
 
-    console.log('7. Checking if user exists in auth...');
+    console.log('9. Checking if user exists in auth...');
 
     // First, check if user exists in auth.users by email
     const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
@@ -105,7 +180,7 @@ serve(async (req) => {
     
     if (existingAuthUser) {
       // User exists in auth, use it
-      console.log('8. User found in auth:', existingAuthUser.id);
+      console.log('10. User found in auth:', existingAuthUser.id);
       authUser = existingAuthUser;
 
       // Check if profile exists
@@ -117,21 +192,38 @@ serve(async (req) => {
 
       // Update profile with company_id if needed
       if (profile && !profile.company_id) {
-        console.log('9. Updating profile with company_id');
+        console.log('11. Updating profile with company_id');
         await supabaseAdmin
           .from('profiles')
           .update({ company_id: company.id, phone: phone })
           .eq('user_id', authUser.id);
       }
+
+      // إذا كان المستخدم من company_users، ربط الحسابين
+      if (companyUser) {
+        const { data: existingCompanyUser } = await supabaseAdmin
+          .from('company_users')
+          .select('user_id')
+          .eq('id', companyUser.id)
+          .maybeSingle();
+
+        if (existingCompanyUser && !existingCompanyUser.user_id) {
+          console.log('12. Linking company_user with auth user');
+          await supabaseAdmin
+            .from('company_users')
+            .update({ user_id: authUser.id })
+            .eq('id', companyUser.id);
+        }
+      }
     } else {
       // Create new user
-      console.log('8. Creating new user...');
+      console.log('10. Creating new user...');
       const { data: authData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
         email: companyEmail,
         password: companyPassword,
         email_confirm: true,
         user_metadata: {
-          full_name: company.name,
+          full_name: companyUser ? companyUser.full_name : company.name,
           phone: phone,
         },
       });
@@ -147,17 +239,30 @@ serve(async (req) => {
       authUser = authData.user;
 
       // Update profile with company_id
-      console.log('9. Updating profile with company_id');
+      console.log('11. Updating profile with company_id');
       await supabaseAdmin
         .from('profiles')
-        .update({ company_id: company.id, phone: phone })
+        .update({ 
+          company_id: company.id, 
+          phone: phone,
+          full_name: companyUser ? companyUser.full_name : company.name
+        })
         .eq('user_id', authUser.id);
 
-      console.log('10. User created:', authUser.id);
+      // إذا كان المستخدم من company_users، ربط الحسابين
+      if (companyUser) {
+        console.log('12. Linking company_user with auth user');
+        await supabaseAdmin
+          .from('company_users')
+          .update({ user_id: authUser.id })
+          .eq('id', companyUser.id);
+      }
+
+      console.log('13. User created:', authUser.id);
     }
 
     // تحديث كلمة المرور للمستخدم
-    console.log('10. Updating user password...');
+    console.log('14. Updating user password...');
     
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       authUser.id,
@@ -172,7 +277,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('11. Password updated successfully');
+    console.log('15. Password updated successfully');
 
     return new Response(
       JSON.stringify({

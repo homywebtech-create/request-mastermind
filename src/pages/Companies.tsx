@@ -19,6 +19,7 @@ import { countries } from "@/data/countries";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
+import { openWhatsApp } from "@/lib/externalLinks";
 
 interface Service {
   id: string;
@@ -552,7 +553,7 @@ export default function Companies() {
     const message = `Hello ${companyName},\n\nYour company has been registered in our system.\nTo access the company page, please click on the following link:\n${companyLoginUrl}\n\nYou will be asked to enter your phone number: ${phone}\nThen an activation code will be sent via WhatsApp.`;
 
     const whatsappUrl = `https://wa.me/${phone.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    openWhatsApp(phone, message);
 
     toast({
       title: t.whatsappOpened,

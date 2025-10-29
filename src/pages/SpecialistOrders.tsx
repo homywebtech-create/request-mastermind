@@ -4,11 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map } from "lucide-react";
+import { LogOut, Package, Clock, CheckCircle, AlertCircle, Phone, MapPin, DollarSign, FileText, Sparkles, Tag, XCircle, Navigation, Map, Calendar, Star, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { App as CapacitorApp } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Badge } from "@/components/ui/badge";
-import { differenceInMinutes, parseISO } from "date-fns";
+import { differenceInMinutes, parseISO, format } from "date-fns";
+import { ar } from "date-fns/locale";
+import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +53,7 @@ interface Order {
   gps_latitude: number | null;
   gps_longitude: number | null;
   building_info: string | null;
+  order_number: string | null;
   customer: {
     name: string;
     whatsapp_number: string;
@@ -164,6 +168,9 @@ export default function SpecialistOrders() {
         async (payload) => {
           console.log('New order detected:', payload);
           
+          // Add small delay to ensure data is available in database
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           // Refresh orders when a new order is assigned to this specialist
           fetchOrders(specialistId);
           
@@ -220,9 +227,17 @@ export default function SpecialistOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         (payload) => {
-          console.log('Order specialist updated:', payload);
-          // Refresh orders immediately when an order is updated
-          fetchOrders(specialistId);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('🔄 [REALTIME] Order specialist updated:');
+          console.log('Old:', payload.old);
+          console.log('New:', payload.new);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          
+          // Add small delay to ensure data is available in database
+          setTimeout(() => {
+            // Refresh orders when an order is updated
+            fetchOrders(specialistId);
+          }, 500);
           
           // Show notification for accepted orders
           if (payload.new && (payload.new as any).is_accepted === true) {
@@ -241,9 +256,17 @@ export default function SpecialistOrders() {
           table: 'orders'
         },
         (payload) => {
-          console.log('Order table updated:', payload);
-          // Refresh orders when order details change
-          fetchOrders(specialistId);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('🔄 [REALTIME] Order table updated:');
+          console.log('Order ID:', payload.new?.id);
+          console.log('New status:', payload.new?.status);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          
+          // Add small delay to ensure data is available in database
+          setTimeout(() => {
+            // Refresh orders when order details change
+            fetchOrders(specialistId);
+          }, 500);
         }
       )
       .subscribe();
@@ -335,6 +358,7 @@ export default function SpecialistOrders() {
           gps_latitude,
           gps_longitude,
           building_info,
+          order_number,
           customer:customers (
             name,
             whatsapp_number,
@@ -365,11 +389,16 @@ export default function SpecialistOrders() {
         };
       });
 
-      console.log('📊 All orders with status:', ordersWithQuotes?.map(o => ({
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📊 [FETCH] All orders fetched:', ordersWithQuotes?.length);
+      console.log('📊 [FETCH] Orders detail:', ordersWithQuotes?.map(o => ({
         id: o.id,
+        status: o.status,
         is_accepted: o.order_specialist?.is_accepted,
-        quoted_price: o.order_specialist?.quoted_price
+        quoted_price: o.order_specialist?.quoted_price,
+        order_specialist_id: o.order_specialist?.id
       })));
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       setOrders(ordersWithQuotes || []);
     } catch (error: any) {
@@ -504,7 +533,7 @@ export default function SpecialistOrders() {
   };
 
   const openWhatsApp = (phone: string) => {
-    window.open(`https://wa.me/${phone.replace(/\+/g, '')}`, '_blank');
+    openWhatsAppHelper(phone);
   };
 
   if (isLoading) {
@@ -543,13 +572,35 @@ export default function SpecialistOrders() {
     o.order_specialist?.rejection_reason !== 'Skipped by specialist'
   );
   
-  console.log('🎯 Filtered orders:', {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📊 [FILTER] Orders breakdown:');
+  console.log('Total orders:', orders.length);
+  console.log('New orders:', newOrders.length);
+  console.log('Quoted orders:', quotedOrders.length);
+  console.log('Accepted orders:', acceptedOrders.length, acceptedOrders.map(o => ({
+    id: o.id,
+    order_number: o.order_number,
+    is_accepted: o.order_specialist?.is_accepted,
+    quoted_price: o.order_specialist?.quoted_price
+  })));
+  console.log('Skipped orders:', skippedOrders.length);
+  console.log('Rejected orders:', rejectedOrders.length);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🎯 [FILTER] Total orders:', orders.length);
+  console.log('🎯 [FILTER] Filtered counts:', {
     new: newOrders.length,
     quoted: quotedOrders.length,
     accepted: acceptedOrders.length,
     skipped: skippedOrders.length,
     rejected: rejectedOrders.length
   });
+  console.log('🎯 [FILTER] Accepted orders detail:', acceptedOrders.map(o => ({
+    id: o.id,
+    status: o.status,
+    is_accepted: o.order_specialist?.is_accepted,
+    order_specialist_id: o.order_specialist?.id
+  })));
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   const renderOrderCard = (order: Order, showQuoteButton: boolean = false) => {
     const hasQuote = !!order.order_specialist?.quoted_price;
@@ -628,9 +679,16 @@ export default function SpecialistOrders() {
                   <span className="text-sm font-bold">طلب جديد - قدم سعرك</span>
                 </div>
               )}
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-2xl font-bold text-foreground">{order.customer?.name}</h3>
-                {getStatusBadge(order.status, hasQuote)}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-2xl font-bold text-foreground">{order.customer?.name}</h3>
+                  {getStatusBadge(order.status, hasQuote)}
+                </div>
+                {order.order_number && (
+                  <Badge variant="outline" className="text-xs font-bold">
+                    {order.order_number}
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
@@ -840,60 +898,17 @@ export default function SpecialistOrders() {
           </div>
         )}
         
-        {order.order_specialist?.is_accepted === true && (
-          <div className="px-6 pb-6 space-y-4">
-            {canMoveNow() ? (
-              <div className="space-y-4">
-                <Button
-                  onClick={() => navigate(`/order-tracking/${order.id}`)}
-                  className="w-full bg-green-600 hover:bg-green-700 h-auto py-5 px-6 shadow-lg hover:shadow-xl transition-all"
-                  size="lg"
-                >
-                  <div className="flex items-center justify-between w-full gap-4">
-                    <div className="flex items-center gap-3">
-                      <Navigation className="h-6 w-6" />
-                      <span className="text-lg font-bold">انطلق الآن</span>
-                    </div>
-                    {getTimeUntilMovement() && order.booking_date && (
-                      <div className="flex items-center gap-2 bg-blue-500/30 px-4 py-2 rounded-full border-2 border-blue-400/50 backdrop-blur-sm">
-                        <Clock className="h-4 w-4 text-white" />
-                        <span className="font-bold text-sm text-white font-mono">
-                          {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
-                          {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${String(getTimeUntilMovement()!.hours).padStart(2, '0')}:`}
-                          {String(getTimeUntilMovement()!.minutes).padStart(2, '0')}:
-                          {String(getTimeUntilMovement()!.seconds).padStart(2, '0')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </Button>
-              </div>
-            ) : (
-              <Button
-                disabled
-                className="w-full h-auto py-5 px-6 shadow-md"
-                variant="outline"
-                size="lg"
-              >
-                <div className="flex items-center justify-between w-full gap-4">
-                  <div className="flex items-center gap-3">
-                    <Navigation className="h-6 w-6" />
-                    <span className="font-bold text-lg">انطلق الآن</span>
-                  </div>
-                  {getTimeUntilMovement() && order.booking_date && (
-                    <div className="flex items-center gap-2 bg-red-50 px-4 py-2 rounded-full border-2 border-red-200">
-                      <Clock className="h-4 w-4 text-red-600" />
-                      <span className="font-bold text-sm text-red-600 font-mono">
-                        {getTimeUntilMovement()!.days > 0 && `${getTimeUntilMovement()!.days}d `}
-                        {(getTimeUntilMovement()!.hours > 0 || getTimeUntilMovement()!.days > 0) && `${String(getTimeUntilMovement()!.hours).padStart(2, '0')}:`}
-                        {String(getTimeUntilMovement()!.minutes).padStart(2, '0')}:
-                        {String(getTimeUntilMovement()!.seconds).padStart(2, '0')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </Button>
-            )}
+        {/* Action buttons for Accepted and Quoted Orders */}
+        {(order.order_specialist?.is_accepted === true || (hasQuote && !isRejected)) && (
+          <div className="px-6 pb-6">
+            <Button
+              onClick={() => navigate(`/order-tracking/${order.id}`)}
+              className="w-full gap-2 h-12 text-base font-bold shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
+              <FileText className="h-5 w-5" />
+              {order.order_specialist?.is_accepted === true ? 'عرض تفاصيل الطلب المؤكد' : 'عرض تفاصيل العرض'}
+            </Button>
           </div>
         )}
       </Card>

@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.verify-company-code]
 verify_jwt = false
 
+[functions.find-company-by-phone]
+verify_jwt = false
+
 [functions.verify-specialist-code]
 verify_jwt = false
 
@@ -31,4 +34,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.notify-expired-orders]
+verify_jwt = false
+
+[functions.translate-order]
 verify_jwt = false

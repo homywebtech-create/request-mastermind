@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy } from "lucide-react";
+import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -19,6 +20,7 @@ import { useTranslation } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 
 interface Order {
   id: string;
@@ -119,6 +121,13 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const { user } = useAuth();
   const { role } = useUserRole();
   const { hasPermission } = useUserPermissions(user?.id, role);
+  const { hasPermission: hasCompanyPermission } = useCompanyUserPermissions(user?.id);
+  
+  // Determine if user can manage orders based on view type
+  const canManageOrders = isCompanyView 
+    ? hasCompanyPermission('manage_orders')
+    : hasPermission('manage_orders');
+  
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [resendDialogOpen, setResendDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -152,11 +161,15 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     if (filter === 'awaiting-response') {
       if (isCompanyView && companyId) {
         // For companies: show orders where company specialists have quoted but not accepted yet
+        // AND exclude orders that have started tracking (in progress)
         const companySpecialists = order.order_specialists?.filter(os => 
           os.specialists?.company_id === companyId
         );
-        return companySpecialists && 
-               companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+        const hasQuoteNotAccepted = companySpecialists && 
+                                     companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+        const notInProgress = !order.tracking_stage && order.status !== 'completed';
+        
+        return hasQuoteNotAccepted && notInProgress;
       } else {
         // For admin: show orders with quotes but NO quote accepted yet
         const hasAnyAccepted = order.order_specialists?.some(os => os.is_accepted === true);
@@ -319,22 +332,22 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     const localSentTime = recentlySentOrders.get(order.id);
     if (localSentTime) {
       const diffInMinutes = Math.floor((Date.now() - localSentTime) / (1000 * 60));
-      return diffInMinutes;
+      return Math.max(0, diffInMinutes); // Never return negative
     }
     
     // Fall back to database time
     const now = new Date();
     const sentTime = order.last_sent_at ? new Date(order.last_sent_at) : new Date(order.created_at);
     const diffInMinutes = Math.floor((now.getTime() - sentTime.getTime()) / (1000 * 60));
-    return diffInMinutes;
+    return Math.max(0, diffInMinutes); // Never return negative
   };
 
   const isOverThreeMinutes = (order: Order) => {
-    return getTimeSinceSent(order) > 3;
+    return getTimeSinceSent(order) >= 3;
   };
 
   const isWithinThreeMinutes = (order: Order) => {
-    return getTimeSinceSent(order) <= 3;
+    return getTimeSinceSent(order) < 3;
   };
 
   const isProcessing = (orderId: string) => {
@@ -408,17 +421,12 @@ You can use this link to track your order status at any time.
 
 Thank you for contacting us! 🌟`;
     
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
-    
-    window.open(whatsappUrl, '_blank');
+    openWhatsAppHelper(cleanNumber, message);
     onLinkCopied(order.id);
   };
 
   const openWhatsApp = (phoneNumber: string) => {
-    const cleanNumber = phoneNumber.replace(/\D/g, '');
-    const whatsappUrl = `https://wa.me/${cleanNumber}`;
-    window.open(whatsappUrl, '_blank');
+    openWhatsAppHelper(phoneNumber);
   };
 
   const handleAcceptQuote = async (orderSpecialistId: string, orderId: string) => {
@@ -433,6 +441,38 @@ Thank you for contacting us! 🌟`;
         .eq('id', orderSpecialistId);
 
       if (error) throw error;
+
+      // Fetch the specialist to notify
+      let specialistId: string | null = null;
+      try {
+        const { data: os, error: osErr } = await supabase
+          .from('order_specialists')
+          .select('specialist_id')
+          .eq('id', orderSpecialistId)
+          .single();
+        if (!osErr) specialistId = os?.specialist_id || null;
+      } catch (e) {
+        console.warn('Could not resolve specialist_id for accepted quote:', e);
+      }
+
+      // Send booking confirmation push → deep link to /order-tracking/:orderId
+      if (specialistId) {
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              specialistIds: [specialistId],
+              title: 'تأكيد الحجز',
+              body: 'تم تأكيد حجزك بنجاح',
+              data: {
+                orderId,
+                type: 'booking_confirmed',
+              },
+            },
+          });
+        } catch (e) {
+          console.warn('🔔 Push booking_confirmed failed (non-blocking):', e);
+        }
+      }
 
       toast({
         title: t.quoteAccepted,
@@ -1015,8 +1055,10 @@ Thank you for contacting us! 🌟`;
                   const customerBudget = order.customers?.budget || '-';
                   const isPending = order.status === 'pending' && (order.company_id || order.send_to_all_companies);
                   const minutesSinceSent = getTimeSinceSent(order);
-                  const isDelayed = isOverThreeMinutes(order) && isPending;
-                  const isRecentlySent = isWithinThreeMinutes(order) && isPending;
+                  // Show delayed status for all orders that can be resent, not just pending ones
+                  const canShowResendButton = canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView));
+                  const isDelayed = isOverThreeMinutes(order) && canShowResendButton;
+                  const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton;
                   const isOrderProcessing = isProcessing(order.id);
                   
                   return (
@@ -1096,32 +1138,37 @@ Thank you for contacting us! 🌟`;
                                       </div>
                                     </div>
                                     <div className="mt-2 flex gap-2">
-                                      <Button
-                                        size="sm"
-                                        variant="default"
-                                        className="flex-1"
-                                        onClick={() => {
-                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
-                                          window.open(url, '_blank');
-                                        }}
-                                      >
-                                        <Building2 className="h-3 w-3 mr-2" />
-                                        {t.enterCompanyPage}
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                          const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
-                                          navigator.clipboard.writeText(url);
-                                          toast({
-                                            title: t.linkCopiedSuccess,
-                                            description: t.linkCopiedSuccessDesc,
-                                          });
-                                        }}
-                                      >
-                                        <Copy className="h-3 w-3" />
-                                      </Button>
+                                      {/* Only show these buttons to users with appropriate permissions */}
+                                      {(canManageOrders || !isCompanyView) && (
+                                        <>
+                                          <Button
+                                            size="sm"
+                                            variant="default"
+                                            className="flex-1"
+                            onClick={() => {
+                              const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                              window.location.href = url;
+                            }}
+                                          >
+                                            <Building2 className="h-3 w-3 mr-2" />
+                                            {t.enterCompanyPage}
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
+                                              navigator.clipboard.writeText(url);
+                                              toast({
+                                                title: t.linkCopiedSuccess,
+                                                description: t.linkCopiedSuccessDesc,
+                                              });
+                                            }}
+                                          >
+                                            <Copy className="h-3 w-3" />
+                                          </Button>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
                                 ))}
@@ -1202,38 +1249,46 @@ Thank you for contacting us! 🌟`;
                       
                       <TableCell>
                         <div className="flex items-center gap-2 flex-wrap">
-                          {isPending && (
+                          {/* Show resend button for pending orders and orders without quotes */}
+                          {canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView)) && (
                             <>
                               <Button
                                 size="sm"
-                                variant={isDelayed ? "destructive" : "outline"}
+                                variant={isDelayed ? "destructive" : "default"}
                                 onClick={() => openResendDialog(order)}
-                                disabled={Boolean(isRecentlySent) || Boolean(isOrderProcessing)}
+                                disabled={isRecentlySent || isOrderProcessing}
                                 className="flex items-center gap-1"
                               >
-                                {isOrderProcessing ? (
+                                 {isOrderProcessing ? (
                                   <>
                                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                     {t.sending}
                                   </>
+                                ) : isRecentlySent ? (
+                                  <>
+                                    <Send className="h-3 w-3" />
+                                    {t.resendIn.replace('{minutes}', Math.max(0, 3 - minutesSinceSent).toString())}
+                                  </>
                                 ) : (
                                   <>
                                     <Send className="h-3 w-3" />
-                                    {isRecentlySent ? t.resendIn.replace('{minutes}', (3 - minutesSinceSent).toString()) : t.resend}
+                                    {t.resend} ({minutesSinceSent} min)
                                   </>
                                 )}
                               </Button>
 
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openSendDialog(order)}
-                                disabled={Boolean(isOrderProcessing)}
-                                className="flex items-center gap-1"
-                              >
-                                <Building2 className="h-3 w-3" />
-                                {t.change}
-                              </Button>
+                              {isPending && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openSendDialog(order)}
+                                  disabled={Boolean(isOrderProcessing)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Building2 className="h-3 w-3" />
+                                  {t.change}
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>

@@ -93,6 +93,12 @@ const permissionGroups: PermissionGroup[] = [
     permissions: [
       { key: 'view_activity_logs', label: { ar: "عرض سجل النشاطات", en: "View Activity Logs" } }
     ]
+  },
+  {
+    title: { ar: "الإحصائيات", en: "Statistics" },
+    permissions: [
+      { key: 'view_admin_statistics', label: { ar: "عرض الإحصائيات", en: "View Statistics" } }
+    ]
   }
 ];
 

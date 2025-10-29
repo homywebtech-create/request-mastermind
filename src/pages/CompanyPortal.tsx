@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 import { Button } from "@/components/ui/button";
 import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck, BarChart } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
@@ -19,6 +21,8 @@ interface Company {
   email: string;
   address: string;
   logo_url?: string;
+  currentUserName?: string;
+  currentUserPhone?: string;
 }
 
 interface Order {
@@ -80,6 +84,8 @@ export default function CompanyPortal() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const { hasPermission, hasAnyPermission, isOwner } = useCompanyUserPermissions(user?.id);
   const [company, setCompany] = useState<Company | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<string>('new');
@@ -155,7 +161,7 @@ export default function CompanyPortal() {
       // الحصول على معلومات الشركة
       const { data: profile } = await supabase
         .from("profiles")
-        .select("company_id")
+        .select("company_id, full_name, phone")
         .eq("user_id", user.id)
         .single();
 
@@ -177,7 +183,13 @@ export default function CompanyPortal() {
         .single();
 
       if (companyError) throw companyError;
-      setCompany(companyData);
+      
+      // إضافة معلومات المستخدم للشركة
+      setCompany({
+        ...companyData,
+        currentUserName: profile.full_name,
+        currentUserPhone: profile.phone,
+      });
 
       // جلب الطلبات
       fetchOrders(profile.company_id);
@@ -261,12 +273,16 @@ export default function CompanyPortal() {
     );
     
     // Awaiting Response (بانتظار الرد): تم تقديم عرض من محترفات الشركة ولم يتم قبوله بعد
+    // ولكن لم يبدأ التتبع بعد (استثناء الطلبات التي في مرحلة التنفيذ)
     const awaitingOrders = ordersList.filter(o => {
       const companySpecialists = o.order_specialists?.filter(os => 
         os.specialists?.company_id === company?.id
       );
-      return companySpecialists && 
-             companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+      const hasQuoteNotAccepted = companySpecialists && 
+                                   companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+      const notInProgress = !o.tracking_stage && o.status !== 'completed';
+      
+      return hasQuoteNotAccepted && notInProgress;
     });
     
     // Upcoming (القادمة): تم قبول عرض محترفة من الشركة لكن لم يبدأ التتبع بعد
@@ -507,46 +523,70 @@ export default function CompanyPortal() {
                     {company.name_en}
                   </h2>
                 )}
-                <p className="text-sm text-muted-foreground mt-1">
-                  {company.phone}
-                </p>
+                {/* Current user info only */}
+                {company.currentUserName && (
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                    <Users className="h-3 w-3" />
+                    <span>{company.currentUserName}</span>
+                    {company.currentUserPhone && (
+                      <span className="text-xs">({company.currentUserPhone})</span>
+                    )}
+                  </p>
+                )}
               </div>
             </div>
             
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
-              <Button
-                variant="outline"
-                onClick={() => navigate("/company/team")}
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">{language === 'ar' ? 'الفريق' : 'Team'}</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/company/statistics")}
-                className="flex items-center gap-2"
-              >
-                <BarChart className="h-4 w-4" />
-                <span className="hidden sm:inline">{language === 'ar' ? 'الإحصائيات' : 'Statistics'}</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/company/contracts")}
-                className="flex items-center gap-2"
-              >
-                <FileCheck className="h-4 w-4" />
-                <span className="hidden sm:inline">{language === 'ar' ? 'العقود' : 'Contracts'}</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/specialists")}
-                className="flex items-center gap-2"
-              >
-                <UserCog className="h-4 w-4" />
-                <span className="hidden sm:inline">Specialists</span>
-              </Button>
+              
+              {/* Team Management - only for users with manage_team permission */}
+              {hasPermission('manage_team') && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/company/team")}
+                  className="flex items-center gap-2"
+                >
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">{language === 'ar' ? 'الفريق' : 'Team'}</span>
+                </Button>
+              )}
+              
+              {/* Statistics - only for users with view_reports or view_statistics permission */}
+              {(hasPermission('view_reports') || hasPermission('view_statistics')) && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/company/statistics")}
+                  className="flex items-center gap-2"
+                >
+                  <BarChart className="h-4 w-4" />
+                  <span className="hidden sm:inline">{language === 'ar' ? 'الإحصائيات' : 'Statistics'}</span>
+                </Button>
+              )}
+              
+              {/* Contracts - only for users with view/manage contracts permission */}
+              {hasAnyPermission(['view_contracts', 'manage_contracts']) && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/company/contracts")}
+                  className="flex items-center gap-2"
+                >
+                  <FileCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">{language === 'ar' ? 'العقود' : 'Contracts'}</span>
+                </Button>
+              )}
+              
+              {/* Specialists - only for users with view/manage specialists permission */}
+              {hasAnyPermission(['view_specialists', 'manage_specialists']) && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/specialists")}
+                  className="flex items-center gap-2"
+                >
+                  <UserCog className="h-4 w-4" />
+                  <span className="hidden sm:inline">Specialists</span>
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
                 size="icon"
@@ -609,15 +649,18 @@ export default function CompanyPortal() {
           </div>
         </div>
 
-        <div className="flex justify-start">
-          <Button
-            onClick={() => setShowOrderForm(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>طلب جديد / New Order</span>
-          </Button>
-        </div>
+        {/* New Order Button - only for users with manage_orders permission */}
+        {hasPermission('manage_orders') && (
+          <div className="flex justify-start">
+            <Button
+              onClick={() => setShowOrderForm(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>طلب جديد / New Order</span>
+            </Button>
+          </div>
+        )}
 
         <OrdersTable
           orders={orders}
