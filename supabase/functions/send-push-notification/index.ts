@@ -182,6 +182,12 @@ serve(async (req) => {
           ),
         };
 
+        // Choose Android channel: use call-style for new orders/tests, standard otherwise
+        const androidChannelId =
+          (notificationType === 'new_order' || notificationType === 'resend_order' || notificationType === 'test')
+            ? 'booking-calls-v4'
+            : 'new-orders-v5';
+
         // IMPORTANT: Include BOTH notification and data for Android
         // - notification: Ensures FCM displays notification when app is CLOSED
         // - data: Allows MyFirebaseMessagingService.onMessageReceived() to handle it when app is open/background
@@ -198,8 +204,7 @@ serve(async (req) => {
                   priority: 'high',
                   direct_boot_ok: true,
                   notification: {
-                    channel_id: 'new-orders-v4',
-                    sound: 'notification_sound',
+                    channel_id: androidChannelId,
                   },
                 },
               },
