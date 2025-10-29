@@ -540,64 +540,64 @@ export default function OrderTracking() {
 
         {/* Moving Stage - Compact */}
         {stage === 'moving' && (
-          <div className="space-y-4 pb-24">
+          <div className="space-y-3 pb-24">
             {/* Compact Status Card */}
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
-              <div className="p-4 text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full">
-                  <Navigation className="h-6 w-6" />
+              <div className="p-3 text-center">
+                <div className="inline-flex items-center justify-center w-10 h-10 bg-white/20 rounded-full mb-2">
+                  <Navigation className="h-5 w-5" />
                 </div>
-                <h2 className="text-lg font-bold">في الطريق إلى العميل</h2>
-                <p className="text-sm text-blue-50">العميل بانتظارك كن هناك في الوقت</p>
+                <p className="text-base font-semibold text-blue-50">العميل بانتظارك كن هناك في الوقت</p>
               </div>
             </Card>
 
-            {/* Compact Navigation Icons */}
-            <div className="flex gap-3 justify-center">
-              <Button
-                size="icon"
-                className="h-14 w-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg"
-                onClick={openMaps}
-                title="موقع العميل"
-              >
-                <MapPin className="h-6 w-6" />
-              </Button>
+            {/* Compact Navigation Icons with Labels */}
+            <div className="flex gap-4 justify-center items-start">
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  size="icon"
+                  className="h-16 w-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg"
+                  onClick={openMaps}
+                >
+                  <MapPin className="h-7 w-7" />
+                </Button>
+                <span className="text-xs font-medium text-muted-foreground">موقع العميل</span>
+              </div>
 
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-14 w-14 rounded-full shadow-lg"
-                onClick={shareLocation}
-                title="شارك الموقع"
-              >
-                <Share2 className="h-6 w-6" />
-              </Button>
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-16 w-16 rounded-full shadow-lg"
+                  onClick={shareLocation}
+                >
+                  <Share2 className="h-7 w-7" />
+                </Button>
+                <span className="text-xs font-medium text-muted-foreground">مشاركة الموقع</span>
+              </div>
             </div>
 
             {/* Fixed Arrival Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50 space-y-3">
+            <div className="fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t z-50 space-y-2">
               {/* Timer Warning - Show when button is disabled */}
               {movingTimer > 0 && (
-                <Card className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-950/50 dark:to-amber-900/50 border-2 border-amber-300 dark:border-amber-700 shadow-lg">
-                  <div className="p-4 space-y-2">
+                <Card className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-950/50 dark:to-amber-900/50 border-2 border-amber-300 dark:border-amber-700 shadow-md">
+                  <div className="p-3 space-y-2">
                     <div className="flex items-center justify-center gap-2">
-                      <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse" />
-                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-pulse" />
+                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">
                         الزر سيتم تفعيله بعد
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-3xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
+                      <p className="text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
                         00:{movingTimer.toString().padStart(2, '0')}
-                      </p>
-                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                        انتظر قليلاً حتى يتم تفعيل زر الوصول
                       </p>
                     </div>
                     {/* Progress Bar */}
-                    <div className="w-full bg-amber-200 dark:bg-amber-900 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-amber-200 dark:bg-amber-900 rounded-full h-1.5 overflow-hidden">
                       <div
-                        className="bg-amber-600 dark:bg-amber-400 h-2 rounded-full transition-all duration-1000"
+                        className="bg-amber-600 dark:bg-amber-400 h-1.5 rounded-full transition-all duration-1000"
                         style={{ width: `${((60 - movingTimer) / 60) * 100}%` }}
                       />
                     </div>
@@ -608,14 +608,14 @@ export default function OrderTracking() {
               <Button
                 onClick={handleArrived}
                 disabled={movingTimer > 0}
-                className={`w-full h-14 text-lg font-bold shadow-lg transition-all ${
+                className={`w-full h-12 text-base font-bold shadow-lg transition-all ${
                   movingTimer > 0 
                     ? 'opacity-50 cursor-not-allowed bg-gray-400' 
                     : 'bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:shadow-xl'
                 }`}
                 size="lg"
               >
-                <CheckCircle className="h-6 w-6 ml-2" />
+                <CheckCircle className="h-5 w-5 ml-2" />
                 <span>لقد وصلت إلى الموقع</span>
               </Button>
             </div>
