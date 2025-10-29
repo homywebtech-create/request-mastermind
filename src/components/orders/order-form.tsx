@@ -466,12 +466,14 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
 
       if (!error && data) {
         // Customer found - auto-fill the name and other data
+        // Only fill budget if both budget and budget_type exist to maintain consistency
+        const shouldFillBudget = data.budget && data.budget_type;
         setFormData(prev => ({
           ...prev,
           customerName: data.name,
           area: data.area || prev.area,
-          budget: data.budget || prev.budget,
-          budgetType: data.budget_type || prev.budgetType,
+          budget: shouldFillBudget ? data.budget : prev.budget,
+          budgetType: shouldFillBudget ? data.budget_type : prev.budgetType,
         }));
         
         toast({
