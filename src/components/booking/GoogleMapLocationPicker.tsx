@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
-import { MapPin, Navigation, Check } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MapPin, Navigation, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GoogleMapLocationPickerProps {
-  onLocationSelect: (lat: number, lng: number) => void;
+  onLocationSelect: (lat: number, lng: number, address?: string) => void;
   initialLat?: number;
   initialLng?: number;
   language?: 'ar' | 'en';
@@ -12,54 +15,45 @@ interface GoogleMapLocationPickerProps {
 
 const translations = {
   ar: {
-    testingMode: '🧪 وضع الاختبار - استخدم الموقع الافتراضي',
-    testingDesc: 'للاختبار فقط: يمكنك استخدام الموقع الافتراضي (الدوحة). بعد الانتهاء من الاختبار، يمكن إضافة خريطة تفاعلية حقيقية.',
-    selectLocation: 'حدد موقع الخدمة',
-    defaultLocation: 'موقع افتراضي (الدوحة)',
-    myLocation: 'موقعي الحالي',
-    confirmLocation: 'تأكيد الموقع',
-    backToMyLocation: 'العودة إلى موقعي',
-    enterApiKey: 'يرجى إدخال Google Maps API Key',
-    getApiKey: 'احصل على API key مجاني من https://console.cloud.google.com',
-    locationSelected: 'الموقع المحدد:',
-    latitude: 'خط العرض',
-    longitude: 'خط الطول',
-    area: 'المنطقة',
-    moveMapHint: 'حرك الخريطة لتحديد الموقع المطلوب',
-    locationSet: 'تم تحديد الموقع',
-    defaultLocationUsed: 'تم استخدام الموقع الافتراضي (الدوحة، قطر)',
-    currentLocationUsed: 'تم تحديد موقعك الحالي بنجاح',
+    selectLocation: 'حدد موقع الخدمة على الخريطة',
+    searchPlaceholder: 'ابحث عن عنوان أو مكان...',
+    currentLocation: 'موقعي الحالي',
+    locationSelected: 'تم تحديد الموقع',
+    clickMap: 'انقر على الخريطة لتحديد الموقع',
+    dragMarker: 'يمكنك سحب العلامة لضبط الموقع بدقة',
+    loading: 'جاري تحميل الخريطة...',
     error: 'خطأ',
     geoError: 'متصفحك لا يدعم خاصية تحديد الموقع',
     geoPermissionError: 'لم نتمكن من الوصول لموقعك. تأكد من منح الإذن للمتصفح.',
-    locationConfirmed: 'تم تأكيد الموقع بنجاح',
-    useInteractiveMap: 'استخدم الخريطة التفاعلية',
+    currentLocationUsed: 'تم تحديد موقعك الحالي بنجاح',
   },
   en: {
-    testingMode: '🧪 Testing Mode - Use Default Location',
-    testingDesc: 'For testing only: You can use the default location (Doha). After testing, an interactive map can be added.',
-    selectLocation: 'Select Service Location',
-    defaultLocation: 'Default Location (Doha)',
-    myLocation: 'My Current Location',
-    confirmLocation: 'Confirm Location',
-    backToMyLocation: 'Back to My Location',
-    enterApiKey: 'Please enter Google Maps API Key',
-    getApiKey: 'Get free API key from https://console.cloud.google.com',
-    locationSelected: 'Selected Location:',
-    latitude: 'Latitude',
-    longitude: 'Longitude',
-    area: 'Area',
-    moveMapHint: 'Move the map to select the desired location',
-    locationSet: 'Location Set',
-    defaultLocationUsed: 'Default location set (Doha, Qatar)',
-    currentLocationUsed: 'Your current location has been set successfully',
+    selectLocation: 'Select Service Location on Map',
+    searchPlaceholder: 'Search for address or place...',
+    currentLocation: 'My Current Location',
+    locationSelected: 'Location Selected',
+    clickMap: 'Click on the map to select location',
+    dragMarker: 'You can drag the marker to fine-tune the location',
+    loading: 'Loading map...',
     error: 'Error',
     geoError: 'Your browser does not support geolocation',
-    geoPermissionError: 'Could not access your location. Make sure to grant permission to the browser.',
-    locationConfirmed: 'Location confirmed successfully',
-    useInteractiveMap: 'Use Interactive Map',
+    geoPermissionError: 'Could not access your location. Make sure to grant permission.',
+    currentLocationUsed: 'Your current location has been set successfully',
   }
 };
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '500px',
+  borderRadius: '12px',
+};
+
+const defaultCenter = {
+  lat: 25.286106,
+  lng: 51.534817,
+};
+
+const libraries: ("places")[] = ["places"];
 
 export function GoogleMapLocationPicker({ 
   onLocationSelect, 
@@ -68,314 +62,314 @@ export function GoogleMapLocationPicker({
   language = 'ar' 
 }: GoogleMapLocationPickerProps) {
   const t = translations[language];
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
-  const geocoder = useRef<any>(null);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number }>({ 
-    lat: initialLat, 
-    lng: initialLng 
-  });
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [areaName, setAreaName] = useState<string>('');
-  const [googleApiKey, setGoogleApiKey] = useState<string>('');
-  const [showMap, setShowMap] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const { toast } = useToast();
+  const [apiKey, setApiKey] = useState<string>('');
+  
+  // Fetch API key from edge function
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        if (error) {
+          console.error('Error fetching Google Maps API key:', error);
+        } else if (data?.apiKey) {
+          setApiKey(data.apiKey);
+        }
+      } catch (error) {
+        console.error('Error fetching Google Maps API key:', error);
+      }
+    };
+    fetchApiKey();
+  }, []);
+  
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: apiKey,
+    libraries,
+    language: language,
+  });
 
-  // Request location permission on mount
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [center, setCenter] = useState({ lat: initialLat, lng: initialLng });
+  const [markerPosition, setMarkerPosition] = useState({ lat: initialLat, lng: initialLng });
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  // Get current location on mount
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation({ lat: latitude, lng: longitude });
-          setCurrentLocation({ lat: latitude, lng: longitude });
-          onLocationSelect(latitude, longitude);
+          const currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setCenter(currentLocation);
+          setMarkerPosition(currentLocation);
+          onLocationSelect(currentLocation.lat, currentLocation.lng);
+          
+          // Reverse geocode to get address
+          if (window.google) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: currentLocation }, (results, status) => {
+              if (status === 'OK' && results && results[0]) {
+                setSelectedAddress(results[0].formatted_address);
+              }
+            });
+          }
         },
         (error) => {
-          console.log('Geolocation permission denied or error:', error);
-          // Set default location if permission denied
-          setCurrentLocation({ lat: initialLat, lng: initialLng });
-          onLocationSelect(initialLat, initialLng);
+          console.log('Geolocation error:', error);
         }
       );
-    } else {
-      setCurrentLocation({ lat: initialLat, lng: initialLng });
-      onLocationSelect(initialLat, initialLng);
     }
   }, []);
 
-  // Load Google Maps script
-  useEffect(() => {
-    if (!showMap || !googleApiKey || mapLoaded) return;
+  const onLoad = useCallback((map: google.maps.Map) => {
+    setMap(map);
+  }, []);
 
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&libraries=places&language=${language}`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      setMapLoaded(true);
-      geocoder.current = new (window as any).google.maps.Geocoder();
-    };
-    document.head.appendChild(script);
+  const onUnmount = useCallback(() => {
+    setMap(null);
+  }, []);
 
-    return () => {
-      // Cleanup if needed
-    };
-  }, [googleApiKey, showMap, language]);
+  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setMarkerPosition({ lat, lng });
+      onLocationSelect(lat, lng);
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainer.current || map.current || !mapLoaded) return;
-
-    map.current = new (window as any).google.maps.Map(mapContainer.current, {
-      center: currentLocation,
-      zoom: 15,
-      disableDefaultUI: false,
-      zoomControl: true,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: true,
-      gestureHandling: 'greedy',
-    });
-
-    // Update location on map drag
-    map.current.addListener('center_changed', () => {
-      if (!map.current) return;
-      const center = map.current.getCenter();
-      if (center) {
-        const lat = center.lat();
-        const lng = center.lng();
-        setCurrentLocation({ lat, lng });
-        reverseGeocode(lat, lng);
-      }
-    });
-
-    // Initial reverse geocode
-    reverseGeocode(currentLocation.lat, currentLocation.lng);
-  }, [mapLoaded]);
-
-  const reverseGeocode = (lat: number, lng: number) => {
-    if (!geocoder.current) return;
-
-    geocoder.current.geocode(
-      { location: { lat, lng } },
-      (results, status) => {
+      // Reverse geocode to get address
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
         if (status === 'OK' && results && results[0]) {
-          // Get the most relevant address component (neighborhood or locality)
-          const addressComponents = results[0].address_components;
-          let area = '';
-          
-          for (const component of addressComponents) {
-            if (component.types.includes('neighborhood') || 
-                component.types.includes('sublocality') ||
-                component.types.includes('locality')) {
-              area = component.long_name;
-              break;
-            }
-          }
-          
-          setAreaName(area || results[0].formatted_address);
+          setSelectedAddress(results[0].formatted_address);
+          onLocationSelect(lat, lng, results[0].formatted_address);
         }
+      });
+
+      toast({
+        title: t.locationSelected,
+        description: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+      });
+    }
+  }, [onLocationSelect, toast, t]);
+
+  const handleMarkerDragEnd = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setMarkerPosition({ lat, lng });
+      onLocationSelect(lat, lng);
+
+      // Reverse geocode to get address
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          setSelectedAddress(results[0].formatted_address);
+          onLocationSelect(lat, lng, results[0].formatted_address);
+        }
+      });
+    }
+  }, [onLocationSelect]);
+
+  const handleCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: t.error,
+        description: t.geoError,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const currentLocation = { lat: latitude, lng: longitude };
+        
+        setCenter(currentLocation);
+        setMarkerPosition(currentLocation);
+        onLocationSelect(latitude, longitude);
+
+        if (map) {
+          map.panTo(currentLocation);
+          map.setZoom(16);
+        }
+
+        // Reverse geocode to get address
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: currentLocation }, (results, status) => {
+          if (status === 'OK' && results && results[0]) {
+            setSelectedAddress(results[0].formatted_address);
+            onLocationSelect(latitude, longitude, results[0].formatted_address);
+          }
+        });
+
+        toast({
+          title: t.locationSelected,
+          description: t.currentLocationUsed,
+        });
+      },
+      () => {
+        toast({
+          title: t.error,
+          description: t.geoPermissionError,
+          variant: 'destructive',
+        });
       }
     );
   };
 
-  const handleUseDefaultLocation = () => {
-    const defaultLat = 25.286106;
-    const defaultLng = 51.534817;
-    
-    setCurrentLocation({ lat: defaultLat, lng: defaultLng });
-    
-    if (map.current) {
-      map.current.setCenter({ lat: defaultLat, lng: defaultLng });
-      reverseGeocode(defaultLat, defaultLng);
-    }
+  const onPlaceChanged = () => {
+    if (autocompleteRef.current) {
+      const place = autocompleteRef.current.getPlace();
+      
+      if (place.geometry && place.geometry.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const newCenter = { lat, lng };
+        
+        setCenter(newCenter);
+        setMarkerPosition(newCenter);
+        setSelectedAddress(place.formatted_address || '');
+        onLocationSelect(lat, lng, place.formatted_address);
 
-    toast({
-      title: t.locationSet,
-      description: t.defaultLocationUsed,
-    });
-  };
+        if (map) {
+          map.panTo(newCenter);
+          map.setZoom(16);
+        }
 
-  const handleBackToMyLocation = () => {
-    if (!userLocation) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            setUserLocation({ lat: latitude, lng: longitude });
-            setCurrentLocation({ lat: latitude, lng: longitude });
-            
-            if (map.current) {
-              map.current.setCenter({ lat: latitude, lng: longitude });
-              reverseGeocode(latitude, longitude);
-            }
-
-            toast({
-              title: t.locationSet,
-              description: t.currentLocationUsed,
-            });
-          },
-          (error) => {
-            toast({
-              title: t.error,
-              description: t.geoPermissionError,
-              variant: 'destructive',
-            });
-          }
-        );
+        toast({
+          title: t.locationSelected,
+          description: place.formatted_address,
+        });
       }
-      return;
-    }
-
-    setCurrentLocation(userLocation);
-    
-    if (map.current) {
-      map.current.setCenter(userLocation);
-      reverseGeocode(userLocation.lat, userLocation.lng);
     }
   };
 
-  const handleConfirmLocation = () => {
-    onLocationSelect(currentLocation.lat, currentLocation.lng);
-    
-    toast({
-      title: t.locationSet,
-      description: t.locationConfirmed,
-    });
-  };
+  if (loadError) {
+    return (
+      <div className="text-center p-8 text-destructive">
+        <p>{t.error}: فشل تحميل خريطة Google</p>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-[500px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+          <p className="text-muted-foreground">{t.loading}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {/* Testing Mode Notice - Only show if map not activated */}
-      {!showMap && (
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-            {t.testingMode}
-          </p>
-          <p className="text-xs text-blue-700 dark:text-blue-300">
-            {t.testingDesc}
-          </p>
-        </div>
-      )}
-
-      {/* Quick Actions */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <MapPin className="h-5 w-5 text-primary" />
-          <span className="font-medium">{t.selectLocation}</span>
+          <span className="font-semibold text-lg">{t.selectLocation}</span>
         </div>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            onClick={handleUseDefaultLocation}
-            className="flex items-center gap-2"
-          >
-            <MapPin className="h-4 w-4" />
-            {t.defaultLocation}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          onClick={handleCurrentLocation}
+          className="flex items-center gap-2"
+        >
+          <Navigation className="h-4 w-4" />
+          {t.currentLocation}
+        </Button>
       </div>
 
-      {/* Show map activation button */}
-      {!showMap && (
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => setShowMap(true)}
-            className="text-sm text-primary hover:underline font-medium"
-          >
-            {t.useInteractiveMap}
-          </button>
-        </div>
-      )}
-
-      {/* Google Maps API Key Input */}
-      {showMap && !googleApiKey && (
-        <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-            {t.enterApiKey}
-          </p>
-          <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-3">
-            {t.getApiKey}
-          </p>
-          <input
+      {/* Search Box */}
+      <div className="relative">
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none z-10" />
+        <Autocomplete
+          onLoad={(autocomplete) => {
+            autocompleteRef.current = autocomplete;
+          }}
+          onPlaceChanged={onPlaceChanged}
+          options={{
+            componentRestrictions: { country: 'qa' },
+            fields: ['geometry', 'formatted_address', 'name'],
+          }}
+        >
+          <Input
             type="text"
-            value={googleApiKey}
-            onChange={(e) => setGoogleApiKey(e.target.value)}
-            placeholder="AIza..."
-            className="w-full px-3 py-2 border border-border rounded-md text-sm"
-            dir="ltr"
+            placeholder={t.searchPlaceholder}
+            className="pr-10 h-12 text-base"
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
           />
-        </div>
-      )}
+        </Autocomplete>
+      </div>
 
-      {/* Map Container with fixed center marker */}
-      {showMap && googleApiKey && mapLoaded && (
-        <div className="relative">
-          <div 
-            ref={mapContainer} 
-            className="h-[450px] w-full rounded-lg border-2 border-border shadow-lg"
+      {/* Map */}
+      <div className="relative rounded-xl overflow-hidden shadow-lg border-2 border-border">
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={center}
+          zoom={14}
+          onClick={handleMapClick}
+          onLoad={onLoad}
+          onUnmount={onUnmount}
+          options={{
+            streetViewControl: false,
+            mapTypeControl: true,
+            fullscreenControl: true,
+            zoomControl: true,
+            styles: [
+              {
+                featureType: 'poi',
+                elementType: 'labels',
+                stylers: [{ visibility: 'on' }],
+              },
+            ],
+          }}
+        >
+          <Marker
+            position={markerPosition}
+            draggable={true}
+            onDragEnd={handleMarkerDragEnd}
+            animation={google.maps.Animation.DROP}
+            icon={{
+              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="40" height="56" viewBox="0 0 40 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 0C8.95 0 0 8.95 0 20C0 35 20 56 20 56C20 56 40 35 40 20C40 8.95 31.05 0 20 0Z" fill="#3b82f6"/>
+                  <circle cx="20" cy="20" r="8" fill="white"/>
+                </svg>
+              `),
+              scaledSize: new google.maps.Size(40, 56),
+              anchor: new google.maps.Point(20, 56),
+            }}
           />
-          
-          {/* Fixed center marker */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <MapPin className="h-10 w-10 text-red-500 drop-shadow-lg" fill="currentColor" />
-          </div>
+        </GoogleMap>
+      </div>
 
-          {/* Control buttons overlay */}
-          <div className="absolute top-4 left-4 right-4 flex justify-between gap-2 z-10">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={handleBackToMyLocation}
-              className="flex items-center gap-2 shadow-lg"
-            >
-              <Navigation className="h-4 w-4" />
-              {t.myLocation}
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              onClick={handleConfirmLocation}
-              className="flex items-center gap-2 shadow-lg"
-            >
-              <Check className="h-4 w-4" />
-              {t.confirmLocation}
-            </Button>
-          </div>
-
-          {/* Hint at bottom */}
-          <div className="absolute bottom-4 left-4 right-4 z-10">
-            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-border">
-              <p className="text-sm text-center text-muted-foreground">
-                {t.moveMapHint}
-              </p>
-            </div>
+      {/* Info Box */}
+      <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
+        <div className="flex items-start gap-2">
+          <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div className="space-y-1 flex-1">
+            {selectedAddress ? (
+              <>
+                <p className="font-medium text-sm">{t.locationSelected}</p>
+                <p className="text-sm text-muted-foreground break-words">{selectedAddress}</p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t.clickMap}</p>
+            )}
+            <p className="text-xs text-primary font-mono">
+              📍 {markerPosition.lat.toFixed(6)}, {markerPosition.lng.toFixed(6)}
+            </p>
           </div>
         </div>
-      )}
-
-      {/* Selected Location Display */}
-      <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-2">
-        <p className="font-medium text-base mb-2">{t.locationSelected}</p>
-        {areaName && showMap && mapLoaded && (
-          <p className="text-foreground font-medium flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-primary" />
-            {t.area}: {areaName}
-          </p>
-        )}
-        <p className="flex items-center gap-2">
-          📍 {t.latitude}: <span className="font-mono">{currentLocation.lat.toFixed(6)}</span>
-        </p>
-        <p className="flex items-center gap-2">
-          📍 {t.longitude}: <span className="font-mono">{currentLocation.lng.toFixed(6)}</span>
-        </p>
+        <p className="text-xs text-muted-foreground italic">{t.dragMarker}</p>
       </div>
     </div>
   );
