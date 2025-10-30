@@ -182,7 +182,7 @@ export default function SpecialistHome() {
         .eq('specialist_id', specId)
         .gte('booking_date', new Date().toISOString().split('T')[0]) // Only show today and future orders
         .neq('status', 'completed') // Hide completed orders
-        .neq('status', 'pending') // Hide pending orders (not yet accepted)
+        .neq('status', 'cancelled') // Hide cancelled orders
         .order('booking_date', { ascending: true });
 
       console.log('📊 [SpecialistHome] Orders query result:', { 
