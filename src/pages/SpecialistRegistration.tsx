@@ -275,6 +275,25 @@ export default function SpecialistRegistration() {
         idCardBackUrl = await uploadImage(idCardBackFile, "id-cards", specialist.id);
       }
 
+      // Delete existing specialties first (while registration_completed_at is still NULL)
+      await supabase
+        .from("specialist_specialties")
+        .delete()
+        .eq("specialist_id", specialist.id);
+
+      // Insert new specialties (while registration_completed_at is still NULL)
+      const specialties = values.sub_service_ids.map(subServiceId => ({
+        specialist_id: specialist.id,
+        sub_service_id: subServiceId,
+      }));
+
+      const { error: specialtiesError } = await supabase
+        .from("specialist_specialties")
+        .insert(specialties);
+
+      if (specialtiesError) throw specialtiesError;
+
+      // Update specialist info and mark registration as completed
       const { error: updateError } = await supabase
         .from("specialists")
         .update({
@@ -295,24 +314,6 @@ export default function SpecialistRegistration() {
         .eq("registration_token", token);
 
       if (updateError) throw updateError;
-
-      // Delete existing specialties
-      await supabase
-        .from("specialist_specialties")
-        .delete()
-        .eq("specialist_id", specialist.id);
-
-      // Insert new specialties
-      const specialties = values.sub_service_ids.map(subServiceId => ({
-        specialist_id: specialist.id,
-        sub_service_id: subServiceId,
-      }));
-
-      const { error: specialtiesError } = await supabase
-        .from("specialist_specialties")
-        .insert(specialties);
-
-      if (specialtiesError) throw specialtiesError;
 
       setSubmitted(true);
       toast({
