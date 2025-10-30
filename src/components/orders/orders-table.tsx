@@ -223,12 +223,12 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
                ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
         return hasAcceptedSpecialist && trackingStarted;
       } else {
-        // For admin: show accepted orders with active tracking
-        const hasAcceptedQuote = order.order_specialists?.some(os => os.is_accepted === true);
+        // For admin: show orders with active tracking OR status in-progress
         const trackingStarted = order.tracking_stage && 
                order.tracking_stage !== null &&
                ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
-        return hasAcceptedQuote && trackingStarted;
+        const statusInProgress = order.status === 'in-progress';
+        return trackingStarted || statusInProgress;
       }
     }
     
