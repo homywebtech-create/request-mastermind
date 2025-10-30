@@ -715,41 +715,35 @@ export default function OrderTracking() {
         {/* Moving Stage - Compact */}
         {stage === 'moving' && (
           <div className="space-y-3 pb-24">
-            {/* Compact Status Card */}
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
-              <div className="p-3 text-center">
-                <div className="inline-flex items-center justify-center w-10 h-10 bg-white/20 rounded-full mb-2">
-                  <Navigation className="h-5 w-5" />
-                </div>
-                <p className="text-base font-semibold text-blue-50">{language === 'ar' ? 'العميل بانتظارك كن هناك في الوقت' : 'Customer is waiting, be there on time'}</p>
-              </div>
-            </Card>
-
-            {/* Compact Navigation Icons with Labels */}
-            <div className="flex gap-4 justify-center items-start">
-              <div className="flex flex-col items-center gap-1">
-                <Button
-                  size="icon"
-                  className="h-16 w-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg"
-                  onClick={openMaps}
-                >
+            {/* Primary Location Button - Large and Clear */}
+            <Button
+              onClick={openMaps}
+              className="w-full min-h-[120px] bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-none shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] rounded-xl"
+            >
+              <div className="flex flex-col items-center gap-3 py-2">
+                <div className="flex items-center justify-center w-14 h-14 bg-white/20 rounded-full backdrop-blur-sm">
                   <MapPin className="h-7 w-7" />
-                </Button>
-                <span className="text-xs font-medium text-muted-foreground">{language === 'ar' ? 'موقع العميل' : 'Customer Location'}</span>
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-lg font-bold text-white leading-tight">
+                    {language === 'ar' ? 'العميل بانتظارك، قم بالتحرك إليه لتكون هناك في الوقت' : 'Customer is waiting, move to them to be there on time'}
+                  </p>
+                  <p className="text-sm font-medium text-blue-100">
+                    {language === 'ar' ? 'اضغط هنا لفتح خريطة الموقع' : 'Click here to open location map'}
+                  </p>
+                </div>
               </div>
+            </Button>
 
-              <div className="flex flex-col items-center gap-1">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="h-16 w-16 rounded-full shadow-lg"
-                  onClick={shareLocation}
-                >
-                  <Share2 className="h-7 w-7" />
-                </Button>
-                <span className="text-xs font-medium text-muted-foreground">{language === 'ar' ? 'مشاركة الموقع' : 'Share Location'}</span>
-              </div>
-            </div>
+            {/* Share Location Button - Secondary */}
+            <Button
+              onClick={shareLocation}
+              variant="outline"
+              className="w-full h-14 border-2 hover:bg-accent"
+            >
+              <Share2 className="h-5 w-5 ml-2" />
+              <span className="font-semibold">{language === 'ar' ? 'مشاركة موقعي مع العميل' : 'Share My Location with Customer'}</span>
+            </Button>
 
             {/* Fixed Arrival Button */}
             <div className="fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t z-50 space-y-2">
