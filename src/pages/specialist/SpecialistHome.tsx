@@ -486,7 +486,7 @@ export default function SpecialistHome() {
                       <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
                         <Navigation className="h-5 w-5" />
-                        <span>{canMove ? (isAr ? "انطلق الآن" : "Start now") : (isAr ? "انتظر الموعد" : "Wait for time")}</span>
+                        <span>{canMove ? (isAr ? "افتح الحجز" : "Open Booking") : (isAr ? "انتظر الموعد" : "Wait for time")}</span>
                       </div>
                         {timeUntil && (
                           <div className={cn(
