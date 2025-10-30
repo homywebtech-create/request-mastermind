@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
     const { specialist_id, order_id, start_time, hours_count, booking_date, booking_time, check_only } = await req.json() as ScheduleRequest;
 
-    if (!specialist_id || !order_id || !booking_date || !booking_time || !hours_count) {
+    if (!specialist_id || !order_id || !booking_date || !booking_time || hours_count === undefined || hours_count === null) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

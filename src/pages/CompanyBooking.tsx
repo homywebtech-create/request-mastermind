@@ -540,7 +540,7 @@ export default function CompanyBooking() {
       }
       
       // Parse hours_count (it's stored as text in DB)
-      const hours = orderData?.hours_count ? parseInt(orderData.hours_count) : 1;
+      const hours = orderData?.hours_count ? parseFloat(orderData.hours_count) : 1;
       setHoursCount(hours);
       setEditedHoursCount(hours);
       
