@@ -171,22 +171,26 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     if (filter === 'awaiting-response') {
       if (isCompanyView && companyId) {
         // For companies: show orders where company specialists have quoted but not accepted yet
-        // AND exclude orders that have started tracking (in progress)
+        // Must NOT have any accepted quotes AND must NOT have started tracking
         const companySpecialists = order.order_specialists?.filter(os => 
           os.specialists?.company_id === companyId
         );
         const hasQuoteNotAccepted = companySpecialists && 
-                                     companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
-        const notInProgress = !order.tracking_stage && order.status !== 'completed';
+                                     companySpecialists.some(os => os.quoted_price && os.is_accepted !== true);
+        const noAcceptedQuote = !companySpecialists?.some(os => os.is_accepted === true);
+        const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
+        const notCompleted = order.status !== 'completed';
         
-        return hasQuoteNotAccepted && notInProgress;
+        return hasQuoteNotAccepted && noAcceptedQuote && notStartedTracking && notCompleted;
       } else {
-        // For admin: show orders with quotes but NO quote accepted yet
+        // For admin: show orders with quotes but NO quote accepted yet AND not started tracking
         const hasAnyAccepted = order.order_specialists?.some(os => os.is_accepted === true);
         const hasQuotes = order.order_specialists?.some(os => os.quoted_price);
+        const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
+        const notCompleted = order.status !== 'completed';
         
-        // Show only if has quotes AND no quote accepted yet
-        return hasQuotes && !hasAnyAccepted;
+        // Show only if has quotes AND no quote accepted yet AND not tracking
+        return hasQuotes && !hasAnyAccepted && notStartedTracking && notCompleted;
       }
     }
     
@@ -196,20 +200,18 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
         const hasAcceptedSpecialist = order.order_specialists?.some(os => 
           os.is_accepted === true && os.specialists?.company_id === companyId
         );
-        const notStartedTracking = !order.tracking_stage;
-        const notCompleted = order.status !== 'completed';
-        return hasAcceptedSpecialist && notStartedTracking && notCompleted;
-      } else {
-        // For admin: show orders with accepted quotes OR confirmed bookings (in-progress status with booking date)
-        const hasAcceptedQuote = order.order_specialists && 
-                                 order.order_specialists.some(os => os.is_accepted === true);
-        const isConfirmedBooking = order.status === 'in-progress' && 
-                                   order.booking_date && 
-                                   order.booking_time;
         const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
         const notCompleted = order.status !== 'completed';
         const notCancelled = order.status !== 'cancelled';
-        return (hasAcceptedQuote || isConfirmedBooking) && notStartedTracking && notCompleted && notCancelled;
+        return hasAcceptedSpecialist && notStartedTracking && notCompleted && notCancelled;
+      } else {
+        // For admin: show orders with accepted quotes that haven't started tracking yet
+        const hasAcceptedQuote = order.order_specialists && 
+                                 order.order_specialists.some(os => os.is_accepted === true);
+        const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
+        const notCompleted = order.status !== 'completed';
+        const notCancelled = order.status !== 'cancelled';
+        return hasAcceptedQuote && notStartedTracking && notCompleted && notCancelled;
       }
     }
     
