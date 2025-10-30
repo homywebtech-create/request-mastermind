@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useBlocker } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star, ChevronDown } from "lucide-react";
+import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star, ChevronDown, ArrowLeft } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -76,6 +76,35 @@ export default function OrderTracking() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const t = useTranslation(language).specialist;
+
+  // Prevent back navigation during active tracking
+  useEffect(() => {
+    const preventBackNavigation = (e: PopStateEvent) => {
+      // Only prevent if we're in an active tracking stage (not initial or completed)
+      const activeStages: Stage[] = ['moving', 'arrived', 'working', 'invoice_requested', 'invoice_details'];
+      
+      if (activeStages.includes(stage)) {
+        e.preventDefault();
+        window.history.pushState(null, '', window.location.href);
+        
+        toast({
+          title: language === 'ar' ? 'تحذير' : 'Warning',
+          description: language === 'ar' 
+            ? 'لا يمكن الرجوع أثناء تتبع الطلب. يرجى إنهاء أو إلغاء الطلب أولاً.'
+            : 'Cannot go back during active order tracking. Please finish or cancel the order first.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    // Add state to history to enable detection
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', preventBackNavigation);
+
+    return () => {
+      window.removeEventListener('popstate', preventBackNavigation);
+    };
+  }, [stage, language, toast]);
 
   useEffect(() => {
     if (!orderId) return;

@@ -636,6 +636,42 @@ export default function SpecialistProfile() {
           </AccordionItem>
 
 
+          {/* App Version Section */}
+          <AccordionItem value="version" className="border rounded-lg bg-card">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Package className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">{isAr ? "معلومات الإصدار" : "Version Info"}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-4">
+              <div className="space-y-3 pt-2">
+                <div className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{isAr ? "رقم الإصدار" : "Version"}</span>
+                      <span className="font-bold text-primary">1.0.0</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{isAr ? "تاريخ التحديث" : "Update Date"}</span>
+                      <span className="font-medium">2025-01-30</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{isAr ? "وقت التحديث" : "Update Time"}</span>
+                      <span className="font-medium">09:45:00</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center text-xs text-muted-foreground">
+                  {isAr ? "تأكد دائماً من أن لديك أحدث إصدار من التطبيق" : "Always ensure you have the latest version of the app"}
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+
           {/* Quick Actions Section */}
           <AccordionItem value="actions" className="border rounded-lg bg-card">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
