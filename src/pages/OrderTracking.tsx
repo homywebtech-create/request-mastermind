@@ -30,6 +30,7 @@ type Stage = 'initial' | 'moving' | 'arrived' | 'working' | 'completed' | 'cance
 
 interface Order {
   id: string;
+  order_number: string | null;
   service_type: string;
   notes: string | null;
   booking_date: string | null;
@@ -240,6 +241,7 @@ export default function OrderTracking() {
         .from('orders')
         .select(`
           id,
+          order_number,
           service_type,
           notes,
           booking_date,
@@ -614,6 +616,16 @@ export default function OrderTracking() {
       <div className="max-w-2xl mx-auto space-y-6 p-4">
         {/* Order Info Card - Mobile Optimized */}
         <Card className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-md">
+          {/* Order Number Badge */}
+          {order.order_number && (
+            <div className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
+              <FileText className="h-4 w-4 text-primary" />
+              <span className="text-sm font-bold text-primary">
+                {language === 'ar' ? 'رقم الطلب:' : 'Order #:'} {order.order_number}
+              </span>
+            </div>
+          )}
+          
           <div className="flex items-center gap-3 mb-3">
             <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
               <span className="text-2xl">👤</span>
