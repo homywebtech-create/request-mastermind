@@ -38,6 +38,7 @@ interface Order {
   booking_type?: string | null;
   booking_date?: string | null;
   booking_date_type?: string | null;
+  booking_time?: string | null;
   hours_count?: string | null;
   building_info?: string | null;
   gps_latitude?: number | null;
@@ -199,12 +200,16 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
         const notCompleted = order.status !== 'completed';
         return hasAcceptedSpecialist && notStartedTracking && notCompleted;
       } else {
-        // For admin: show orders with accepted quotes but tracking hasn't started yet
+        // For admin: show orders with accepted quotes OR confirmed bookings (in-progress status with booking date)
         const hasAcceptedQuote = order.order_specialists && 
                                  order.order_specialists.some(os => os.is_accepted === true);
+        const isConfirmedBooking = order.status === 'in-progress' && 
+                                   order.booking_date && 
+                                   order.booking_time;
         const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
         const notCompleted = order.status !== 'completed';
-        return hasAcceptedQuote && notStartedTracking && notCompleted;
+        const notCancelled = order.status !== 'cancelled';
+        return (hasAcceptedQuote || isConfirmedBooking) && notStartedTracking && notCompleted && notCancelled;
       }
     }
     

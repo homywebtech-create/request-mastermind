@@ -825,6 +825,7 @@ export default function CompanyBooking() {
         
         if (acceptError) {
           console.error('❌ Error accepting specialist:', acceptError);
+          throw new Error('فشل تأكيد المحترفة المختارة');
         } else {
           console.log('✅ Successfully accepted specialist');
         }
@@ -858,7 +859,8 @@ export default function CompanyBooking() {
           console.log('✅ Successfully rejected other specialists');
         }
       } else {
-        console.log('⚠️ No assigned specialist ID - skipping acceptance/rejection updates');
+        console.error('⚠️ CRITICAL: No assigned specialist ID - cannot complete booking');
+        throw new Error('لم يتم تحديد محترفة للحجز');
       }
 
       // Notify accepted specialists about booking confirmation → deep link to /order-tracking/:orderId
