@@ -715,14 +715,17 @@ export default function OrderTracking() {
         {/* Moving Stage - Compact */}
         {stage === 'moving' && (
           <div className="space-y-3 pb-24">
-            {/* Primary Location Button - Large and Clear */}
+            {/* Primary Location Button - Large and Clear with Animations */}
             <Button
               onClick={openMaps}
-              className="w-full min-h-[120px] bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-none shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] rounded-xl"
+              className="w-full min-h-[120px] bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-none shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] rounded-xl animate-pulse hover:animate-none relative overflow-hidden group"
             >
-              <div className="flex flex-col items-center gap-3 py-2">
-                <div className="flex items-center justify-center w-14 h-14 bg-white/20 rounded-full backdrop-blur-sm">
-                  <MapPin className="h-7 w-7" />
+              {/* Animated Glow Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[slide-in-right_2s_ease-in-out_infinite]" />
+              
+              <div className="flex flex-col items-center gap-3 py-2 relative z-10">
+                <div className="flex items-center justify-center w-14 h-14 bg-white/20 rounded-full backdrop-blur-sm animate-[scale-in_1s_ease-in-out_infinite] group-hover:animate-none">
+                  <MapPin className="h-7 w-7 animate-bounce" />
                 </div>
                 <div className="text-center space-y-1">
                   <p className="text-lg font-bold text-white leading-tight">
@@ -735,13 +738,13 @@ export default function OrderTracking() {
               </div>
             </Button>
 
-            {/* Share Location Button - Secondary */}
+            {/* Share Location Button - Secondary with Attention Effects */}
             <Button
               onClick={shareLocation}
               variant="outline"
-              className="w-full h-14 border-2 hover:bg-accent"
+              className="w-full h-14 border-2 hover:bg-accent transition-all hover:scale-105 hover:shadow-lg animate-fade-in"
             >
-              <Share2 className="h-5 w-5 ml-2" />
+              <Share2 className="h-5 w-5 ml-2 animate-pulse" />
               <span className="font-semibold">{language === 'ar' ? 'مشاركة موقعي مع العميل' : 'Share My Location with Customer'}</span>
             </Button>
 
