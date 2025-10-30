@@ -115,27 +115,34 @@ export default function SpecialistHome() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      console.log('🔐 [AUTH] User data:', user);
+      
       if (!user) {
         navigate('/specialist-auth');
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('full_name, phone')
+        .select('full_name, phone, user_id')
         .eq('user_id', user.id)
         .single();
+
+      console.log('👤 [PROFILE] Profile data:', profile, 'Error:', profileError);
 
       if (profile) {
         setSpecialistName(profile.full_name);
         
-        const { data: specialist } = await supabase
+        const { data: specialist, error: specialistError } = await supabase
           .from('specialists')
-          .select('id, preferred_language')
+          .select('id, name, phone, preferred_language')
           .eq('phone', profile.phone)
           .single();
 
+        console.log('⭐ [SPECIALIST] Specialist data:', specialist, 'Error:', specialistError);
+
         if (specialist) {
+          console.log('✅ [SPECIALIST] Setting specialist ID:', specialist.id);
           setSpecialistId(specialist.id);
           setPreferredLanguage(specialist.preferred_language || 'ar');
           
@@ -149,10 +156,12 @@ export default function SpecialistHome() {
           } catch (error) {
             console.error('❌ [SPECIALIST] Failed to initialize Firebase:', error);
           }
+        } else {
+          console.error('❌ [SPECIALIST] No specialist found for phone:', profile.phone);
         }
       }
     } catch (error) {
-      console.error('Auth check error:', error);
+      console.error('❌ [AUTH] Auth check error:', error);
       navigate('/specialist-auth');
     }
   };
