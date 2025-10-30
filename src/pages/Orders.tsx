@@ -351,7 +351,7 @@ export default function Orders() {
       // Create order
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
-        .insert({
+        .insert([{
           customer_id: customerId,
           company_id: formData.sendToAll ? null : formData.companyId,
           send_to_all_companies: formData.sendToAll,
@@ -360,7 +360,7 @@ export default function Orders() {
           notes: formData.notes,
           status: 'pending',
           created_by: user?.id
-        })
+        }])
         .select('id')
         .single();
 
