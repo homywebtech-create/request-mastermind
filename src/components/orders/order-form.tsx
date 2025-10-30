@@ -296,6 +296,26 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
           });
           return false;
         }
+        // Validate hours count if service requires it
+        if (selectedService) {
+          let pricingType = 'hourly';
+          if (formData.subServiceId) {
+            const subService = selectedService.sub_services.find(ss => ss.id === formData.subServiceId);
+            pricingType = subService?.pricing_type || 'hourly';
+          } else {
+            pricingType = selectedService.pricing_type || 'hourly';
+          }
+          
+          // Don't validate for 'agreement' pricing type
+          if (pricingType !== 'agreement' && !formData.hoursCount) {
+            toast({
+              title: "بيانات ناقصة / Missing Data",
+              description: "يرجى اختيار عدد الساعات / Please select hours count",
+              variant: "destructive",
+            });
+            return false;
+          }
+        }
         return true;
 
       case 3:
