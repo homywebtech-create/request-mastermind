@@ -8,6 +8,8 @@ import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PowerManager;
+import android.view.WindowManager;
 import androidx.core.app.NotificationCompat;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -68,6 +70,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private void sendHighPriorityNotification(String title, String body, String route, boolean useCallChannel) {
+        // Wake up the screen first
+        wakeUpScreen();
+        
         // Create notification channels (required for Android 8.0+)
         createNotificationChannel();
 
@@ -82,10 +87,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         intent.putExtra("fromNotification", true);
         intent.putExtra("route", route);
         
-        // Full-screen intent (like incoming call)
+        // Full-screen intent (like incoming call) - wake screen and show over lockscreen
         Intent fullScreenIntent = new Intent(Intent.ACTION_VIEW, deepLink);
         fullScreenIntent.setPackage(getPackageName());
-        fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        fullScreenIntent.setFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK | 
+            Intent.FLAG_ACTIVITY_CLEAR_TOP | 
+            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+        );
         fullScreenIntent.putExtra("fromNotification", true);
         fullScreenIntent.putExtra("route", route);
 
@@ -186,6 +195,40 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             notificationManager.createNotificationChannel(callChannel);
 
             Log.d(TAG, "✅ Notification channels ensured with consistent sound + vibration (" + CHANNEL_ID + ", " + CALL_CHANNEL_ID + ")");
+        }
+    }
+
+    /**
+     * Wake up the device screen when notification arrives
+     */
+    private void wakeUpScreen() {
+        try {
+            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+            if (powerManager != null) {
+                // Create wake lock with screen on flag
+                PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
+                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK | 
+                    PowerManager.ACQUIRE_CAUSES_WAKEUP | 
+                    PowerManager.ON_AFTER_RELEASE,
+                    "RequestMastermind:NotificationWakeLock"
+                );
+                
+                // Acquire wake lock for 10 seconds to wake the screen
+                wakeLock.acquire(10000);
+                
+                Log.d(TAG, "📱 Screen wake lock acquired");
+                
+                // Release the wake lock after a delay
+                // (The FLAG will keep screen on for a bit even after release)
+                new android.os.Handler().postDelayed(() -> {
+                    if (wakeLock.isHeld()) {
+                        wakeLock.release();
+                        Log.d(TAG, "📱 Screen wake lock released");
+                    }
+                }, 8000);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error waking screen: " + e.getMessage());
         }
     }
 }
