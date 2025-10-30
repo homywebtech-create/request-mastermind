@@ -93,8 +93,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         fullScreenIntent.setFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK | 
             Intent.FLAG_ACTIVITY_CLEAR_TOP | 
-            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS |
+            Intent.FLAG_ACTIVITY_SINGLE_TOP
         );
+        fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+        fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         fullScreenIntent.putExtra("fromNotification", true);
         fullScreenIntent.putExtra("route", route);
 
@@ -200,32 +205,32 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     /**
      * Wake up the device screen when notification arrives
+     * Enhanced for Xiaomi/Redmi devices with aggressive power management
      */
     private void wakeUpScreen() {
         try {
             PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
             if (powerManager != null) {
-                // Create wake lock with screen on flag
+                // Use FULL_WAKE_LOCK for maximum screen wake capability (especially for Xiaomi)
                 PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
-                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK | 
+                    PowerManager.FULL_WAKE_LOCK | 
                     PowerManager.ACQUIRE_CAUSES_WAKEUP | 
                     PowerManager.ON_AFTER_RELEASE,
                     "RequestMastermind:NotificationWakeLock"
                 );
                 
-                // Acquire wake lock for 10 seconds to wake the screen
-                wakeLock.acquire(10000);
+                // Acquire wake lock for 15 seconds (longer duration for MIUI)
+                wakeLock.acquire(15000);
                 
-                Log.d(TAG, "📱 Screen wake lock acquired");
+                Log.d(TAG, "📱 Full screen wake lock acquired (MIUI-optimized)");
                 
                 // Release the wake lock after a delay
-                // (The FLAG will keep screen on for a bit even after release)
                 new android.os.Handler().postDelayed(() -> {
                     if (wakeLock.isHeld()) {
                         wakeLock.release();
                         Log.d(TAG, "📱 Screen wake lock released");
                     }
-                }, 8000);
+                }, 12000);
             }
         } catch (Exception e) {
             Log.e(TAG, "❌ Error waking screen: " + e.getMessage());
