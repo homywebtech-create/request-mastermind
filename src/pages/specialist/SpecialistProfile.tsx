@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe, CheckCircle, XCircle, Clock, DollarSign, Package, BarChart3, Image as ImageIcon } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import BusyGuard from "@/components/specialist/BusyGuard";
 import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -319,7 +320,8 @@ export default function SpecialistProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+    <BusyGuard specialistId={specialist?.id || ''} allowWhenBusy={false}>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
@@ -706,7 +708,8 @@ export default function SpecialistProfile() {
         </div>
       </div>
 
-      <BottomNavigation newOrdersCount={newOrdersCount} />
-    </div>
+      <BottomNavigation newOrdersCount={newOrdersCount} specialistId={specialist?.id} />
+      </div>
+    </BusyGuard>
   );
 }

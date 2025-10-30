@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Package, FileText, Tag, Sparkles, Globe } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import BusyGuard from "@/components/specialist/BusyGuard";
 import { translateOrderDetails } from "@/lib/translateHelper";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n/index";
@@ -786,7 +787,8 @@ export default function SpecialistNewOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+    <BusyGuard specialistId={specialistId} allowWhenBusy={true}>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
@@ -1087,7 +1089,8 @@ export default function SpecialistNewOrders() {
         )}
       </div>
 
-      <BottomNavigation newOrdersCount={newOrdersCount} />
-    </div>
+      <BottomNavigation newOrdersCount={newOrdersCount} specialistId={specialistId} />
+      </div>
+    </BusyGuard>
   );
 }

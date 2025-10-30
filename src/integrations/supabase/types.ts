@@ -869,6 +869,7 @@ export type Database = {
           company_id: string
           countries_worked_in: string[] | null
           created_at: string
+          current_order_id: string | null
           experience_years: number | null
           face_photo_url: string | null
           full_body_photo_url: string | null
@@ -901,6 +902,7 @@ export type Database = {
           company_id: string
           countries_worked_in?: string[] | null
           created_at?: string
+          current_order_id?: string | null
           experience_years?: number | null
           face_photo_url?: string | null
           full_body_photo_url?: string | null
@@ -933,6 +935,7 @@ export type Database = {
           company_id?: string
           countries_worked_in?: string[] | null
           created_at?: string
+          current_order_id?: string | null
           experience_years?: number | null
           face_photo_url?: string | null
           full_body_photo_url?: string | null
@@ -966,6 +969,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialists_current_order_id_fkey"
+            columns: ["current_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -1131,6 +1141,7 @@ export type Database = {
         Args: { _order_id: string; _specialist_id: string }
         Returns: boolean
       }
+      is_specialist_busy: { Args: { _specialist_id: string }; Returns: boolean }
       log_activity: {
         Args: {
           _action_type: string

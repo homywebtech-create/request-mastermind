@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Navigation, Calendar, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import BusyGuard from "@/components/specialist/BusyGuard";
 import { translateOrderDetails } from "@/lib/translateHelper";
 import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
@@ -358,7 +359,8 @@ export default function SpecialistHome() {
   const displayOrders = orders.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+    <BusyGuard specialistId={specialistId} allowWhenBusy={false}>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
@@ -538,8 +540,9 @@ export default function SpecialistHome() {
         )}
       </div>
 
-      <BottomNavigation newOrdersCount={newOrdersCount} />
-    </div>
+      <BottomNavigation newOrdersCount={newOrdersCount} specialistId={specialistId} />
+      </div>
+    </BusyGuard>
   );
 }
 
