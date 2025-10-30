@@ -159,7 +159,9 @@ export default function SpecialistHome() {
 
   const fetchOrders = async (specId: string) => {
     try {
+      const today = new Date().toISOString().split('T')[0];
       console.log('🔍 [SpecialistHome] Fetching orders for specialist:', specId);
+      console.log('📅 [SpecialistHome] Today date:', today);
       setIsLoading(true);
 
       // Get all orders assigned to this specialist based on order.specialist_id field
@@ -180,12 +182,14 @@ export default function SpecialistHome() {
           )
         `)
         .eq('specialist_id', specId)
-        .gte('booking_date', new Date().toISOString().split('T')[0]) // Only show today and future orders
+        .gte('booking_date', today) // Only show today and future orders
         .neq('status', 'completed') // Hide completed orders
         .neq('status', 'cancelled') // Hide cancelled orders
         .order('booking_date', { ascending: true });
 
       console.log('📊 [SpecialistHome] Orders query result:', { 
+        specialistId: specId,
+        today: today,
         count: ordersData?.length || 0, 
         error: ordersError,
         orders: ordersData 
