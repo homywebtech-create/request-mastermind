@@ -1084,76 +1084,81 @@ export default function OrderTracking() {
 
         {/* Invoice Details Stage */}
         {stage === 'invoice_details' && (
-          <div className="min-h-screen flex flex-col">
-            <Card className="flex-1 flex flex-col m-4">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 text-center">
-                <div className="text-4xl mb-2">💰</div>
-                <h3 className="text-lg font-bold text-white">{language === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details'}</h3>
-              </div>
+          <div className="fixed inset-0 flex flex-col bg-background">
+            {/* Header - Fixed at top */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 text-center shadow-lg">
+              <div className="text-4xl mb-2">💰</div>
+              <h3 className="text-lg font-bold text-white">{language === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details'}</h3>
+            </div>
 
-              {/* Invoice Content - Scrollable if needed */}
-              <div className="flex-1 overflow-auto p-4">
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 rounded-lg space-y-2.5 shadow-inner">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">نوع الخدمة</span>
-                    <span className="font-semibold">{order.service_type}</span>
+            {/* Invoice Content - Centered and Compact */}
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
+              <div className="w-full max-w-md space-y-4">
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-5 rounded-xl space-y-3 shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                  {/* Service Type */}
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
+                    <span className="text-sm text-muted-foreground">نوع الخدمة</span>
+                    <span className="font-bold text-base">{order.service_type}</span>
                   </div>
                   
-                  <div className="flex justify-between items-center text-sm">
+                  {/* Hours Count */}
+                  <div className="flex justify-between items-center text-base">
                     <span className="text-muted-foreground">عدد الساعات</span>
-                    <span className="font-semibold">{order.hours_count}</span>
+                    <span className="font-bold text-lg">{order.hours_count} ساعة</span>
                   </div>
                   
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">ميزانية العميل</span>
-                    <span className="font-semibold">
-                      {order.customer?.budget || 'غير محدد'} 
-                      {order.customer?.budget_type && ` (${order.customer.budget_type})`}
+                  {/* Price per Hour */}
+                  <div className="flex justify-between items-center text-base">
+                    <span className="text-muted-foreground">سعر الساعة</span>
+                    <span className="font-bold text-lg">
+                      {(invoiceAmount / parseFloat(order.hours_count || '1')).toFixed(2)} د.ك
                     </span>
                   </div>
                   
-                  <div className="border-t border-slate-300 dark:border-slate-700 pt-2.5 mt-2.5">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">السعر المعروض</span>
-                      <span className="font-semibold">{invoiceAmount.toFixed(2)} د.ك</span>
-                    </div>
-                    
-                    {discount > 0 && (
-                      <div className="flex justify-between items-center text-green-600 mt-2 text-sm">
-                        <span>الخصم</span>
-                        <span className="font-semibold">-{discount.toFixed(2)} د.ك</span>
-                      </div>
-                    )}
+                  {/* Calculation Line */}
+                  <div className="flex justify-between items-center text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <span className="text-blue-700 dark:text-blue-300">الحساب</span>
+                    <span className="font-mono font-semibold text-blue-900 dark:text-blue-100">
+                      {order.hours_count} × {(invoiceAmount / parseFloat(order.hours_count || '1')).toFixed(2)} = {invoiceAmount.toFixed(2)} د.ك
+                    </span>
                   </div>
                   
-                  <div className="border-t-2 border-slate-400 dark:border-slate-600 pt-2.5 mt-2.5">
+                  {/* Discount if any */}
+                  {discount > 0 && (
+                    <div className="flex justify-between items-center text-green-600 dark:text-green-400 text-base">
+                      <span className="font-medium">الخصم</span>
+                      <span className="font-bold">-{discount.toFixed(2)} د.ك</span>
+                    </div>
+                  )}
+                  
+                  {/* Total Amount - Prominent */}
+                  <div className="border-t-2 border-slate-400 dark:border-slate-500 pt-3 mt-3">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-base">المبلغ الإجمالي</span>
-                      <span className="font-black text-primary text-2xl">
-                        {(invoiceAmount - discount).toFixed(2)} <span className="text-lg">د.ك</span>
+                      <span className="font-bold text-lg">المبلغ الإجمالي</span>
+                      <span className="font-black text-green-600 text-3xl">
+                        {(invoiceAmount - discount).toFixed(2)} <span className="text-xl">د.ك</span>
                       </span>
                     </div>
                   </div>
                 </div>
                 
-                <p className="text-xs text-center text-muted-foreground mt-3">
-                  الرجاء تحصيل هذا المبلغ من العميل
+                <p className="text-sm text-center text-muted-foreground bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                  💵 الرجاء تحصيل هذا المبلغ من العميل
                 </p>
               </div>
+            </div>
 
-              {/* Fixed Button at Bottom */}
-              <div className="p-4 border-t bg-background">
-                <Button
-                  onClick={handlePaymentReceived}
-                  className="w-full h-12 text-base font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                  size="lg"
-                >
-                  <CheckCircle className="ml-2 h-5 w-5" />
-                  تأكيد استلام الدفع
-                </Button>
-              </div>
-            </Card>
+            {/* Fixed Button at Bottom - Always Visible */}
+            <div className="p-4 border-t-2 bg-background shadow-[0_-4px_12px_rgba(0,0,0,0.1)] sticky bottom-0">
+              <Button
+                onClick={handlePaymentReceived}
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg animate-pulse"
+                size="lg"
+              >
+                <CheckCircle className="ml-2 h-5 w-5" />
+                تأكيد استلام الدفع
+              </Button>
+            </div>
           </div>
         )}
 
