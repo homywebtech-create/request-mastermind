@@ -893,14 +893,82 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               return (
                 <div className="space-y-2">
                   <Label htmlFor="hoursCount">{label.ar} / {label.en}</Label>
-                  <Input
-                    id="hoursCount"
-                    type="number"
-                    min="1"
-                    value={formData.hoursCount}
-                    onChange={(e) => handleInputChange('hoursCount', e.target.value)}
-                    placeholder={label.placeholder}
-                  />
+                  <Select 
+                    value={formData.hoursCount} 
+                    onValueChange={(value) => handleInputChange('hoursCount', value)}
+                  >
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder={label.placeholder} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="0.0167">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">دقيقة واحدة (اختبار)</span>
+                          <span className="text-xs text-muted-foreground">1 Minute (Test)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="1">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">1 {pricingType === 'hourly' ? 'ساعة' : pricingType === 'daily' ? 'يوم' : pricingType === 'monthly' ? 'شهر' : 'مهمة'}</span>
+                          <span className="text-xs text-muted-foreground">1 {label.en.slice(0, -1)}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="2">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">2 {pricingType === 'hourly' ? 'ساعات' : pricingType === 'daily' ? 'أيام' : pricingType === 'monthly' ? 'شهور' : 'مهام'}</span>
+                          <span className="text-xs text-muted-foreground">2 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="3">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">3 {pricingType === 'hourly' ? 'ساعات' : pricingType === 'daily' ? 'أيام' : pricingType === 'monthly' ? 'شهور' : 'مهام'}</span>
+                          <span className="text-xs text-muted-foreground">3 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="4">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">4 {pricingType === 'hourly' ? 'ساعات' : pricingType === 'daily' ? 'أيام' : pricingType === 'monthly' ? 'شهور' : 'مهام'}</span>
+                          <span className="text-xs text-muted-foreground">4 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="5">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">5 {pricingType === 'hourly' ? 'ساعات' : pricingType === 'daily' ? 'أيام' : pricingType === 'monthly' ? 'شهور' : 'مهام'}</span>
+                          <span className="text-xs text-muted-foreground">5 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="6">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">6 {pricingType === 'hourly' ? 'ساعات' : pricingType === 'daily' ? 'أيام' : pricingType === 'monthly' ? 'شهور' : 'مهام'}</span>
+                          <span className="text-xs text-muted-foreground">6 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="7">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">7 {pricingType === 'hourly' ? 'ساعات' : pricingType === 'daily' ? 'أيام' : pricingType === 'monthly' ? 'شهور' : 'مهام'}</span>
+                          <span className="text-xs text-muted-foreground">7 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="8">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">8 {pricingType === 'hourly' ? 'ساعات' : pricingType === 'daily' ? 'أيام' : pricingType === 'monthly' ? 'شهور' : 'مهام'}</span>
+                          <span className="text-xs text-muted-foreground">8 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="12">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">12 {pricingType === 'hourly' ? 'ساعة' : pricingType === 'daily' ? 'يوم' : pricingType === 'monthly' ? 'شهر' : 'مهمة'}</span>
+                          <span className="text-xs text-muted-foreground">12 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="24">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">24 {pricingType === 'hourly' ? 'ساعة' : pricingType === 'daily' ? 'يوم' : pricingType === 'monthly' ? 'شهر' : 'مهمة'}</span>
+                          <span className="text-xs text-muted-foreground">24 {label.en}</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               );
             })()}
