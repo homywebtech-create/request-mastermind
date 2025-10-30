@@ -275,45 +275,32 @@ export default function SpecialistRegistration() {
         idCardBackUrl = await uploadImage(idCardBackFile, "id-cards", specialist.id);
       }
 
-      // Delete existing specialties first (while registration_completed_at is still NULL)
-      await supabase
-        .from("specialist_specialties")
-        .delete()
-        .eq("specialist_id", specialist.id);
+      // Complete registration via backend function to bypass RLS conflicts
+      const { data: completeData, error: completeError } = await supabase.functions.invoke(
+        'complete-specialist-registration',
+        {
+          body: {
+            specialist_id: specialist.id,
+            token,
+            experience_years: values.experience_years,
+            notes: values.notes,
+            id_card_expiry_date: values.id_card_expiry_date,
+            countries_worked_in: values.countries_worked_in,
+            has_cleaning_allergy: values.has_cleaning_allergy,
+            has_pet_allergy: values.has_pet_allergy,
+            languages_spoken: values.languages_spoken,
+            sub_service_ids: values.sub_service_ids,
+            face_photo_url: facePhotoUrl,
+            full_body_photo_url: fullBodyPhotoUrl,
+            id_card_front_url: idCardFrontUrl,
+            id_card_back_url: idCardBackUrl,
+          },
+        }
+      );
 
-      // Insert new specialties (while registration_completed_at is still NULL)
-      const specialties = values.sub_service_ids.map(subServiceId => ({
-        specialist_id: specialist.id,
-        sub_service_id: subServiceId,
-      }));
-
-      const { error: specialtiesError } = await supabase
-        .from("specialist_specialties")
-        .insert(specialties);
-
-      if (specialtiesError) throw specialtiesError;
-
-      // Update specialist info and mark registration as completed
-      const { error: updateError } = await supabase
-        .from("specialists")
-        .update({
-          experience_years: values.experience_years,
-          notes: values.notes,
-          face_photo_url: facePhotoUrl,
-          full_body_photo_url: fullBodyPhotoUrl,
-          id_card_front_url: idCardFrontUrl,
-          id_card_back_url: idCardBackUrl,
-          id_card_expiry_date: values.id_card_expiry_date,
-          countries_worked_in: values.countries_worked_in,
-          has_cleaning_allergy: values.has_cleaning_allergy,
-          has_pet_allergy: values.has_pet_allergy,
-          languages_spoken: values.languages_spoken,
-          registration_completed_at: new Date().toISOString(),
-        })
-        .eq("id", specialist.id)
-        .eq("registration_token", token);
-
-      if (updateError) throw updateError;
+      if (completeError || (completeData && (completeData as any).error)) {
+        throw new Error(completeError?.message || (completeData as any).error || 'Registration failed');
+      }
 
       setSubmitted(true);
       toast({
