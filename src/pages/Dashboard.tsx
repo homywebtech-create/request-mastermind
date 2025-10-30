@@ -327,33 +327,38 @@ export default function Dashboard() {
       (!o.order_specialists || o.order_specialists.every(os => !os.quoted_price))
     );
     
-    // Awaiting Response: Orders with at least one quote, not accepted yet
-    const awaitingOrders = ordersList.filter(o => 
-      o.order_specialists && 
-      o.order_specialists.some(os => os.quoted_price) &&
-      !o.order_specialists.some(os => os.is_accepted === true)
-    );
+    // Awaiting Response: Orders with at least one quote, not accepted yet, and tracking not started
+    const awaitingOrders = ordersList.filter(o => {
+      const hasQuotes = o.order_specialists && o.order_specialists.some(os => os.quoted_price);
+      const hasAnyAccepted = o.order_specialists?.some(os => os.is_accepted === true);
+      const notStartedTracking = !o.tracking_stage || o.tracking_stage === null;
+      const notCompleted = o.status !== 'completed';
+      
+      return hasQuotes && !hasAnyAccepted && notStartedTracking && notCompleted;
+    });
     
     // Upcoming: Orders with accepted quotes but tracking hasn't started yet
     const upcomingOrders = ordersList.filter(o => {
       const hasAcceptedQuote = o.order_specialists && 
                                o.order_specialists.some(os => os.is_accepted === true);
-      const notStartedTracking = !(o as any).tracking_stage;
+      const notStartedTracking = !o.tracking_stage || o.tracking_stage === null;
       const notCompleted = o.status !== 'completed';
+      const notCancelled = o.status !== 'cancelled';
       
-      return hasAcceptedQuote && notStartedTracking && notCompleted;
+      return hasAcceptedQuote && notStartedTracking && notCompleted && notCancelled;
     });
     
     // In Progress: Orders where specialist has started tracking
     const inProgressOrders = ordersList.filter(o => {
-      const trackingStage = (o as any).tracking_stage;
+      const trackingStage = o.tracking_stage;
       return trackingStage && 
+             trackingStage !== null &&
              ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
     });
     
     // Completed: Orders where payment received or status is completed
     const completedOrders = ordersList.filter(o => {
-      const trackingStage = (o as any).tracking_stage;
+      const trackingStage = o.tracking_stage;
       return trackingStage === 'payment_received' || o.status === 'completed';
     });
     
