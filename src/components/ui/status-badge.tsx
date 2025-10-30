@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { Clock, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle2, XCircle, MessageSquare, Calendar } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface StatusBadgeProps {
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'awaiting-response' | 'upcoming' | 'in-progress' | 'completed' | 'cancelled';
   className?: string;
 }
 
@@ -13,6 +13,18 @@ const statusConfig = {
     labelEn: 'Pending',
     icon: Clock,
     className: 'bg-pending-light text-pending border-pending/30 shadow-sm',
+  },
+  'awaiting-response': {
+    labelAr: 'في انتظار الرد',
+    labelEn: 'Awaiting Response',
+    icon: MessageSquare,
+    className: 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+  },
+  'upcoming': {
+    labelAr: 'قادم',
+    labelEn: 'Upcoming',
+    icon: Calendar,
+    className: 'bg-purple-50 text-purple-700 border-purple-200 shadow-sm dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800',
   },
   'in-progress': {
     labelAr: 'قيد التنفيذ',
