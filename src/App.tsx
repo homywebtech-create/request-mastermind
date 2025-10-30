@@ -94,6 +94,7 @@ function MobileLanding() {
   const [deepLink, setDeepLink] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [pendingRouteChecked, setPendingRouteChecked] = useState(false);
+  const [forceReady, setForceReady] = useState(false);
 
   // Extract route from deep link URL (supports custom schemes + path-based)
   const extractRoute = (url: string): string | null => {
@@ -171,6 +172,17 @@ function MobileLanding() {
     };
   }, []);
 
+  // Force navigation after timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      console.log('⚠️ [TIMEOUT] Loading took too long, forcing navigation...');
+      setForceReady(true);
+      setPendingRouteChecked(true);
+    }, 5000); // 5 seconds timeout
+
+    return () => clearTimeout(timeout);
+  }, []);
+
   // Check for pending routes FIRST (from notification tap while logged out)
   useEffect(() => {
     if (Capacitor.getPlatform() === 'web') {
@@ -181,18 +193,22 @@ function MobileLanding() {
     const checkPendingRoute = async () => {
       console.log('🔍 [PENDING] Checking for pending route from notification...');
       
-      const { Preferences } = await import('@capacitor/preferences');
-      const { value } = await Preferences.get({ key: 'pendingRoute' });
-      
-      if (value) {
-        console.log('✅ [PENDING] Found pending route:', value);
-        setDeepLink(value);
-        await Preferences.remove({ key: 'pendingRoute' });
-      } else {
-        console.log('ℹ️ [PENDING] No pending route found');
+      try {
+        const { Preferences } = await import('@capacitor/preferences');
+        const { value } = await Preferences.get({ key: 'pendingRoute' });
+        
+        if (value) {
+          console.log('✅ [PENDING] Found pending route:', value);
+          setDeepLink(value);
+          await Preferences.remove({ key: 'pendingRoute' });
+        } else {
+          console.log('ℹ️ [PENDING] No pending route found');
+        }
+      } catch (error) {
+        console.error('❌ [PENDING] Error checking pending route:', error);
+      } finally {
+        setPendingRouteChecked(true);
       }
-      
-      setPendingRouteChecked(true);
     };
 
     checkPendingRoute();
@@ -200,12 +216,15 @@ function MobileLanding() {
 
   // Handle navigation once auth is ready AND pending route is checked
   useEffect(() => {
-    if (loading || hasNavigated || !pendingRouteChecked) {
-      console.log('⏸️ [NAV] Waiting...', { loading, hasNavigated, pendingRouteChecked });
+    // Allow navigation if timeout forced or normal conditions met
+    const isReady = (forceReady || !loading) && pendingRouteChecked;
+    
+    if (!isReady || hasNavigated) {
+      console.log('⏸️ [NAV] Waiting...', { loading, hasNavigated, pendingRouteChecked, forceReady });
       return;
     }
 
-    console.log('🧭 [NAV] Ready to navigate - user:', !!user, 'deepLink:', deepLink);
+    console.log('🧭 [NAV] Ready to navigate - user:', !!user, 'deepLink:', deepLink, 'forceReady:', forceReady);
 
     if (deepLink) {
       if (user) {
@@ -227,9 +246,10 @@ function MobileLanding() {
     }
 
     setHasNavigated(true);
-  }, [user, loading, deepLink, navigate, hasNavigated, pendingRouteChecked]);
+  }, [user, loading, deepLink, navigate, hasNavigated, pendingRouteChecked, forceReady]);
 
-  if (loading || !hasNavigated) {
+  // Show loader only if not forced ready and actually loading
+  if ((loading && !forceReady) || !hasNavigated) {
     return <AppLoader message="جاري الاتصال..." />;
   }
 
