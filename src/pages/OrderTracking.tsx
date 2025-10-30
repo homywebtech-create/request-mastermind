@@ -38,12 +38,18 @@ interface Order {
   gps_latitude: number | null;
   gps_longitude: number | null;
   building_info: string | null;
+  company_id: string | null;
   customer: {
     name: string;
     whatsapp_number: string;
     area: string | null;
     budget: string | null;
     budget_type: string | null;
+  } | null;
+  company: {
+    id: string;
+    name: string;
+    logo_url: string | null;
   } | null;
   order_specialists?: Array<{
     quoted_price: string | null;
@@ -278,12 +284,18 @@ export default function OrderTracking() {
           gps_latitude,
           gps_longitude,
           building_info,
+          company_id,
           customer:customers (
             name,
             whatsapp_number,
             area,
             budget,
             budget_type
+          ),
+          company:companies (
+            id,
+            name,
+            logo_url
           ),
           order_specialists (
             quoted_price,
@@ -1085,10 +1097,21 @@ export default function OrderTracking() {
         {/* Invoice Details Stage */}
         {stage === 'invoice_details' && (
           <div className="fixed inset-0 flex flex-col bg-background">
-            {/* Header - Fixed at top */}
+            {/* Header - Fixed at top with Company Info */}
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 text-center shadow-lg">
-              <div className="text-4xl mb-2">💰</div>
+              {order?.company?.logo_url ? (
+                <img 
+                  src={order.company.logo_url} 
+                  alt={order.company.name}
+                  className="h-16 w-auto mx-auto mb-2 object-contain"
+                />
+              ) : (
+                <div className="text-4xl mb-2">💰</div>
+              )}
               <h3 className="text-lg font-bold text-white">{language === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details'}</h3>
+              {order?.company && (
+                <p className="text-sm text-white/90 mt-1">{order.company.name}</p>
+              )}
             </div>
 
             {/* Invoice Content - Centered and Compact */}
@@ -1111,15 +1134,7 @@ export default function OrderTracking() {
                   <div className="flex justify-between items-center text-base">
                     <span className="text-muted-foreground">سعر الساعة</span>
                     <span className="font-bold text-lg">
-                      {(invoiceAmount / parseFloat(order.hours_count || '1')).toFixed(2)} د.ك
-                    </span>
-                  </div>
-                  
-                  {/* Calculation Line */}
-                  <div className="flex justify-between items-center text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <span className="text-blue-700 dark:text-blue-300">الحساب</span>
-                    <span className="font-mono font-semibold text-blue-900 dark:text-blue-100">
-                      {order.hours_count} × {(invoiceAmount / parseFloat(order.hours_count || '1')).toFixed(2)} = {invoiceAmount.toFixed(2)} د.ك
+                      {(invoiceAmount / parseFloat(order.hours_count || '1')).toFixed(2)} ر.ق
                     </span>
                   </div>
                   
@@ -1127,7 +1142,7 @@ export default function OrderTracking() {
                   {discount > 0 && (
                     <div className="flex justify-between items-center text-green-600 dark:text-green-400 text-base">
                       <span className="font-medium">الخصم</span>
-                      <span className="font-bold">-{discount.toFixed(2)} د.ك</span>
+                      <span className="font-bold">-{discount.toFixed(2)} ر.ق</span>
                     </div>
                   )}
                   
@@ -1136,7 +1151,7 @@ export default function OrderTracking() {
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-lg">المبلغ الإجمالي</span>
                       <span className="font-black text-green-600 text-3xl">
-                        {(invoiceAmount - discount).toFixed(2)} <span className="text-xl">د.ك</span>
+                        {(invoiceAmount - discount).toFixed(2)} <span className="text-xl">ر.ق</span>
                       </span>
                     </div>
                   </div>
