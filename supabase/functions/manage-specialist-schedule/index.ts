@@ -58,9 +58,9 @@ Deno.serve(async (req) => {
     const startDateTime = new Date(booking_date);
     startDateTime.setHours(hours, minutes, 0, 0);
 
-    // Calculate end time
-    const endDateTime = new Date(startDateTime);
-    endDateTime.setHours(endDateTime.getHours() + hours_count);
+    // Calculate end time - convert hours to milliseconds for accurate calculation
+    const durationMs = hours_count * 60 * 60 * 1000;
+    const endDateTime = new Date(startDateTime.getTime() + durationMs);
 
     // Check if specialist is available
     const { data: isAvailable, error: checkError } = await supabaseClient
