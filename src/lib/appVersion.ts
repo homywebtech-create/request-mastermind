@@ -1,8 +1,8 @@
 // App version information
 export const APP_VERSION = {
-  version: '1.0.0',
-  buildDate: '2025-01-30',
-  buildTime: '09:45:00',
+  version: '1.0.1',
+  buildDate: '2025-01-31',
+  buildTime: '14:30:00',
 };
 
 export function getAppVersion() {
