@@ -10,6 +10,7 @@ import { SpecialistProfileDialog } from "./SpecialistProfileDialog";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,6 +78,7 @@ interface SpecialistsTableProps {
 
 export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }: SpecialistsTableProps) {
   const { toast } = useToast();
+  const { language } = useLanguage();
   const [editingSpecialist, setEditingSpecialist] = useState<Specialist | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [generatingToken, setGeneratingToken] = useState<string | null>(null);
@@ -214,10 +216,10 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
       if (error) throw error;
 
       toast({
-        title: "تم الإيقاف بنجاح / Suspended Successfully",
+        title: language === 'ar' ? 'تم الإيقاف بنجاح' : 'Suspended Successfully',
         description: suspensionType === 'temporary' 
-          ? "تم إيقاف المحترفة مؤقتاً / Specialist suspended temporarily"
-          : "تم إيقاف المحترفة نهائياً / Specialist suspended permanently",
+          ? (language === 'ar' ? 'تم إيقاف المحترفة مؤقتاً' : 'Specialist suspended temporarily')
+          : (language === 'ar' ? 'تم إيقاف المحترفة نهائياً' : 'Specialist suspended permanently'),
       });
 
       setSuspendingSpecialist(null);
@@ -228,8 +230,8 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     } catch (error: any) {
       console.error("Error suspending specialist:", error);
       toast({
-        title: "خطأ / Error",
-        description: error.message || "فشل إيقاف المحترفة / Failed to suspend specialist",
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message || (language === 'ar' ? 'فشل إيقاف المحترفة' : 'Failed to suspend specialist'),
         variant: "destructive",
       });
     }
@@ -250,16 +252,16 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
       if (error) throw error;
 
       toast({
-        title: "تم إلغاء الإيقاف / Unsuspended",
-        description: "تم تفعيل المحترفة بنجاح / Specialist activated successfully",
+        title: language === 'ar' ? 'تم إلغاء الإيقاف' : 'Unsuspended',
+        description: language === 'ar' ? 'تم تفعيل المحترفة بنجاح' : 'Specialist activated successfully',
       });
 
       onUpdate();
     } catch (error: any) {
       console.error("Error unsuspending specialist:", error);
       toast({
-        title: "خطأ / Error",
-        description: error.message || "فشل إلغاء الإيقاف / Failed to unsuspend specialist",
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message || (language === 'ar' ? 'فشل إلغاء الإيقاف' : 'Failed to unsuspend specialist'),
         variant: "destructive",
       });
     }
@@ -271,7 +273,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     if (specialist.suspension_type === 'permanent') {
       return <Badge variant="destructive" className="flex items-center gap-1">
         <Ban className="h-3 w-3" />
-        إيقاف دائم / Permanent
+        {language === 'ar' ? 'إيقاف دائم' : 'Permanent'}
       </Badge>;
     }
     
@@ -417,7 +419,9 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                           className="flex items-center gap-1"
                         >
                           <Link2 className="h-3 w-3" />
-                          {generatingToken === specialist.id ? "جاري..." : "رابط السيرة"}
+                          {generatingToken === specialist.id 
+                            ? (language === 'ar' ? 'جاري...' : 'Generating...') 
+                            : (language === 'ar' ? 'رابط السيرة' : 'Resume Link')}
                         </Button>
                         <Button
                           size="sm"
@@ -426,7 +430,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                           className="flex items-center gap-1"
                         >
                           <FileUser className="h-3 w-3" />
-                          السيرة
+                          {language === 'ar' ? 'السيرة' : 'Resume'}
                         </Button>
                         <Button
                           size="sm"
@@ -453,7 +457,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                             className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
                           >
                             <CheckCircle className="h-3 w-3" />
-                            تفعيل
+                            {language === 'ar' ? 'تفعيل' : 'Activate'}
                           </Button>
                         ) : (
                           <Button
@@ -465,7 +469,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                             className="flex items-center gap-1"
                           >
                             <Ban className="h-3 w-3" />
-                            إيقاف
+                            {language === 'ar' ? 'إيقاف' : 'Suspend'}
                           </Button>
                         )}
                         <AlertDialog>
@@ -548,22 +552,22 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
         }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>إيقاف المحترفة / Suspend Specialist</DialogTitle>
+              <DialogTitle>{language === 'ar' ? 'إيقاف المحترفة' : 'Suspend Specialist'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>نوع الإيقاف / Suspension Type</Label>
+                <Label>{language === 'ar' ? 'نوع الإيقاف' : 'Suspension Type'}</Label>
                 <RadioGroup value={suspensionType} onValueChange={(value) => setSuspensionType(value as 'temporary' | 'permanent')}>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <RadioGroupItem value="temporary" id="temporary" />
                     <Label htmlFor="temporary" className="cursor-pointer">
-                      إيقاف مؤقت / Temporary Suspension
+                      {language === 'ar' ? 'إيقاف مؤقت' : 'Temporary Suspension'}
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <RadioGroupItem value="permanent" id="permanent" />
                     <Label htmlFor="permanent" className="cursor-pointer">
-                      إيقاف دائم / Permanent Suspension
+                      {language === 'ar' ? 'إيقاف دائم' : 'Permanent Suspension'}
                     </Label>
                   </div>
                 </RadioGroup>
@@ -571,7 +575,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
 
               {suspensionType === 'temporary' && (
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">تاريخ انتهاء الإيقاف / End Date</Label>
+                  <Label htmlFor="endDate">{language === 'ar' ? 'تاريخ انتهاء الإيقاف' : 'End Date'}</Label>
                   <Input
                     id="endDate"
                     type="datetime-local"
@@ -583,12 +587,12 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="reason">سبب الإيقاف (اختياري) / Reason (Optional)</Label>
+                <Label htmlFor="reason">{language === 'ar' ? 'سبب الإيقاف (اختياري)' : 'Reason (Optional)'}</Label>
                 <Textarea
                   id="reason"
                   value={suspensionReason}
                   onChange={(e) => setSuspensionReason(e.target.value)}
-                  placeholder="أدخل سبب الإيقاف..."
+                  placeholder={language === 'ar' ? 'أدخل سبب الإيقاف...' : 'Enter suspension reason...'}
                   rows={3}
                 />
               </div>
@@ -603,14 +607,14 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                     setSuspensionReason('');
                   }}
                 >
-                  إلغاء / Cancel
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={handleSuspension}
                   disabled={suspensionType === 'temporary' && !suspensionEndDate}
                 >
-                  تأكيد الإيقاف / Confirm Suspension
+                  {language === 'ar' ? 'تأكيد الإيقاف' : 'Confirm Suspension'}
                 </Button>
               </div>
             </div>
