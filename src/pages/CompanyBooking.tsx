@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GoogleMapLocationPicker } from '@/components/booking/GoogleMapLocationPicker';
+import { MapLocationPicker } from '@/components/booking/MapLocationPicker';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Building2, Calendar, Users, ArrowRight, ArrowLeft, Check, Languages, Clock, FileUser, FileText, AlertCircle } from 'lucide-react';
@@ -2050,11 +2050,10 @@ export default function CompanyBooking() {
                   {t.selectLocation}
                 </h3>
                 
-                <GoogleMapLocationPicker
+                <MapLocationPicker
                   onLocationSelect={(lat, lng) => setLocation({ lat, lng })}
                   initialLat={location?.lat}
                   initialLng={location?.lng}
-                  language={language}
                 />
 
                 <div className="space-y-2">
