@@ -169,9 +169,15 @@ export default function SpecialistHome() {
   const fetchOrders = async (specId: string) => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('🔍 [SpecialistHome] Fetching orders for specialist:', specId);
       console.log('📅 [SpecialistHome] Today date:', today);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setIsLoading(true);
+
+      // First, verify authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('🔐 [FETCH] Current user:', user?.id);
 
       // Get all orders assigned to this specialist based on order.specialist_id field
       const { data: ordersData, error: ordersError } = await supabase
@@ -196,13 +202,14 @@ export default function SpecialistHome() {
         .neq('status', 'cancelled') // Hide cancelled orders
         .order('booking_date', { ascending: true });
 
-      console.log('📊 [SpecialistHome] Orders query result:', { 
-        specialistId: specId,
-        today: today,
-        count: ordersData?.length || 0, 
-        error: ordersError,
-        orders: ordersData 
-      });
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📊 [SpecialistHome] Orders query result:');
+      console.log('   Specialist ID:', specId);
+      console.log('   Today:', today);
+      console.log('   Count:', ordersData?.length || 0);
+      console.log('   Error:', ordersError);
+      console.log('   Orders:', JSON.stringify(ordersData, null, 2));
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       if (ordersError) {
         console.error('❌ [SpecialistHome] Error fetching orders:', ordersError);
