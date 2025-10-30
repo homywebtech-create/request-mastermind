@@ -31,7 +31,7 @@ interface Order {
   service_type: string;
   notes: string | null;
   booking_type: string | null;
-  hours_count: string | null;
+  hours_count: number | null;
   customer: {
     name: string;
     area: string | null;

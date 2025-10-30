@@ -531,7 +531,7 @@ export type Database = {
           expires_at: string | null
           gps_latitude: number | null
           gps_longitude: number | null
-          hours_count: string | null
+          hours_count: number | null
           id: string
           last_sent_at: string | null
           link_copied_at: string | null
@@ -567,7 +567,7 @@ export type Database = {
           expires_at?: string | null
           gps_latitude?: number | null
           gps_longitude?: number | null
-          hours_count?: string | null
+          hours_count?: number | null
           id?: string
           last_sent_at?: string | null
           link_copied_at?: string | null
@@ -603,7 +603,7 @@ export type Database = {
           expires_at?: string | null
           gps_latitude?: number | null
           gps_longitude?: number | null
-          hours_count?: string | null
+          hours_count?: number | null
           id?: string
           last_sent_at?: string | null
           link_copied_at?: string | null

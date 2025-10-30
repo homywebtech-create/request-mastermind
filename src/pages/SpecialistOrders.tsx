@@ -46,7 +46,7 @@ interface Order {
   status: string;
   notes: string | null;
   booking_type: string | null;
-  hours_count: string | null;
+  hours_count: number | null;
   booking_date: string | null;
   booking_date_type: string | null;
   selected_booking_type: string | null;

@@ -34,7 +34,7 @@ interface Order {
   service_type: string;
   notes: string | null;
   booking_date: string | null;
-  hours_count: string | null;
+  hours_count: number | null;
   gps_latitude: number | null;
   gps_longitude: number | null;
   building_info: string | null;
@@ -220,8 +220,7 @@ export default function OrderTracking() {
   // Calculate total work seconds from hours_count
   useEffect(() => {
     if (order?.hours_count) {
-      const hours = parseFloat(order.hours_count);
-      setTotalWorkSeconds(hours * 3600); // Convert hours to seconds
+      setTotalWorkSeconds(order.hours_count * 3600); // Convert hours to seconds
     }
   }, [order]);
 
@@ -1134,7 +1133,7 @@ export default function OrderTracking() {
                   <div className="flex justify-between items-center text-base">
                     <span className="text-muted-foreground">سعر الساعة</span>
                     <span className="font-bold text-lg">
-                      {(invoiceAmount / parseFloat(order.hours_count || '1')).toFixed(2)} ر.ق
+                      {(invoiceAmount / (order.hours_count || 1)).toFixed(2)} ر.ق
                     </span>
                   </div>
                   

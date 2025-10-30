@@ -41,7 +41,7 @@ interface Order {
   booking_type?: string | null;
   booking_date?: string | null;
   booking_date_type?: string | null;
-  hours_count?: string | null;
+  hours_count?: number | null;
   building_info?: string | null;
   gps_latitude?: number | null;
   gps_longitude?: number | null;
