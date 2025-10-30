@@ -234,6 +234,13 @@ export default function CompanyBooking() {
   const [editedSubService, setEditedSubService] = useState<string>('');
   const [showEditWarningDialog, setShowEditWarningDialog] = useState(false);
   
+  // Specialist schedules for availability checking
+  const [specialistSchedules, setSpecialistSchedules] = useState<Record<string, Array<{
+    start_time: string;
+    end_time: string;
+    order_id: string;
+  }>>>({});
+  
   // Services and sub-services
   const [services, setServices] = useState<Array<{
     id: string;
@@ -266,8 +273,8 @@ export default function CompanyBooking() {
     return slots;
   };
 
-  // Check if time slot is available (not in the past + 2 hours buffer)
-  const isTimeSlotAvailable = (timeSlot: string, selectedDate: Date | null) => {
+  // Check if time slot is available for a specific specialist
+  const isTimeSlotAvailable = (timeSlot: string, selectedDate: Date | null, specialistId?: string) => {
     if (!selectedDate) return false;
     
     const now = new Date();
@@ -282,8 +289,44 @@ export default function CompanyBooking() {
     const bufferTime = new Date(now);
     bufferTime.setHours(bufferTime.getHours() + 2);
     
-    // Slot is available if it's after current time + 2 hours buffer
-    return slotDateTime >= bufferTime;
+    // Check if slot is in the past (+ 2 hours buffer)
+    if (slotDateTime < bufferTime) {
+      return false;
+    }
+
+    // If checking for a specific specialist, check their schedule
+    if (specialistId && specialistSchedules[specialistId]) {
+      const schedules = specialistSchedules[specialistId];
+      const slotEndDateTime = new Date(selectedDate);
+      const [endHours, endMinutes] = timeSlot.split('-')[1].split(':').map(Number);
+      slotEndDateTime.setHours(endHours, endMinutes, 0, 0);
+      
+      // Calculate end time based on hours_count
+      const actualEndDateTime = new Date(slotDateTime);
+      actualEndDateTime.setHours(actualEndDateTime.getHours() + hoursCount);
+
+      // Check if this slot conflicts with any existing booking (including buffer)
+      const hasConflict = schedules.some(schedule => {
+        const scheduleStart = new Date(schedule.start_time);
+        const scheduleEnd = new Date(schedule.end_time);
+        
+        // Add 2 hour buffer before and after
+        const bufferBefore = new Date(scheduleStart);
+        bufferBefore.setHours(bufferBefore.getHours() - 2);
+        
+        const bufferAfter = new Date(scheduleEnd);
+        bufferAfter.setHours(bufferAfter.getHours() + 2);
+        
+        // Check if slot overlaps with schedule (including buffer)
+        return (slotDateTime < bufferAfter && actualEndDateTime > bufferBefore);
+      });
+
+      if (hasConflict) {
+        return false;
+      }
+    }
+    
+    return true;
   };
 
   // Check if specialist has any available time slots on a specific date
@@ -293,8 +336,10 @@ export default function CompanyBooking() {
     // Get all time slots
     const allSlots = generateTimeSlots();
     
-    // Check if at least one slot is available (not in the past)
-    const hasAvailableSlot = allSlots.some(slot => isTimeSlotAvailable(slot, date));
+    // Check if at least one slot is available for this specific specialist
+    const hasAvailableSlot = allSlots.some(slot => 
+      isTimeSlotAvailable(slot, date, specialist.id)
+    );
     
     return hasAvailableSlot;
   };
@@ -384,6 +429,51 @@ export default function CompanyBooking() {
   useEffect(() => {
     fetchData();
   }, [orderId, companyId]);
+
+  // Reload schedules when selected specialists or date changes
+  useEffect(() => {
+    if (selectedSpecialistIds.length === 0 || !bookingDateType) return;
+    
+    const reloadSchedules = async () => {
+      const startDate = new Date(bookingDateType);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(bookingDateType);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const { data: schedulesData, error: schedulesError } = await supabase
+        .from('specialist_schedules')
+        .select('specialist_id, start_time, end_time, order_id')
+        .in('specialist_id', selectedSpecialistIds)
+        .gte('start_time', startDate.toISOString())
+        .lte('start_time', endDate.toISOString());
+      
+      if (schedulesError) {
+        console.error('❌ Error reloading schedules:', schedulesError);
+      } else {
+        const schedulesBySpecialist: Record<string, Array<{
+          start_time: string;
+          end_time: string;
+          order_id: string;
+        }>> = {};
+        
+        schedulesData?.forEach((schedule: any) => {
+          if (!schedulesBySpecialist[schedule.specialist_id]) {
+            schedulesBySpecialist[schedule.specialist_id] = [];
+          }
+          schedulesBySpecialist[schedule.specialist_id].push({
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            order_id: schedule.order_id,
+          });
+        });
+        
+        setSpecialistSchedules(schedulesBySpecialist);
+        console.log('🔄 Reloaded schedules for selected specialists:', schedulesBySpecialist);
+      }
+    };
+    
+    reloadSchedules();
+  }, [selectedSpecialistIds, bookingDateType]);
 
   // Auto-select today's date when component mounts
   useEffect(() => {
@@ -1862,7 +1952,11 @@ export default function CompanyBooking() {
                                         // Show time slots for regular service
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                           {timeSlots.map((slot) => {
-                                            const isAvailable = isTimeSlotAvailable(slot, bookingDateType ? new Date(bookingDateType) : null);
+                                            // Check availability for all selected specialists
+                                            const isAvailable = selectedSpecialistIds.every(specId => 
+                                              isTimeSlotAvailable(slot, bookingDateType ? new Date(bookingDateType) : null, specId)
+                                            );
+                                            
                                             return (
                                               <label
                                                 key={slot}
@@ -1884,6 +1978,9 @@ export default function CompanyBooking() {
                                                 <div className="flex items-center gap-1.5">
                                                   <Clock className="h-4 w-4" />
                                                   <span className="font-semibold text-xs">{slot}</span>
+                                                  {!isAvailable && (
+                                                    <span className="text-[10px] ml-1">🔒</span>
+                                                  )}
                                                 </div>
                                               </label>
                                             );
