@@ -46,7 +46,29 @@ Deno.serve(async (req) => {
     const timeString = booking_time.includes('-') 
       ? booking_time.split('-')[0].trim() 
       : booking_time;
-    const [hours, minutes] = timeString.split(':').map(Number);
+    
+    // Parse time string to handle both "8:00" and "8:00 AM" formats
+    let hours = 0;
+    let minutes = 0;
+    
+    if (timeString.includes('AM') || timeString.includes('PM')) {
+      const isPM = timeString.includes('PM');
+      const timePart = timeString.replace(/AM|PM/gi, '').trim();
+      const [hourStr, minuteStr] = timePart.split(':');
+      hours = parseInt(hourStr, 10);
+      minutes = parseInt(minuteStr, 10);
+      
+      // Convert to 24-hour format
+      if (isPM && hours !== 12) {
+        hours += 12;
+      } else if (!isPM && hours === 12) {
+        hours = 0;
+      }
+    } else {
+      const [hourStr, minuteStr] = timeString.split(':');
+      hours = parseInt(hourStr, 10);
+      minutes = parseInt(minuteStr, 10);
+    }
     
     if (isNaN(hours) || isNaN(minutes)) {
       return new Response(
@@ -55,8 +77,9 @@ Deno.serve(async (req) => {
       );
     }
     
-    const startDateTime = new Date(booking_date);
-    startDateTime.setHours(hours, minutes, 0, 0);
+    // Create date in local timezone by parsing components separately
+    const [year, month, day] = booking_date.split('-').map(Number);
+    const startDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
 
     // Calculate end time - convert hours to milliseconds for accurate calculation
     const durationMs = hours_count * 60 * 60 * 1000;
