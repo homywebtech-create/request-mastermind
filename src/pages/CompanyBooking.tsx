@@ -256,18 +256,41 @@ export default function CompanyBooking() {
   const totalSteps = 4;
   const t = translations[language];
 
+  // Convert 24-hour format to 12-hour format with AM/PM
+  const formatTimeTo12Hour = (hour: number, minute: number) => {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const minuteStr = minute.toString().padStart(2, '0');
+    return `${hour12}:${minuteStr} ${period}`;
+  };
+
+  // Convert 12-hour format with AM/PM to 24-hour format
+  const parse12HourTime = (timeStr: string): { hours: number, minutes: number } => {
+    const [time, period] = timeStr.split(' ');
+    const [hours, minutes] = time.split(':').map(Number);
+    
+    let hours24 = hours;
+    if (period === 'PM' && hours !== 12) {
+      hours24 = hours + 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours24 = 0;
+    }
+    
+    return { hours: hours24, minutes };
+  };
+
   // Generate available time slots from 8:00 AM to 4:00 PM
   const generateTimeSlots = () => {
     const slots = [];
     for (let hour = 8; hour < 16; hour++) {
       // First half hour slot
-      const startTime1 = `${hour.toString().padStart(2, '0')}:00`;
-      const endTime1 = `${hour.toString().padStart(2, '0')}:30`;
+      const startTime1 = formatTimeTo12Hour(hour, 0);
+      const endTime1 = formatTimeTo12Hour(hour, 30);
       slots.push(`${startTime1}-${endTime1}`);
       
       // Second half hour slot
-      const startTime2 = `${hour.toString().padStart(2, '0')}:30`;
-      const endTime2 = `${(hour + 1).toString().padStart(2, '0')}:00`;
+      const startTime2 = formatTimeTo12Hour(hour, 30);
+      const endTime2 = formatTimeTo12Hour(hour + 1, 0);
       slots.push(`${startTime2}-${endTime2}`);
     }
     return slots;
@@ -279,7 +302,7 @@ export default function CompanyBooking() {
     
     const now = new Date();
     const [startTime] = timeSlot.split('-');
-    const [hours, minutes] = startTime.split(':').map(Number);
+    const { hours, minutes } = parse12HourTime(startTime);
     
     // Create a date object for the slot
     const slotDateTime = new Date(selectedDate);
@@ -298,7 +321,8 @@ export default function CompanyBooking() {
     if (specialistId && specialistSchedules[specialistId]) {
       const schedules = specialistSchedules[specialistId];
       const slotEndDateTime = new Date(selectedDate);
-      const [endHours, endMinutes] = timeSlot.split('-')[1].split(':').map(Number);
+      const endTime = timeSlot.split('-')[1];
+      const { hours: endHours, minutes: endMinutes } = parse12HourTime(endTime);
       slotEndDateTime.setHours(endHours, endMinutes, 0, 0);
       
       // Calculate end time based on hours_count
