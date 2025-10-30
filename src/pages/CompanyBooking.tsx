@@ -903,7 +903,7 @@ export default function CompanyBooking() {
         console.log('✅ Using manually selected specialist:', assignedSpecialistId);
       }
 
-      // Update order details - set status to accepted and assign specialist
+      // Update order details - set status to upcoming after booking confirmed
       const { error: orderError } = await supabase
         .from('orders')
         .update({
@@ -914,7 +914,7 @@ export default function CompanyBooking() {
           booking_date: bookingDate,
           booking_date_type: 'custom',
           booking_time: selectedTime,
-          status: 'in-progress',
+          status: 'upcoming', // Set to upcoming after booking is confirmed
           specialist_id: assignedSpecialistId,
           tracking_stage: null,
           notes: isMonthlyService 
