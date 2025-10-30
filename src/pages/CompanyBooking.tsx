@@ -720,7 +720,7 @@ export default function CompanyBooking() {
 
       const bookingDate = bookingDateType; // This is already in ISO format (YYYY-MM-DD)
 
-      // Verify specialist availability before booking
+      // Verify specialist availability before booking (check only, don't create schedule yet)
       const availabilityChecks = await Promise.all(
         selectedSpecialistIds.map(async (specialistId) => {
           const response = await supabase.functions.invoke('manage-specialist-schedule', {
@@ -730,6 +730,7 @@ export default function CompanyBooking() {
               booking_date: bookingDate,
               booking_time: selectedTime,
               hours_count: hoursCount,
+              check_only: true, // Only check availability, don't create schedule
             },
           });
 
@@ -744,11 +745,16 @@ export default function CompanyBooking() {
       // Check if all specialists are available
       const unavailableSpecialists = availabilityChecks.filter(check => !check.available);
       if (unavailableSpecialists.length > 0) {
+        const unavailableNames = unavailableSpecialists
+          .map(check => specialists.find(s => s.id === check.specialist_id)?.name)
+          .filter(Boolean)
+          .join('، ');
+        
         toast({
           title: language === 'ar' ? 'خطأ في التوفر' : 'Availability Error',
           description: language === 'ar' 
-            ? 'بعض الخبيرات المحددات غير متاحات في هذا الوقت. يرجى اختيار وقت آخر.'
-            : 'Some selected specialists are not available at this time. Please choose another time.',
+            ? `الخبيرات التاليات غير متاحات في هذا الوقت: ${unavailableNames}. يرجى اختيار وقت آخر أو خبيرات أخريات.`
+            : `The following specialists are not available at this time: ${unavailableNames}. Please choose another time or other specialists.`,
           variant: 'destructive',
         });
         return;
@@ -804,6 +810,34 @@ export default function CompanyBooking() {
         .eq('id', orderId);
 
       if (orderError) throw orderError;
+
+      // Create schedule entry for the assigned specialist
+      if (assignedSpecialistId) {
+        const scheduleResponse = await supabase.functions.invoke('manage-specialist-schedule', {
+          body: {
+            specialist_id: assignedSpecialistId,
+            order_id: orderId,
+            booking_date: bookingDate,
+            booking_time: selectedTime,
+            hours_count: hoursCount,
+            check_only: false, // Actually create the schedule
+          },
+        });
+
+        if (scheduleResponse.error || !scheduleResponse.data?.success) {
+          console.error('❌ Failed to create specialist schedule:', scheduleResponse.error);
+          toast({
+            title: language === 'ar' ? 'خطأ' : 'Error',
+            description: language === 'ar' 
+              ? 'فشل حجز الوقت للخبيرة. قد تكون غير متاحة الآن.'
+              : 'Failed to book time for the specialist. They may no longer be available.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        console.log('✅ Successfully created specialist schedule');
+      }
 
       // Use the assigned specialist for all operations
       const finalSelectedIds = assignedSpecialistId ? [assignedSpecialistId] : selectedSpecialistIds;
