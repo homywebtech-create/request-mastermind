@@ -79,6 +79,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // Choose channel depending on type
         String channelId = useCallChannel ? CALL_CHANNEL_ID : CHANNEL_ID;
 
+        // Extract orderId from route if present
+        String orderId = null;
+        if (route != null && route.contains("orderId=")) {
+            orderId = route.split("orderId=")[1].split("&")[0];
+        }
+
         // Intent to launch MainActivity when notification is tapped (deep link)
         Uri deepLink = Uri.parse("request-mastermind://open?route=" + Uri.encode(route));
         Intent intent = new Intent(Intent.ACTION_VIEW, deepLink);
@@ -87,21 +93,21 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         intent.putExtra("fromNotification", true);
         intent.putExtra("route", route);
         
-        // Full-screen intent (like incoming call) - wake screen and show over lockscreen
-        Intent fullScreenIntent = new Intent(Intent.ACTION_VIEW, deepLink);
-        fullScreenIntent.setPackage(getPackageName());
+        // Full-screen intent - launches custom Activity for incoming orders
+        Intent fullScreenIntent = new Intent(this, IncomingOrderActivity.class);
         fullScreenIntent.setFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK | 
             Intent.FLAG_ACTIVITY_CLEAR_TOP | 
-            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS |
-            Intent.FLAG_ACTIVITY_SINGLE_TOP
+            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
         );
         fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
         fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-        fullScreenIntent.putExtra("fromNotification", true);
+        fullScreenIntent.putExtra("title", title);
+        fullScreenIntent.putExtra("body", body);
         fullScreenIntent.putExtra("route", route);
+        fullScreenIntent.putExtra("orderId", orderId);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this, 

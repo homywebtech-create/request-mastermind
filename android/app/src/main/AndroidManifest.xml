@@ -32,6 +32,15 @@
 
         </activity>
 
+        <!-- Full-screen incoming order Activity -->
+        <activity
+            android:name=".IncomingOrderActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:exported="false" />
+
         <!-- Firebase Cloud Messaging Service -->
         <service
             android:name=".MyFirebaseMessagingService"

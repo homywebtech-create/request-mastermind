@@ -30,6 +30,9 @@
 # Keep FCM messaging service
 -keep class app.lovable.c9213afe1e6545938c572cfda087384c.MyFirebaseMessagingService { *; }
 
+# Keep incoming order activity
+-keep class app.lovable.c9213afe1e6545938c572cfda087384c.IncomingOrderActivity { *; }
+
 # Keep notification classes
 -keep class androidx.core.app.NotificationCompat** { *; }
 -keep class android.app.Notification** { *; }
