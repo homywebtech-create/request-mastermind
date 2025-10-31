@@ -76,8 +76,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // Create notification channels (required for Android 8.0+)
         createNotificationChannel();
 
-        // Choose channel depending on type
-        String channelId = useCallChannel ? CALL_CHANNEL_ID : CHANNEL_ID;
+        // Choose channel depending on type, force CALL channel on Xiaomi/Redmi
+        boolean isXiaomi = android.os.Build.MANUFACTURER != null && android.os.Build.MANUFACTURER.equalsIgnoreCase("Xiaomi");
+        String channelId = (useCallChannel || isXiaomi) ? CALL_CHANNEL_ID : CHANNEL_ID;
 
         // Extract orderId from route if present
         String orderId = null;
@@ -86,8 +87,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         }
 
         // For Xiaomi/Redmi devices, launch the activity DIRECTLY (don't rely on full-screen intent)
-        String manufacturer = android.os.Build.MANUFACTURER;
-        if (manufacturer != null && manufacturer.equalsIgnoreCase("Xiaomi")) {
+        if (isXiaomi) {
             Intent directIntent = new Intent(this, IncomingOrderActivity.class);
             directIntent.setFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK | 
@@ -170,7 +170,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Show on lock screen
             .setColor(0xFFFF0000)
             .setLights(0xFFFF0000, 500, 500)
-            .setOngoing(false)
+            .setOngoing(channelId.equals(CALL_CHANNEL_ID))
             .setTimeoutAfter(30000)
             .setDefaults(0) // Don't use defaults, use explicit settings
             .setOnlyAlertOnce(false); // Alert every time
