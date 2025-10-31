@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,12 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, User, Camera, CreditCard, FileCheck } from "lucide-react";
 import { countries } from "@/data/countries";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useTranslation } from "@/i18n";
+import { Progress } from "@/components/ui/progress";
 
 const registrationSchema = z.object({
   experience_years: z.coerce.number().min(0, "يجب أن تكون سنوات الخبرة 0 أو أكثر").max(50, "سنوات الخبرة غير صحيحة"),
@@ -46,12 +45,20 @@ interface SubService {
   service_id: string;
 }
 
+const STEPS = [
+  { id: 1, title: 'المعلومات الأساسية', title_en: 'Basic Information', icon: User },
+  { id: 2, title: 'الصور الشخصية', title_en: 'Personal Photos', icon: Camera },
+  { id: 3, title: 'صور البطاقة', title_en: 'ID Card Photos', icon: CreditCard },
+  { id: 4, title: 'المراجعة والتأكيد', title_en: 'Review & Confirm', icon: FileCheck },
+];
+
 export default function SpecialistRegistration() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const { language } = useLanguage();
   const token = searchParams.get("token");
 
+  const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [specialist, setSpecialist] = useState<any>(null);
@@ -86,7 +93,6 @@ export default function SpecialistRegistration() {
   });
 
   useEffect(() => {
-    // Initialize without token requirement
     initializeRegistration();
     fetchServices();
   }, []);
@@ -102,7 +108,6 @@ export default function SpecialistRegistration() {
   const initializeRegistration = async () => {
     setIsLoading(true);
     try {
-      // Create a temporary specialist for registration
       const tempSpecialist = {
         id: 'temp-' + Date.now(),
         name: 'New Registration',
@@ -150,8 +155,10 @@ export default function SpecialistRegistration() {
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast({
-          title: "خطأ / Error",
-          description: "حجم الصورة يجب أن يكون أقل من 5 ميجابايت / Image size must be less than 5MB",
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' 
+            ? "حجم الصورة يجب أن يكون أقل من 5 ميجابايت" 
+            : "Image size must be less than 5MB",
           variant: "destructive",
         });
         return;
@@ -212,45 +219,68 @@ export default function SpecialistRegistration() {
     return publicUrl;
   };
 
+  const validateStep = async (step: number): Promise<boolean> => {
+    if (step === 1) {
+      const fields = ['experience_years', 'sub_service_ids', 'countries_worked_in', 'languages_spoken', 'id_card_expiry_date'];
+      const result = await form.trigger(fields as any);
+      return result;
+    }
+    if (step === 2) {
+      if (!facePhotoFile && !specialist?.face_photo_url) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' ? "يجب رفع صورة الوجه" : "Please upload face photo",
+          variant: "destructive",
+        });
+        return false;
+      }
+      if (!fullBodyPhotoFile && !specialist?.full_body_photo_url) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' ? "يجب رفع صورة كاملة" : "Please upload full body photo",
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    }
+    if (step === 3) {
+      if (!idCardFrontFile && !specialist?.id_card_front_url) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' ? "يجب رفع صورة البطاقة الأمامية" : "Please upload ID card front",
+          variant: "destructive",
+        });
+        return false;
+      }
+      if (!idCardBackFile && !specialist?.id_card_back_url) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' ? "يجب رفع صورة البطاقة الخلفية" : "Please upload ID card back",
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    }
+    return true;
+  };
+
+  const handleNext = async () => {
+    const isValid = await validateStep(currentStep);
+    if (isValid && currentStep < 4) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   const onSubmit = async (values: RegistrationFormValues) => {
     if (!specialist) return;
-
-    // Validate required images
-    if (!facePhotoFile && !specialist.face_photo_url) {
-      toast({
-        title: "خطأ / Error",
-        description: "يجب رفع صورة الوجه / Please upload face photo",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!fullBodyPhotoFile && !specialist.full_body_photo_url) {
-      toast({
-        title: "خطأ / Error",
-        description: "يجب رفع صورة كاملة / Please upload full body photo",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!idCardFrontFile && !specialist.id_card_front_url) {
-      toast({
-        title: "خطأ / Error",
-        description: "يجب رفع صورة البطاقة الأمامية / Please upload ID card front",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!idCardBackFile && !specialist.id_card_back_url) {
-      toast({
-        title: "خطأ / Error",
-        description: "يجب رفع صورة البطاقة الخلفية / Please upload ID card back",
-        variant: "destructive",
-      });
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -275,7 +305,7 @@ export default function SpecialistRegistration() {
         idCardBackUrl = await uploadImage(idCardBackFile, "id-cards", specialist.id);
       }
 
-      // Complete registration via backend function to bypass RLS conflicts
+      // Complete registration via backend function
       const { data: completeData, error: completeError } = await supabase.functions.invoke(
         'complete-specialist-registration',
         {
@@ -304,14 +334,16 @@ export default function SpecialistRegistration() {
 
       setSubmitted(true);
       toast({
-        title: "تم بنجاح / Success",
-        description: "تم إكمال التسجيل بنجاح. سيتم مراجعة بياناتك قريباً / Registration completed successfully. Your profile will be reviewed soon.",
+        title: language === 'ar' ? "تم بنجاح" : "Success",
+        description: language === 'ar' 
+          ? "تم إكمال التسجيل بنجاح. سيتم مراجعة بياناتك قريباً"
+          : "Registration completed successfully. Your profile will be reviewed soon.",
       });
     } catch (error: any) {
       console.error("Error submitting registration:", error);
       toast({
-        title: "خطأ / Error",
-        description: error.message || "حدث خطأ أثناء حفظ البيانات / An error occurred while saving data",
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: error.message || (language === 'ar' ? "حدث خطأ أثناء حفظ البيانات" : "An error occurred while saving data"),
         variant: "destructive",
       });
     } finally {
@@ -322,32 +354,30 @@ export default function SpecialistRegistration() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>جاري التحميل... / Loading...</p>
+        <p>{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
       </div>
     );
   }
 
-  // Removed token requirement for testing
-
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950">
+        <Card className="max-w-md shadow-2xl animate-scale-in">
           <CardHeader>
             <div className="flex justify-center mb-4">
-              <CheckCircle2 className="h-16 w-16 text-green-500" />
+              <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center animate-bounce">
+                <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+              </div>
             </div>
-            <CardTitle className="text-center">
-              تم إكمال التسجيل بنجاح!
-              <br />
-              Registration Completed!
+            <CardTitle className="text-center text-2xl">
+              {language === 'ar' ? 'تم إكمال التسجيل بنجاح!' : 'Registration Completed!'}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
-              شكراً لإكمال بياناتك. سيتم مراجعة ملفك الشخصي والموافقة عليه قريباً.
-              <br />
-              Thank you for completing your registration. Your profile will be reviewed and approved soon.
+              {language === 'ar' 
+                ? 'شكراً لإكمال بياناتك. سيتم مراجعة ملفك الشخصي والموافقة عليه قريباً.'
+                : 'Thank you for completing your registration. Your profile will be reviewed and approved soon.'}
             </p>
           </CardContent>
         </Card>
@@ -355,411 +385,538 @@ export default function SpecialistRegistration() {
     );
   }
 
+  const progressPercentage = (currentStep / 4) * 100;
+
   return (
-    <div className="min-h-screen bg-background p-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">
-              تسجيل عامل جديد - New Worker Registration
-            </CardTitle>
-            <CardDescription className="text-center">
-              يرجى إكمال البيانات التالية لإنهاء التسجيل
-              <br />
-              Please complete the following information to finish registration
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>تعليمات مهمة / Important Instructions:</strong>
-                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                  <li>يجب أن تكون الصورة احترافية وبالزي الموحد / Photo must be professional and in uniform</li>
-                  <li>الصور غير المناسبة سيتم رفضها / Inappropriate photos will be rejected</li>
-                  <li>حجم الصورة يجب أن يكون أقل من 5 ميجابايت / Image size must be less than 5MB</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8 animate-fade-in">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            {language === 'ar' ? 'تسجيل محترف جديد' : 'New Specialist Registration'}
+          </h1>
+          <p className="text-muted-foreground">
+            {language === 'ar' 
+              ? 'يرجى إكمال البيانات التالية لإنهاء التسجيل'
+              : 'Please complete the following information to finish registration'}
+          </p>
+        </div>
 
+        {/* Progress Bar */}
+        <Card className="mb-6 shadow-lg animate-fade-in">
+          <CardContent className="pt-6">
+            <div className="mb-6">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium">
+                  {language === 'ar' ? 'التقدم' : 'Progress'}: {currentStep}/4
+                </span>
+                <span className="text-sm font-medium">{Math.round(progressPercentage)}%</span>
+              </div>
+              <Progress value={progressPercentage} className="h-3" />
+            </div>
+
+            {/* Steps */}
+            <div className="grid grid-cols-4 gap-2">
+              {STEPS.map((step) => {
+                const StepIcon = step.icon;
+                const isActive = currentStep === step.id;
+                const isCompleted = currentStep > step.id;
+
+                return (
+                  <div
+                    key={step.id}
+                    className={`flex flex-col items-center p-3 rounded-lg transition-all ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground shadow-lg scale-105'
+                        : isCompleted
+                        ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    <StepIcon className="h-6 w-6 mb-2" />
+                    <span className="text-xs font-medium text-center hidden md:block">
+                      {language === 'ar' ? step.title : step.title_en}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Form Card */}
+        <Card className="shadow-2xl animate-scale-in">
+          <CardContent className="pt-6">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Photos Section */}
-                <div className="space-y-6 border rounded-lg p-4">
-                  <h3 className="font-semibold text-lg">الصور المطلوبة / Required Photos</h3>
-                  
-                  {/* Face Photo */}
-                  <div className="space-y-2">
-                    <FormLabel>صورة الوجه / Face Photo *</FormLabel>
-                    <div className="flex flex-col items-center gap-4">
-                      <Avatar className="h-32 w-32">
-                        <AvatarImage src={facePhotoPreview} />
-                        <AvatarFallback className="text-2xl">
-                          📷
-                        </AvatarFallback>
-                      </Avatar>
-                      <label htmlFor="face-photo-upload" className="cursor-pointer">
-                        <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent">
-                          <Upload className="h-4 w-4" />
-                          <span className="text-sm">
-                            {facePhotoPreview ? "تغيير صورة الوجه" : "رفع صورة الوجه"}
-                          </span>
-                        </div>
-                        <input
-                          id="face-photo-upload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleImageChange(e, 'face')}
-                        />
-                      </label>
-                    </div>
-                  </div>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                {/* Step 1: Basic Information */}
+                {currentStep === 1 && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        {language === 'ar' ? 'المعلومات الأساسية' : 'Basic Information'}
+                      </h3>
 
-                  {/* Full Body Photo */}
-                  <div className="space-y-2">
-                    <FormLabel>صورة كاملة / Full Body Photo *</FormLabel>
-                    <div className="flex flex-col items-center gap-4">
-                      {fullBodyPhotoPreview ? (
-                        <img src={fullBodyPhotoPreview} alt="Full body" className="w-48 h-64 object-cover rounded-lg" />
-                      ) : (
-                        <div className="w-48 h-64 border-2 border-dashed rounded-lg flex items-center justify-center">
-                          <Upload className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
-                      <label htmlFor="full-body-upload" className="cursor-pointer">
-                        <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent">
-                          <Upload className="h-4 w-4" />
-                          <span className="text-sm">
-                            {fullBodyPhotoPreview ? "تغيير الصورة الكاملة" : "رفع الصورة الكاملة"}
-                          </span>
-                        </div>
-                        <input
-                          id="full-body-upload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleImageChange(e, 'fullBody')}
-                        />
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* ID Card Photos */}
-                  <div className="space-y-4">
-                    <FormLabel>صورة البطاقة الشخصية (الوجهان) / ID Card (Both Sides) *</FormLabel>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* ID Front */}
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">الوجه الأمامي / Front Side</p>
-                        {idCardFrontPreview ? (
-                          <img src={idCardFrontPreview} alt="ID Front" className="w-full h-48 object-cover rounded-lg" />
-                        ) : (
-                          <div className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center">
-                            <Upload className="h-8 w-8 text-muted-foreground" />
-                          </div>
+                      <FormField
+                        control={form.control}
+                        name="experience_years"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'سنوات الخبرة *' : 'Years of Experience *'}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                max="50"
+                                placeholder={language === 'ar' ? '5' : '5'} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                        <label htmlFor="id-front-upload" className="cursor-pointer block">
-                          <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent w-full justify-center">
-                            <Upload className="h-4 w-4" />
-                            <span className="text-sm">
-                              {idCardFrontPreview ? "تغيير" : "رفع"}
-                            </span>
-                          </div>
-                          <input
-                            id="id-front-upload"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageChange(e, 'idFront')}
-                          />
-                        </label>
+                      />
+
+                      {/* Services Selection */}
+                      <div className="space-y-2">
+                        <FormLabel>{language === 'ar' ? 'الخدمات *' : 'Services *'}</FormLabel>
+                        <MultiSelect
+                          options={services.map(s => ({
+                            label: language === 'ar' ? s.name : (s.name_en || s.name),
+                            value: s.id
+                          }))}
+                          selected={selectedServices}
+                          onChange={setSelectedServices}
+                          placeholder={language === 'ar' ? "اختر الخدمات" : "Select services"}
+                        />
                       </div>
 
-                      {/* ID Back */}
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">الوجه الخلفي / Back Side</p>
-                        {idCardBackPreview ? (
-                          <img src={idCardBackPreview} alt="ID Back" className="w-full h-48 object-cover rounded-lg" />
-                        ) : (
-                          <div className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center">
-                            <Upload className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        )}
-                        <label htmlFor="id-back-upload" className="cursor-pointer block">
-                          <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent w-full justify-center">
-                            <Upload className="h-4 w-4" />
-                            <span className="text-sm">
-                              {idCardBackPreview ? "تغيير" : "رفع"}
-                            </span>
-                          </div>
-                          <input
-                            id="id-back-upload"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageChange(e, 'idBack')}
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ID Card Expiry Date */}
-                <FormField
-                  control={form.control}
-                  name="id_card_expiry_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>تاريخ انتهاء البطاقة / ID Card Expiry Date *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="date"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Experience Years */}
-                <FormField
-                  control={form.control}
-                  name="experience_years"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>سنوات الخبرة / Years of Experience *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="50"
-                          placeholder="مثال: 5 / Example: 5"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Services Selection */}
-                <div className="space-y-4">
-                  <FormLabel className="text-base">الخدمات الرئيسية / Main Services *</FormLabel>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {services.map((service) => (
-                      <div key={service.id} className="flex items-center space-x-2 space-x-reverse">
-                        <Checkbox
-                          id={service.id}
-                          checked={selectedServices.includes(service.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedServices([...selectedServices, service.id]);
-                            } else {
-                              setSelectedServices(selectedServices.filter(id => id !== service.id));
-                              // Clear selected sub-services for this service
-                              const subServicesToRemove = subServices
-                                .filter(ss => ss.service_id === service.id)
-                                .map(ss => ss.id);
-                              form.setValue(
-                                'sub_service_ids',
-                                form.getValues('sub_service_ids').filter(id => !subServicesToRemove.includes(id))
-                              );
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={service.id}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          <div>{service.name}</div>
-                          {service.name_en && (
-                            <div className="text-xs text-muted-foreground">{service.name_en}</div>
+                      {/* Sub-services Selection */}
+                      {subServices.length > 0 && (
+                        <FormField
+                          control={form.control}
+                          name="sub_service_ids"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{language === 'ar' ? 'التخصصات *' : 'Specialties *'}</FormLabel>
+                              <FormControl>
+                                <MultiSelect
+                                  options={subServices.map(ss => ({
+                                    label: language === 'ar' ? ss.name : (ss.name_en || ss.name),
+                                    value: ss.id
+                                  }))}
+                                  selected={field.value}
+                                  onChange={field.onChange}
+                                  placeholder={language === 'ar' ? "اختر التخصصات" : "Select specialties"}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </label>
+                        />
+                      )}
+
+                      <FormField
+                        control={form.control}
+                        name="countries_worked_in"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'الدول التي عملت فيها *' : 'Countries Worked In *'}</FormLabel>
+                            <FormControl>
+                              <MultiSelect
+                                options={countries.map(c => ({
+                                  label: `${c.flag} ${language === 'ar' ? c.nameAr : c.name}`,
+                                  value: language === 'ar' ? c.nameAr : c.name
+                                }))}
+                                selected={field.value}
+                                onChange={field.onChange}
+                                placeholder={language === 'ar' ? "اختر الدول" : "Select countries"}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="languages_spoken"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'اللغات المتحدثة *' : 'Languages Spoken *'}</FormLabel>
+                            <FormControl>
+                              <MultiSelect
+                                options={[
+                                  { label: language === 'ar' ? 'العربية' : 'Arabic', value: 'Arabic' },
+                                  { label: language === 'ar' ? 'الإنجليزية' : 'English', value: 'English' },
+                                  { label: language === 'ar' ? 'الأوردو' : 'Urdu', value: 'Urdu' },
+                                  { label: language === 'ar' ? 'الهندية' : 'Hindi', value: 'Hindi' },
+                                  { label: language === 'ar' ? 'التاغالوغ' : 'Tagalog', value: 'Tagalog' },
+                                  { label: language === 'ar' ? 'البنغالية' : 'Bengali', value: 'Bengali' },
+                                ]}
+                                selected={field.value}
+                                onChange={field.onChange}
+                                placeholder={language === 'ar' ? "اختر اللغات" : "Select languages"}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="id_card_expiry_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'تاريخ انتهاء البطاقة *' : 'ID Card Expiry Date *'}</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="space-y-3 border-t pt-4">
+                        <FormLabel>{language === 'ar' ? 'الحساسية' : 'Allergies'}</FormLabel>
+                        <FormField
+                          control={form.control}
+                          name="has_pet_allergy"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2 space-x-reverse">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="!mt-0 cursor-pointer">
+                                {language === 'ar' ? 'حساسية من الحيوانات' : 'Pet Allergy'}
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="has_cleaning_allergy"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2 space-x-reverse">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="!mt-0 cursor-pointer">
+                                {language === 'ar' ? 'حساسية من مواد التنظيف' : 'Cleaning Products Allergy'}
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
                       </div>
-                    ))}
+
+                      <FormField
+                        control={form.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'ملاحظات إضافية' : 'Additional Notes'}</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder={language === 'ar' ? "أي معلومات إضافية..." : "Any additional information..."}
+                                className="min-h-[100px]"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
-
-                {/* Sub-Services */}
-                {selectedServices.length > 0 && subServices.length > 0 && (
-                  <FormField
-                    control={form.control}
-                    name="sub_service_ids"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الخدمات الفرعية / Sub-Services *</FormLabel>
-                        <div className="space-y-4">
-                          {selectedServices.map((serviceId) => {
-                            const service = services.find(s => s.id === serviceId);
-                            const serviceSubServices = subServices.filter(ss => ss.service_id === serviceId);
-                            
-                            if (serviceSubServices.length === 0) return null;
-
-                            return (
-                              <div key={serviceId} className="border rounded-lg p-4">
-                                <h4 className="font-medium mb-3">{service?.name}</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  {serviceSubServices.map((subService) => (
-                                    <div key={subService.id} className="flex items-center space-x-2 space-x-reverse">
-                                      <Checkbox
-                                        id={subService.id}
-                                        checked={field.value.includes(subService.id)}
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            field.onChange([...field.value, subService.id]);
-                                          } else {
-                                            field.onChange(field.value.filter((id) => id !== subService.id));
-                                          }
-                                        }}
-                                      />
-                                      <label
-                                        htmlFor={subService.id}
-                                        className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                      >
-                                        <div>{subService.name}</div>
-                                        {subService.name_en && (
-                                          <div className="text-xs text-muted-foreground">{subService.name_en}</div>
-                                        )}
-                                      </label>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 )}
 
-                {/* Notes */}
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ملاحظات إضافية / Additional Notes</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="أي معلومات إضافية تود إضافتها / Any additional information"
-                          className="min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Step 2: Personal Photos */}
+                {currentStep === 2 && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <Camera className="h-5 w-5" />
+                        {language === 'ar' ? 'الصور الشخصية' : 'Personal Photos'}
+                      </h3>
 
-                {/* Countries Worked In */}
-                <FormField
-                  control={form.control}
-                  name="countries_worked_in"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>الدول التي عملت فيها من قبل / Countries Worked In *</FormLabel>
-                      <FormControl>
-                        <MultiSelect
-                          options={countries.map((country) => ({
-                            label: `${country.flag} ${country.name}`,
-                            value: country.name,
-                          }))}
-                          selected={field.value}
-                          onChange={field.onChange}
-                          placeholder="Select countries..."
-                          emptyMessage="No countries found"
-                          searchPlaceholder="Search country..."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>{language === 'ar' ? 'يجب أن تكون الصورة احترافية وبالزي الموحد' : 'Photo must be professional and in uniform'}</li>
+                            <li>{language === 'ar' ? 'الصور غير المناسبة سيتم رفضها' : 'Inappropriate photos will be rejected'}</li>
+                            <li>{language === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت' : 'Image size must be less than 5MB'}</li>
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
 
-                {/* Languages */}
-                <FormField
-                  control={form.control}
-                  name="languages_spoken"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>اللغات التي تتحدثها / Languages Spoken *</FormLabel>
-                      <FormControl>
-                        <MultiSelect
-                          options={['Arabic', 'English', 'Hindi', 'Urdu', 'Tagalog', 'Indonesian', 'Bengali', 'French', 'Other'].map((lang) => ({
-                            label: lang,
-                            value: lang,
-                          }))}
-                          selected={field.value}
-                          onChange={field.onChange}
-                          placeholder="Select languages..."
-                          emptyMessage="No languages found"
-                          searchPlaceholder="Search language..."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Allergies */}
-                <div className="space-y-4 border rounded-lg p-4">
-                  <h3 className="font-semibold">معلومات الحساسية / Allergy Information</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="has_cleaning_allergy"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-x-reverse space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>
-                            هل تعاني من حساسية ضد مواد التنظيف؟ / Do you have allergy to cleaning products?
-                          </FormLabel>
+                      {/* Face Photo */}
+                      <div className="space-y-3 p-6 border-2 border-dashed rounded-lg hover:border-primary transition-colors">
+                        <FormLabel className="text-base">
+                          {language === 'ar' ? 'صورة الوجه *' : 'Face Photo *'}
+                        </FormLabel>
+                        <div className="flex flex-col items-center gap-4">
+                          <Avatar className="h-40 w-40 border-4 border-background shadow-xl">
+                            <AvatarImage src={facePhotoPreview} />
+                            <AvatarFallback className="text-4xl bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
+                              📷
+                            </AvatarFallback>
+                          </Avatar>
+                          <label htmlFor="face-photo-upload" className="cursor-pointer">
+                            <div className="flex items-center gap-2 px-6 py-3 border-2 rounded-lg hover:bg-accent hover:scale-105 transition-all shadow-sm">
+                              <Upload className="h-5 w-5" />
+                              <span className="font-medium">
+                                {facePhotoPreview 
+                                  ? (language === 'ar' ? 'تغيير الصورة' : 'Change Photo')
+                                  : (language === 'ar' ? 'رفع صورة الوجه' : 'Upload Face Photo')}
+                              </span>
+                            </div>
+                            <input
+                              id="face-photo-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleImageChange(e, 'face')}
+                            />
+                          </label>
                         </div>
-                      </FormItem>
-                    )}
-                  />
+                      </div>
 
-                  <FormField
-                    control={form.control}
-                    name="has_pet_allergy"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-x-reverse space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>
-                            هل تعاني من حساسية تجاه الحيوانات (قطط/كلاب)؟ / Do you have allergy to pets (cats/dogs)?
-                          </FormLabel>
+                      {/* Full Body Photo */}
+                      <div className="space-y-3 p-6 border-2 border-dashed rounded-lg hover:border-primary transition-colors">
+                        <FormLabel className="text-base">
+                          {language === 'ar' ? 'صورة كاملة *' : 'Full Body Photo *'}
+                        </FormLabel>
+                        <div className="flex flex-col items-center gap-4">
+                          {fullBodyPhotoPreview ? (
+                            <img 
+                              src={fullBodyPhotoPreview} 
+                              alt="Full body" 
+                              className="w-56 h-72 object-cover rounded-lg shadow-xl border-4 border-background" 
+                            />
+                          ) : (
+                            <div className="w-56 h-72 border-4 border-dashed rounded-lg flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                              <Upload className="h-12 w-12 text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground">{language === 'ar' ? 'صورة بالطول الكامل' : 'Full body photo'}</p>
+                            </div>
+                          )}
+                          <label htmlFor="full-body-upload" className="cursor-pointer">
+                            <div className="flex items-center gap-2 px-6 py-3 border-2 rounded-lg hover:bg-accent hover:scale-105 transition-all shadow-sm">
+                              <Upload className="h-5 w-5" />
+                              <span className="font-medium">
+                                {fullBodyPhotoPreview 
+                                  ? (language === 'ar' ? 'تغيير الصورة' : 'Change Photo')
+                                  : (language === 'ar' ? 'رفع صورة كاملة' : 'Upload Full Photo')}
+                              </span>
+                            </div>
+                            <input
+                              id="full-body-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleImageChange(e, 'fullBody')}
+                            />
+                          </label>
                         </div>
-                      </FormItem>
-                    )}
-                  />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: ID Card Photos */}
+                {currentStep === 3 && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <CreditCard className="h-5 w-5" />
+                        {language === 'ar' ? 'صور البطاقة الشخصية' : 'ID Card Photos'}
+                      </h3>
+
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          <p className="text-sm">
+                            {language === 'ar' 
+                              ? 'يرجى التأكد من وضوح جميع البيانات في الصور'
+                              : 'Please ensure all data is clearly visible in the photos'}
+                          </p>
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {/* ID Front */}
+                        <div className="space-y-3 p-6 border-2 border-dashed rounded-lg hover:border-primary transition-colors">
+                          <FormLabel className="text-base">
+                            {language === 'ar' ? 'الوجه الأمامي *' : 'Front Side *'}
+                          </FormLabel>
+                          {idCardFrontPreview ? (
+                            <img 
+                              src={idCardFrontPreview} 
+                              alt="ID Front" 
+                              className="w-full h-56 object-cover rounded-lg shadow-lg border-2 border-background" 
+                            />
+                          ) : (
+                            <div className="w-full h-56 border-4 border-dashed rounded-lg flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-950">
+                              <CreditCard className="h-12 w-12 text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground text-center px-4">
+                                {language === 'ar' ? 'الوجه الأمامي للبطاقة' : 'Front side of ID'}
+                              </p>
+                            </div>
+                          )}
+                          <label htmlFor="id-front-upload" className="cursor-pointer block">
+                            <div className="flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg hover:bg-accent hover:scale-105 transition-all shadow-sm">
+                              <Upload className="h-4 w-4" />
+                              <span className="text-sm font-medium">
+                                {idCardFrontPreview 
+                                  ? (language === 'ar' ? 'تغيير' : 'Change')
+                                  : (language === 'ar' ? 'رفع' : 'Upload')}
+                              </span>
+                            </div>
+                            <input
+                              id="id-front-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleImageChange(e, 'idFront')}
+                            />
+                          </label>
+                        </div>
+
+                        {/* ID Back */}
+                        <div className="space-y-3 p-6 border-2 border-dashed rounded-lg hover:border-primary transition-colors">
+                          <FormLabel className="text-base">
+                            {language === 'ar' ? 'الوجه الخلفي *' : 'Back Side *'}
+                          </FormLabel>
+                          {idCardBackPreview ? (
+                            <img 
+                              src={idCardBackPreview} 
+                              alt="ID Back" 
+                              className="w-full h-56 object-cover rounded-lg shadow-lg border-2 border-background" 
+                            />
+                          ) : (
+                            <div className="w-full h-56 border-4 border-dashed rounded-lg flex flex-col items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-950">
+                              <CreditCard className="h-12 w-12 text-muted-foreground mb-2 rotate-180" />
+                              <p className="text-sm text-muted-foreground text-center px-4">
+                                {language === 'ar' ? 'الوجه الخلفي للبطاقة' : 'Back side of ID'}
+                              </p>
+                            </div>
+                          )}
+                          <label htmlFor="id-back-upload" className="cursor-pointer block">
+                            <div className="flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg hover:bg-accent hover:scale-105 transition-all shadow-sm">
+                              <Upload className="h-4 w-4" />
+                              <span className="text-sm font-medium">
+                                {idCardBackPreview 
+                                  ? (language === 'ar' ? 'تغيير' : 'Change')
+                                  : (language === 'ar' ? 'رفع' : 'Upload')}
+                              </span>
+                            </div>
+                            <input
+                              id="id-back-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleImageChange(e, 'idBack')}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Review */}
+                {currentStep === 4 && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <FileCheck className="h-5 w-5" />
+                        {language === 'ar' ? 'مراجعة البيانات' : 'Review Information'}
+                      </h3>
+
+                      <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                        <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <AlertDescription className="text-blue-900 dark:text-blue-100">
+                          {language === 'ar' 
+                            ? 'يرجى مراجعة جميع البيانات قبل التأكيد. يمكنك العودة لتعديل أي معلومات.'
+                            : 'Please review all information before confirming. You can go back to edit any details.'}
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="space-y-4 p-6 bg-muted rounded-lg">
+                        <div>
+                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'سنوات الخبرة' : 'Years of Experience'}</p>
+                          <p className="font-semibold">{form.getValues('experience_years')} {language === 'ar' ? 'سنوات' : 'years'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'عدد التخصصات' : 'Number of Specialties'}</p>
+                          <p className="font-semibold">{form.getValues('sub_service_ids').length}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الدول' : 'Countries'}</p>
+                          <p className="font-semibold">{form.getValues('countries_worked_in').length} {language === 'ar' ? 'دولة' : 'countries'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغات' : 'Languages'}</p>
+                          <p className="font-semibold">{form.getValues('languages_spoken').join(', ')}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الصور المرفوعة' : 'Uploaded Photos'}</p>
+                          <div className="flex gap-2 mt-2">
+                            {facePhotoPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                            {fullBodyPhotoPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                            {idCardFrontPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                            {idCardBackPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                            <span className="text-sm">4/4 {language === 'ar' ? 'صور' : 'photos'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Buttons */}
+                <div className="flex justify-between mt-8 pt-6 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBack}
+                    disabled={currentStep === 1 || isSubmitting}
+                    className="gap-2"
+                  >
+                    {language === 'ar' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                    {language === 'ar' ? 'السابق' : 'Back'}
+                  </Button>
+
+                  {currentStep < 4 ? (
+                    <Button
+                      type="button"
+                      onClick={handleNext}
+                      className="gap-2"
+                    >
+                      {language === 'ar' ? 'التالي' : 'Next'}
+                      {language === 'ar' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="gap-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      {isSubmitting 
+                        ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') 
+                        : (language === 'ar' ? 'تأكيد التسجيل' : 'Confirm Registration')}
+                    </Button>
+                  )}
                 </div>
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  size="lg"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "جاري الحفظ... / Saving..." : "إكمال التسجيل / Complete Registration"}
-                </Button>
               </form>
             </Form>
           </CardContent>
