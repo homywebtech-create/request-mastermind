@@ -1097,13 +1097,83 @@ export default function SpecialistRegistration() {
                           )}
 
                           <div>
-                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الصور المرفوعة' : 'Uploaded Photos'}</p>
-                            <div className="flex gap-2 mt-2">
-                              {facePhotoPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                              {fullBodyPhotoPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                              {idCardFrontPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                              {idCardBackPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                              <span className="text-sm">4/4 {language === 'ar' ? 'صور' : 'photos'}</span>
+                            <p className="text-sm text-muted-foreground mb-3">{language === 'ar' ? 'الصور المرفوعة' : 'Uploaded Photos'}</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              {/* Face Photo */}
+                              {facePhotoPreview && (
+                                <div className="space-y-2">
+                                  <p className="text-xs text-muted-foreground font-medium">
+                                    {language === 'ar' ? 'صورة الوجه' : 'Face Photo'}
+                                  </p>
+                                  <div className="relative rounded-lg overflow-hidden border-2 border-green-500 shadow-md">
+                                    <img 
+                                      src={facePhotoPreview} 
+                                      alt="Face" 
+                                      className="w-full h-32 object-cover" 
+                                    />
+                                    <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
+                                      <CheckCircle2 className="h-4 w-4 text-white" />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Full Body Photo */}
+                              {fullBodyPhotoPreview && (
+                                <div className="space-y-2">
+                                  <p className="text-xs text-muted-foreground font-medium">
+                                    {language === 'ar' ? 'صورة كاملة' : 'Full Body'}
+                                  </p>
+                                  <div className="relative rounded-lg overflow-hidden border-2 border-green-500 shadow-md">
+                                    <img 
+                                      src={fullBodyPhotoPreview} 
+                                      alt="Full Body" 
+                                      className="w-full h-32 object-cover" 
+                                    />
+                                    <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
+                                      <CheckCircle2 className="h-4 w-4 text-white" />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* ID Card Front */}
+                              {idCardFrontPreview && (
+                                <div className="space-y-2">
+                                  <p className="text-xs text-muted-foreground font-medium">
+                                    {language === 'ar' ? 'البطاقة - أمامي' : 'ID Card - Front'}
+                                  </p>
+                                  <div className="relative rounded-lg overflow-hidden border-2 border-green-500 shadow-md">
+                                    <img 
+                                      src={idCardFrontPreview} 
+                                      alt="ID Front" 
+                                      className="w-full h-32 object-cover" 
+                                    />
+                                    <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
+                                      <CheckCircle2 className="h-4 w-4 text-white" />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* ID Card Back */}
+                              {idCardBackPreview && (
+                                <div className="space-y-2">
+                                  <p className="text-xs text-muted-foreground font-medium">
+                                    {language === 'ar' ? 'البطاقة - خلفي' : 'ID Card - Back'}
+                                  </p>
+                                  <div className="relative rounded-lg overflow-hidden border-2 border-green-500 shadow-md">
+                                    <img 
+                                      src={idCardBackPreview} 
+                                      alt="ID Back" 
+                                      className="w-full h-32 object-cover" 
+                                    />
+                                    <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
+                                      <CheckCircle2 className="h-4 w-4 text-white" />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
