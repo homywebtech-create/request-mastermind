@@ -1,7 +1,6 @@
 import * as React from "react";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
 export type Option = {
@@ -30,6 +29,7 @@ export function MultiSelect({
   searchPlaceholder = "بحث...",
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleUnselect = (value: string) => {
@@ -59,6 +59,7 @@ export function MultiSelect({
       const target = event.target as HTMLElement;
       if (!target.closest('[data-multi-select]')) {
         setOpen(false);
+        setSearchQuery("");
       }
     };
 
@@ -68,10 +69,14 @@ export function MultiSelect({
     }
   }, [open]);
 
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className={cn("relative", className)} data-multi-select>
       <div 
-        className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-pointer bg-background"
+        className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-pointer bg-background min-h-[42px]"
         onClick={handleToggle}
       >
         <div className="flex flex-wrap gap-1">
@@ -81,13 +86,15 @@ export function MultiSelect({
               <Badge
                 key={value}
                 variant="secondary"
-                className="rounded-sm px-1 font-normal"
+                className="rounded-sm px-2 py-1 font-normal"
               >
                 {option?.label}
                 <button
                   className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
+                      e.preventDefault();
+                      e.stopPropagation();
                       handleUnselect(value);
                     }
                   }}
@@ -106,46 +113,62 @@ export function MultiSelect({
               </Badge>
             );
           })}
-          <input
-            ref={inputRef}
-            placeholder={selected.length === 0 ? placeholder : ""}
-            className="ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[120px]"
-            onFocus={() => setOpen(true)}
-            readOnly
-          />
+          {selected.length === 0 && (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
         </div>
       </div>
       {open && (
-        <Command className="absolute top-full left-0 right-0 mt-2 z-[100] rounded-md border bg-popover text-popover-foreground shadow-md">
-          <CommandGroup className="max-h-[300px] overflow-auto p-2">
-            <CommandEmpty>{emptyMessage}</CommandEmpty>
-            {options.map((option) => {
-              const isSelected = selected.includes(option.value);
-              return (
-                <CommandItem
-                  key={option.value}
-                  onSelect={() => handleSelect(option.value)}
-                  className="cursor-pointer"
-                >
+        <div className="absolute top-full left-0 right-0 mt-2 z-[100] rounded-md border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
+          <div className="p-2 border-b">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={searchPlaceholder}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="max-h-[300px] overflow-y-auto p-1">
+            {filteredOptions.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {emptyMessage}
+              </div>
+            ) : (
+              filteredOptions.map((option) => {
+                const isSelected = selected.includes(option.value);
+                return (
                   <div
-                    className={cn(
-                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                      isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "opacity-50 [&_svg]:invisible"
-                    )}
+                    key={option.value}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(option.value);
+                    }}
+                    className="flex items-center gap-2 px-2 py-2 text-sm rounded-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
-                    <X className="h-3 w-3" />
+                    <div
+                      className={cn(
+                        "flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0",
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "opacity-50"
+                      )}
+                    >
+                      {isSelected && <X className="h-3 w-3" />}
+                    </div>
+                    {option.icon && (
+                      <option.icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
+                    <span className="flex-1">{option.label}</span>
                   </div>
-                  {option.icon && (
-                    <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span>{option.label}</span>
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </Command>
+                );
+              })
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
