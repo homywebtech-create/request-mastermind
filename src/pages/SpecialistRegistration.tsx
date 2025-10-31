@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ImageCropper } from "@/components/ui/image-cropper";
 import { Upload, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, User, Camera, CreditCard, FileCheck, Share2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { countries } from "@/data/countries";
@@ -84,6 +85,11 @@ export default function SpecialistRegistration() {
   const [idCardFrontPreview, setIdCardFrontPreview] = useState<string>("");
   const [idCardBackFile, setIdCardBackFile] = useState<File | null>(null);
   const [idCardBackPreview, setIdCardBackPreview] = useState<string>("");
+  
+  // Cropper states
+  const [tempImageForCrop, setTempImageForCrop] = useState<string>("");
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [currentCropType, setCurrentCropType] = useState<'face' | 'fullBody' | 'idFront' | 'idBack' | null>(null);
   
   const [services, setServices] = useState<Service[]>([]);
   const [subServices, setSubServices] = useState<SubService[]>([]);
@@ -390,30 +396,49 @@ export default function SpecialistRegistration() {
         return;
       }
 
+      // Load image for cropping
       const reader = new FileReader();
       reader.onloadend = () => {
-        const preview = reader.result as string;
-        switch (type) {
-          case 'face':
-            setFacePhotoFile(file);
-            setFacePhotoPreview(preview);
-            break;
-          case 'fullBody':
-            setFullBodyPhotoFile(file);
-            setFullBodyPhotoPreview(preview);
-            break;
-          case 'idFront':
-            setIdCardFrontFile(file);
-            setIdCardFrontPreview(preview);
-            break;
-          case 'idBack':
-            setIdCardBackFile(file);
-            setIdCardBackPreview(preview);
-            break;
-        }
+        setTempImageForCrop(reader.result as string);
+        setCurrentCropType(type);
+        setCropperOpen(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    // Convert blob to file
+    const fileName = `${currentCropType}-${Date.now()}.jpg`;
+    const croppedFile = new File([croppedBlob], fileName, { type: 'image/jpeg' });
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    
+    // Update state based on type
+    switch (currentCropType) {
+      case 'face':
+        setFacePhotoFile(croppedFile);
+        setFacePhotoPreview(previewUrl);
+        break;
+      case 'fullBody':
+        setFullBodyPhotoFile(croppedFile);
+        setFullBodyPhotoPreview(previewUrl);
+        break;
+      case 'idFront':
+        setIdCardFrontFile(croppedFile);
+        setIdCardFrontPreview(previewUrl);
+        break;
+      case 'idBack':
+        setIdCardBackFile(croppedFile);
+        setIdCardBackPreview(previewUrl);
+        break;
+    }
+    
+    toast({
+      title: language === 'ar' ? "نجاح" : "Success",
+      description: language === 'ar' ? "تم حفظ الصورة بنجاح" : "Image saved successfully",
+    });
   };
 
   const uploadImage = async (
@@ -1684,6 +1709,29 @@ export default function SpecialistRegistration() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Image Cropper Dialog */}
+      <ImageCropper
+        image={tempImageForCrop}
+        open={cropperOpen}
+        onClose={() => {
+          setCropperOpen(false);
+          setTempImageForCrop("");
+          setCurrentCropType(null);
+        }}
+        onCropComplete={handleCropComplete}
+        aspectRatio={
+          currentCropType === 'face' ? 1 : 
+          currentCropType === 'fullBody' ? 3 / 4 : 
+          16 / 9
+        }
+        title={
+          currentCropType === 'face' ? (language === 'ar' ? 'اقتصاص صورة الوجه' : 'Crop Face Photo') :
+          currentCropType === 'fullBody' ? (language === 'ar' ? 'اقتصاص الصورة الكاملة' : 'Crop Full Body Photo') :
+          currentCropType === 'idFront' ? (language === 'ar' ? 'اقتصاص البطاقة الأمامية' : 'Crop ID Front') :
+          (language === 'ar' ? 'اقتصاص البطاقة الخلفية' : 'Crop ID Back')
+        }
+      />
     </div>
   );
 }
