@@ -1,7 +1,8 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Users, Star, Award, Calendar, Phone, MapPin, FileText, AlertCircle } from 'lucide-react';
+import { Users, Star, Award, Calendar, Phone, MapPin, FileText, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,9 +29,14 @@ interface SpecialistProfileDialogProps {
     languages_spoken?: string[];
     has_pet_allergy?: boolean;
     has_cleaning_allergy?: boolean;
+    approval_status?: string;
+    registration_completed_at?: string;
   };
   language?: 'ar' | 'en';
-  hideIdCards?: boolean; // New prop to hide ID cards for customers
+  hideIdCards?: boolean;
+  showApprovalButtons?: boolean;
+  onApprove?: (specialistId: string) => void;
+  onReject?: (specialistId: string) => void;
 }
 
 interface Specialty {
@@ -43,7 +49,10 @@ export function SpecialistProfileDialog({
   onOpenChange,
   specialist,
   language = 'ar',
-  hideIdCards = false // Default to showing ID cards (for admin/company)
+  hideIdCards = false,
+  showApprovalButtons = false,
+  onApprove,
+  onReject
 }: SpecialistProfileDialogProps) {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(false);
@@ -432,6 +441,38 @@ export function SpecialistProfileDialog({
             </>
           )}
         </div>
+
+        {/* Approval Buttons Footer */}
+        {showApprovalButtons && specialist.approval_status === 'pending' && specialist.registration_completed_at && (
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (onReject) {
+                  onReject(specialist.id);
+                  onOpenChange(false);
+                }
+              }}
+              className="flex items-center gap-2"
+            >
+              <XCircle className="h-4 w-4" />
+              {language === 'ar' ? 'رفض' : 'Reject'}
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                if (onApprove) {
+                  onApprove(specialist.id);
+                  onOpenChange(false);
+                }
+              }}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="h-4 w-4" />
+              {language === 'ar' ? 'قبول' : 'Approve'}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

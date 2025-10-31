@@ -3,8 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock, FileUser } from "lucide-react";
+import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock, FileUser, MoreVertical } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SpecialistForm } from "./specialist-form";
 import { SpecialistProfileDialog } from "./SpecialistProfileDialog";
 import { useState } from "react";
@@ -175,7 +182,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     }
   };
 
-  const handleApproval = async (specialistId: string, status: 'approved' | 'rejected') => {
+  const handleApproval = async (specialistId: string, status: 'approved' | 'rejected' = 'approved') => {
     try {
       const { error } = await supabase
         .from("specialists")
@@ -435,111 +442,86 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {specialist.approval_status === 'pending' && specialist.registration_completed_at && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleApproval(specialist.id, 'approved')}
-                              className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => setShowProfile(specialist)}>
+                            <FileUser className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'عرض السيرة الذاتية' : 'View Resume'}
+                          </DropdownMenuItem>
+                          
+                          {specialist.registration_token && (
+                            <DropdownMenuItem onClick={() => copyRegistrationLink(specialist)}>
+                              <Link2 className="mr-2 h-4 w-4" />
+                              {language === 'ar' ? 'نسخ رابط التسجيل' : 'Copy Registration Link'}
+                            </DropdownMenuItem>
+                          )}
+                          
+                          <DropdownMenuItem onClick={() => openWhatsApp(specialist.phone)}>
+                            <Phone className="mr-2 h-4 w-4" />
+                            WhatsApp
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleEdit(specialist)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            {language === 'ar' ? 'تعديل' : 'Edit'}
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuSeparator />
+                          
+                          {specialist.suspension_type ? (
+                            <DropdownMenuItem 
+                              onClick={() => handleUnsuspend(specialist.id)}
+                              className="text-green-600"
                             >
-                              <CheckCircle className="h-3 w-3" />
-                              {language === 'ar' ? 'قبول' : 'Approve'}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleApproval(specialist.id, 'rejected')}
-                              className="flex items-center gap-1"
-                            >
-                              <XCircle className="h-3 w-3" />
-                              {language === 'ar' ? 'رفض' : 'Reject'}
-                            </Button>
-                          </>
-                        )}
-                        {specialist.registration_token && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => copyRegistrationLink(specialist)}
-                            className="flex items-center gap-1"
-                          >
-                            <Link2 className="h-3 w-3" />
-                            {language === 'ar' ? 'رابط التسجيل' : 'Registration Link'}
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setShowProfile(specialist)}
-                          className="flex items-center gap-1"
-                        >
-                          <FileUser className="h-3 w-3" />
-                          {language === 'ar' ? 'السيرة' : 'Resume'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openWhatsApp(specialist.phone)}
-                          className="flex items-center gap-1"
-                        >
-                          <Phone className="h-3 w-3" />
-                          WhatsApp
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(specialist)}
-                          className="flex items-center gap-1"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        {specialist.suspension_type ? (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => handleUnsuspend(specialist.id)}
-                            className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                            {language === 'ar' ? 'تفعيل' : 'Activate'}
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSuspendingSpecialist(specialist);
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            <Ban className="h-3 w-3" />
-                            {language === 'ar' ? 'إيقاف' : 'Suspend'}
-                          </Button>
-                        )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" className="flex items-center gap-1">
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete {specialist.name}? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => onDelete(specialist.id)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              {language === 'ar' ? 'تفعيل' : 'Activate'}
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => setSuspendingSpecialist(specialist)}>
+                              <Ban className="mr-2 h-4 w-4" />
+                              {language === 'ar' ? 'إيقاف' : 'Suspend'}
+                            </DropdownMenuItem>
+                          )}
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem 
+                                onSelect={(e) => e.preventDefault()}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                {language === 'ar' ? 'حذف' : 'Delete'}
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {language === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {language === 'ar' 
+                                    ? `هل أنت متأكد من حذف ${specialist.name}؟ هذا الإجراء لا يمكن التراجع عنه.`
+                                    : `Are you sure you want to delete ${specialist.name}? This action cannot be undone.`
+                                  }
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                                </AlertDialogCancel>
+                                <AlertDialogAction onClick={() => onDelete(specialist.id)}>
+                                  {language === 'ar' ? 'حذف' : 'Delete'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -691,9 +673,14 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
             countries_worked_in: showProfile.countries_worked_in,
             languages_spoken: showProfile.languages_spoken,
             has_pet_allergy: showProfile.has_pet_allergy,
-            has_cleaning_allergy: showProfile.has_cleaning_allergy
+            has_cleaning_allergy: showProfile.has_cleaning_allergy,
+            approval_status: showProfile.approval_status,
+            registration_completed_at: showProfile.registration_completed_at
           }}
           language={language}
+          showApprovalButtons={true}
+          onApprove={handleApproval}
+          onReject={(id) => handleApproval(id, 'rejected')}
         />
       )}
     </Card>
