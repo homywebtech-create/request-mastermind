@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star, ChevronDown, ArrowLeft } from "lucide-react";
 import {
   Dialog,
@@ -73,6 +74,10 @@ export default function OrderTracking() {
   const [otherReason, setOtherReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showEarlyFinishDialog, setShowEarlyFinishDialog] = useState(false);
+  const [showExtendTimeDialog, setShowExtendTimeDialog] = useState(false);
+  const [extensionHours, setExtensionHours] = useState(1);
+  const [nextBookingTime, setNextBookingTime] = useState<string | null>(null);
+  const [canExtend, setCanExtend] = useState(true);
   const [arrivedStartTime, setArrivedStartTime] = useState<Date | null>(null);
   const [customerRating, setCustomerRating] = useState(0);
   const [customerReviewNotes, setCustomerReviewNotes] = useState('');
@@ -633,6 +638,94 @@ export default function OrderTracking() {
     return Math.max(0, totalWorkSeconds - workingTime);
   };
 
+  const checkNextBooking = async () => {
+    if (!order || !orderId) return;
+
+    try {
+      // Get the specialist ID from order_specialists
+      const { data: orderSpecialist } = await supabase
+        .from('order_specialists')
+        .select('specialist_id')
+        .eq('order_id', orderId)
+        .single();
+
+      if (!orderSpecialist) return;
+
+      // Get current order's booking time
+      const currentBookingDate = new Date(order.booking_date || Date.now());
+
+      // Check for next bookings for this specialist
+      const { data: nextOrders } = await supabase
+        .from('order_specialists')
+        .select(`
+          orders!inner(
+            id,
+            booking_date,
+            hours_count,
+            order_number
+          )
+        `)
+        .eq('specialist_id', orderSpecialist.specialist_id)
+        .neq('order_id', orderId)
+        .gte('orders.booking_date', currentBookingDate.toISOString())
+        .order('orders(booking_date)', { ascending: true })
+        .limit(1);
+
+      if (nextOrders && nextOrders.length > 0) {
+        const nextOrder = nextOrders[0].orders as any;
+        const nextBookingDate = new Date(nextOrder.booking_date);
+        const timeDiff = (nextBookingDate.getTime() - Date.now()) / 1000 / 3600; // hours
+
+        setNextBookingTime(nextBookingDate.toLocaleString('ar-SA'));
+        
+        // Can't extend if next booking is within 3 hours
+        if (timeDiff < 3) {
+          setCanExtend(false);
+        } else {
+          setCanExtend(true);
+        }
+      } else {
+        setCanExtend(true);
+        setNextBookingTime(null);
+      }
+    } catch (error) {
+      console.error('Error checking next booking:', error);
+      setCanExtend(true);
+    }
+  };
+
+  const handleExtendTime = async (additionalHours: number) => {
+    try {
+      const additionalSeconds = additionalHours * 3600;
+      setTotalWorkSeconds(prev => prev + additionalSeconds);
+      setTimeExpired(false);
+      stopTimeExpiredAlert();
+      
+      // Update order hours_count in database
+      const newHoursCount = (order?.hours_count || 0) + additionalHours;
+      await supabase
+        .from('orders')
+        .update({ hours_count: newHoursCount })
+        .eq('id', orderId);
+
+      toast({
+        title: language === 'ar' ? "تم التمديد" : "Extended",
+        description: language === 'ar' 
+          ? `تم تمديد وقت العمل ${additionalHours} ساعة إضافية`
+          : `Work time extended by ${additionalHours} additional hour(s)`,
+      });
+
+      setShowExtendTimeDialog(false);
+    } catch (error) {
+      console.error('Error extending time:', error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "فشل تمديد الوقت" : "Failed to extend time",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -946,24 +1039,117 @@ export default function OrderTracking() {
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                <Button
-                  onClick={togglePause}
-                  variant="outline"
-                  className="w-full"
-                  size="lg"
-                >
-                  {isPaused ? (
-                    <>
-                      <Play className="ml-2 h-5 w-5" />
-                      استئناف العمل
-                    </>
-                  ) : (
-                    <>
-                      <Pause className="ml-2 h-5 w-5" />
-                      إيقاف مؤقت
-                    </>
-                  )}
-                </Button>
+                {/* Only show pause button if time hasn't expired */}
+                {!timeExpired && (
+                  <Button
+                    onClick={togglePause}
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isPaused ? (
+                      <>
+                        <Play className="ml-2 h-5 w-5" />
+                        استئناف العمل
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="ml-2 h-5 w-5" />
+                        إيقاف مؤقت
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {/* Extend Time Button - Show when time expired */}
+                {timeExpired && (
+                  <Dialog open={showExtendTimeDialog} onOpenChange={(open) => {
+                    if (open) checkNextBooking();
+                    setShowExtendTimeDialog(open);
+                  }}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        className="w-full border-blue-500 text-blue-600 hover:bg-blue-50"
+                        size="lg"
+                      >
+                        <Clock className="ml-2 h-5 w-5" />
+                        تمديد وقت العمل
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>تمديد وقت العمل</DialogTitle>
+                        <DialogDescription>
+                          {canExtend 
+                            ? 'اختر عدد الساعات الإضافية'
+                            : 'لا يمكن التمديد بسبب وجود حجز آخر'}
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      {canExtend ? (
+                        <div className="space-y-4 py-4">
+                          <div className="grid grid-cols-3 gap-3">
+                            <Button
+                              variant={extensionHours === 1 ? "default" : "outline"}
+                              onClick={() => setExtensionHours(1)}
+                              className="h-20 flex flex-col items-center justify-center"
+                            >
+                              <Clock className="h-6 w-6 mb-1" />
+                              <span className="text-sm">ساعة واحدة</span>
+                            </Button>
+                            <Button
+                              variant={extensionHours === 2 ? "default" : "outline"}
+                              onClick={() => setExtensionHours(2)}
+                              className="h-20 flex flex-col items-center justify-center"
+                            >
+                              <Clock className="h-6 w-6 mb-1" />
+                              <span className="text-sm">ساعتين</span>
+                            </Button>
+                            <Button
+                              variant={extensionHours === 3 ? "default" : "outline"}
+                              onClick={() => setExtensionHours(3)}
+                              className="h-20 flex flex-col items-center justify-center"
+                            >
+                              <Clock className="h-6 w-6 mb-1" />
+                              <span className="text-sm">3 ساعات</span>
+                            </Button>
+                          </div>
+                          
+                          <Button 
+                            onClick={() => handleExtendTime(extensionHours)}
+                            className="w-full"
+                          >
+                            تأكيد التمديد
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="py-4 space-y-4">
+                          <Alert className="border-amber-500 bg-amber-50">
+                            <AlertTriangle className="h-4 w-4 text-amber-600" />
+                            <AlertDescription className="text-amber-800">
+                              <p className="font-semibold mb-2">يوجد حجز آخر قريب</p>
+                              <p className="text-sm">
+                                الحجز القادم في: {nextBookingTime}
+                              </p>
+                              <p className="text-sm mt-2">
+                                لا يمكن تمديد وقت العمل لأن هناك مهمة أخرى في انتظارك قريباً
+                              </p>
+                            </AlertDescription>
+                          </Alert>
+                          
+                          <Button 
+                            onClick={() => setShowExtendTimeDialog(false)}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            حسناً، فهمت
+                          </Button>
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                )}
 
                 {/* Emergency Actions - Collapsible Section */}
                 <Collapsible className="w-full border-t pt-4 mt-4">
