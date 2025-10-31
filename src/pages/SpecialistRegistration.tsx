@@ -700,17 +700,15 @@ export default function SpecialistRegistration() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>{language === 'ar' ? 'الدول التي عملت فيها *' : 'Countries Worked In *'}</FormLabel>
-                            <FormControl>
-                              <MultiSelect
-                                options={countries.map(c => ({
-                                  label: `${c.flag} ${language === 'ar' ? c.nameAr : c.name}`,
-                                  value: language === 'ar' ? c.nameAr : c.name
-                                }))}
-                                selected={field.value}
-                                onChange={field.onChange}
-                                placeholder={language === 'ar' ? "اختر الدول" : "Select countries"}
-                              />
-                            </FormControl>
+                            <MultiSelect
+                              options={countries.map(c => ({
+                                label: `${c.flag} ${language === 'ar' ? c.nameAr : c.name}`,
+                                value: language === 'ar' ? c.nameAr : c.name
+                              }))}
+                              selected={field.value}
+                              onChange={field.onChange}
+                              placeholder={language === 'ar' ? "اختر الدول" : "Select countries"}
+                            />
                             <FormMessage />
                           </FormItem>
                         )}
@@ -722,21 +720,19 @@ export default function SpecialistRegistration() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>{language === 'ar' ? 'اللغات المتحدثة *' : 'Languages Spoken *'}</FormLabel>
-                            <FormControl>
-                              <MultiSelect
-                                options={[
-                                  { label: language === 'ar' ? 'العربية' : 'Arabic', value: 'Arabic' },
-                                  { label: language === 'ar' ? 'الإنجليزية' : 'English', value: 'English' },
-                                  { label: language === 'ar' ? 'الأوردو' : 'Urdu', value: 'Urdu' },
-                                  { label: language === 'ar' ? 'الهندية' : 'Hindi', value: 'Hindi' },
-                                  { label: language === 'ar' ? 'التاغالوغ' : 'Tagalog', value: 'Tagalog' },
-                                  { label: language === 'ar' ? 'البنغالية' : 'Bengali', value: 'Bengali' },
-                                ]}
-                                selected={field.value}
-                                onChange={field.onChange}
-                                placeholder={language === 'ar' ? "اختر اللغات" : "Select languages"}
-                              />
-                            </FormControl>
+                            <MultiSelect
+                              options={[
+                                { label: language === 'ar' ? 'العربية' : 'Arabic', value: 'Arabic' },
+                                { label: language === 'ar' ? 'الإنجليزية' : 'English', value: 'English' },
+                                { label: language === 'ar' ? 'الأوردو' : 'Urdu', value: 'Urdu' },
+                                { label: language === 'ar' ? 'الهندية' : 'Hindi', value: 'Hindi' },
+                                { label: language === 'ar' ? 'التاغالوغ' : 'Tagalog', value: 'Tagalog' },
+                                { label: language === 'ar' ? 'البنغالية' : 'Bengali', value: 'Bengali' },
+                              ]}
+                              selected={field.value}
+                              onChange={field.onChange}
+                              placeholder={language === 'ar' ? "اختر اللغات" : "Select languages"}
+                            />
                             <FormMessage />
                           </FormItem>
                         )}
