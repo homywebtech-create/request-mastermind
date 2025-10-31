@@ -90,6 +90,10 @@ export default function SpecialistRegistration() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [showWelcomePage, setShowWelcomePage] = useState(!token);
+  const [phoneForRegistration, setPhoneForRegistration] = useState("");
+  const [countryCodeForRegistration, setCountryCodeForRegistration] = useState("+966");
+  const [isCreatingRegistration, setIsCreatingRegistration] = useState(false);
+  const [defaultCompanyLogo, setDefaultCompanyLogo] = useState<string | null>(null);
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -113,6 +117,7 @@ export default function SpecialistRegistration() {
   useEffect(() => {
     initializeRegistration();
     fetchServices();
+    fetchDefaultCompanyLogo();
   }, []);
 
   useEffect(() => {
@@ -202,6 +207,98 @@ export default function SpecialistRegistration() {
     }
   };
 
+  const handleStartRegistration = async () => {
+    if (!phoneForRegistration || phoneForRegistration.length < 7) {
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "الرجاء إدخال رقم هاتف صحيح" : "Please enter a valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingRegistration(true);
+    try {
+      const fullPhone = `${countryCodeForRegistration}${phoneForRegistration}`;
+      
+      // Check if specialist with this phone already exists
+      const { data: existingSpecialist } = await supabase
+        .from('specialists')
+        .select('id, registration_token, approval_status, registration_completed_at, phone')
+        .eq('phone', fullPhone)
+        .maybeSingle();
+
+      let tokenToUse = '';
+
+      if (existingSpecialist) {
+        // If specialist exists and hasn't completed registration
+        if (!existingSpecialist.registration_completed_at && existingSpecialist.approval_status === 'pending') {
+          tokenToUse = existingSpecialist.registration_token || `${Date.now()}_${fullPhone}`;
+          
+          // Update token if it doesn't exist
+          if (!existingSpecialist.registration_token) {
+            const { error: updateError } = await supabase
+              .from('specialists')
+              .update({ registration_token: tokenToUse } as any)
+              .eq('id', existingSpecialist.id);
+            
+            if (updateError) {
+              console.error('Error updating token:', updateError);
+            }
+          }
+        } else {
+          toast({
+            title: language === 'ar' ? "تنبيه" : "Notice",
+            description: language === 'ar' 
+              ? "هذا الرقم مسجل بالفعل في النظام"
+              : "This number is already registered in the system",
+            variant: "destructive",
+          });
+          setIsCreatingRegistration(false);
+          return;
+        }
+      } else {
+        // Create new specialist record via direct insert
+        tokenToUse = `${Date.now()}_${fullPhone}`;
+        
+        // Get default company ID (Al Numila Company)
+        const { data: defaultCompany } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('name', 'شركة النميلة')
+          .maybeSingle();
+
+        // Insert specialist record with type assertion to bypass TypeScript check
+        const { error: createError } = await supabase
+          .from('specialists')
+          .insert({
+            registration_token: tokenToUse,
+            phone: fullPhone,
+            approval_status: 'pending',
+            is_busy: false,
+            company_id: defaultCompany?.id,
+          } as any);
+
+        if (createError) {
+          console.error('Create error:', createError);
+          throw createError;
+        }
+      }
+
+      // Redirect to registration page with token
+      window.location.href = `/specialist-registration?token=${encodeURIComponent(tokenToUse)}`;
+    } catch (error: any) {
+      console.error("Error creating registration:", error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: error.message || (language === 'ar' ? "حدث خطأ. الرجاء المحاولة مرة أخرى" : "An error occurred. Please try again"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingRegistration(false);
+    }
+  };
+
   const fetchServices = async () => {
     const { data } = await supabase
       .from("services")
@@ -211,6 +308,22 @@ export default function SpecialistRegistration() {
 
     if (data) {
       setServices(data);
+    }
+  };
+
+  const fetchDefaultCompanyLogo = async () => {
+    try {
+      const { data } = await supabase
+        .from('companies')
+        .select('logo_url')
+        .eq('name', 'شركة النميلة')
+        .maybeSingle();
+      
+      if (data?.logo_url) {
+        setDefaultCompanyLogo(data.logo_url);
+      }
+    } catch (error) {
+      console.error('Error fetching company logo:', error);
     }
   };
 
@@ -455,9 +568,18 @@ export default function SpecialistRegistration() {
         <Card className="max-w-2xl w-full shadow-2xl border-2 animate-scale-in">
           <CardHeader className="text-center space-y-6 pb-8">
             <div className="flex justify-center">
-              <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
-                <User className="h-14 w-14 text-primary-foreground" />
-              </div>
+              {defaultCompanyLogo ? (
+                <Avatar className="h-28 w-28 ring-4 ring-primary/20 shadow-lg">
+                  <AvatarImage src={defaultCompanyLogo} alt="Company Logo" />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60">
+                    <User className="h-16 w-16 text-primary-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="h-28 w-28 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg ring-4 ring-primary/20">
+                  <User className="h-16 w-16 text-primary-foreground" />
+                </div>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -498,29 +620,59 @@ export default function SpecialistRegistration() {
               </ul>
             </div>
 
-            <Alert className="border-primary/50 bg-primary/5">
-              <Share2 className="h-5 w-5 text-primary" />
-              <AlertDescription className="text-base">
-                <p className="font-semibold mb-2">
-                  {language === 'ar' ? 'كيف تبدأ؟' : 'How to Get Started?'}
-                </p>
-                <p>
+            <div className="space-y-4">
+              <div className="text-center">
+                <h4 className="font-semibold text-xl mb-2">
+                  {language === 'ar' ? 'ابدأ رحلتك معنا الآن' : 'Start Your Journey With Us Now'}
+                </h4>
+                <p className="text-sm text-muted-foreground">
                   {language === 'ar' 
-                    ? 'للحصول على رابط التسجيل الخاص بك، يرجى التواصل مع شركة النميلة مباشرة. سيتم إرسال رابط تسجيل خاص بك عبر الواتساب أو الرسائل النصية.'
-                    : 'To receive your personal registration link, please contact Al Numila Company directly. A unique registration link will be sent to you via WhatsApp or SMS.'}
+                    ? 'أدخل رقم هاتفك للبدء في عملية التسجيل'
+                    : 'Enter your phone number to begin the registration process'}
                 </p>
-              </AlertDescription>
-            </Alert>
+              </div>
 
-            <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 text-center space-y-3">
-              <h4 className="font-semibold text-lg">
-                {language === 'ar' ? 'هل لديك رابط تسجيل؟' : 'Do You Have a Registration Link?'}
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                {language === 'ar' 
-                  ? 'إذا تلقيت رابط تسجيل من الشركة، استخدمه للوصول مباشرة إلى نموذج التسجيل'
-                  : 'If you received a registration link from the company, use it to access the registration form directly'}
-              </p>
+              <div className="flex gap-2">
+                <Select value={countryCodeForRegistration} onValueChange={setCountryCodeForRegistration}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country.dialCode} value={country.dialCode}>
+                        {country.flag} {country.dialCode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="tel"
+                  placeholder={language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
+                  value={phoneForRegistration}
+                  onChange={(e) => setPhoneForRegistration(e.target.value.replace(/\D/g, ''))}
+                  className="flex-1 text-lg h-12"
+                  dir="ltr"
+                  maxLength={15}
+                />
+              </div>
+
+              <Button 
+                onClick={handleStartRegistration} 
+                className="w-full h-12 text-lg font-semibold"
+                disabled={isCreatingRegistration || !phoneForRegistration}
+              >
+                {isCreatingRegistration ? (
+                  <span className="flex items-center gap-2">
+                    <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
+                    {language === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    {language === 'ar' ? 'ابدأ التسجيل' : 'Start Registration'}
+                    <ChevronRight className="h-5 w-5" />
+                  </span>
+                )}
+              </Button>
             </div>
 
             <div className="text-center text-sm text-muted-foreground pt-4 border-t">
