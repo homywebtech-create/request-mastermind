@@ -117,7 +117,7 @@ export function MultiSelect({
       </div>
       {open && (
         <Command className="absolute top-full left-0 right-0 mt-2 z-[100] rounded-md border bg-popover text-popover-foreground shadow-md">
-          <CommandGroup className="max-h-64 overflow-auto p-2">
+          <CommandGroup className="max-h-[300px] overflow-auto p-2">
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             {options.map((option) => {
               const isSelected = selected.includes(option.value);
