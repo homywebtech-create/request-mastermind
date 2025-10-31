@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, LogOut, ArrowLeft } from "lucide-react";
-import { SpecialistForm } from "@/components/specialists/specialist-form";
+import { SimplifiedSpecialistForm } from "@/components/specialists/SimplifiedSpecialistForm";
 import { SpecialistsTable } from "@/components/specialists/specialists-table";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -261,7 +261,7 @@ export default function Specialists() {
             </p>
           </div>
           {company && (
-            <SpecialistForm
+            <SimplifiedSpecialistForm
               companyId={company.id}
               onSuccess={() => company && fetchSpecialists(company.id)}
             />
