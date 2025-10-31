@@ -604,9 +604,8 @@ export default function SpecialistRegistration() {
             variant="outline"
             size="sm"
             onClick={() => {
-              const newLang = language === 'ar' ? 'en' : 'ar';
-              localStorage.setItem('language', newLang);
-              window.location.reload();
+              const { setLanguage } = useLanguage.getState();
+              setLanguage(language === 'ar' ? 'en' : 'ar');
             }}
             className="gap-2"
           >
@@ -882,6 +881,21 @@ export default function SpecialistRegistration() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 py-8">
+      {/* Language Switcher */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const { setLanguage } = useLanguage.getState();
+            setLanguage(language === 'ar' ? 'en' : 'ar');
+          }}
+          className="gap-2"
+        >
+          <span>{language === 'ar' ? 'EN' : 'ع'}</span>
+        </Button>
+      </div>
+      
       <div className="max-w-4xl mx-auto">
         {/* Company Welcome Header */}
         {companyName && (
