@@ -99,27 +99,64 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
             }
         }
 
-        // 2) Xiaomi/Redmi autostart settings: only open once
+        // 2) Display over other apps permission (needed for full-screen notification UI)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            boolean overlayAllowed = Settings.canDrawOverlays(this);
+            boolean overlayPromptDone = prefs.getBoolean("overlay_prompt_done", false);
+            if (!overlayAllowed && !overlayPromptDone) {
+                new android.os.Handler().postDelayed(() -> {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+                    intent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                }, 800);
+                prefs.edit().putBoolean("overlay_prompt_done", true).apply();
+            }
+        }
+
+        // 3) Xiaomi/Redmi autostart settings: only open once
         if (BatteryOptimizationHelper.isXiaomiDevice()) {
             boolean autostartPromptDone = prefs.getBoolean("autostart_prompt_done", false);
             if (!autostartPromptDone) {
                 new android.os.Handler().postDelayed(() -> {
                     BatteryOptimizationHelper.openAutostartSettings(this);
-                }, 1200);
+                }, 1500);
                 prefs.edit().putBoolean("autostart_prompt_done", true).apply();
             }
         }
 
-        // 3) Android 12+ Full-screen intent: open setting only once if not allowed
+        // 4) Android 12+ Full-screen intent: open setting only once if not allowed
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             boolean fullScreenAllowed = notificationManager != null && notificationManager.canUseFullScreenIntent();
             boolean fsPromptDone = prefs.getBoolean("fs_intent_prompt_done", false);
             if (!fullScreenAllowed && !fsPromptDone) {
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT);
-                intent.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(intent);
+                new android.os.Handler().postDelayed(() -> {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT);
+                    intent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                }, 2200);
                 prefs.edit().putBoolean("fs_intent_prompt_done", true).apply();
+            }
+        }
+
+        // 5) Xiaomi/MIUI: Display pop-up windows permission (critical for lockscreen UI)
+        if (BatteryOptimizationHelper.isXiaomiDevice()) {
+            boolean miuiPopupPromptDone = prefs.getBoolean("miui_popup_prompt_done", false);
+            if (!miuiPopupPromptDone) {
+                new android.os.Handler().postDelayed(() -> {
+                    try {
+                        Intent intent = new Intent("miui.intent.action.APP_PERM_EDITOR");
+                        intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity");
+                        intent.putExtra("extra_pkgname", getPackageName());
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        // Fallback: open app settings
+                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        intent.setData(Uri.parse("package:" + getPackageName()));
+                        startActivity(intent);
+                    }
+                }, 2900);
+                prefs.edit().putBoolean("miui_popup_prompt_done", true).apply();
             }
         }
     }
