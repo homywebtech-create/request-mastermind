@@ -92,6 +92,53 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     openWhatsAppHelper(phoneNumber);
   };
 
+  const copyRegistrationLink = async (specialist: Specialist) => {
+    try {
+      if (!specialist.registration_token) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' 
+            ? "لا يوجد رابط تسجيل" 
+            : "No registration link available",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const link = `${window.location.origin}/specialist-registration?token=${specialist.registration_token}`;
+      await navigator.clipboard.writeText(link);
+      
+      toast({
+        title: language === 'ar' ? "تم النسخ" : "Copied",
+        description: language === 'ar' 
+          ? "تم نسخ رابط التسجيل" 
+          : "Registration link copied to clipboard",
+      });
+    } catch (error: any) {
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getRowHighlight = (specialist: Specialist) => {
+    // Red: Awaiting registration (link sent but not completed)
+    if (!specialist.registration_completed_at && specialist.registration_token) {
+      return "bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30";
+    }
+    // Yellow: Completed registration but awaiting approval
+    if (specialist.registration_completed_at && specialist.approval_status === 'pending') {
+      return "bg-yellow-50 dark:bg-yellow-950/20 hover:bg-yellow-100 dark:hover:bg-yellow-950/30";
+    }
+    // Green: Approved and active
+    if (specialist.approval_status === 'approved' && specialist.is_active) {
+      return "bg-green-50 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-950/30";
+    }
+    return "hover:bg-muted/50";
+  };
+
   const handleGenerateRegistrationLink = async (specialistId: string) => {
     setGeneratingToken(specialistId);
     try {
@@ -323,7 +370,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                 </TableRow>
               ) : (
                 specialists.map((specialist) => (
-                  <TableRow key={specialist.id}>
+                  <TableRow key={specialist.id} className={getRowHighlight(specialist)}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -411,18 +458,17 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                             </Button>
                           </>
                         )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleGenerateRegistrationLink(specialist.id)}
-                          disabled={generatingToken === specialist.id}
-                          className="flex items-center gap-1"
-                        >
-                          <Link2 className="h-3 w-3" />
-                          {generatingToken === specialist.id 
-                            ? (language === 'ar' ? 'جاري...' : 'Generating...') 
-                            : (language === 'ar' ? 'رابط السيرة' : 'Resume Link')}
-                        </Button>
+                        {specialist.registration_token && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyRegistrationLink(specialist)}
+                            className="flex items-center gap-1"
+                          >
+                            <Link2 className="h-3 w-3" />
+                            {language === 'ar' ? 'رابط التسجيل' : 'Registration Link'}
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { countries } from "@/data/countries";
-import { Copy, Link as LinkIcon } from "lucide-react";
+
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 
@@ -30,7 +30,6 @@ export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpe
   const t = useTranslation(language).specialists;
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [registrationLink, setRegistrationLink] = useState<string | null>(null);
 
   const form = useForm<SimplifiedFormValues>({
     resolver: zodResolver(simplifiedSchema),
@@ -65,9 +64,14 @@ export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpe
           return;
         }
         
-        // If registration not completed, show the existing link
-        const link = `${window.location.origin}/specialist-registration?token=${existingSpecialist.registration_token}`;
-        setRegistrationLink(link);
+        // If registration not completed, show success message
+        toast({
+          title: language === 'ar' ? "تنبيه" : "Notice",
+          description: language === 'ar' 
+            ? "الرابط موجود بالفعل، يمكن نسخه من جدول المحترفين" 
+            : "Link already exists, you can copy it from the specialists table",
+        });
+        onSuccess();
         return;
       }
 
@@ -90,9 +94,6 @@ export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpe
 
       if (specialistError) throw specialistError;
 
-      // Generate registration link
-      const link = `${window.location.origin}/specialist-registration?token=${token}`;
-      setRegistrationLink(link);
 
       toast({
         title: language === 'ar' ? "نجح" : "Success",
@@ -100,6 +101,9 @@ export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpe
           ? "تم إنشاء رابط التسجيل بنجاح" 
           : "Registration link created successfully",
       });
+
+      form.reset();
+      onSuccess();
 
     } catch (error: any) {
       console.error("Error creating specialist:", error);
@@ -113,72 +117,6 @@ export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpe
     }
   };
 
-  const copyToClipboard = async () => {
-    if (!registrationLink) return;
-    
-    try {
-      await navigator.clipboard.writeText(registrationLink);
-      toast({
-        title: language === 'ar' ? "تم النسخ" : "Copied",
-        description: language === 'ar' 
-          ? "تم نسخ الرابط" 
-          : "Link copied to clipboard",
-      });
-    } catch (error) {
-      toast({
-        title: language === 'ar' ? "خطأ" : "Error",
-        description: language === 'ar' 
-          ? "فشل نسخ الرابط" 
-          : "Failed to copy link",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleReset = () => {
-    setRegistrationLink(null);
-    form.reset();
-    onSuccess();
-  };
-
-  if (registrationLink) {
-    return (
-      <div className="space-y-4">
-        <div className="bg-muted p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <LinkIcon className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">
-              {language === 'ar' ? 'رابط التسجيل' : 'Registration Link'}
-            </h3>
-          </div>
-          <p className="text-sm text-muted-foreground mb-3">
-            {language === 'ar' 
-              ? 'قم بنسخ هذا الرابط وإرساله للمحترف لإكمال تسجيله'
-              : 'Copy this link and send it to the specialist to complete registration'}
-          </p>
-          <div className="flex gap-2">
-            <Input 
-              value={registrationLink} 
-              readOnly 
-              className="font-mono text-sm"
-            />
-            <Button 
-              onClick={copyToClipboard}
-              variant="outline"
-              size="icon"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button onClick={handleReset}>
-            {language === 'ar' ? 'إضافة محترف آخر' : 'Add Another Specialist'}
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <Form {...form}>

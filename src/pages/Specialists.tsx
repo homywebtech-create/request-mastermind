@@ -57,7 +57,7 @@ export default function Specialists() {
   const [company, setCompany] = useState<Company | null>(null);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filterType, setFilterType] = useState<'all' | 'active' | 'suspended'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'awaiting_registration' | 'pending_approval' | 'approved' | 'active' | 'suspended'>('all');
 
   useEffect(() => {
     checkAuth();
@@ -204,8 +204,23 @@ export default function Specialists() {
 
   if (!company) return null;
 
+  const awaitingRegistrationCount = specialists.filter(s => 
+    !s.registration_completed_at && s.registration_token
+  ).length;
+  
+  const pendingApprovalCount = specialists.filter(s => 
+    s.registration_completed_at && s.approval_status === 'pending'
+  ).length;
+  
+  const approvedCount = specialists.filter(s => 
+    s.approval_status === 'approved'
+  ).length;
+
   const filteredSpecialists = specialists.filter(specialist => {
     if (filterType === 'all') return true;
+    if (filterType === 'awaiting_registration') return !specialist.registration_completed_at && specialist.registration_token;
+    if (filterType === 'pending_approval') return specialist.registration_completed_at && specialist.approval_status === 'pending';
+    if (filterType === 'approved') return specialist.approval_status === 'approved';
     if (filterType === 'active') return specialist.is_active && !specialist.suspension_type;
     if (filterType === 'suspended') return !specialist.is_active || !!specialist.suspension_type;
     return true;
@@ -269,10 +284,25 @@ export default function Specialists() {
         </div>
 
         <Tabs value={filterType} onValueChange={(v) => setFilterType(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
-            <TabsTrigger value="all">{t.all}</TabsTrigger>
-            <TabsTrigger value="active">{t.active}</TabsTrigger>
-            <TabsTrigger value="suspended">{t.suspended}</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-6 max-w-4xl">
+            <TabsTrigger value="all">
+              {language === 'ar' ? 'الكل' : 'All'} ({specialists.length})
+            </TabsTrigger>
+            <TabsTrigger value="awaiting_registration">
+              {language === 'ar' ? 'بانتظار التسجيل' : 'Awaiting Registration'} ({awaitingRegistrationCount})
+            </TabsTrigger>
+            <TabsTrigger value="pending_approval">
+              {language === 'ar' ? 'بانتظار الموافقة' : 'Pending Approval'} ({pendingApprovalCount})
+            </TabsTrigger>
+            <TabsTrigger value="approved">
+              {language === 'ar' ? 'معتمد' : 'Approved'} ({approvedCount})
+            </TabsTrigger>
+            <TabsTrigger value="active">
+              {language === 'ar' ? 'نشط' : 'Active'} ({specialists.filter(s => s.is_active && !s.suspension_type).length})
+            </TabsTrigger>
+            <TabsTrigger value="suspended">
+              {language === 'ar' ? 'موقوف' : 'Suspended'} ({specialists.filter(s => !s.is_active || !!s.suspension_type).length})
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value={filterType} className="mt-6">
