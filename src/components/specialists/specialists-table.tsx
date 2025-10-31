@@ -398,7 +398,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                               className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
                             >
                               <CheckCircle className="h-3 w-3" />
-                              قبول
+                              {language === 'ar' ? 'قبول' : 'Approve'}
                             </Button>
                             <Button
                               size="sm"
@@ -407,7 +407,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                               className="flex items-center gap-1"
                             >
                               <XCircle className="h-3 w-3" />
-                              رفض
+                              {language === 'ar' ? 'رفض' : 'Reject'}
                             </Button>
                           </>
                         )}
