@@ -91,7 +91,7 @@ export default function SpecialistRegistration() {
   const [submitted, setSubmitted] = useState(false);
   const [showWelcomePage, setShowWelcomePage] = useState(!token);
   const [phoneForRegistration, setPhoneForRegistration] = useState("");
-  const [companyCountryCode, setCompanyCountryCode] = useState("+966");
+  const [companyCountryCode, setCompanyCountryCode] = useState<string | null>(null);
   const [isCreatingRegistration, setIsCreatingRegistration] = useState(false);
   const [defaultCompanyLogo, setDefaultCompanyLogo] = useState<string | null>(null);
 
@@ -217,9 +217,19 @@ export default function SpecialistRegistration() {
       return;
     }
 
+    if (!companyCountryCode) {
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "جاري تحميل بيانات الشركة..." : "Loading company data...",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsCreatingRegistration(true);
     try {
       const fullPhone = `${companyCountryCode}${phoneForRegistration}`;
+      console.log('📱 Creating registration with phone:', fullPhone, 'country code:', companyCountryCode);
       
       // Check if specialist with this phone already exists
       const { data: existingSpecialist } = await supabase
@@ -313,22 +323,33 @@ export default function SpecialistRegistration() {
 
   const fetchDefaultCompanyLogo = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('companies')
         .select('logo_url, country_code')
         .eq('name', 'شركة النميلة')
         .maybeSingle();
       
+      console.log('🏢 Company data fetched:', { data, error });
+      
       if (data) {
         if (data.logo_url) {
+          console.log('🖼️ Setting company logo:', data.logo_url);
           setDefaultCompanyLogo(data.logo_url);
         }
         if (data.country_code) {
+          console.log('🌍 Setting company country code:', data.country_code);
           setCompanyCountryCode(data.country_code);
+        } else {
+          console.warn('⚠️ No country_code found for company, using default +966');
+          setCompanyCountryCode('+966');
         }
+      } else {
+        console.warn('⚠️ Company not found, using default country code +966');
+        setCompanyCountryCode('+966');
       }
     } catch (error) {
-      console.error('Error fetching company logo:', error);
+      console.error('❌ Error fetching company data:', error);
+      setCompanyCountryCode('+966'); // Fallback
     }
   };
 
@@ -654,9 +675,15 @@ export default function SpecialistRegistration() {
               </div>
 
               <div className="flex gap-2">
-                <div className="w-[140px] h-12 rounded-md border border-input bg-muted flex items-center justify-center font-medium">
-                  {countries.find(c => c.dialCode === companyCountryCode)?.flag || '🇸🇦'} {companyCountryCode}
-                </div>
+                {companyCountryCode ? (
+                  <div className="w-[140px] h-12 rounded-md border border-input bg-muted flex items-center justify-center font-medium">
+                    {countries.find(c => c.dialCode === companyCountryCode)?.flag || '🇸🇦'} {companyCountryCode}
+                  </div>
+                ) : (
+                  <div className="w-[140px] h-12 rounded-md border border-input bg-muted flex items-center justify-center">
+                    <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                  </div>
+                )}
                 <Input
                   type="tel"
                   placeholder={language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
@@ -665,13 +692,14 @@ export default function SpecialistRegistration() {
                   className="flex-1 text-lg h-12"
                   dir="ltr"
                   maxLength={15}
+                  disabled={!companyCountryCode}
                 />
               </div>
 
               <Button 
                 onClick={handleStartRegistration} 
                 className="w-full h-12 text-lg font-semibold"
-                disabled={isCreatingRegistration || !phoneForRegistration}
+                disabled={isCreatingRegistration || !phoneForRegistration || !companyCountryCode}
               >
                 {isCreatingRegistration ? (
                   <span className="flex items-center gap-2">
