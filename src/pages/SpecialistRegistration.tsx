@@ -139,6 +139,8 @@ export default function SpecialistRegistration() {
           companies:company_id (
             id,
             name,
+            name_en,
+            logo_url,
             country_code
           )
         `)
@@ -462,26 +464,49 @@ export default function SpecialistRegistration() {
     }
   };
 
+  const companyName = language === 'ar' 
+    ? (specialist?.companies as any)?.name 
+    : ((specialist?.companies as any)?.name_en || (specialist?.companies as any)?.name);
+  const companyLogo = (specialist?.companies as any)?.logo_url;
+
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950">
         <Card className="max-w-md shadow-2xl animate-scale-in">
           <CardHeader>
-            <div className="flex justify-center mb-4">
-              <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center animate-bounce">
-                <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+            <div className="flex flex-col items-center space-y-4">
+              {companyLogo && (
+                <Avatar className="h-24 w-24 border-4 border-primary/20">
+                  <AvatarImage src={companyLogo} alt={companyName} />
+                  <AvatarFallback>{companyName?.charAt(0)}</AvatarFallback>
+                </Avatar>
+              )}
+              <div className="flex justify-center">
+                <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center animate-bounce">
+                  <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+                </div>
               </div>
             </div>
-            <CardTitle className="text-center text-2xl">
-              {language === 'ar' ? 'تم إكمال التسجيل بنجاح!' : 'Registration Completed!'}
+            <CardTitle className="text-center text-2xl mt-4">
+              {language === 'ar' ? `شركة ${companyName}` : `${companyName} Company`}
             </CardTitle>
+            <CardDescription className="text-center text-lg font-semibold text-primary">
+              {language === 'ar' ? 'سعيدون بانضمامك إلينا!' : "We're happy to have you!"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              {language === 'ar' 
-                ? 'شكراً لإكمال بياناتك. سيتم مراجعة ملفك الشخصي والموافقة عليه قريباً.'
-                : 'Thank you for completing your registration. Your profile will be reviewed and approved soon.'}
-            </p>
+            <div className="p-4 bg-primary/10 rounded-lg">
+              <p className="text-sm font-medium mb-2">
+                {language === 'ar' 
+                  ? 'تم استلام طلب انضمامك'
+                  : 'Your registration request has been received'}
+              </p>
+              <p className="text-muted-foreground">
+                {language === 'ar' 
+                  ? 'سيقوم فريق عملنا بمراجعة طلب تسجيلك وسيتم التواصل معك بعد قليل'
+                  : 'Our team will review your registration and contact you shortly'}
+              </p>
+            </div>
             
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-3">
@@ -509,6 +534,30 @@ export default function SpecialistRegistration() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 py-8">
       <div className="max-w-4xl mx-auto">
+        {/* Company Welcome Header */}
+        {companyName && (
+          <Card className="mb-6 shadow-lg animate-fade-in border-2 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center space-y-4">
+                {companyLogo && (
+                  <Avatar className="h-20 w-20 border-4 border-primary/20">
+                    <AvatarImage src={companyLogo} alt={companyName} />
+                    <AvatarFallback>{companyName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div>
+                  <h2 className="text-2xl font-bold text-primary mb-2">
+                    {language === 'ar' ? 'مرحباً بك في' : 'Welcome to'}
+                  </h2>
+                  <p className="text-xl font-semibold">
+                    {companyName}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
           <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -601,9 +650,9 @@ export default function SpecialistRegistration() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>{language === 'ar' ? 'كود الدولة *' : 'Country Code *'}</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value} disabled>
                                 <FormControl>
-                                  <SelectTrigger className="bg-background">
+                                  <SelectTrigger className="bg-muted cursor-not-allowed">
                                     <SelectValue />
                                   </SelectTrigger>
                                 </FormControl>
