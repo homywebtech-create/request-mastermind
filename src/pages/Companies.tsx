@@ -380,7 +380,8 @@ export default function Companies() {
       .from("companies")
       .insert([{
         ...formData,
-        phone: fullPhone
+        phone: fullPhone,
+        country_code: selectedCountry?.dialCode || '+966' // حفظ مفتاح الدولة
       }])
       .select()
       .single();
@@ -501,7 +502,8 @@ export default function Companies() {
       phone: fullPhone,
       email: editFormData.email || null,
       address: editFormData.address || null,
-      logo_url: logoUrl
+      logo_url: logoUrl,
+      country_code: selectedCountry?.dialCode || '+966' // حفظ مفتاح الدولة
     };
 
     console.log('📤 Sending update with data:', updateData);

@@ -28,6 +28,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSpecialistCompanyCountry } from "@/hooks/useCompanyCountry";
 
 interface OrderSpecialist {
   id: string;
@@ -81,6 +82,9 @@ export default function SpecialistOrders() {
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
   const isMobile = useIsMobile();
+  
+  // Get company currency based on specialist's company country
+  const { currencySymbol, currency } = useSpecialistCompanyCountry(specialistId || null);
 
   // Initialize audio context and notifications on first user interaction
   useEffect(() => {
@@ -671,10 +675,10 @@ export default function SpecialistOrders() {
     const baseBudget = !isNaN(numericBudget) && numericBudget > 0 ? numericBudget : 0;
     
     const priceOptions = baseBudget > 0 ? [
-      { label: `${baseBudget} QAR`, value: `${baseBudget} QAR` },
-      { label: `${baseBudget + 3} QAR`, value: `${baseBudget + 3} QAR` },
-      { label: `${baseBudget + 6} QAR`, value: `${baseBudget + 6} QAR` },
-      { label: `${baseBudget + 9} QAR`, value: `${baseBudget + 9} QAR` },
+      { label: `${baseBudget} ${currency}`, value: `${baseBudget} ${currency}` },
+      { label: `${baseBudget + 3} ${currency}`, value: `${baseBudget + 3} ${currency}` },
+      { label: `${baseBudget + 6} ${currency}`, value: `${baseBudget + 6} ${currency}` },
+      { label: `${baseBudget + 9} ${currency}`, value: `${baseBudget + 9} ${currency}` },
     ] : [];
     
     return (
@@ -848,7 +852,7 @@ export default function SpecialistOrders() {
                 <DialogTitle>اختر سعرك</DialogTitle>
                 <DialogDescription>
                   {baseBudget > 0 
-                    ? `ميزانية العميل: ${baseBudget} ريال قطري - اختر السعر المناسب`
+                    ? `ميزانية العميل: ${baseBudget} ${currencySymbol} - اختر السعر المناسب`
                     : "اختر السعر الذي يناسبك"}
                 </DialogDescription>
               </DialogHeader>
@@ -877,7 +881,7 @@ export default function SpecialistOrders() {
                           className="h-auto py-3 flex flex-col gap-1"
                         >
                           <span className="text-base font-bold">{option.label}</span>
-                          <span className="text-xs opacity-80">+{(index + 1) * 3} QAR</span>
+                          <span className="text-xs opacity-80">+{(index + 1) * 3} {currency}</span>
                         </Button>
                       ))}
                     </div>
