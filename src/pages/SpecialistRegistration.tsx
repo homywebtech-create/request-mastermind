@@ -1024,30 +1024,87 @@ export default function SpecialistRegistration() {
                       </Alert>
 
                       <div className="space-y-4 p-6 bg-muted rounded-lg">
-                        <div>
-                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'سنوات الخبرة' : 'Years of Experience'}</p>
-                          <p className="font-semibold">{form.getValues('experience_years')} {language === 'ar' ? 'سنوات' : 'years'}</p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الاسم' : 'Name'}</p>
+                            <p className="font-semibold">{form.getValues('name')}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}</p>
+                            <p className="font-semibold">{form.getValues('countryCode')}{form.getValues('phoneNumber')}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الجنسية' : 'Nationality'}</p>
+                            <p className="font-semibold">{form.getValues('nationality')}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'تاريخ الميلاد' : 'Birth Date'}</p>
+                            <p className="font-semibold">{form.getValues('birth_date')}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'سنوات الخبرة' : 'Years of Experience'}</p>
+                            <p className="font-semibold">{form.getValues('experience_years')} {language === 'ar' ? 'سنوات' : 'years'}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'تاريخ انتهاء البطاقة' : 'ID Card Expiry Date'}</p>
+                            <p className="font-semibold">{form.getValues('id_card_expiry_date')}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'عدد التخصصات' : 'Number of Specialties'}</p>
-                          <p className="font-semibold">{form.getValues('sub_service_ids').length}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الدول' : 'Countries'}</p>
-                          <p className="font-semibold">{form.getValues('countries_worked_in').length} {language === 'ar' ? 'دولة' : 'countries'}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغات' : 'Languages'}</p>
-                          <p className="font-semibold">{form.getValues('languages_spoken').join(', ')}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الصور المرفوعة' : 'Uploaded Photos'}</p>
-                          <div className="flex gap-2 mt-2">
-                            {facePhotoPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                            {fullBodyPhotoPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                            {idCardFrontPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                            {idCardBackPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                            <span className="text-sm">4/4 {language === 'ar' ? 'صور' : 'photos'}</span>
+
+                        <div className="pt-4 border-t">
+                          <div className="mb-4">
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'التخصصات' : 'Specialties'}</p>
+                            <p className="font-semibold">{form.getValues('sub_service_ids').length} {language === 'ar' ? 'تخصص' : 'specialties'}</p>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الدول التي عملت فيها' : 'Countries Worked In'}</p>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {form.getValues('countries_worked_in').map((country: string, index: number) => (
+                                <span key={index} className="px-2 py-1 bg-primary/10 text-primary rounded-md text-sm">
+                                  {country}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغات المتحدثة' : 'Languages Spoken'}</p>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {form.getValues('languages_spoken').map((lang: string, index: number) => (
+                                <span key={index} className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-sm">
+                                  {lang}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mb-4">
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الحساسية من الحيوانات' : 'Pet Allergy'}</p>
+                            <p className="font-semibold">{form.getValues('has_pet_allergy') ? (language === 'ar' ? 'نعم' : 'Yes') : (language === 'ar' ? 'لا' : 'No')}</p>
+                          </div>
+
+                          <div className="mb-4">
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الحساسية من مواد التنظيف' : 'Cleaning Materials Allergy'}</p>
+                            <p className="font-semibold">{form.getValues('has_cleaning_allergy') ? (language === 'ar' ? 'نعم' : 'Yes') : (language === 'ar' ? 'لا' : 'No')}</p>
+                          </div>
+
+                          {form.getValues('notes') && (
+                            <div className="mb-4">
+                              <p className="text-sm text-muted-foreground">{language === 'ar' ? 'ملاحظات' : 'Notes'}</p>
+                              <p className="font-semibold whitespace-pre-wrap">{form.getValues('notes')}</p>
+                            </div>
+                          )}
+
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الصور المرفوعة' : 'Uploaded Photos'}</p>
+                            <div className="flex gap-2 mt-2">
+                              {facePhotoPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                              {fullBodyPhotoPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                              {idCardFrontPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                              {idCardBackPreview && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                              <span className="text-sm">4/4 {language === 'ar' ? 'صور' : 'photos'}</span>
+                            </div>
                           </div>
                         </div>
                       </div>

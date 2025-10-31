@@ -88,7 +88,7 @@ export function SimplifiedSpecialistForm({ companyId, companyCountryCode, onSucc
           name: fullPhone, // Temporary name, will be updated during registration
           registration_token: token,
           approval_status: 'pending',
-          is_active: false,
+          is_active: true,
         })
         .select()
         .single();
