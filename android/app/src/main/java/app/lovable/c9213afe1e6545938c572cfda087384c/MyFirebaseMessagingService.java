@@ -192,6 +192,18 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
 
+            // If channels exist with lower importance, delete to recreate with MAX
+            try {
+                NotificationChannel existing1 = notificationManager.getNotificationChannel(CHANNEL_ID);
+                if (existing1 != null && existing1.getImportance() < NotificationManager.IMPORTANCE_MAX) {
+                    notificationManager.deleteNotificationChannel(CHANNEL_ID);
+                }
+                NotificationChannel existing2 = notificationManager.getNotificationChannel(CALL_CHANNEL_ID);
+                if (existing2 != null && existing2.getImportance() < NotificationManager.IMPORTANCE_MAX) {
+                    notificationManager.deleteNotificationChannel(CALL_CHANNEL_ID);
+                }
+            } catch (Exception ignored) {}
+
             // Unified audio attributes for both channels
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)

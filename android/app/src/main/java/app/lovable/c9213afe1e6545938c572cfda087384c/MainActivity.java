@@ -165,6 +165,18 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
 
+            // If channels exist with lower importance, delete to recreate with MAX
+            try {
+                NotificationChannel existing1 = notificationManager.getNotificationChannel("new-orders-v6");
+                if (existing1 != null && existing1.getImportance() < NotificationManager.IMPORTANCE_MAX) {
+                    notificationManager.deleteNotificationChannel("new-orders-v6");
+                }
+                NotificationChannel existing2 = notificationManager.getNotificationChannel("booking-calls-v6");
+                if (existing2 != null && existing2.getImportance() < NotificationManager.IMPORTANCE_MAX) {
+                    notificationManager.deleteNotificationChannel("booking-calls-v6");
+                }
+            } catch (Exception ignored) {}
+
             // Unified audio attributes to use the device RINGTONE for all notifications
             AudioAttributes ringtoneAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -174,11 +186,11 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
             // Use device's default PHONE RINGTONE (not notification sound)
             Uri defaultRingtoneUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE);
 
-            // Primary channel for normal notifications (use ringtone)
+            // Primary channel for normal notifications (use ringtone) - IMPORTANCE_MAX
             NotificationChannel channel = new NotificationChannel(
                 "new-orders-v6",
                 "New Orders",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_MAX
             );
             channel.setDescription("Notifications for new orders");
             channel.enableVibration(true);
@@ -191,11 +203,11 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
             channel.setSound(defaultRingtoneUri, ringtoneAttributes);
             notificationManager.createNotificationChannel(channel);
 
-            // Call-style channel for urgent bookings (also ringtone)
+            // Call-style channel for urgent bookings (also ringtone) - IMPORTANCE_MAX
             NotificationChannel callChannel = new NotificationChannel(
                 "booking-calls-v6",
                 "Booking Calls",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_MAX
             );
             callChannel.setDescription("Incoming booking alerts (call style)");
             callChannel.enableVibration(true);
