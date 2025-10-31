@@ -22,10 +22,11 @@ type SimplifiedFormValues = z.infer<typeof simplifiedSchema>;
 
 interface SimplifiedSpecialistFormProps {
   companyId: string;
+  companyCountryCode: string;
   onSuccess: () => void;
 }
 
-export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpecialistFormProps) {
+export function SimplifiedSpecialistForm({ companyId, companyCountryCode, onSuccess }: SimplifiedSpecialistFormProps) {
   const { language } = useLanguage();
   const t = useTranslation(language).specialists;
   const { toast } = useToast();
@@ -34,7 +35,7 @@ export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpe
   const form = useForm<SimplifiedFormValues>({
     resolver: zodResolver(simplifiedSchema),
     defaultValues: {
-      countryCode: "+966",
+      countryCode: companyCountryCode || "+966",
       phone: "",
     },
   });
@@ -121,11 +122,14 @@ export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpe
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-4">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
+        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-4 border-l-4 border-blue-500">
+          <p className="text-sm text-blue-800 dark:text-blue-200 font-medium mb-1">
+            {language === 'ar' ? '📱 إضافة محترف جديد' : '📱 Add New Specialist'}
+          </p>
+          <p className="text-xs text-blue-700 dark:text-blue-300">
             {language === 'ar' 
-              ? 'قم بإدخال رقم هاتف المحترف فقط، وسيتم إنشاء رابط تسجيل خاص به لإكمال باقي البيانات'
-              : 'Enter the specialist phone number only, and a registration link will be created for them to complete the rest of the information'}
+              ? `رقم الهاتف يجب أن يكون برمز الدولة ${companyCountryCode}. سيتم إنشاء رابط تسجيل خاص به لإكمال باقي البيانات.`
+              : `Phone number must use country code ${companyCountryCode}. A registration link will be created for them to complete the rest of the information.`}
           </p>
         </div>
 
@@ -138,9 +142,9 @@ export function SimplifiedSpecialistForm({ companyId, onSuccess }: SimplifiedSpe
                 <FormLabel>
                   {language === 'ar' ? 'كود الدولة *' : 'Country Code *'}
                 </FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value} disabled>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-muted">
                       <SelectValue />
                     </SelectTrigger>
                   </FormControl>

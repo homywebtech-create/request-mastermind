@@ -14,6 +14,7 @@ import { useTranslation } from "@/i18n";
 interface Company {
   id: string;
   name: string;
+  country_code?: string;
 }
 
 interface Specialist {
@@ -112,7 +113,7 @@ export default function Specialists() {
 
       const { data: companyData, error: companyError } = await supabase
         .from("companies")
-        .select("id, name")
+        .select("id, name, country_code")
         .eq("id", profile.company_id)
         .single();
 
@@ -278,32 +279,59 @@ export default function Specialists() {
           {company && (
             <SimplifiedSpecialistForm
               companyId={company.id}
+              companyCountryCode={company.country_code || "+966"}
               onSuccess={() => company && fetchSpecialists(company.id)}
             />
           )}
         </div>
 
         <Tabs value={filterType} onValueChange={(v) => setFilterType(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 max-w-4xl">
-            <TabsTrigger value="all">
-              {language === 'ar' ? 'الكل' : 'All'} ({specialists.length})
-            </TabsTrigger>
-            <TabsTrigger value="awaiting_registration">
-              {language === 'ar' ? 'بانتظار التسجيل' : 'Awaiting Registration'} ({awaitingRegistrationCount})
-            </TabsTrigger>
-            <TabsTrigger value="pending_approval">
-              {language === 'ar' ? 'بانتظار الموافقة' : 'Pending Approval'} ({pendingApprovalCount})
-            </TabsTrigger>
-            <TabsTrigger value="approved">
-              {language === 'ar' ? 'معتمد' : 'Approved'} ({approvedCount})
-            </TabsTrigger>
-            <TabsTrigger value="active">
-              {language === 'ar' ? 'نشط' : 'Active'} ({specialists.filter(s => s.is_active && !s.suspension_type).length})
-            </TabsTrigger>
-            <TabsTrigger value="suspended">
-              {language === 'ar' ? 'موقوف' : 'Suspended'} ({specialists.filter(s => !s.is_active || !!s.suspension_type).length})
-            </TabsTrigger>
-          </TabsList>
+          <div className="bg-card rounded-lg border shadow-sm p-1">
+            <TabsList className="grid w-full grid-cols-6 h-auto gap-1 bg-transparent">
+              <TabsTrigger 
+                value="all"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm flex flex-col gap-1 py-3"
+              >
+                <span className="font-semibold">{language === 'ar' ? 'الكل' : 'All'}</span>
+                <span className="text-lg font-bold">{specialists.length}</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="awaiting_registration"
+                className="data-[state=active]:bg-red-100 dark:data-[state=active]:bg-red-950 data-[state=active]:text-red-900 dark:data-[state=active]:text-red-100 data-[state=active]:shadow-sm flex flex-col gap-1 py-3"
+              >
+                <span className="font-semibold text-xs">{language === 'ar' ? 'بانتظار التسجيل' : 'Awaiting Registration'}</span>
+                <span className="text-lg font-bold">{awaitingRegistrationCount}</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="pending_approval"
+                className="data-[state=active]:bg-yellow-100 dark:data-[state=active]:bg-yellow-950 data-[state=active]:text-yellow-900 dark:data-[state=active]:text-yellow-100 data-[state=active]:shadow-sm flex flex-col gap-1 py-3"
+              >
+                <span className="font-semibold text-xs">{language === 'ar' ? 'بانتظار الموافقة' : 'Pending Approval'}</span>
+                <span className="text-lg font-bold">{pendingApprovalCount}</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="approved"
+                className="data-[state=active]:bg-green-100 dark:data-[state=active]:bg-green-950 data-[state=active]:text-green-900 dark:data-[state=active]:text-green-100 data-[state=active]:shadow-sm flex flex-col gap-1 py-3"
+              >
+                <span className="font-semibold">{language === 'ar' ? 'معتمد' : 'Approved'}</span>
+                <span className="text-lg font-bold">{approvedCount}</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="active"
+                className="data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-950 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100 data-[state=active]:shadow-sm flex flex-col gap-1 py-3"
+              >
+                <span className="font-semibold">{language === 'ar' ? 'نشط' : 'Active'}</span>
+                <span className="text-lg font-bold">{specialists.filter(s => s.is_active && !s.suspension_type).length}</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="suspended"
+                className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-900 data-[state=active]:text-gray-900 dark:data-[state=active]:text-gray-100 data-[state=active]:shadow-sm flex flex-col gap-1 py-3"
+              >
+                <span className="font-semibold">{language === 'ar' ? 'موقوف' : 'Suspended'}</span>
+                <span className="text-lg font-bold">{specialists.filter(s => !s.is_active || !!s.suspension_type).length}</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value={filterType} className="mt-6">
             <SpecialistsTable
