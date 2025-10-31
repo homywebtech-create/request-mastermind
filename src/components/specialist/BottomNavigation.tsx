@@ -18,39 +18,42 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
 
   const navItems = [
     {
-      icon: Home,
-      label: isAr ? "الرئيسية" : "Home",
+      icon: Package,
+      label: isAr ? "طلبات مؤكدة" : "Confirmed",
       path: "/specialist-orders",
       isActive: location.pathname === "/specialist-orders",
-      disabled: isBusy && !location.pathname.includes('/tracking/')
+      disabled: isBusy && !location.pathname.includes('/tracking/'),
+      gradient: "from-green-500 to-emerald-600"
     },
     {
-      icon: Package,
-      label: isAr ? "عروض جديدة" : "New Orders",
+      icon: Home,
+      label: isAr ? "عروض جديدة" : "New Offers",
       path: "/specialist-orders/new",
       isActive: location.pathname === "/specialist-orders/new",
-      badge: isBusy ? 0 : newOrdersCount, // إخفاء العداد عند الانشغال
-      disabled: isBusy
+      badge: isBusy ? 0 : newOrdersCount,
+      disabled: isBusy,
+      gradient: "from-blue-500 to-indigo-600"
     },
     {
       icon: Settings,
       label: isAr ? "الإعدادات" : "Settings",
       path: "/specialist-orders/profile",
       isActive: location.pathname === "/specialist-orders/profile",
-      disabled: isBusy && !location.pathname.includes('/tracking/')
+      disabled: isBusy && !location.pathname.includes('/tracking/'),
+      gradient: "from-purple-500 to-pink-600"
     }
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-lg z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-background/95 border-t-2 border-primary/20 shadow-2xl backdrop-blur-sm z-50">
       {/* رسالة تنبيه عند الانشغال */}
       {isBusy && currentOrderId && (
-        <div className="bg-amber-500 text-white px-4 py-2 text-center text-sm font-medium">
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2.5 text-center text-sm font-bold shadow-lg animate-pulse">
           {isAr ? '🔒 لديك طلب قيد التنفيذ - العروض الجديدة متوقفة مؤقتاً' : '🔒 Order in progress - New offers paused'}
         </div>
       )}
       
-      <div className="flex items-center justify-around h-20 px-2 max-w-screen-lg mx-auto">
+      <div className="flex items-center justify-around h-24 px-3 max-w-screen-lg mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isDisabled = item.disabled;
@@ -60,7 +63,6 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
               key={item.path}
               onClick={() => {
                 if (isDisabled) {
-                  // إذا كان مشغولاً، توجيه للطلب الحالي
                   if (currentOrderId) {
                     navigate(`/specialist-orders/tracking/${currentOrderId}`);
                   }
@@ -69,40 +71,46 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
                 }
               }}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all flex-1",
+                "relative flex flex-col items-center justify-center gap-2 px-5 py-3 rounded-2xl transition-all duration-300 flex-1 group",
                 isDisabled && "opacity-40 cursor-not-allowed",
                 item.isActive 
-                  ? "text-primary bg-primary/10" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? `bg-gradient-to-br ${item.gradient} text-white shadow-lg scale-105` 
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:scale-105"
               )}
             >
               <div className="relative">
                 {isDisabled ? (
-                  <Lock className="h-5 w-5" />
+                  <Lock className="h-6 w-6" />
                 ) : (
-                  <Icon 
-                    className={cn(
-                      "h-6 w-6 transition-transform",
-                      item.isActive && "scale-110"
-                    )} 
-                  />
-                )}
-                {item.badge && item.badge > 0 && !isDisabled && (
-                  <div className="absolute -top-2 -right-2 h-5 w-5 bg-destructive rounded-full flex items-center justify-center animate-pulse">
-                    <span className="text-[10px] font-bold text-destructive-foreground">
-                      {item.badge > 9 ? '9+' : item.badge}
-                    </span>
-                  </div>
+                  <>
+                    <Icon 
+                      className={cn(
+                        "h-7 w-7 transition-all duration-300",
+                        item.isActive && "drop-shadow-lg animate-pulse"
+                      )} 
+                    />
+                    {item.badge && item.badge > 0 && !isDisabled && (
+                      <div className="absolute -top-3 -right-3 h-6 w-6 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center animate-bounce shadow-lg border-2 border-white">
+                        <span className="text-[11px] font-extrabold text-white">
+                          {item.badge > 9 ? '9+' : item.badge}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <span className={cn(
-                "text-[10px] font-medium transition-all",
-                item.isActive && "font-bold"
+                "text-[11px] font-semibold transition-all duration-300 whitespace-nowrap",
+                item.isActive && "font-extrabold drop-shadow-md"
               )}>
                 {item.label}
               </span>
               {item.isActive && !isDisabled && (
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-primary rounded-t-full" />
+                <div className={cn(
+                  "absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-1.5 rounded-t-full",
+                  `bg-gradient-to-r ${item.gradient}`,
+                  "shadow-lg animate-pulse"
+                )} />
               )}
             </button>
           );

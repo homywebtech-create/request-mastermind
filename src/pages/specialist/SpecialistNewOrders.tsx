@@ -790,11 +790,11 @@ export default function SpecialistNewOrders() {
     <BusyGuard specialistId={specialistId} allowWhenBusy={true}>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-6 shadow-lg">
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white p-6 shadow-2xl">
         <div className="max-w-screen-lg mx-auto">
           <div className="mb-2">
-            <h1 className="text-2xl font-bold mb-1">{t.specialist.newOffersTitle}</h1>
-            <p className="text-sm opacity-90">
+            <h1 className="text-2xl font-bold mb-1 drop-shadow-lg">{t.specialist.newOffersTitle}</h1>
+            <p className="text-sm opacity-95 font-medium">
               {orders.length} {orders.length === 1 ? t.specialist.availableOffers : t.specialist.availableOffersPlural}
             </p>
           </div>

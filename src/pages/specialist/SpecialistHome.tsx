@@ -382,12 +382,12 @@ export default function SpecialistHome() {
     <BusyGuard specialistId={specialistId} allowWhenBusy={false}>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-6 shadow-lg">
+      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 text-white p-6 shadow-2xl">
         <div className="max-w-screen-lg mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold mb-1">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
-              <p className="text-sm opacity-90">{isAr ? 'طلباتك المقبولة' : 'Your accepted orders'}</p>
+              <h1 className="text-2xl font-bold mb-1 drop-shadow-lg">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
+              <p className="text-sm opacity-95 font-medium">{isAr ? '✅ طلباتك المؤكدة' : '✅ Your Confirmed Bookings'}</p>
             </div>
             <Button
               onClick={() => {
@@ -399,7 +399,7 @@ export default function SpecialistHome() {
               }}
               variant="secondary"
               size="sm"
-              className="gap-2"
+              className="gap-2 shadow-lg hover:scale-105 transition-transform"
             >
               <Clock className="h-4 w-4" />
               {isAr ? 'تحديث' : 'Refresh'}
@@ -411,8 +411,8 @@ export default function SpecialistHome() {
       {/* Tools + Orders List */}
       <div className="max-w-screen-lg mx-auto p-4 space-y-4">
         {displayOrders.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">{isAr ? 'لا توجد طلبات مقبولة حالياً' : 'No accepted orders yet'}</p>
+          <Card className="p-8 text-center shadow-lg">
+            <p className="text-muted-foreground text-lg">{isAr ? 'لا توجد طلبات مؤكدة حالياً' : 'No confirmed bookings yet'}</p>
           </Card>
         ) : (
           displayOrders.map((order) => {
