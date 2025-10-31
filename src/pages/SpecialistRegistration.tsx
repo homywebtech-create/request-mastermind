@@ -91,7 +91,7 @@ export default function SpecialistRegistration() {
   const [submitted, setSubmitted] = useState(false);
   const [showWelcomePage, setShowWelcomePage] = useState(!token);
   const [phoneForRegistration, setPhoneForRegistration] = useState("");
-  const [countryCodeForRegistration, setCountryCodeForRegistration] = useState("+966");
+  const [companyCountryCode, setCompanyCountryCode] = useState("+966");
   const [isCreatingRegistration, setIsCreatingRegistration] = useState(false);
   const [defaultCompanyLogo, setDefaultCompanyLogo] = useState<string | null>(null);
 
@@ -219,7 +219,7 @@ export default function SpecialistRegistration() {
 
     setIsCreatingRegistration(true);
     try {
-      const fullPhone = `${countryCodeForRegistration}${phoneForRegistration}`;
+      const fullPhone = `${companyCountryCode}${phoneForRegistration}`;
       
       // Check if specialist with this phone already exists
       const { data: existingSpecialist } = await supabase
@@ -315,12 +315,17 @@ export default function SpecialistRegistration() {
     try {
       const { data } = await supabase
         .from('companies')
-        .select('logo_url')
+        .select('logo_url, country_code')
         .eq('name', 'شركة النميلة')
         .maybeSingle();
       
-      if (data?.logo_url) {
-        setDefaultCompanyLogo(data.logo_url);
+      if (data) {
+        if (data.logo_url) {
+          setDefaultCompanyLogo(data.logo_url);
+        }
+        if (data.country_code) {
+          setCompanyCountryCode(data.country_code);
+        }
       }
     } catch (error) {
       console.error('Error fetching company logo:', error);
@@ -565,6 +570,22 @@ export default function SpecialistRegistration() {
   if (showWelcomePage) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+        {/* Language Switcher */}
+        <div className="fixed top-4 right-4 z-50">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const newLang = language === 'ar' ? 'en' : 'ar';
+              localStorage.setItem('language', newLang);
+              window.location.reload();
+            }}
+            className="gap-2"
+          >
+            <span>{language === 'ar' ? 'EN' : 'ع'}</span>
+          </Button>
+        </div>
+        
         <Card className="max-w-2xl w-full shadow-2xl border-2 animate-scale-in">
           <CardHeader className="text-center space-y-6 pb-8">
             <div className="flex justify-center">
@@ -633,18 +654,9 @@ export default function SpecialistRegistration() {
               </div>
 
               <div className="flex gap-2">
-                <Select value={countryCodeForRegistration} onValueChange={setCountryCodeForRegistration}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country.dialCode} value={country.dialCode}>
-                        {country.flag} {country.dialCode}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="w-[140px] h-12 rounded-md border border-input bg-muted flex items-center justify-center font-medium">
+                  {countries.find(c => c.dialCode === companyCountryCode)?.flag || '🇸🇦'} {companyCountryCode}
+                </div>
                 <Input
                   type="tel"
                   placeholder={language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
