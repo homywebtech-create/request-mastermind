@@ -1237,56 +1237,109 @@ export default function OrderTracking() {
 
             {/* Fixed Finish Work Button */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50">
-              <div className="max-w-2xl mx-auto">
-                {timeExpired ? (
-                  <Button 
-                    onClick={() => {
-                      stopTimeExpiredAlert();
-                      setShowEarlyFinishDialog(true);
-                    }}
-                    className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold animate-pulse"
-                  >
-                    <CheckCircle className="ml-2 h-6 w-6" />
-                    إنهاء العمل الآن
-                  </Button>
-                ) : (
-                  <Dialog open={showEarlyFinishDialog} onOpenChange={setShowEarlyFinishDialog}>
+              <div className="max-w-2xl mx-auto space-y-2">
+                {/* Extend Time Button - Show when time expired */}
+                {timeExpired && (
+                  <Dialog open={showExtendTimeDialog} onOpenChange={(open) => {
+                    if (open) checkNextBooking();
+                    setShowExtendTimeDialog(open);
+                  }}>
                     <DialogTrigger asChild>
-                      <Button className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold">
-                        <CheckCircle className="ml-2 h-6 w-6" />
-                        إنهاء العمل الآن
+                      <Button 
+                        variant="outline"
+                        className="w-full border-blue-500 text-blue-600 hover:bg-blue-50"
+                        size="lg"
+                      >
+                        <Clock className="ml-2 h-5 w-5" />
+                        تمديد وقت العمل
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-md">
                       <DialogHeader>
-                        <DialogTitle>إنهاء العمل مبكراً؟</DialogTitle>
+                        <DialogTitle>تمديد وقت العمل</DialogTitle>
                         <DialogDescription>
-                          هل أنت متأكد من رغبتك في إنهاء العمل قبل الوقت المحدد؟
+                          {canExtend 
+                            ? 'اختر عدد الساعات الإضافية'
+                            : 'لا يمكن التمديد بسبب وجود حجز آخر'}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <p className="text-sm text-muted-foreground">
-                          بالتأكيد، سيتم تسجيل العمل كمنجز وطلب الفاتورة.
-                        </p>
-                        <div className="flex gap-3">
+
+                      {canExtend ? (
+                        <div className="space-y-4 py-4">
+                          <div className="grid grid-cols-3 gap-3">
+                            <Button
+                              variant={extensionHours === 1 ? "default" : "outline"}
+                              onClick={() => setExtensionHours(1)}
+                              className="h-20 flex flex-col items-center justify-center"
+                            >
+                              <Clock className="h-6 w-6 mb-1" />
+                              <span className="text-sm">ساعة واحدة</span>
+                            </Button>
+                            <Button
+                              variant={extensionHours === 2 ? "default" : "outline"}
+                              onClick={() => setExtensionHours(2)}
+                              className="h-20 flex flex-col items-center justify-center"
+                            >
+                              <Clock className="h-6 w-6 mb-1" />
+                              <span className="text-sm">ساعتين</span>
+                            </Button>
+                            <Button
+                              variant={extensionHours === 3 ? "default" : "outline"}
+                              onClick={() => setExtensionHours(3)}
+                              className="h-20 flex flex-col items-center justify-center"
+                            >
+                              <Clock className="h-6 w-6 mb-1" />
+                              <span className="text-sm">3 ساعات</span>
+                            </Button>
+                          </div>
+                          
                           <Button 
-                            onClick={() => setShowEarlyFinishDialog(false)} 
-                            variant="outline" 
-                            className="flex-1"
+                            onClick={() => handleExtendTime(extensionHours)}
+                            className="w-full"
                           >
-                            إلغاء
-                          </Button>
-                          <Button 
-                            onClick={confirmEarlyFinish} 
-                            className="flex-1"
-                          >
-                            نعم، متأكد
+                            تأكيد التمديد
                           </Button>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="py-4 space-y-4">
+                          <Alert className="border-amber-500 bg-amber-50">
+                            <AlertTriangle className="h-4 w-4 text-amber-600" />
+                            <AlertDescription className="text-amber-800">
+                              <p className="font-semibold mb-2">يوجد حجز آخر قريب</p>
+                              <p className="text-sm">
+                                الحجز القادم في: {nextBookingTime}
+                              </p>
+                              <p className="text-sm mt-2">
+                                لا يمكن تمديد وقت العمل لأن هناك مهمة أخرى في انتظارك قريباً
+                              </p>
+                            </AlertDescription>
+                          </Alert>
+                          
+                          <Button 
+                            onClick={() => setShowExtendTimeDialog(false)}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            حسناً، فهمت
+                          </Button>
+                        </div>
+                      )}
                     </DialogContent>
                   </Dialog>
                 )}
+
+                {/* Finish Work Button - Always visible */}
+                <Button 
+                  onClick={() => {
+                    stopTimeExpiredAlert();
+                    setTimeExpired(false);
+                    confirmEarlyFinish();
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold shadow-lg"
+                >
+                  <CheckCircle className="ml-2 h-6 w-6" />
+                  إنهاء العمل الآن
+                </Button>
               </div>
             </div>
           </>
