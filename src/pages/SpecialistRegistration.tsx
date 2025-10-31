@@ -160,10 +160,21 @@ export default function SpecialistRegistration() {
         return;
       }
 
+      console.log("🔍 Specialist data loaded:", {
+        specialist_id: specialistData.id,
+        company_id: specialistData.company_id,
+        company_name: (specialistData.companies as any)?.name,
+        company_name_en: (specialistData.companies as any)?.name_en,
+        company_logo: (specialistData.companies as any)?.logo_url,
+        company_country_code: (specialistData.companies as any)?.country_code,
+        phone: specialistData.phone
+      });
+
       setSpecialist(specialistData);
 
       // Set the country code from the company
       const companyCountryCode = (specialistData.companies as any)?.country_code || "+966";
+      console.log("📱 Setting country code to:", companyCountryCode);
       form.setValue("countryCode", companyCountryCode);
 
       // Extract phone number without country code if phone is already set
@@ -468,6 +479,13 @@ export default function SpecialistRegistration() {
     ? (specialist?.companies as any)?.name 
     : ((specialist?.companies as any)?.name_en || (specialist?.companies as any)?.name);
   const companyLogo = (specialist?.companies as any)?.logo_url;
+
+  console.log("🏢 Company branding info:", {
+    companyName,
+    companyLogo,
+    specialist: specialist?.id,
+    hasCompanyData: !!(specialist?.companies)
+  });
 
   if (submitted) {
     return (
