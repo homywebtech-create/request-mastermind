@@ -14,8 +14,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, User, Camera, CreditCard, FileCheck, Share2 } from "lucide-react";
-import { countries } from "@/data/countries";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { countries } from "@/data/countries";
+import { nationalities } from "@/data/nationalities";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Progress } from "@/components/ui/progress";
@@ -594,17 +595,22 @@ export default function SpecialistRegistration() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>{language === 'ar' ? 'الجنسية *' : 'Nationality *'}</FormLabel>
-                            <FormControl>
-                              <MultiSelect
-                                options={countries.map(c => ({
-                                  label: `${c.flag} ${language === 'ar' ? c.nameAr : c.name}`,
-                                  value: language === 'ar' ? c.nameAr : c.name
-                                }))}
-                                selected={field.value ? [field.value] : []}
-                                onChange={(values) => field.onChange(values[0] || '')}
-                                placeholder={language === 'ar' ? "اختر الجنسية" : "Select nationality"}
-                              />
-                            </FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="bg-background">
+                                  <SelectValue placeholder={language === 'ar' ? 'اختر الجنسية' : 'Select nationality'} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="max-h-60 bg-background z-50">
+                                {nationalities
+                                  .filter(n => n !== '---')
+                                  .map((nationality) => (
+                                    <SelectItem key={nationality} value={nationality}>
+                                      {nationality}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
