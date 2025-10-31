@@ -18,10 +18,12 @@ public class IncomingOrderActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Enable showing over lock screen
+        // Ensure screen wakes and shows over lock screen on all versions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
+            // Keep screen on while activity is visible
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         } else {
             getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
@@ -29,6 +31,20 @@ public class IncomingOrderActivity extends Activity {
                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
                 WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
             );
+        }
+
+        // Explicitly request to dismiss keyguard if locked (helps on MIUI)
+        try {
+            android.app.KeyguardManager km = (android.app.KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+            if (km != null && km.isKeyguardLocked()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    km.requestDismissKeyguard(this, null);
+                } else {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error dismissing keyguard: " + e.getMessage());
         }
 
         setContentView(R.layout.activity_incoming_order);
