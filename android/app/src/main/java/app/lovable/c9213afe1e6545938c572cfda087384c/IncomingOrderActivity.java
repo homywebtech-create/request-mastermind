@@ -68,22 +68,27 @@ public class IncomingOrderActivity extends Activity {
             bodyView.setText(body);
         }
 
-        // Skip button
+        // Skip button - skip the order and navigate
         Button skipButton = findViewById(R.id.skipButton);
         skipButton.setOnClickListener(v -> {
             Log.d(TAG, "⏭️ Skip button clicked");
-            // Navigate to the offer page
-            navigateToApp(route != null ? route : "/specialist-orders/new");
+            // Navigate with skip action parameter so app can handle the skip
+            String skipRoute = orderId != null 
+                ? "/specialist-orders/new?orderId=" + orderId + "&action=skip"
+                : (route != null ? route + "?action=skip" : "/specialist-orders/new?action=skip");
+            navigateToApp(skipRoute);
             finish();
         });
 
-        // Submit Quote button
+        // Submit Quote button - navigate to pricing page
         Button submitButton = findViewById(R.id.submitQuoteButton);
         submitButton.setOnClickListener(v -> {
             Log.d(TAG, "💰 Submit Quote button clicked");
-            // Navigate to the pricing selection page
-            String submitRoute = orderId != null ? "/specialist-orders/new?orderId=" + orderId : route;
-            navigateToApp(submitRoute != null ? submitRoute : "/specialist-orders/new");
+            // Navigate to pricing selection page with action parameter
+            String submitRoute = orderId != null 
+                ? "/specialist-orders/new?orderId=" + orderId + "&action=submit"
+                : (route != null ? route + "?action=submit" : "/specialist-orders/new?action=submit");
+            navigateToApp(submitRoute);
             finish();
         });
     }

@@ -70,42 +70,48 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private void sendHighPriorityNotification(String title, String body, String route, boolean useCallChannel) {
-        // Wake up the screen first
+        // Only show full-screen interface for new orders
+        if (!useCallChannel) {
+            Log.d(TAG, "ℹ️ Not a new order notification - skipping full-screen interface");
+            // Show normal notification for non-new-order types
+            createNotificationChannel();
+            
+            Uri deepLink = Uri.parse("request-mastermind://open?route=" + Uri.encode(route));
+            Intent intent = new Intent(Intent.ACTION_VIEW, deepLink);
+            intent.setPackage(getPackageName());
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, intent, 
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_icon_config_sample)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+                
+            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.notify((int) System.currentTimeMillis(), builder.build());
+            return;
+        }
+        
+        // Wake up the screen first for new orders
         wakeUpScreen();
         
         // Create notification channels (required for Android 8.0+)
         createNotificationChannel();
 
-        // Choose channel depending on type, force CALL channel on Xiaomi/Redmi
-        boolean isXiaomi = android.os.Build.MANUFACTURER != null && android.os.Build.MANUFACTURER.equalsIgnoreCase("Xiaomi");
-        String channelId = (useCallChannel || isXiaomi) ? CALL_CHANNEL_ID : CHANNEL_ID;
+        // Use CALL channel for new orders (maximum interruption)
+        String channelId = CALL_CHANNEL_ID;
 
         // Extract orderId from route if present
         String orderId = null;
         if (route != null && route.contains("orderId=")) {
             orderId = route.split("orderId=")[1].split("&")[0];
-        }
-
-        // For Xiaomi/Redmi devices, launch the activity DIRECTLY (don't rely on full-screen intent)
-        if (isXiaomi) {
-            Intent directIntent = new Intent(this, IncomingOrderActivity.class);
-            directIntent.setFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK | 
-                Intent.FLAG_ACTIVITY_CLEAR_TOP | 
-                Intent.FLAG_ACTIVITY_NO_HISTORY
-            );
-            directIntent.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-            directIntent.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            directIntent.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
-            directIntent.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-            directIntent.putExtra("title", title);
-            directIntent.putExtra("body", body);
-            directIntent.putExtra("route", route);
-            directIntent.putExtra("orderId", orderId);
-            
-            // Launch the activity directly
-            startActivity(directIntent);
-            Log.d(TAG, "🚀 Launched IncomingOrderActivity directly for Xiaomi device");
         }
 
         // Intent to launch MainActivity when notification is tapped (deep link)

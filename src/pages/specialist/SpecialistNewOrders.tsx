@@ -184,6 +184,31 @@ export default function SpecialistNewOrders() {
     console.log('🚀 [APP START] تطبيق المحترفين - جاهز');
     const platform = (window as any).Capacitor?.getPlatform();
     console.log(`📱 [PLATFORM] ${platform || 'web'}`);
+    
+    // Handle action parameters from notification interface
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const orderId = urlParams.get('orderId');
+    
+    if (action && orderId) {
+      console.log(`🎬 [ACTION] Handling action: ${action} for order: ${orderId}`);
+      
+      if (action === 'skip') {
+        // Auto-skip the order
+        setTimeout(() => {
+          handleAutoSkip(orderId);
+        }, 1000); // Small delay to ensure component is ready
+      } else if (action === 'submit') {
+        // Open quote dialog for the order
+        setTimeout(() => {
+          setQuoteDialog({ open: true, orderId });
+        }, 1000);
+      }
+      
+      // Clean up URL parameters
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
   }, []);
 
   // Timer to update remaining time and auto-remove expired orders
@@ -732,6 +757,34 @@ export default function SpecialistNewOrders() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Auto-skip handler for notification interface
+  const handleAutoSkip = async (orderId: string) => {
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order?.order_specialist) {
+        console.error('Order specialist not found for auto-skip');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('order_specialists')
+        .update({
+          is_accepted: false,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: 'Skipped by specialist from notification'
+        })
+        .eq('id', order.order_specialist.id);
+
+      if (error) throw error;
+
+      sonnerToast.success(t.specialist.orderSkippedSuccess);
+      await fetchOrders(specialistId);
+    } catch (error: any) {
+      console.error('Error auto-skipping order:', error);
+      sonnerToast.error(t.specialist.skipFailed);
     }
   };
 
