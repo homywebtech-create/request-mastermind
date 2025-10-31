@@ -275,7 +275,7 @@ export default function SpecialistRegistration() {
         const { data: defaultCompany } = await supabase
           .from('companies')
           .select('id')
-          .eq('name', 'شركة النميلة')
+          .eq('name', 'شركة النميلة للتنظيفات')
           .maybeSingle();
 
         // Insert specialist record with type assertion to bypass TypeScript check
@@ -326,7 +326,7 @@ export default function SpecialistRegistration() {
       const { data, error } = await supabase
         .from('companies')
         .select('logo_url, country_code')
-        .eq('name', 'شركة النميلة')
+        .eq('name', 'شركة النميلة للتنظيفات')
         .maybeSingle();
       
       console.log('🏢 Company data fetched:', { data, error });
@@ -340,16 +340,16 @@ export default function SpecialistRegistration() {
           console.log('🌍 Setting company country code:', data.country_code);
           setCompanyCountryCode(data.country_code);
         } else {
-          console.warn('⚠️ No country_code found for company, using default +966');
-          setCompanyCountryCode('+966');
+          console.warn('⚠️ No country_code found for company, using default +974');
+          setCompanyCountryCode('+974');
         }
       } else {
-        console.warn('⚠️ Company not found, using default country code +966');
-        setCompanyCountryCode('+966');
+        console.warn('⚠️ Company not found, using default country code +974');
+        setCompanyCountryCode('+974');
       }
     } catch (error) {
       console.error('❌ Error fetching company data:', error);
-      setCompanyCountryCode('+966'); // Fallback
+      setCompanyCountryCode('+974'); // Fallback to Qatar
     }
   };
 
