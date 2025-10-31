@@ -272,11 +272,17 @@ export default function SpecialistRegistration() {
         tokenToUse = `${Date.now()}_${fullPhone}`;
         
         // Get default company ID (Al Numila Company)
-        const { data: defaultCompany } = await supabase
+        const { data: defaultCompany, error: companyError } = await supabase
           .from('companies')
           .select('id')
-          .eq('name', 'شركة النميلة للتنظيفات')
+          .ilike('name', '%النميلة%')
           .maybeSingle();
+
+        if (!defaultCompany) {
+          throw new Error(language === 'ar' 
+            ? 'لم يتم العثور على بيانات الشركة. يرجى المحاولة لاحقاً' 
+            : 'Company data not found. Please try again later');
+        }
 
         // Insert specialist record
         const { error: createError } = await supabase
