@@ -13,13 +13,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, User, Camera, CreditCard, FileCheck } from "lucide-react";
+import { Upload, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, User, Camera, CreditCard, FileCheck, Share2 } from "lucide-react";
 import { countries } from "@/data/countries";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Progress } from "@/components/ui/progress";
 
 const registrationSchema = z.object({
+  name: z.string().min(2, "يجب إدخال الاسم / Name is required").max(100, "الاسم طويل جداً"),
+  phone: z.string().min(10, "رقم الهاتف غير صحيح / Invalid phone number"),
+  nationality: z.string().min(1, "يجب اختيار الجنسية / Nationality is required"),
+  birth_date: z.string().min(1, "يجب إدخال تاريخ الميلاد / Birth date is required"),
   experience_years: z.coerce.number().min(0, "يجب أن تكون سنوات الخبرة 0 أو أكثر").max(50, "سنوات الخبرة غير صحيحة"),
   sub_service_ids: z.array(z.string()).min(1, "يجب اختيار خدمة واحدة على الأقل"),
   notes: z.string().max(500, "الملاحظات طويلة جداً").optional(),
@@ -81,6 +85,10 @@ export default function SpecialistRegistration() {
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
+      name: "",
+      phone: "",
+      nationality: "",
+      birth_date: "",
       experience_years: 0,
       sub_service_ids: [],
       notes: "",
@@ -221,7 +229,7 @@ export default function SpecialistRegistration() {
 
   const validateStep = async (step: number): Promise<boolean> => {
     if (step === 1) {
-      const fields = ['experience_years', 'sub_service_ids', 'countries_worked_in', 'languages_spoken', 'id_card_expiry_date'];
+      const fields = ['name', 'phone', 'nationality', 'birth_date', 'experience_years', 'sub_service_ids', 'countries_worked_in', 'languages_spoken', 'id_card_expiry_date'];
       const result = await form.trigger(fields as any);
       return result;
     }
@@ -312,6 +320,10 @@ export default function SpecialistRegistration() {
           body: {
             specialist_id: specialist.id,
             token,
+            name: values.name,
+            phone: values.phone,
+            nationality: values.nationality,
+            birth_date: values.birth_date,
             experience_years: values.experience_years,
             notes: values.notes,
             id_card_expiry_date: values.id_card_expiry_date,
@@ -359,6 +371,40 @@ export default function SpecialistRegistration() {
     );
   }
 
+  const shareRegistrationLink = async () => {
+    const registrationLink = `${window.location.origin}/specialist-registration`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: language === 'ar' ? 'رابط تسجيل المحترفين' : 'Specialist Registration Link',
+          text: language === 'ar' 
+            ? 'انضم إلينا كمحترف! سجل الآن عبر هذا الرابط'
+            : 'Join us as a specialist! Register now through this link',
+          url: registrationLink,
+        });
+      } catch (error) {
+        console.log('Share cancelled');
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(registrationLink);
+        toast({
+          title: language === 'ar' ? "تم النسخ" : "Copied",
+          description: language === 'ar' 
+            ? "تم نسخ رابط التسجيل" 
+            : "Registration link copied to clipboard",
+        });
+      } catch (error) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' ? "فشل النسخ" : "Failed to copy",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950">
@@ -379,6 +425,22 @@ export default function SpecialistRegistration() {
                 ? 'شكراً لإكمال بياناتك. سيتم مراجعة ملفك الشخصي والموافقة عليه قريباً.'
                 : 'Thank you for completing your registration. Your profile will be reviewed and approved soon.'}
             </p>
+            
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-3">
+                {language === 'ar' 
+                  ? 'هل لديك أصدقاء محترفين؟ شارك رابط التسجيل معهم!'
+                  : 'Have professional friends? Share the registration link with them!'}
+              </p>
+              <Button 
+                onClick={shareRegistrationLink}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <Share2 className="h-4 w-4" />
+                {language === 'ar' ? 'مشاركة رابط التسجيل' : 'Share Registration Link'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -457,6 +519,83 @@ export default function SpecialistRegistration() {
                         <User className="h-5 w-5" />
                         {language === 'ar' ? 'المعلومات الأساسية' : 'Basic Information'}
                       </h3>
+
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'الاسم الكامل *' : 'Full Name *'}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder={language === 'ar' ? 'أحمد محمد' : 'John Doe'} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'رقم الهاتف *' : 'Phone Number *'}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="tel"
+                                placeholder={language === 'ar' ? '+966xxxxxxxxx' : '+966xxxxxxxxx'} 
+                                {...field} 
+                                dir="ltr"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="nationality"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'الجنسية *' : 'Nationality *'}</FormLabel>
+                            <FormControl>
+                              <MultiSelect
+                                options={countries.map(c => ({
+                                  label: `${c.flag} ${language === 'ar' ? c.nameAr : c.name}`,
+                                  value: language === 'ar' ? c.nameAr : c.name
+                                }))}
+                                selected={field.value ? [field.value] : []}
+                                onChange={(values) => field.onChange(values[0] || '')}
+                                placeholder={language === 'ar' ? "اختر الجنسية" : "Select nationality"}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="birth_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'ar' ? 'تاريخ الميلاد *' : 'Birth Date *'}</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {language === 'ar' 
+                                ? '📅 للاستفادة من عروض أعياد الميلاد الخاصة'
+                                : '📅 To receive special birthday offers'}
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
                       <FormField
                         control={form.control}

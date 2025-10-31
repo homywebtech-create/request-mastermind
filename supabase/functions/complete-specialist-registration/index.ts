@@ -16,6 +16,10 @@ serve(async (req) => {
     const {
       specialist_id,
       token,
+      name,
+      phone,
+      nationality,
+      birth_date,
       experience_years,
       notes,
       id_card_expiry_date,
@@ -99,6 +103,10 @@ serve(async (req) => {
     const { error: updError } = await supabaseAdmin
       .from("specialists")
       .update({
+        name,
+        phone,
+        nationality,
+        birth_date,
         experience_years,
         notes,
         id_card_expiry_date,

@@ -869,6 +869,7 @@ export type Database = {
       specialists: {
         Row: {
           approval_status: string | null
+          birth_date: string | null
           company_id: string
           countries_worked_in: string[] | null
           created_at: string
@@ -902,6 +903,7 @@ export type Database = {
         }
         Insert: {
           approval_status?: string | null
+          birth_date?: string | null
           company_id: string
           countries_worked_in?: string[] | null
           created_at?: string
@@ -935,6 +937,7 @@ export type Database = {
         }
         Update: {
           approval_status?: string | null
+          birth_date?: string | null
           company_id?: string
           countries_worked_in?: string[] | null
           created_at?: string
