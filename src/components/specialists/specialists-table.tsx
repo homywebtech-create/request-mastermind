@@ -679,12 +679,21 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
             phone: showProfile.phone,
             nationality: showProfile.nationality,
             image_url: showProfile.image_url,
+            face_photo_url: showProfile.face_photo_url,
+            full_body_photo_url: showProfile.full_body_photo_url,
+            id_card_front_url: showProfile.id_card_front_url,
+            id_card_back_url: showProfile.id_card_back_url,
+            id_card_expiry_date: showProfile.id_card_expiry_date,
             experience_years: showProfile.experience_years,
             rating: 0,
             reviews_count: 0,
-            notes: showProfile.notes
+            notes: showProfile.notes,
+            countries_worked_in: showProfile.countries_worked_in,
+            languages_spoken: showProfile.languages_spoken,
+            has_pet_allergy: showProfile.has_pet_allergy,
+            has_cleaning_allergy: showProfile.has_cleaning_allergy
           }}
-          language="ar"
+          language={language}
         />
       )}
     </Card>
