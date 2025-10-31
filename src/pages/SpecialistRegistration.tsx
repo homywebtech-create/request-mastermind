@@ -63,12 +63,17 @@ export default function SpecialistRegistration() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { language } = useLanguage();
-  const token = searchParams.get("token");
+  // Fix token extraction - handle encoded characters
+  const tokenFromUrl = searchParams.get("token");
+  const token = tokenFromUrl ? decodeURIComponent(tokenFromUrl).replace(/ /g, '+') : null;
+  
+  console.log("📋 Token from URL:", { raw: tokenFromUrl, decoded: token });
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [specialist, setSpecialist] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   
   // Image states
   const [facePhotoFile, setFacePhotoFile] = useState<File | null>(null);
@@ -150,11 +155,13 @@ export default function SpecialistRegistration() {
         .maybeSingle();
 
       if (specialistError || !specialistData) {
+        const errorMsg = language === 'ar' 
+          ? "رابط التسجيل غير صحيح أو منتهي الصلاحية" 
+          : "Invalid or expired registration link";
+        setError(errorMsg);
         toast({
           title: language === 'ar' ? "خطأ" : "Error",
-          description: language === 'ar' 
-            ? "رابط التسجيل غير صحيح أو منتهي الصلاحية" 
-            : "Invalid or expired registration link",
+          description: errorMsg,
           variant: "destructive",
         });
         return;
@@ -185,11 +192,13 @@ export default function SpecialistRegistration() {
 
     } catch (error) {
       console.error("Error initializing registration:", error);
+      const errorMsg = language === 'ar' 
+        ? "حدث خطأ أثناء تحميل البيانات" 
+        : "An error occurred while loading data";
+      setError(errorMsg);
       toast({
         title: language === 'ar' ? "خطأ" : "Error",
-        description: language === 'ar' 
-          ? "حدث خطأ أثناء تحميل البيانات" 
-          : "An error occurred while loading data",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -437,6 +446,38 @@ export default function SpecialistRegistration() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
+      </div>
+    );
+  }
+
+  if (error || !specialist) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950 dark:to-orange-950">
+        <Card className="max-w-md shadow-2xl animate-scale-in">
+          <CardHeader>
+            <div className="flex justify-center mb-4">
+              <div className="h-20 w-20 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            <CardTitle className="text-center text-2xl">
+              {language === 'ar' ? 'خطأ' : 'Error'}
+            </CardTitle>
+            <CardDescription className="text-center text-lg">
+              {error || (language === 'ar' ? 'رابط التسجيل غير صحيح' : 'Invalid registration link')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {language === 'ar' 
+                  ? 'الرجاء التحقق من الرابط أو التواصل مع الشركة للحصول على رابط تسجيل صحيح.'
+                  : 'Please verify your link or contact the company for a valid registration link.'}
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
       </div>
     );
   }
