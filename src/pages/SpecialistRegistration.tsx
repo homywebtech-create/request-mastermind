@@ -120,15 +120,65 @@ export default function SpecialistRegistration() {
   const initializeRegistration = async () => {
     setIsLoading(true);
     try {
-      const tempSpecialist = {
-        id: 'temp-' + Date.now(),
-        name: 'New Registration',
-        approval_status: 'pending',
-        registration_completed_at: null
-      };
-      setSpecialist(tempSpecialist);
+      if (!token) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' 
+            ? "رابط التسجيل غير صحيح" 
+            : "Invalid registration link",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fetch specialist data with company information
+      const { data: specialistData, error: specialistError } = await supabase
+        .from("specialists")
+        .select(`
+          *,
+          companies:company_id (
+            id,
+            name,
+            country_code
+          )
+        `)
+        .eq("registration_token", token)
+        .eq("approval_status", "pending")
+        .is("registration_completed_at", null)
+        .maybeSingle();
+
+      if (specialistError || !specialistData) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' 
+            ? "رابط التسجيل غير صحيح أو منتهي الصلاحية" 
+            : "Invalid or expired registration link",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSpecialist(specialistData);
+
+      // Set the country code from the company
+      const companyCountryCode = (specialistData.companies as any)?.country_code || "+966";
+      form.setValue("countryCode", companyCountryCode);
+
+      // Extract phone number without country code if phone is already set
+      if (specialistData.phone && specialistData.phone.startsWith(companyCountryCode)) {
+        const phoneWithoutCode = specialistData.phone.substring(companyCountryCode.length);
+        form.setValue("phoneNumber", phoneWithoutCode);
+      }
+
     } catch (error) {
       console.error("Error initializing registration:", error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' 
+          ? "حدث خطأ أثناء تحميل البيانات" 
+          : "An error occurred while loading data",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
