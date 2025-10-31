@@ -89,6 +89,7 @@ export default function SpecialistRegistration() {
   const [subServices, setSubServices] = useState<SubService[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const [showWelcomePage, setShowWelcomePage] = useState(!token);
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -126,13 +127,8 @@ export default function SpecialistRegistration() {
     setIsLoading(true);
     try {
       if (!token) {
-        toast({
-          title: language === 'ar' ? "خطأ" : "Error",
-          description: language === 'ar' 
-            ? "رابط التسجيل غير صحيح" 
-            : "Invalid registration link",
-          variant: "destructive",
-        });
+        setIsLoading(false);
+        setShowWelcomePage(true);
         return;
       }
 
@@ -444,8 +440,96 @@ export default function SpecialistRegistration() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+          <p className="text-muted-foreground">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showWelcomePage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+        <Card className="max-w-2xl w-full shadow-2xl border-2 animate-scale-in">
+          <CardHeader className="text-center space-y-6 pb-8">
+            <div className="flex justify-center">
+              <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
+                <User className="h-14 w-14 text-primary-foreground" />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <CardTitle className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                {language === 'ar' ? 'مرحباً بك في شركة النميلة' : 'Welcome to Al Numila Company'}
+              </CardTitle>
+              <CardDescription className="text-lg md:text-xl">
+                {language === 'ar' 
+                  ? 'انضم إلى فريقنا من المحترفين المتميزين'
+                  : 'Join our team of distinguished professionals'}
+              </CardDescription>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-8">
+            <div className="bg-muted/50 rounded-lg p-6 space-y-4">
+              <h3 className="font-semibold text-xl flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'نوفر لك:' : 'We Offer:'}
+              </h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  <span>{language === 'ar' ? 'فرص عمل متنوعة في مجال الخدمات المنزلية والمهنية' : 'Diverse job opportunities in home and professional services'}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  <span>{language === 'ar' ? 'بيئة عمل احترافية ودعم مستمر' : 'Professional work environment and continuous support'}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  <span>{language === 'ar' ? 'عروض عمل مناسبة وأجور تنافسية' : 'Suitable job offers and competitive wages'}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  <span>{language === 'ar' ? 'تطوير مهاراتك المهنية باستمرار' : 'Continuous professional skills development'}</span>
+                </li>
+              </ul>
+            </div>
+
+            <Alert className="border-primary/50 bg-primary/5">
+              <Share2 className="h-5 w-5 text-primary" />
+              <AlertDescription className="text-base">
+                <p className="font-semibold mb-2">
+                  {language === 'ar' ? 'كيف تبدأ؟' : 'How to Get Started?'}
+                </p>
+                <p>
+                  {language === 'ar' 
+                    ? 'للحصول على رابط التسجيل الخاص بك، يرجى التواصل مع شركة النميلة مباشرة. سيتم إرسال رابط تسجيل خاص بك عبر الواتساب أو الرسائل النصية.'
+                    : 'To receive your personal registration link, please contact Al Numila Company directly. A unique registration link will be sent to you via WhatsApp or SMS.'}
+                </p>
+              </AlertDescription>
+            </Alert>
+
+            <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 text-center space-y-3">
+              <h4 className="font-semibold text-lg">
+                {language === 'ar' ? 'هل لديك رابط تسجيل؟' : 'Do You Have a Registration Link?'}
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                {language === 'ar' 
+                  ? 'إذا تلقيت رابط تسجيل من الشركة، استخدمه للوصول مباشرة إلى نموذج التسجيل'
+                  : 'If you received a registration link from the company, use it to access the registration form directly'}
+              </p>
+            </div>
+
+            <div className="text-center text-sm text-muted-foreground pt-4 border-t">
+              {language === 'ar' 
+                ? 'بالتسجيل، أنت توافق على شروط وأحكام شركة النميلة'
+                : 'By registering, you agree to Al Numila Company terms and conditions'}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -464,7 +548,7 @@ export default function SpecialistRegistration() {
               {language === 'ar' ? 'خطأ' : 'Error'}
             </CardTitle>
             <CardDescription className="text-center text-lg">
-              {error || (language === 'ar' ? 'رابط التسجيل غير صحيح' : 'Invalid registration link')}
+              {error || (language === 'ar' ? 'رابط التسجيل غير صحيح أو منتهي الصلاحية' : 'Invalid or expired registration link')}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
@@ -472,10 +556,17 @@ export default function SpecialistRegistration() {
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 {language === 'ar' 
-                  ? 'الرجاء التحقق من الرابط أو التواصل مع الشركة للحصول على رابط تسجيل صحيح.'
-                  : 'Please verify your link or contact the company for a valid registration link.'}
+                  ? 'الرجاء التحقق من الرابط أو التواصل مع شركة النميلة للحصول على رابط تسجيل صحيح.'
+                  : 'Please verify your link or contact Al Numila Company for a valid registration link.'}
               </AlertDescription>
             </Alert>
+            <Button 
+              onClick={() => window.location.href = '/specialist-registration'}
+              variant="outline"
+              className="w-full"
+            >
+              {language === 'ar' ? 'العودة إلى الصفحة الرئيسية' : 'Back to Home'}
+            </Button>
           </CardContent>
         </Card>
       </div>
