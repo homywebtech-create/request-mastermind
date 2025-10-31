@@ -85,6 +85,29 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             orderId = route.split("orderId=")[1].split("&")[0];
         }
 
+        // For Xiaomi/Redmi devices, launch the activity DIRECTLY (don't rely on full-screen intent)
+        String manufacturer = android.os.Build.MANUFACTURER;
+        if (manufacturer != null && manufacturer.equalsIgnoreCase("Xiaomi")) {
+            Intent directIntent = new Intent(this, IncomingOrderActivity.class);
+            directIntent.setFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK | 
+                Intent.FLAG_ACTIVITY_CLEAR_TOP | 
+                Intent.FLAG_ACTIVITY_NO_HISTORY
+            );
+            directIntent.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+            directIntent.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            directIntent.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+            directIntent.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+            directIntent.putExtra("title", title);
+            directIntent.putExtra("body", body);
+            directIntent.putExtra("route", route);
+            directIntent.putExtra("orderId", orderId);
+            
+            // Launch the activity directly
+            startActivity(directIntent);
+            Log.d(TAG, "🚀 Launched IncomingOrderActivity directly for Xiaomi device");
+        }
+
         // Intent to launch MainActivity when notification is tapped (deep link)
         Uri deepLink = Uri.parse("request-mastermind://open?route=" + Uri.encode(route));
         Intent intent = new Intent(Intent.ACTION_VIEW, deepLink);
@@ -93,12 +116,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         intent.putExtra("fromNotification", true);
         intent.putExtra("route", route);
         
-        // Full-screen intent - launches custom Activity for incoming orders
+        // Full-screen intent - launches custom Activity for incoming orders (fallback for other devices)
         Intent fullScreenIntent = new Intent(this, IncomingOrderActivity.class);
         fullScreenIntent.setFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK | 
             Intent.FLAG_ACTIVITY_CLEAR_TOP | 
-            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+            Intent.FLAG_ACTIVITY_NO_HISTORY
         );
         fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         fullScreenIntent.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -171,11 +194,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             Uri defaultRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
             long[] vibrationPattern = new long[]{0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000};
 
-            // Default channel with maximum interruption
+            // Default channel with MAXIMUM interruption (IMPORTANCE_MAX for lock screen)
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
                 "New Orders",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_MAX
             );
             channel.setDescription("Notifications for new orders");
             channel.enableVibration(true);
@@ -188,11 +211,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             channel.setSound(defaultRingtoneUri, audioAttributes);
             notificationManager.createNotificationChannel(channel);
 
-            // Call-style channel with identical settings for consistency
+            // Call-style channel with MAXIMUM interruption (IMPORTANCE_MAX for lock screen)
             NotificationChannel callChannel = new NotificationChannel(
                 CALL_CHANNEL_ID,
                 "Booking Calls",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_MAX
             );
             callChannel.setDescription("Incoming booking alerts (call style)");
             callChannel.enableVibration(true);
