@@ -78,6 +78,7 @@ export default function OrderTracking() {
   const [customerReviewNotes, setCustomerReviewNotes] = useState('');
   const [invoiceAmount, setInvoiceAmount] = useState(0);
   const [discount, setDiscount] = useState(0);
+  const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -654,49 +655,71 @@ export default function OrderTracking() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-6">
       <div className="max-w-2xl mx-auto space-y-6 p-4">
-        {/* Order Info Card - Mobile Optimized */}
-        <Card className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-md">
-          {/* Order Number Badge */}
-          {order.order_number && (
-            <div className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
-              <FileText className="h-4 w-4 text-primary" />
-              <span className="text-sm font-bold text-primary">
-                {language === 'ar' ? 'رقم الطلب:' : 'Order #:'} {order.order_number}
-              </span>
+        {/* Order Info Card - Collapsible */}
+        <Collapsible open={isOrderInfoOpen} onOpenChange={setIsOrderInfoOpen}>
+          <Card className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-md">
+            {/* Order Number Badge and Customer Info - Always Visible */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3 flex-1">
+                {order.order_number && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-bold text-primary">
+                      {language === 'ar' ? 'رقم الطلب:' : 'Order #:'} {order.order_number}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Collapse Toggle Button */}
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronDown 
+                    className={`h-5 w-5 transition-transform ${isOrderInfoOpen ? 'rotate-180' : ''}`} 
+                  />
+                </Button>
+              </CollapsibleTrigger>
             </div>
-          )}
-          
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">👤</span>
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-foreground">{order.customer?.name}</h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">{order.customer?.area}</p>
+            
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-2xl">👤</span>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-foreground">{order.customer?.name}</h2>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">{order.customer?.area}</p>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <div className="bg-background/50 p-2.5 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-0.5">{t.serviceType}</p>
-              <p className="font-semibold text-sm leading-tight">{order.service_type}</p>
-            </div>
-            <div className="bg-background/50 p-2.5 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-0.5">{language === 'ar' ? 'المدة' : 'Duration'}</p>
-              <p className="font-semibold text-sm leading-tight">{order.hours_count} {language === 'ar' ? 'ساعات' : 'hours'}</p>
-            </div>
-          </div>
-          
-          {order.notes && (
-            <div className="mt-3 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">{t.notes}</p>
-              <p className="text-xs text-foreground leading-relaxed">{order.notes}</p>
-            </div>
-          )}
-        </Card>
+            
+            {/* Collapsible Content - Service Type, Duration, Notes */}
+            <CollapsibleContent>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <div className="bg-background/50 p-2.5 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-0.5">{t.serviceType}</p>
+                  <p className="font-semibold text-sm leading-tight">{order.service_type}</p>
+                </div>
+                <div className="bg-background/50 p-2.5 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-0.5">{language === 'ar' ? 'المدة' : 'Duration'}</p>
+                  <p className="font-semibold text-sm leading-tight">{order.hours_count} {language === 'ar' ? 'ساعات' : 'hours'}</p>
+                </div>
+              </div>
+              
+              {order.notes && (
+                <div className="mt-3 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">{t.notes}</p>
+                  <p className="text-xs text-foreground leading-relaxed">{order.notes}</p>
+                </div>
+              )}
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Initial Stage - New: Just order info with start button */}
         {stage === 'initial' && (
@@ -877,220 +900,210 @@ export default function OrderTracking() {
 
         {/* Working Stage */}
         {stage === 'working' && (
-          <Card className="p-6 space-y-6">
-            <h3 className="text-xl font-bold text-center">{language === 'ar' ? 'العمل جارٍ' : 'Work in Progress'}</h3>
-            
-            {/* Work Timer - Countdown */}
-            <div className="text-center space-y-2">
-              <div className={`text-4xl font-bold tabular-nums ${
-                timeExpired ? 'text-red-600 animate-pulse' : 'text-primary'
-              }`}>
-                {formatTime(getRemainingTime())}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                من {formatTime(totalWorkSeconds)}
-              </div>
-              {timeExpired && (
-                <div className="text-base font-semibold text-red-600 animate-pulse">
-                  ⏰ انتهى وقت العمل - يرجى إنهاء العمل
+          <>
+            <Card className="p-6 space-y-6 pb-32">
+              <h3 className="text-xl font-bold text-center">{language === 'ar' ? 'العمل جارٍ' : 'Work in Progress'}</h3>
+              
+              {/* Work Timer - Countdown */}
+              <div className="text-center space-y-2">
+                <div className={`text-4xl font-bold tabular-nums ${
+                  timeExpired ? 'text-red-600 animate-pulse' : 'text-primary'
+                }`}>
+                  {formatTime(getRemainingTime())}
                 </div>
-              )}
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full bg-muted rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all ${
-                  timeExpired ? 'bg-red-600' : 'bg-primary'
-                }`}
-                style={{ width: `${Math.min((workingTime / totalWorkSeconds) * 100, 100)}%` }}
-              />
-            </div>
-
-            {/* Time Expired Alert Dialog */}
-            {timeExpired && (
-              <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 p-4 animate-pulse">
-                <div className="text-center space-y-3">
-                  <div className="text-4xl">⏰</div>
-                  <h4 className="text-lg font-bold text-red-800">انتهى وقت العمل المحدد</h4>
-                  <p className="text-sm text-red-700">
-                    الوقت المخصص للعمل قد انتهى. يرجى إنهاء العمل والانتقال للفاتورة
-                  </p>
+                <div className="text-sm text-muted-foreground">
+                  من {formatTime(totalWorkSeconds)}
                 </div>
-              </Card>
-            )}
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <Button
-                onClick={togglePause}
-                variant="outline"
-                className="w-full"
-                size="lg"
-              >
-                {isPaused ? (
-                  <>
-                    <Play className="ml-2 h-5 w-5" />
-                    استئناف العمل
-                  </>
-                ) : (
-                  <>
-                    <Pause className="ml-2 h-5 w-5" />
-                    إيقاف مؤقت
-                  </>
+                {timeExpired && (
+                  <div className="text-base font-semibold text-red-600 animate-pulse">
+                    ⏰ انتهى وقت العمل - يرجى إنهاء العمل
+                  </div>
                 )}
-              </Button>
+              </div>
 
-              {/* Finish Work Button - Show prominently when time expired */}
-              {timeExpired ? (
-                <Button 
-                  onClick={() => {
-                    stopTimeExpiredAlert();
-                    setShowEarlyFinishDialog(true);
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold animate-pulse"
-                >
-                  <CheckCircle className="ml-2 h-6 w-6" />
-                  إنهاء العمل الآن
-                </Button>
-              ) : (
-                /* Early Finish Button - only show if not at time limit yet */
-                <Dialog open={showEarlyFinishDialog} onOpenChange={setShowEarlyFinishDialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white">
-                      <CheckCircle className="ml-2 h-5 w-5" />
-                      إنهاء العمل مبكراً
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>إنهاء العمل مبكراً؟</DialogTitle>
-                      <DialogDescription>
-                        هل أنت متأكد من رغبتك في إنهاء العمل قبل الوقت المحدد؟
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <p className="text-sm text-muted-foreground">
-                        بالتأكيد، سيتم تسجيل العمل كمنجز وطلب الفاتورة.
-                      </p>
-                      <div className="flex gap-3">
-                        <Button 
-                          onClick={() => setShowEarlyFinishDialog(false)} 
-                          variant="outline" 
-                          className="flex-1"
-                        >
-                          إلغاء
-                        </Button>
-                        <Button 
-                          onClick={confirmEarlyFinish} 
-                          className="flex-1"
-                        >
-                          نعم، متأكد
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+              {/* Progress Bar */}
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    timeExpired ? 'bg-red-600' : 'bg-primary'
+                  }`}
+                  style={{ width: `${Math.min((workingTime / totalWorkSeconds) * 100, 100)}%` }}
+                />
+              </div>
+
+              {/* Time Expired Alert Dialog */}
+              {timeExpired && (
+                <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 p-4 animate-pulse">
+                  <div className="text-center space-y-3">
+                    <div className="text-4xl">⏰</div>
+                    <h4 className="text-lg font-bold text-red-800">انتهى وقت العمل المحدد</h4>
+                    <p className="text-sm text-red-700">
+                      الوقت المخصص للعمل قد انتهى. يرجى إنهاء العمل والانتقال للفاتورة
+                    </p>
+                  </div>
+                </Card>
               )}
 
-              {/* Emergency Actions - Collapsible Section */}
-              <Collapsible className="w-full border-t pt-4 mt-4">
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="w-full text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    <AlertTriangle className="ml-2 h-3 w-3" />
-                    حالات الطوارئ فقط
-                    <ChevronDown className="mr-2 h-3 w-3" />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-2 pt-3">
-                  <p className="text-xs text-center text-muted-foreground mb-3 px-4">
-                    ⚠️ تحذير: هذه الأزرار للحالات الطارئة فقط
-                  </p>
-                  
-                  <Button
-                    onClick={handleEmergency}
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 text-xs"
-                  >
-                    <AlertTriangle className="ml-2 h-3.5 w-3.5" />
-                    اتصال طوارئ بالشركة
-                  </Button>
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <Button
+                  onClick={togglePause}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  {isPaused ? (
+                    <>
+                      <Play className="ml-2 h-5 w-5" />
+                      استئناف العمل
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="ml-2 h-5 w-5" />
+                      إيقاف مؤقت
+                    </>
+                  )}
+                </Button>
 
-                  <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                {/* Emergency Actions - Collapsible Section */}
+                <Collapsible className="w-full border-t pt-4 mt-4">
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="w-full text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <AlertTriangle className="ml-2 h-3 w-3" />
+                      حالات الطوارئ فقط
+                      <ChevronDown className="mr-2 h-3 w-3" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-2 pt-3">
+                    <p className="text-xs text-center text-muted-foreground mb-3 px-4">
+                      ⚠️ تحذير: هذه الأزرار للحالات الطارئة فقط
+                    </p>
+                    
+                    <Button
+                      onClick={handleEmergency}
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 text-xs"
+                    >
+                      <AlertTriangle className="ml-2 h-3.5 w-3.5" />
+                      اتصال طوارئ بالشركة
+                    </Button>
+
+                    <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="w-full text-destructive/70 hover:text-destructive hover:bg-destructive/5 text-xs"
+                        >
+                          <XCircle className="ml-2 h-3.5 w-3.5" />
+                          إلغاء العمل
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Cancellation Reason</DialogTitle>
+                          <DialogDescription>
+                            Please select a reason for cancelling the work
+                          </DialogDescription>
+                        </DialogHeader>
+                        <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <RadioGroupItem value="customer_requested" id="customer_requested" />
+                            <Label htmlFor="customer_requested">Customer Requested Cancellation</Label>
+                          </div>
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <RadioGroupItem value="not_family" id="not_family" />
+                            <Label htmlFor="not_family">Customer is Not Family</Label>
+                          </div>
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <RadioGroupItem value="other" id="other" />
+                            <Label htmlFor="other">Other Reasons</Label>
+                          </div>
+                        </RadioGroup>
+                        
+                        {cancelReason === 'other' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="other_reason">Write the Reason</Label>
+                            <Textarea
+                              id="other_reason"
+                              value={otherReason}
+                              onChange={(e) => setOtherReason(e.target.value)}
+                              placeholder="Write cancellation reason here..."
+                              rows={4}
+                            />
+                          </div>
+                        )}
+                        
+                        <Button onClick={handleCancelWork} variant="destructive" className="w-full">
+                          Confirm Cancellation
+                        </Button>
+                      </DialogContent>
+                    </Dialog>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </Card>
+
+            {/* Fixed Finish Work Button */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50">
+              <div className="max-w-2xl mx-auto">
+                {timeExpired ? (
+                  <Button 
+                    onClick={() => {
+                      stopTimeExpiredAlert();
+                      setShowEarlyFinishDialog(true);
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold animate-pulse"
+                  >
+                    <CheckCircle className="ml-2 h-6 w-6" />
+                    إنهاء العمل الآن
+                  </Button>
+                ) : (
+                  <Dialog open={showEarlyFinishDialog} onOpenChange={setShowEarlyFinishDialog}>
                     <DialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="w-full text-destructive/70 hover:text-destructive hover:bg-destructive/5 text-xs"
-                      >
-                        <XCircle className="ml-2 h-3.5 w-3.5" />
-                        إلغاء العمل
+                      <Button className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold">
+                        <CheckCircle className="ml-2 h-6 w-6" />
+                        إنهاء العمل الآن
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Cancellation Reason</DialogTitle>
+                        <DialogTitle>إنهاء العمل مبكراً؟</DialogTitle>
                         <DialogDescription>
-                          Please select a reason for cancelling the work
+                          هل أنت متأكد من رغبتك في إنهاء العمل قبل الوقت المحدد؟
                         </DialogDescription>
                       </DialogHeader>
-                      <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
-                        <div className="flex items-center space-x-2 space-x-reverse">
-                          <RadioGroupItem value="customer_requested" id="customer_requested" />
-                          <Label htmlFor="customer_requested">Customer Requested Cancellation</Label>
+                      <div className="space-y-4 py-4">
+                        <p className="text-sm text-muted-foreground">
+                          بالتأكيد، سيتم تسجيل العمل كمنجز وطلب الفاتورة.
+                        </p>
+                        <div className="flex gap-3">
+                          <Button 
+                            onClick={() => setShowEarlyFinishDialog(false)} 
+                            variant="outline" 
+                            className="flex-1"
+                          >
+                            إلغاء
+                          </Button>
+                          <Button 
+                            onClick={confirmEarlyFinish} 
+                            className="flex-1"
+                          >
+                            نعم، متأكد
+                          </Button>
                         </div>
-                        <div className="flex items-center space-x-2 space-x-reverse">
-                          <RadioGroupItem value="not_family" id="not_family" />
-                          <Label htmlFor="not_family">Customer is Not Family</Label>
-                        </div>
-                        <div className="flex items-center space-x-2 space-x-reverse">
-                          <RadioGroupItem value="other" id="other" />
-                          <Label htmlFor="other">Other Reasons</Label>
-                        </div>
-                      </RadioGroup>
-                      
-                      {cancelReason === 'other' && (
-                        <div className="space-y-2">
-                          <Label htmlFor="other_reason">Write the Reason</Label>
-                          <Textarea
-                            id="other_reason"
-                            value={otherReason}
-                            onChange={(e) => setOtherReason(e.target.value)}
-                            placeholder="Write cancellation reason here..."
-                            rows={4}
-                          />
-                        </div>
-                      )}
-                      
-                      <Button onClick={handleCancelWork} variant="destructive" className="w-full">
-                        Confirm Cancellation
-                      </Button>
+                      </div>
                     </DialogContent>
                   </Dialog>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {workingTime >= totalWorkSeconds && (
-                <>
-                  {stage === 'working' && (
-                    <Button
-                      onClick={handleRequestInvoice}
-                      className="w-full"
-                      size="lg"
-                    >
-                      <FileText className="ml-2 h-5 w-5" />
-                      Request Invoice
-                    </Button>
-                  )}
-                </>
-              )}
+                )}
+              </div>
             </div>
-          </Card>
+          </>
         )}
 
         {/* Invoice Details Stage */}
