@@ -278,16 +278,17 @@ export default function SpecialistRegistration() {
           .eq('name', 'شركة النميلة للتنظيفات')
           .maybeSingle();
 
-        // Insert specialist record with type assertion to bypass TypeScript check
+        // Insert specialist record
         const { error: createError } = await supabase
           .from('specialists')
           .insert({
             registration_token: tokenToUse,
             phone: fullPhone,
             approval_status: 'pending',
-            is_busy: false,
             company_id: defaultCompany?.id,
-          } as any);
+            name: '',
+            is_active: true,
+          });
 
         if (createError) {
           console.error('Create error:', createError);
