@@ -47,6 +47,8 @@ interface Specialist {
   id_card_back_url?: string;
   id_card_expiry_date?: string;
   experience_years?: number;
+  rating?: number;
+  reviews_count?: number;
   is_active: boolean;
   notes?: string;
   created_at: string;
@@ -667,8 +669,8 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
             id_card_back_url: showProfile.id_card_back_url,
             id_card_expiry_date: showProfile.id_card_expiry_date,
             experience_years: showProfile.experience_years,
-            rating: 0,
-            reviews_count: 0,
+            rating: showProfile.rating,
+            reviews_count: showProfile.reviews_count,
             notes: showProfile.notes,
             countries_worked_in: showProfile.countries_worked_in,
             languages_spoken: showProfile.languages_spoken,
@@ -678,6 +680,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
             registration_completed_at: showProfile.registration_completed_at
           }}
           language={language}
+          hideIdCards={false}
           showApprovalButtons={true}
           onApprove={handleApproval}
           onReject={(id) => handleApproval(id, 'rejected')}

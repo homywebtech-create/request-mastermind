@@ -213,10 +213,10 @@ export function SpecialistProfileDialog({
               <h3 className="text-2xl font-bold mb-2">{specialist.name}</h3>
               
               {/* Rating */}
-              {specialist.rating !== undefined && (
+              {(specialist.rating !== undefined || specialist.reviews_count !== undefined) && (
                 <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
                   <div className="flex items-center">
-                    {renderStars(specialist.rating)}
+                    {renderStars(specialist.rating || 0)}
                   </div>
                   <span className="text-lg font-semibold">
                     {specialist.rating?.toFixed(1) || '0.0'}
@@ -235,47 +235,13 @@ export function SpecialistProfileDialog({
                     {specialist.nationality}
                   </Badge>
                 )}
-                {specialist.experience_years && (
+                {specialist.experience_years !== undefined && specialist.experience_years !== null && (
                   <Badge variant="secondary" className="gap-1">
                     <Award className="h-3 w-3" />
                     {specialist.experience_years} {specialist.experience_years > 1 ? translations.years : translations.year}
                   </Badge>
                 )}
               </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Personal Information */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              {translations.personalInfo}
-            </h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{translations.name}</p>
-                <p className="font-medium">{specialist.name}</p>
-              </div>
-
-              {specialist.nationality && (
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{translations.nationality}</p>
-                  <p className="font-medium">{specialist.nationality}</p>
-                </div>
-              )}
-
-              {specialist.experience_years && (
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{translations.experience}</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {specialist.experience_years} {specialist.experience_years > 1 ? translations.years : translations.year}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
@@ -302,6 +268,22 @@ export function SpecialistProfileDialog({
               <p className="text-sm text-muted-foreground">{translations.noSpecialties}</p>
             )}
           </div>
+
+          {/* Experience Years */}
+          {specialist.experience_years !== undefined && specialist.experience_years !== null && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  {translations.experience}
+                </h4>
+                <p className="font-medium text-lg">
+                  {specialist.experience_years} {specialist.experience_years > 1 ? translations.years : translations.year}
+                </p>
+              </div>
+            </>
+          )}
 
           {/* Photos Section */}
           {(specialist.full_body_photo_url || (!hideIdCards && (specialist.id_card_front_url || specialist.id_card_back_url))) && (

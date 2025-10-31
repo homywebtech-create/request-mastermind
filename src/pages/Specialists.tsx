@@ -23,7 +23,14 @@ interface Specialist {
   phone: string;
   nationality?: string;
   image_url?: string;
+  face_photo_url?: string;
+  full_body_photo_url?: string;
+  id_card_front_url?: string;
+  id_card_back_url?: string;
+  id_card_expiry_date?: string;
   experience_years?: number;
+  rating?: number;
+  reviews_count?: number;
   is_active: boolean;
   notes?: string;
   created_at: string;
@@ -33,6 +40,10 @@ interface Specialist {
   suspension_type?: string;
   suspension_end_date?: string;
   suspension_reason?: string;
+  countries_worked_in?: string[];
+  languages_spoken?: string[];
+  has_pet_allergy?: boolean;
+  has_cleaning_allergy?: boolean;
   specialist_specialties?: Array<{
     sub_service_id: string;
     sub_services: {
