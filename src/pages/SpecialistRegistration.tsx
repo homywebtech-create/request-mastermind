@@ -15,13 +15,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, User, Camera, CreditCard, FileCheck, Share2 } from "lucide-react";
 import { countries } from "@/data/countries";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Progress } from "@/components/ui/progress";
 
 const registrationSchema = z.object({
   name: z.string().min(2, "يجب إدخال الاسم / Name is required").max(100, "الاسم طويل جداً"),
-  phone: z.string().min(10, "رقم الهاتف غير صحيح / Invalid phone number"),
+  countryCode: z.string().min(1, "يجب اختيار كود الدولة / Country code required"),
+  phoneNumber: z.string().min(7, "رقم الهاتف غير صحيح / Invalid phone number").max(15),
   nationality: z.string().min(1, "يجب اختيار الجنسية / Nationality is required"),
   birth_date: z.string().min(1, "يجب إدخال تاريخ الميلاد / Birth date is required"),
   experience_years: z.coerce.number().min(0, "يجب أن تكون سنوات الخبرة 0 أو أكثر").max(50, "سنوات الخبرة غير صحيحة"),
@@ -86,7 +88,8 @@ export default function SpecialistRegistration() {
     resolver: zodResolver(registrationSchema),
     defaultValues: {
       name: "",
-      phone: "",
+      countryCode: "+966",
+      phoneNumber: "",
       nationality: "",
       birth_date: "",
       experience_years: 0,
@@ -229,7 +232,7 @@ export default function SpecialistRegistration() {
 
   const validateStep = async (step: number): Promise<boolean> => {
     if (step === 1) {
-      const fields = ['name', 'phone', 'nationality', 'birth_date', 'experience_years', 'sub_service_ids', 'countries_worked_in', 'languages_spoken', 'id_card_expiry_date'];
+      const fields = ['name', 'countryCode', 'phoneNumber', 'nationality', 'birth_date', 'experience_years', 'sub_service_ids', 'countries_worked_in', 'languages_spoken', 'id_card_expiry_date'];
       const result = await form.trigger(fields as any);
       return result;
     }
@@ -292,6 +295,9 @@ export default function SpecialistRegistration() {
 
     setIsSubmitting(true);
     try {
+      // Combine country code with phone number
+      const fullPhoneNumber = `${values.countryCode}${values.phoneNumber}`;
+
       // Upload photos
       let facePhotoUrl = specialist.face_photo_url;
       if (facePhotoFile) {
@@ -321,7 +327,7 @@ export default function SpecialistRegistration() {
             specialist_id: specialist.id,
             token,
             name: values.name,
-            phone: values.phone,
+            phone: fullPhoneNumber,
             nationality: values.nationality,
             birth_date: values.birth_date,
             experience_years: values.experience_years,
@@ -537,24 +543,50 @@ export default function SpecialistRegistration() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{language === 'ar' ? 'رقم الهاتف *' : 'Phone Number *'}</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="tel"
-                                placeholder={language === 'ar' ? '+966xxxxxxxxx' : '+966xxxxxxxxx'} 
-                                {...field} 
-                                dir="ltr"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <FormField
+                          control={form.control}
+                          name="countryCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{language === 'ar' ? 'كود الدولة *' : 'Country Code *'}</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-background">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="max-h-60 bg-background z-50">
+                                  {countries.map((country) => (
+                                    <SelectItem key={country.code} value={country.dialCode}>
+                                      {country.flag} {country.dialCode}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="phoneNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{language === 'ar' ? 'رقم الهاتف *' : 'Phone Number *'}</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="tel"
+                                  placeholder={language === 'ar' ? '5xxxxxxxx' : '5xxxxxxxx'} 
+                                  {...field} 
+                                  dir="ltr"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
                       <FormField
                         control={form.control}
