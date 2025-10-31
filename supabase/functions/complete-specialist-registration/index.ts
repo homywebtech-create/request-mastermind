@@ -61,7 +61,7 @@ serve(async (req) => {
       );
     }
 
-    if (specialist.approval_status !== "pending" || specialist.registration_completed_at !== null || specialist.is_active !== true) {
+    if (specialist.approval_status !== "pending" || specialist.registration_completed_at !== null) {
       return new Response(
         JSON.stringify({ error: "Registration not allowed for this specialist" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
