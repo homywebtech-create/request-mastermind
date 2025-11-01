@@ -101,9 +101,10 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
         console.error('[Update] ApkInstaller plugin not available');
         toast({
           title: 'Installer not available',
-          description: 'The installer is not available on this build. Please open the APK from a file manager to install.',
+          description: 'The installer is not available on this build. Opening the APK link in your browser...',
           variant: 'destructive',
         });
+        try { window.open(version.apk_url, '_blank'); } catch {}
         return;
       }
 
