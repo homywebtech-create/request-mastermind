@@ -4,8 +4,26 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Simple foreground: white circle -->
+    <!-- Document/Request icon with checkmark -->
+    <!-- Document background -->
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M54,12a42,42 0,1 0,0,84a42,42 0,1 0,0,-84z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,24h36c2.21,0 4,1.79 4,4v52c0,2.21 -1.79,4 -4,4H36c-2.21,0 -4,-1.79 -4,-4V28c0,-2.21 1.79,-4 4,-4z" />
+    <!-- Checkmark -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M48,54l6,6l12,-12l-2.83,-2.83L54,54.34l-3.17,-3.17z" />
+    <!-- Document lines -->
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M42,36h24v2H42z" />
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M42,42h24v2H42z" />
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M42,66h24v2H42z" />
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M42,72h16v2H42z" />
 </vector>
