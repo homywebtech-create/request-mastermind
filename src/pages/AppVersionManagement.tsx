@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useTranslation } from '@/i18n';
 import { Download, Trash2, Upload } from 'lucide-react';
 import {
   Table,
@@ -32,6 +34,8 @@ interface AppVersion {
 
 const AppVersionManagement = () => {
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = useTranslation(language);
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -63,8 +67,8 @@ const AppVersionManagement = () => {
     if (file) {
       if (!file.name.endsWith('.apk')) {
         toast({
-          title: "خطأ",
-          description: "الرجاء اختيار ملف APK",
+          title: t.common.error,
+          description: t.appVersions.invalidFile,
           variant: "destructive"
         });
         return;
@@ -78,8 +82,10 @@ const AppVersionManagement = () => {
         setVersionName(version.name);
         setVersionCode(version.code.toString());
         toast({
-          title: "تم اكتشاف الإصدار",
-          description: `الإصدار: ${version.name} (${version.code})`,
+          title: t.appVersions.versionDetected,
+          description: t.appVersions.versionInfo
+            .replace('{version}', version.name)
+            .replace('{code}', version.code.toString()),
         });
       }
     }
@@ -127,6 +133,17 @@ const AppVersionManagement = () => {
       changelog: string;
       is_mandatory: boolean;
     }) => {
+      // Check for duplicate version_code first
+      const { data: existing } = await supabase
+        .from('app_versions')
+        .select('version_code, version_name')
+        .eq('version_code', newVersion.version_code)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error(t.appVersions.duplicateVersionHelp.replace('{version}', existing.version_name));
+      }
+
       const { data, error } = await supabase
         .from('app_versions')
         .insert([newVersion])
@@ -139,8 +156,8 @@ const AppVersionManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['app-versions'] });
       toast({
-        title: "تم إضافة الإصدار",
-        description: "تم إرسال إشعارات للمستخدمين تلقائياً",
+        title: t.appVersions.versionAdded,
+        description: t.appVersions.notificationsSentAuto,
       });
       // Reset form
       setVersionCode('');
@@ -153,7 +170,7 @@ const AppVersionManagement = () => {
     },
     onError: (error: any) => {
       toast({
-        title: "خطأ",
+        title: t.common.error,
         description: error.message,
         variant: "destructive",
       });
@@ -173,8 +190,8 @@ const AppVersionManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['app-versions'] });
       toast({
-        title: "تم الحذف",
-        description: "تم حذف الإصدار بنجاح",
+        title: t.appVersions.versionDeleted,
+        description: t.appVersions.versionDeletedSuccess,
       });
     },
   });
@@ -190,16 +207,16 @@ const AppVersionManagement = () => {
       // Upload APK if file is selected
       if (apkFile) {
         toast({
-          title: "جاري رفع الملف...",
-          description: "قد يستغرق بضع ثوانٍ",
+          title: t.appVersions.uploadingFile,
+          description: t.appVersions.uploadingFileHelp,
         });
         finalApkUrl = await uploadApk(apkFile);
       }
 
       if (!finalApkUrl) {
         toast({
-          title: "خطأ",
-          description: "الرجاء رفع ملف APK أو إدخال رابط",
+          title: t.common.error,
+          description: t.appVersions.apkUrlOrFileRequired,
           variant: "destructive"
         });
         return;
@@ -214,7 +231,7 @@ const AppVersionManagement = () => {
       });
     } catch (error: any) {
       toast({
-        title: "خطأ في رفع الملف",
+        title: t.appVersions.uploadError,
         description: error.message,
         variant: "destructive"
       });
@@ -226,31 +243,31 @@ const AppVersionManagement = () => {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">إدارة إصدارات التطبيق</h1>
+        <h1 className="text-3xl font-bold">{t.appVersions.title}</h1>
         <p className="text-muted-foreground mt-2">
-          إضافة إصدار جديد يرسل إشعارات تلقائياً لجميع المستخدمين
+          {t.appVersions.subtitle}
         </p>
       </div>
 
       {/* Create Version Form */}
       <Card>
         <CardHeader>
-          <CardTitle>إضافة إصدار جديد</CardTitle>
+          <CardTitle>{t.appVersions.addNewVersion}</CardTitle>
           <CardDescription>
-            سيتم إرسال إشعار push لجميع المستخدمين تلقائياً
+            {t.appVersions.notificationsSent}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!isCreating ? (
             <Button onClick={() => setIsCreating(true)}>
               <Upload className="w-4 h-4 ml-2" />
-              إضافة إصدار جديد
+              {t.appVersions.addVersionButton}
             </Button>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* APK File Upload */}
               <div className="space-y-2">
-                <Label htmlFor="apkFile">ملف APK</Label>
+                <Label htmlFor="apkFile">{t.appVersions.apkFile}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="apkFile"
@@ -266,33 +283,33 @@ const AppVersionManagement = () => {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  سيتم اكتشاف رقم الإصدار تلقائياً من اسم الملف (مثال: app-v1.0.2.apk)
+                  {t.appVersions.apkFileHelp}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="versionCode">رقم الإصدار (Version Code)</Label>
+                  <Label htmlFor="versionCode">{t.appVersions.versionCode}</Label>
                   <Input
                     id="versionCode"
                     type="number"
                     value={versionCode}
                     onChange={(e) => setVersionCode(e.target.value)}
-                    placeholder="سيتم ملؤه تلقائياً"
+                    placeholder={t.appVersions.autoFilled}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    يتم ملؤه تلقائياً من اسم الملف
+                    {t.appVersions.autoFilledHelp}
                   </p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="versionName">اسم الإصدار (Version Name)</Label>
+                  <Label htmlFor="versionName">{t.appVersions.versionName}</Label>
                   <Input
                     id="versionName"
                     value={versionName}
                     onChange={(e) => setVersionName(e.target.value)}
-                    placeholder="سيتم ملؤه تلقائياً"
+                    placeholder={t.appVersions.autoFilled}
                     required
                   />
                 </div>
@@ -301,7 +318,7 @@ const AppVersionManagement = () => {
               {/* Advanced option: Manual URL (if no file uploaded) */}
               {!apkFile && (
                 <div className="space-y-2">
-                  <Label htmlFor="apkUrl">أو أدخل رابط APK يدوياً (اختياري)</Label>
+                  <Label htmlFor="apkUrl">{t.appVersions.manualUrl}</Label>
                   <Input
                     id="apkUrl"
                     value={apkUrl}
@@ -312,12 +329,12 @@ const AppVersionManagement = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="changelog">ملاحظات التحديث (Changelog)</Label>
+                <Label htmlFor="changelog">{t.appVersions.changelogLabel}</Label>
                 <Textarea
                   id="changelog"
                   value={changelog}
                   onChange={(e) => setChangelog(e.target.value)}
-                  placeholder="- إصلاح أخطاء&#10;- تحسينات في الأداء&#10;- ميزات جديدة"
+                  placeholder={t.appVersions.changelogPlaceholder}
                   rows={4}
                 />
               </div>
@@ -329,20 +346,20 @@ const AppVersionManagement = () => {
                   onCheckedChange={setIsMandatory}
                 />
                 <Label htmlFor="mandatory" className="cursor-pointer">
-                  تحديث إلزامي (التطبيق لن يعمل بدون تحديث)
+                  {t.appVersions.mandatoryUpdate}
                 </Label>
               </div>
 
               <div className="flex gap-2">
                 <Button type="submit" disabled={createVersion.isPending || uploading}>
-                  {uploading ? 'جاري رفع الملف...' : createVersion.isPending ? 'جاري الإضافة...' : 'إضافة وإرسال الإشعارات'}
+                  {uploading ? t.appVersions.uploading : createVersion.isPending ? t.appVersions.adding : t.appVersions.addAndNotify}
                 </Button>
                 <Button 
                   type="button" 
                   variant="outline"
                   onClick={() => setIsCreating(false)}
                 >
-                  إلغاء
+                  {t.common.cancel}
                 </Button>
               </div>
             </form>
@@ -353,21 +370,21 @@ const AppVersionManagement = () => {
       {/* Versions List */}
       <Card>
         <CardHeader>
-          <CardTitle>الإصدارات السابقة</CardTitle>
+          <CardTitle>{t.appVersions.previousVersions}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p>جاري التحميل...</p>
+            <p>{t.common.loading}</p>
           ) : versions && versions.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>رقم الإصدار</TableHead>
-                  <TableHead>اسم الإصدار</TableHead>
-                  <TableHead>إلزامي</TableHead>
-                  <TableHead>ملاحظات</TableHead>
-                  <TableHead>تاريخ الإضافة</TableHead>
-                  <TableHead>إجراءات</TableHead>
+                  <TableHead>{t.appVersions.versionNumber}</TableHead>
+                  <TableHead>{t.appVersions.versionNameLabel}</TableHead>
+                  <TableHead>{t.appVersions.mandatory}</TableHead>
+                  <TableHead>{t.appVersions.changelogNotes}</TableHead>
+                  <TableHead>{t.appVersions.dateAdded}</TableHead>
+                  <TableHead>{t.common.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -377,16 +394,16 @@ const AppVersionManagement = () => {
                     <TableCell className="font-semibold">{version.version_name}</TableCell>
                     <TableCell>
                       {version.is_mandatory ? (
-                        <Badge variant="destructive">إلزامي</Badge>
+                        <Badge variant="destructive">{t.appVersions.mandatory}</Badge>
                       ) : (
-                        <Badge variant="secondary">اختياري</Badge>
+                        <Badge variant="secondary">{t.appVersions.optional}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="max-w-xs truncate">
                       {version.changelog || '-'}
                     </TableCell>
                     <TableCell>
-                      {new Date(version.created_at).toLocaleDateString('ar-SA')}
+                      {new Date(version.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -401,7 +418,7 @@ const AppVersionManagement = () => {
                           size="sm"
                           variant="destructive"
                           onClick={() => {
-                            if (confirm('هل تريد حذف هذا الإصدار؟')) {
+                            if (confirm(t.appVersions.deleteConfirm)) {
                               deleteVersion.mutate(version.id);
                             }
                           }}
@@ -416,7 +433,7 @@ const AppVersionManagement = () => {
             </Table>
           ) : (
             <p className="text-center text-muted-foreground py-8">
-              لا توجد إصدارات حالياً
+              {t.appVersions.noVersions}
             </p>
           )}
         </CardContent>
