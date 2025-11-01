@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { AppVersion } from '@/hooks/useAppUpdate';
 import { App } from '@capacitor/app';
-import { Browser } from '@capacitor/browser';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useToast } from '@/hooks/use-toast';
+import ApkInstaller from '@/lib/apkInstaller';
 
 interface UpdateDialogProps {
   open: boolean;
@@ -21,13 +22,39 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
     try {
       setDownloading(true);
       
-      // Open APK URL in browser to download
-      await Browser.open({ url: version.apk_url });
-      
       toast({
-        title: "تحميل التحديث",
-        description: "سيتم تنزيل التحديث. اتبع التعليمات لتثبيت التطبيق.",
+        title: "جاري التحميل...",
+        description: "يتم تنزيل التحديث، يرجى الانتظار.",
       });
+
+      // Download the APK file
+      const response = await fetch(version.apk_url);
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      // Save to device storage
+      const fileName = `update-${version.version_name}.apk`;
+      const savedFile = await Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: Directory.Cache,
+      });
+
+      // Trigger native Android installation dialog
+      await ApkInstaller.installApk({ 
+        filePath: savedFile.uri.replace('file://', '')
+      });
+      
     } catch (error) {
       console.error('Error downloading update:', error);
       toast({

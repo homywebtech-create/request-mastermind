@@ -151,6 +151,20 @@ const AppVersionManagement = () => {
         .single();
       
       if (error) throw error;
+
+      // Send push notifications to all users
+      try {
+        const { error: notifyError } = await supabase.functions.invoke('notify-app-update', {
+          body: { versionId: data.id }
+        });
+
+        if (notifyError) {
+          console.error('Error sending notifications:', notifyError);
+        }
+      } catch (error) {
+        console.error('Error invoking notification function:', error);
+      }
+      
       return data;
     },
     onSuccess: () => {

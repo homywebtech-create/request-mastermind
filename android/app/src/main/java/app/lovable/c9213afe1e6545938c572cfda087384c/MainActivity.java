@@ -23,6 +23,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(NotificationPermissionPlugin.class);
         registerPlugin(BatteryOptimizationPlugin.class);
         registerPlugin(NotificationRoutePlugin.class);
+        registerPlugin(ApkInstallerPlugin.class);
         createNotificationChannel();
         checkAndRequestPermissions();
         ensureWakeAndShowIfFromNotification(getIntent());

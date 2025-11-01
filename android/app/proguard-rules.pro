@@ -45,5 +45,7 @@
 -keep class com.capacitor.pushnotifications.** { *; }
 -dontwarn com.capacitor.pushnotifications.**
 
-# Keep custom Capacitor plugin for permissions
+# Keep custom Capacitor plugins
 -keep class app.lovable.c9213afe1e6545938c572cfda087384c.MainActivity$NotificationPermissionPlugin { *; }
+-keep class app.lovable.c9213afe1e6545938c572cfda087384c.ApkInstallerPlugin { *; }
+-keep class app.lovable.c9213afe1e6545938c572cfda087384c.BatteryOptimizationPlugin { *; }
