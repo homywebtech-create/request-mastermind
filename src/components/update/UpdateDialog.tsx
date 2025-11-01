@@ -61,36 +61,58 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
 
       console.log('Converted to base64, saving to filesystem...');
 
-      // Save to device storage
+      // Save to external storage (Downloads) for better compatibility
       const fileName = `update-${version.version_name}.apk`;
-      const savedFile = await Filesystem.writeFile({
-        path: fileName,
-        data: base64Data,
-        directory: Directory.Cache,
-      });
-
-      console.log('File saved at:', savedFile.uri);
-
-      // Check if running on native platform
+      
+      // Try to save to external storage first (more reliable for APK installation)
+      let savedFile;
       try {
-        await ApkInstaller.installApk({ 
-          filePath: savedFile.uri.replace('file://', '')
+        savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.External,
         });
+        console.log('File saved to external storage:', savedFile.uri);
+      } catch (extError) {
+        console.warn('Failed to save to external storage, trying cache:', extError);
+        // Fallback to cache if external fails
+        savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache,
+        });
+        console.log('File saved to cache:', savedFile.uri);
+      }
+      
+      // Get the actual file path (remove file:// prefix)
+      let filePath = savedFile.uri;
+      
+      if (filePath.startsWith('file://')) {
+        filePath = filePath.replace('file://', '');
+      }
+      
+      console.log('Attempting to install APK from path:', filePath);
+
+      // Trigger installation
+      try {
+        const result = await ApkInstaller.installApk({ 
+          filePath: filePath
+        });
+        
+        console.log('ApkInstaller result:', result);
 
         toast({
           title: t.updateDialog.installStarted || "Installation Started",
           description: t.updateDialog.installStartedDesc || "Please follow the installation prompts",
         });
-      } catch (pluginError) {
+      } catch (pluginError: any) {
         console.error('ApkInstaller plugin error:', pluginError);
-        
-        // Fallback: open APK file with system intent
-        const fileUrl = savedFile.uri;
-        window.open(fileUrl, '_system');
+        console.error('Error details:', JSON.stringify(pluginError));
         
         toast({
-          title: "APK Downloaded",
-          description: "Please install the APK file manually from your downloads",
+          title: "Installation Error",
+          description: pluginError?.message || "Failed to start installation. Please check app permissions and install from file manager.",
+          variant: "destructive"
         });
       }
       
