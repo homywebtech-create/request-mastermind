@@ -220,6 +220,29 @@ private void ensureWakeAndShowIfFromNotification(Intent intent) {
             callChannel.setLockscreenVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
             callChannel.setSound(defaultRingtoneUri, ringtoneAttributes);
             notificationManager.createNotificationChannel(callChannel);
+
+            // App Updates channel - IMPORTANCE_HIGH (not MAX to avoid being too intrusive)
+            NotificationChannel updateChannel = new NotificationChannel(
+                "app-updates",
+                "App Updates",
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            updateChannel.setDescription("Notifications for new app versions");
+            updateChannel.enableVibration(true);
+            updateChannel.setVibrationPattern(new long[]{0, 500, 200, 500});
+            updateChannel.setShowBadge(true);
+            updateChannel.enableLights(true);
+            updateChannel.setLightColor(0xFF0066FF);
+            updateChannel.setLockscreenVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
+            // Use default notification sound (not ringtone) for updates
+            updateChannel.setSound(
+                android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION),
+                new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .build()
+            );
+            notificationManager.createNotificationChannel(updateChannel);
         }
     }
     

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { App } from '@capacitor/app';
+import { useUpdateNotificationHandler, UpdateNotificationData } from './useUpdateNotificationHandler';
 
 export interface AppVersion {
   id: string;
@@ -45,6 +46,28 @@ export const useAppUpdate = () => {
     }
     return null;
   };
+
+  // Handle push notification for updates
+  const handleUpdateNotification = useCallback((data: UpdateNotificationData) => {
+    console.log('🔔 [Update] Notification received, setting version data:', data);
+    
+    const version: AppVersion = {
+      id: data.version_id,
+      version_code: parseInt(data.version_code),
+      version_name: data.version_name,
+      apk_url: data.apk_url,
+      is_mandatory: data.is_mandatory === 'true',
+      changelog: data.changelog || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setLatestVersion(version);
+    setUpdateAvailable(true);
+  }, []);
+
+  // Listen for push notifications
+  useUpdateNotificationHandler(handleUpdateNotification);
 
   // Periodic update checks (every 6 hours)
   useEffect(() => {
