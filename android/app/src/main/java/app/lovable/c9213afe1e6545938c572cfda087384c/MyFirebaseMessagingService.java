@@ -19,6 +19,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "FCMService";
     private static final String CHANNEL_ID = "new-orders-v6";
     private static final String CALL_CHANNEL_ID = "booking-calls-v6";
+    private static final String UPDATE_CHANNEL_ID = "app-updates";
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -40,6 +41,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             Log.d(TAG, "🔔 Data Message - Type: " + type);
             Log.d(TAG, "🔔 Data Message - OrderID: " + orderId);
             Log.d(TAG, "🔀 Data Message - Route: " + route);
+            
+            // Handle app update notifications specially
+            if ("app_update".equalsIgnoreCase(type)) {
+                Log.d(TAG, "🔄 App update notification received");
+                sendAppUpdateNotification(remoteMessage.getData());
+                return;
+            }
             
             boolean useCallChannel = "new_order".equalsIgnoreCase(type) || "test".equalsIgnoreCase(type);
             // ✅ Show notification with full-screen intent (works when app is closed!)
@@ -247,7 +255,85 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             notificationManager.createNotificationChannel(callChannel);
 
             Log.d(TAG, "✅ Notification channels ensured with consistent sound + vibration (" + CHANNEL_ID + ", " + CALL_CHANNEL_ID + ")");
+            
+            // App Updates channel (HIGH priority, not MAX - less intrusive)
+            NotificationChannel updateChannel = new NotificationChannel(
+                UPDATE_CHANNEL_ID,
+                "App Updates",
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            updateChannel.setDescription("Notifications for app updates");
+            updateChannel.enableVibration(true);
+            updateChannel.setVibrationPattern(new long[]{0, 500, 200, 500});
+            updateChannel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            updateChannel.setShowBadge(true);
+            updateChannel.setSound(defaultRingtoneUri, audioAttributes);
+            notificationManager.createNotificationChannel(updateChannel);
+            
+            Log.d(TAG, "✅ Update channel created: " + UPDATE_CHANNEL_ID);
         }
+    }
+
+    /**
+     * Handle app update notifications with action buttons
+     */
+    private void sendAppUpdateNotification(java.util.Map<String, String> data) {
+        createNotificationChannel();
+        
+        String title = data.get("title");
+        String body = data.get("body");
+        String versionName = data.get("version_name");
+        String apkUrl = data.get("apk_url");
+        String changelog = data.get("changelog");
+        String isMandatory = data.get("is_mandatory");
+        String route = data.get("route");
+        
+        if (title == null) title = "تحديث متوفر";
+        if (body == null) body = "إصدار جديد من التطبيق";
+        if (route == null) route = "/specialist-orders?showUpdate=true";
+        
+        Log.d(TAG, "🔄 Creating update notification - Version: " + versionName);
+        Log.d(TAG, "🔄 APK URL: " + apkUrl);
+        Log.d(TAG, "🔄 Mandatory: " + isMandatory);
+        
+        // Create intent to open app and show update dialog
+        Uri deepLink = Uri.parse("request-mastermind://open?route=" + Uri.encode(route));
+        Intent intent = new Intent(Intent.ACTION_VIEW, deepLink);
+        intent.setPackage(getPackageName());
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+            this, 
+            (int) System.currentTimeMillis(), 
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        
+        // Build notification with action button
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, UPDATE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_icon_config_sample)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(new NotificationCompat.BigTextStyle()
+                .bigText(changelog != null && !changelog.isEmpty() ? changelog : body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setColor(0xFF0066FF);
+        
+        // Add "Update Now" action button
+        builder.addAction(
+            R.drawable.ic_stat_icon_config_sample,
+            "تحديث الآن",
+            pendingIntent
+        );
+        
+        // Show notification
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(999, builder.build()); // Use fixed ID 999 for updates
+        
+        Log.d(TAG, "✅ App update notification displayed with action button");
     }
 
     /**

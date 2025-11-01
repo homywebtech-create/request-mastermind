@@ -35,6 +35,7 @@ import PushNotificationTest from "./pages/PushNotificationTest";
 import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
+import AppVersionManagement from "./pages/AppVersionManagement";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -404,6 +405,14 @@ function AppRouter() {
           }
         />
         <Route
+          path="/admin/app-versions"
+          element={
+            <RoleProtectedRoute requiredPermission="view_dashboard">
+              <AppVersionManagement />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
           path="/company-booking/:orderId/:companyId"
           element={<CompanyBooking />}
         />
@@ -441,6 +450,7 @@ function AppRouter() {
 const AppWithUpdates = () => {
   const { updateAvailable, latestVersion, checkForUpdates } = useAppUpdate();
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const location = window.location;
 
   useEffect(() => {
     // Check for updates on app start (only on mobile)
@@ -454,6 +464,19 @@ const AppWithUpdates = () => {
       setShowUpdateDialog(true);
     }
   }, [updateAvailable, latestVersion]);
+
+  // Check for showUpdate URL parameter (from notification)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('showUpdate') === 'true' && isCapacitorApp) {
+      console.log('🔄 Update dialog requested via URL parameter');
+      checkForUpdates().then(version => {
+        if (version) {
+          setShowUpdateDialog(true);
+        }
+      });
+    }
+  }, [location.search, checkForUpdates]);
 
   return (
     <>

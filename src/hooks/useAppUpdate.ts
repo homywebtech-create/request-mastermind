@@ -40,6 +40,16 @@ export const useAppUpdate = () => {
     return null;
   };
 
+  // Periodic update checks (every 6 hours)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('⏰ Periodic update check triggered');
+      checkForUpdates();
+    }, 6 * 60 * 60 * 1000); // 6 hours
+
+    return () => clearInterval(interval);
+  }, []);
+
   return {
     updateAvailable,
     latestVersion,
