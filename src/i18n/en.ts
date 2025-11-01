@@ -75,6 +75,19 @@ export const en = {
     duplicateVersion: "This version already exists",
     duplicateVersionHelp: "Please use a different version code. Latest version: {version}",
   },
+
+  updateDialog: {
+    downloading: "Downloading...",
+    downloadingDesc: "Update is being downloaded, please wait.",
+    downloadError: "Error",
+    downloadErrorDesc: "Failed to download update. Try again.",
+    updateAvailable: "Update Available - {version}",
+    newVersionAvailable: "New version available for download",
+    mandatoryUpdate: "This update is mandatory. You must update the app to continue.",
+    updateNow: "Update Now",
+    closeApp: "Close App",
+    skip: "Skip",
+  },
   
   dashboard: {
     title: "Orders Management Dashboard",

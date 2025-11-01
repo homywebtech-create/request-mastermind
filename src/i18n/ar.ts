@@ -75,6 +75,19 @@ export const ar = {
     duplicateVersion: "هذا الإصدار موجود مسبقاً",
     duplicateVersionHelp: "الرجاء استخدام رقم إصدار مختلف. آخر إصدار: {version}",
   },
+
+  updateDialog: {
+    downloading: "جاري التحميل...",
+    downloadingDesc: "يتم تنزيل التحديث، يرجى الانتظار.",
+    downloadError: "خطأ",
+    downloadErrorDesc: "فشل تحميل التحديث. حاول مرة أخرى.",
+    updateAvailable: "تحديث متوفر - {version}",
+    newVersionAvailable: "إصدار جديد متاح للتحميل",
+    mandatoryUpdate: "هذا التحديث إلزامي. يجب تحديث التطبيق للمتابعة.",
+    updateNow: "تحديث الآن",
+    closeApp: "إغلاق التطبيق",
+    skip: "تخطي",
+  },
   
   dashboard: {
     title: "لوحة إدارة الطلبات",

@@ -7,6 +7,8 @@ import { App } from '@capacitor/app';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useToast } from '@/hooks/use-toast';
 import ApkInstaller from '@/lib/apkInstaller';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useTranslation } from '@/i18n';
 
 interface UpdateDialogProps {
   open: boolean;
@@ -17,14 +19,16 @@ interface UpdateDialogProps {
 export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps) => {
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = useTranslation(language);
 
   const handleUpdate = async () => {
     try {
       setDownloading(true);
       
       toast({
-        title: "جاري التحميل...",
-        description: "يتم تنزيل التحديث، يرجى الانتظار.",
+        title: t.updateDialog.downloading,
+        description: t.updateDialog.downloadingDesc,
       });
 
       // Download the APK file
@@ -58,8 +62,8 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
     } catch (error) {
       console.error('Error downloading update:', error);
       toast({
-        title: "خطأ",
-        description: "فشل تحميل التحديث. حاول مرة أخرى.",
+        title: t.updateDialog.downloadError,
+        description: t.updateDialog.downloadErrorDesc,
         variant: "destructive"
       });
     } finally {
@@ -82,17 +86,17 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="w-5 h-5" />
-            تحديث متوفر - {version.version_name}
+            {t.updateDialog.updateAvailable.replace('{version}', version.version_name)}
           </DialogTitle>
           <DialogDescription className="text-right">
-            {version.changelog || 'إصدار جديد متاح للتحميل'}
+            {version.changelog || t.updateDialog.newVersionAvailable}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {version.is_mandatory && (
             <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-md text-sm">
-              هذا التحديث إلزامي. يجب تحديث التطبيق للمتابعة.
+              {t.updateDialog.mandatoryUpdate}
             </div>
           )}
 
@@ -103,7 +107,7 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
               className="w-full"
             >
               <Download className="w-4 h-4 ml-2" />
-              {downloading ? 'جاري التحميل...' : 'تحديث الآن'}
+              {downloading ? t.updateDialog.downloading : t.updateDialog.updateNow}
             </Button>
 
             {version.is_mandatory ? (
@@ -113,7 +117,7 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
                 className="w-full"
               >
                 <X className="w-4 h-4 ml-2" />
-                إغلاق التطبيق
+                {t.updateDialog.closeApp}
               </Button>
             ) : (
               <Button
@@ -121,7 +125,7 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
                 variant="outline"
                 className="w-full"
               >
-                تخطي
+                {t.updateDialog.skip}
               </Button>
             )}
           </div>
