@@ -87,6 +87,8 @@ export const ar = {
     updateNow: "تحديث الآن",
     closeApp: "إغلاق التطبيق",
     skip: "تخطي",
+    installStarted: "بدأ التثبيت",
+    installStartedDesc: "يرجى اتباع تعليمات التثبيت",
   },
   
   dashboard: {

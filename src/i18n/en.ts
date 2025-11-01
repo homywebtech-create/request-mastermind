@@ -87,6 +87,8 @@ export const en = {
     updateNow: "Update Now",
     closeApp: "Close App",
     skip: "Skip",
+    installStarted: "Installation Started",
+    installStartedDesc: "Please follow the installation prompts",
   },
   
   dashboard: {

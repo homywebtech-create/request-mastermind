@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { APP_VERSION } from '@/lib/appVersion';
+import { App } from '@capacitor/app';
 
 export interface AppVersion {
   id: string;
@@ -21,8 +21,14 @@ export const useAppUpdate = () => {
   const checkForUpdates = async () => {
     setChecking(true);
     try {
+      // Get actual installed version code from the app
+      const appInfo = await App.getInfo();
+      const currentVersionCode = parseInt(appInfo.build);
+
+      console.log('Current installed version code:', currentVersionCode);
+
       const { data, error } = await supabase.functions.invoke('check-app-update', {
-        body: { currentVersionCode: APP_VERSION.code }
+        body: { currentVersionCode }
       });
 
       if (error) throw error;

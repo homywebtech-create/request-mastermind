@@ -31,9 +31,22 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
         description: t.updateDialog.downloadingDesc,
       });
 
+      console.log('Downloading APK from:', version.apk_url);
+
       // Download the APK file
-      const response = await fetch(version.apk_url);
+      const response = await fetch(version.apk_url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.android.package-archive'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      }
+
       const blob = await response.blob();
+      console.log('Downloaded blob size:', blob.size);
       
       // Convert blob to base64
       const reader = new FileReader();
@@ -46,6 +59,8 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
         reader.readAsDataURL(blob);
       });
 
+      console.log('Converted to base64, saving to filesystem...');
+
       // Save to device storage
       const fileName = `update-${version.version_name}.apk`;
       const savedFile = await Filesystem.writeFile({
@@ -54,16 +69,24 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
         directory: Directory.Cache,
       });
 
+      console.log('File saved at:', savedFile.uri);
+
       // Trigger native Android installation dialog
       await ApkInstaller.installApk({ 
         filePath: savedFile.uri.replace('file://', '')
       });
+
+      toast({
+        title: t.updateDialog.installStarted || "Installation Started",
+        description: t.updateDialog.installStartedDesc || "Please follow the installation prompts",
+      });
       
     } catch (error) {
       console.error('Error downloading update:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: t.updateDialog.downloadError,
-        description: t.updateDialog.downloadErrorDesc,
+        description: `${t.updateDialog.downloadErrorDesc}: ${errorMessage}`,
         variant: "destructive"
       });
     } finally {
