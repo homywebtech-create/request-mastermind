@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { AppVersion } from '@/hooks/useAppUpdate';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useToast } from '@/hooks/use-toast';
 import ApkInstaller from '@/lib/apkInstaller';
@@ -24,105 +25,102 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
 
   const handleUpdate = async () => {
     try {
+      // Guard: only on native Android. In web preview this plugin is unavailable
+      if (!Capacitor.isNativePlatform()) {
+        toast({
+          title: 'Opening download link',
+          description: 'Install updates from the Android app. Opened the APK link in your browser.',
+        });
+        try { window.open(version.apk_url, '_blank'); } catch {}
+        return;
+      }
+
       setDownloading(true);
-      
+
       toast({
         title: t.updateDialog.downloading,
         description: t.updateDialog.downloadingDesc,
       });
 
-      console.log('Downloading APK from:', version.apk_url);
+      console.log('[Update] Platform:', Capacitor.getPlatform());
+      console.log('[Update] Downloading APK from:', version.apk_url);
 
-      // Download the APK file
-      const response = await fetch(version.apk_url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/vnd.android.package-archive'
+      const fileName = `update-${version.version_name}.apk`;
+      let filePath: string | null = null;
+
+      // Prefer native downloadFile API to avoid huge base64 memory usage
+      try {
+        if (typeof (Filesystem as any).downloadFile === 'function') {
+          const res = await (Filesystem as any).downloadFile({
+            url: version.apk_url,
+            path: fileName,
+            directory: Directory.Cache,
+          });
+          const candidate = (res?.uri || res?.path || '').toString();
+          filePath = candidate.startsWith('file://') ? candidate.replace('file://', '') : candidate;
+          console.log('[Update] Downloaded to (cache):', filePath);
         }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      } catch (e) {
+        console.warn('[Update] downloadFile failed, falling back to fetch->writeFile:', e);
       }
 
-      const blob = await response.blob();
-      console.log('Downloaded blob size:', blob.size);
-      
-      // Convert blob to base64
-      const reader = new FileReader();
-      const base64Data = await new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      // Fallback: fetch + writeFile (base64) to Cache if downloadFile not available/failed
+      if (!filePath) {
+        const response = await fetch(version.apk_url, { method: 'GET' });
+        if (!response.ok) {
+          throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        console.log('[Update] Blob size:', blob.size);
 
-      console.log('Converted to base64, saving to filesystem...');
-
-      // Save to external storage (Downloads) for better compatibility
-      const fileName = `update-${version.version_name}.apk`;
-      
-      // Try to save to external storage first (more reliable for APK installation)
-      let savedFile;
-      try {
-        savedFile = await Filesystem.writeFile({
-          path: fileName,
-          data: base64Data,
-          directory: Directory.External,
+        const reader = new FileReader();
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
         });
-        console.log('File saved to external storage:', savedFile.uri);
-      } catch (extError) {
-        console.warn('Failed to save to external storage, trying cache:', extError);
-        // Fallback to cache if external fails
-        savedFile = await Filesystem.writeFile({
+
+        const savedFile = await Filesystem.writeFile({
           path: fileName,
           data: base64Data,
           directory: Directory.Cache,
         });
-        console.log('File saved to cache:', savedFile.uri);
+        const candidate = (savedFile?.uri || '').toString();
+        filePath = candidate.startsWith('file://') ? candidate.replace('file://', '') : candidate;
+        console.log('[Update] Saved (fallback) to cache at:', filePath);
       }
-      
-      // Get the actual file path (remove file:// prefix)
-      let filePath = savedFile.uri;
-      
-      if (filePath.startsWith('file://')) {
-        filePath = filePath.replace('file://', '');
-      }
-      
-      console.log('Attempting to install APK from path:', filePath);
 
-      // Trigger installation
-      try {
-        const result = await ApkInstaller.installApk({ 
-          filePath: filePath
-        });
-        
-        console.log('ApkInstaller result:', result);
-
-        toast({
-          title: t.updateDialog.installStarted || "Installation Started",
-          description: t.updateDialog.installStartedDesc || "Please follow the installation prompts",
-        });
-      } catch (pluginError: any) {
-        console.error('ApkInstaller plugin error:', pluginError);
-        console.error('Error details:', JSON.stringify(pluginError));
-        
-        toast({
-          title: "Installation Error",
-          description: pluginError?.message || "Failed to start installation. Please check app permissions and install from file manager.",
-          variant: "destructive"
-        });
+      if (!filePath) {
+        throw new Error('Unable to save update file');
       }
-      
-    } catch (error) {
-      console.error('Error downloading update:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      console.log('[Update] Attempting install from path:', filePath);
+
+      // Verify plugin availability at runtime (avoids "plugin not added" errors)
+      if (!Capacitor.isPluginAvailable('ApkInstaller')) {
+        console.error('[Update] ApkInstaller plugin not available');
+        toast({
+          title: 'Installer not available',
+          description: 'The installer is not available on this build. Please open the APK from a file manager to install.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const result = await ApkInstaller.installApk({ filePath });
+      console.log('[Update] ApkInstaller result:', result);
+
+      toast({
+        title: t.updateDialog.installStarted || 'Installation Started',
+        description: t.updateDialog.installStartedDesc || 'Follow the Android prompts to complete the update.',
+      });
+    } catch (error: any) {
+      console.error('[Update] Error during update flow:', error);
+      const msg = error?.message || 'Unknown error';
       toast({
         title: t.updateDialog.downloadError,
-        description: `${t.updateDialog.downloadErrorDesc}: ${errorMessage}`,
-        variant: "destructive"
+        description: `${t.updateDialog.downloadErrorDesc}: ${msg}`,
+        variant: 'destructive',
       });
     } finally {
       setDownloading(false);
