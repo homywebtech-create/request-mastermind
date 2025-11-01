@@ -89,10 +89,10 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
                         item.isActive && "drop-shadow-lg animate-pulse"
                       )} 
                     />
-                    {item.badge && item.badge > 0 && !isDisabled && (
-                      <div className="absolute -top-3 -right-3 h-6 w-6 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center animate-bounce shadow-lg border-2 border-white">
-                        <span className="text-[11px] font-extrabold text-white">
-                          {item.badge > 9 ? '9+' : item.badge}
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <div className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10">
+                        <span className="text-[10px] font-extrabold text-white leading-none">
+                          {item.badge > 99 ? '99+' : item.badge}
                         </span>
                       </div>
                     )}
