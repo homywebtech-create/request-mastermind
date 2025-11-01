@@ -89,6 +89,8 @@ export const en = {
     skip: "Skip",
     installStarted: "Installation Started",
     installStartedDesc: "Please follow the installation prompts",
+    noInternet: "No Internet Connection",
+    noInternetDesc: "Please check your internet connection and try again.",
   },
   
   dashboard: {

@@ -24,6 +24,16 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
   const t = useTranslation(language);
 
   const handleUpdate = async () => {
+    // Check internet connection first
+    if (!navigator.onLine) {
+      toast({
+        title: t.updateDialog.noInternet || "No Internet Connection",
+        description: t.updateDialog.noInternetDesc || "Please check your internet connection and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Guard: only on native Android. In web preview this plugin is unavailable
       if (!Capacitor.isNativePlatform()) {

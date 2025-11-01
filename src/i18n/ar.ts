@@ -89,6 +89,8 @@ export const ar = {
     skip: "تخطي",
     installStarted: "بدأ التثبيت",
     installStartedDesc: "يرجى اتباع تعليمات التثبيت",
+    noInternet: "لا يوجد اتصال بالإنترنت",
+    noInternetDesc: "يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.",
   },
   
   dashboard: {
