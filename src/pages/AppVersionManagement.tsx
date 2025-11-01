@@ -34,13 +34,75 @@ const AppVersionManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
+  const [uploading, setUploading] = useState(false);
   
   // Form state
   const [versionCode, setVersionCode] = useState('');
   const [versionName, setVersionName] = useState('');
+  const [apkFile, setApkFile] = useState<File | null>(null);
   const [apkUrl, setApkUrl] = useState('');
   const [changelog, setChangelog] = useState('');
   const [isMandatory, setIsMandatory] = useState(true);
+
+  // Auto-extract version from filename (e.g., app-v1.0.2.apk)
+  const extractVersionFromFilename = (filename: string) => {
+    const match = filename.match(/v?(\d+)\.(\d+)\.(\d+)/);
+    if (match) {
+      const [, major, minor, patch] = match;
+      return {
+        name: `${major}.${minor}.${patch}`,
+        code: parseInt(major) * 10000 + parseInt(minor) * 100 + parseInt(patch)
+      };
+    }
+    return null;
+  };
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.apk')) {
+        toast({
+          title: "خطأ",
+          description: "الرجاء اختيار ملف APK",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setApkFile(file);
+      
+      // Try to auto-extract version from filename
+      const version = extractVersionFromFilename(file.name);
+      if (version) {
+        setVersionName(version.name);
+        setVersionCode(version.code.toString());
+        toast({
+          title: "تم اكتشاف الإصدار",
+          description: `الإصدار: ${version.name} (${version.code})`,
+        });
+      }
+    }
+  };
+
+  // Upload APK to storage
+  const uploadApk = async (file: File): Promise<string> => {
+    const fileName = `${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage
+      .from('apk-files')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('apk-files')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
 
   // Fetch versions
   const { data: versions, isLoading } = useQuery({
@@ -84,6 +146,7 @@ const AppVersionManagement = () => {
       setVersionCode('');
       setVersionName('');
       setApkUrl('');
+      setApkFile(null);
       setChangelog('');
       setIsMandatory(true);
       setIsCreating(false);
@@ -116,15 +179,48 @@ const AppVersionManagement = () => {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    createVersion.mutate({
-      version_code: parseInt(versionCode),
-      version_name: versionName,
-      apk_url: apkUrl,
-      changelog,
-      is_mandatory: isMandatory,
-    });
+    
+    try {
+      setUploading(true);
+      
+      let finalApkUrl = apkUrl;
+      
+      // Upload APK if file is selected
+      if (apkFile) {
+        toast({
+          title: "جاري رفع الملف...",
+          description: "قد يستغرق بضع ثوانٍ",
+        });
+        finalApkUrl = await uploadApk(apkFile);
+      }
+
+      if (!finalApkUrl) {
+        toast({
+          title: "خطأ",
+          description: "الرجاء رفع ملف APK أو إدخال رابط",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      createVersion.mutate({
+        version_code: parseInt(versionCode),
+        version_name: versionName,
+        apk_url: finalApkUrl,
+        changelog,
+        is_mandatory: isMandatory,
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في رفع الملف",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -152,6 +248,28 @@ const AppVersionManagement = () => {
             </Button>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* APK File Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="apkFile">ملف APK</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="apkFile"
+                    type="file"
+                    accept=".apk"
+                    onChange={handleFileChange}
+                    className="cursor-pointer"
+                  />
+                  {apkFile && (
+                    <Badge variant="secondary" className="self-center">
+                      {(apkFile.size / 1024 / 1024).toFixed(2)} MB
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  سيتم اكتشاف رقم الإصدار تلقائياً من اسم الملف (مثال: app-v1.0.2.apk)
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="versionCode">رقم الإصدار (Version Code)</Label>
@@ -160,11 +278,11 @@ const AppVersionManagement = () => {
                     type="number"
                     value={versionCode}
                     onChange={(e) => setVersionCode(e.target.value)}
-                    placeholder="مثال: 2"
+                    placeholder="سيتم ملؤه تلقائياً"
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    يجب أن يكون أكبر من الإصدار السابق
+                    يتم ملؤه تلقائياً من اسم الملف
                   </p>
                 </div>
                 
@@ -174,25 +292,24 @@ const AppVersionManagement = () => {
                     id="versionName"
                     value={versionName}
                     onChange={(e) => setVersionName(e.target.value)}
-                    placeholder="مثال: 1.0.2"
+                    placeholder="سيتم ملؤه تلقائياً"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="apkUrl">رابط ملف APK</Label>
-                <Input
-                  id="apkUrl"
-                  value={apkUrl}
-                  onChange={(e) => setApkUrl(e.target.value)}
-                  placeholder="https://example.com/app-v1.0.2.apk"
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  رفع الملف على سيرفر وإدخال الرابط المباشر
-                </p>
-              </div>
+              {/* Advanced option: Manual URL (if no file uploaded) */}
+              {!apkFile && (
+                <div className="space-y-2">
+                  <Label htmlFor="apkUrl">أو أدخل رابط APK يدوياً (اختياري)</Label>
+                  <Input
+                    id="apkUrl"
+                    value={apkUrl}
+                    onChange={(e) => setApkUrl(e.target.value)}
+                    placeholder="https://example.com/app-v1.0.2.apk"
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="changelog">ملاحظات التحديث (Changelog)</Label>
@@ -217,8 +334,8 @@ const AppVersionManagement = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" disabled={createVersion.isPending}>
-                  {createVersion.isPending ? 'جاري الإضافة...' : 'إضافة وإرسال الإشعارات'}
+                <Button type="submit" disabled={createVersion.isPending || uploading}>
+                  {uploading ? 'جاري رفع الملف...' : createVersion.isPending ? 'جاري الإضافة...' : 'إضافة وإرسال الإشعارات'}
                 </Button>
                 <Button 
                   type="button" 
