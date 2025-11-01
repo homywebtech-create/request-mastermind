@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.complete-specialist-registration]
 verify_jwt = false
+
+[functions.notify-app-update]
+verify_jwt = false
