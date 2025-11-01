@@ -71,15 +71,28 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
 
       console.log('File saved at:', savedFile.uri);
 
-      // Trigger native Android installation dialog
-      await ApkInstaller.installApk({ 
-        filePath: savedFile.uri.replace('file://', '')
-      });
+      // Check if running on native platform
+      try {
+        await ApkInstaller.installApk({ 
+          filePath: savedFile.uri.replace('file://', '')
+        });
 
-      toast({
-        title: t.updateDialog.installStarted || "Installation Started",
-        description: t.updateDialog.installStartedDesc || "Please follow the installation prompts",
-      });
+        toast({
+          title: t.updateDialog.installStarted || "Installation Started",
+          description: t.updateDialog.installStartedDesc || "Please follow the installation prompts",
+        });
+      } catch (pluginError) {
+        console.error('ApkInstaller plugin error:', pluginError);
+        
+        // Fallback: open APK file with system intent
+        const fileUrl = savedFile.uri;
+        window.open(fileUrl, '_system');
+        
+        toast({
+          title: "APK Downloaded",
+          description: "Please install the APK file manually from your downloads",
+        });
+      }
       
     } catch (error) {
       console.error('Error downloading update:', error);
