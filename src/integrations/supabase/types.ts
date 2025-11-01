@@ -47,6 +47,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_versions: {
+        Row: {
+          apk_url: string
+          changelog: string | null
+          created_at: string | null
+          id: string
+          is_mandatory: boolean | null
+          updated_at: string | null
+          version_code: number
+          version_name: string
+        }
+        Insert: {
+          apk_url: string
+          changelog?: string | null
+          created_at?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          updated_at?: string | null
+          version_code: number
+          version_name: string
+        }
+        Update: {
+          apk_url?: string
+          changelog?: string | null
+          created_at?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          updated_at?: string | null
+          version_code?: number
+          version_name?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null

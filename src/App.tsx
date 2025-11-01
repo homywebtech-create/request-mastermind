@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { UpdateDialog } from "@/components/update/UpdateDialog";
+import { useAppUpdate } from "@/hooks/useAppUpdate";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Companies from "./pages/Companies";
@@ -436,6 +438,37 @@ function AppRouter() {
   );
 }
 
+const AppWithUpdates = () => {
+  const { updateAvailable, latestVersion, checkForUpdates } = useAppUpdate();
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+
+  useEffect(() => {
+    // Check for updates on app start (only on mobile)
+    if (isCapacitorApp) {
+      checkForUpdates();
+    }
+  }, [checkForUpdates]);
+
+  useEffect(() => {
+    if (updateAvailable && latestVersion) {
+      setShowUpdateDialog(true);
+    }
+  }, [updateAvailable, latestVersion]);
+
+  return (
+    <>
+      {latestVersion && (
+        <UpdateDialog 
+          open={showUpdateDialog} 
+          onOpenChange={setShowUpdateDialog}
+          version={latestVersion}
+        />
+      )}
+      <AppRouter />
+    </>
+  );
+};
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -443,7 +476,7 @@ const App = () => {
         <UserRoleProvider>
           <Toaster />
           <Sonner />
-          <AppRouter />
+          <AppWithUpdates />
         </UserRoleProvider>
       </TooltipProvider>
     </QueryClientProvider>
