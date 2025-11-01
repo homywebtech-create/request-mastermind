@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
-// Test comment for update flow v3 - testing push notifications
+// Test comment for update flow v4 - testing auto-download and install
 const NotFound = () => {
   const location = useLocation();
 
