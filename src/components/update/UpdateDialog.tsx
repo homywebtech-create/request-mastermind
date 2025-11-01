@@ -108,12 +108,7 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
 
       // Verify plugin availability at runtime (avoids "plugin not added" errors)
       if (!Capacitor.isPluginAvailable('ApkInstaller')) {
-        console.error('[Update] ApkInstaller plugin not available');
-        toast({
-          title: 'Installer not available',
-          description: 'The installer is not available on this build. Opening the APK link in your browser...',
-          variant: 'destructive',
-        });
+        console.log('[Update] ApkInstaller plugin not available, opening browser fallback');
         try { window.open(version.apk_url, '_blank'); } catch {}
         return;
       }
