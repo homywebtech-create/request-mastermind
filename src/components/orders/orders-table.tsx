@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy } from "lucide-react";
+import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -1086,7 +1087,6 @@ Thank you for contacting us! 🌟`;
                 <TableHead className="text-left">{t.customerBudget}</TableHead>
                 <TableHead className="text-left">{t.service}</TableHead>
                 <TableHead className="text-left">{language === 'ar' ? 'تفاصيل الحجز' : 'Booking Details'}</TableHead>
-                <TableHead className="text-left">{language === 'ar' ? 'الموقع' : 'Location'}</TableHead>
                 <TableHead className="text-left">
                   {filter === 'awaiting-response' ? t.companyQuotes : (filter === 'cancelled' ? (language === 'ar' ? 'تفاصيل الإلغاء' : 'Cancellation Details') : t.notes)}
                 </TableHead>
@@ -1097,7 +1097,7 @@ Thank you for contacting us! 🌟`;
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     {t.noOrders}
                   </TableCell>
                 </TableRow>
@@ -1160,7 +1160,16 @@ Thank you for contacting us! 🌟`;
                       </TableCell>
                       
                       <TableCell>
-                        <Badge variant="outline">{order.service_type}</Badge>
+                        <div className="flex items-center gap-2 min-w-[120px]">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+                            <Wrench className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <Badge variant="secondary" className="font-medium">
+                              {order.service_type}
+                            </Badge>
+                          </div>
+                        </div>
                       </TableCell>
 
                       {/* Booking Details Column */}
@@ -1198,34 +1207,6 @@ Thank you for contacting us! 🌟`;
                             </Badge>
                           )}
                           {!order.booking_date && !order.booking_type && (
-                            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not specified'}</span>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Location Column */}
-                      <TableCell>
-                        <div className="space-y-1 min-w-[150px]">
-                          {order.building_info && (
-                            <div className="text-sm">
-                              <span className="font-medium">{order.building_info}</span>
-                            </div>
-                          )}
-                          {order.gps_latitude && order.gps_longitude && (
-                            <a
-                              href={`https://www.google.com/maps?q=${order.gps_latitude},${order.gps_longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-primary hover:underline"
-                            >
-                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              {language === 'ar' ? 'عرض الخريطة' : 'View Map'}
-                            </a>
-                          )}
-                          {!order.building_info && !order.gps_latitude && (
                             <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not specified'}</span>
                           )}
                         </div>
@@ -1444,7 +1425,7 @@ Thank you for contacting us! 🌟`;
                       </TableCell>
                       
                       <TableCell>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
                           {/* Show resend button for pending orders and orders without quotes */}
                           {canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView)) && (
                             <>
@@ -1474,16 +1455,32 @@ Thank you for contacting us! 🌟`;
                               </Button>
 
                               {isPending && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openSendDialog(order)}
-                                  disabled={Boolean(isOrderProcessing)}
-                                  className="flex items-center gap-1"
-                                >
-                                  <Building2 className="h-3 w-3" />
-                                  {t.change}
-                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={Boolean(isOrderProcessing)}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => openSendDialog(order)}>
+                                      <Building2 className="h-4 w-4 mr-2" />
+                                      {t.change}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleCopyOrderLink(order)}>
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      {language === 'ar' ? 'نسخ الرابط' : 'Copy Link'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => sendOrderLinkViaWhatsApp(order)}>
+                                      <Send className="h-4 w-4 mr-2" />
+                                      {language === 'ar' ? 'إرسال واتساب' : 'Send WhatsApp'}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               )}
                             </>
                           )}
