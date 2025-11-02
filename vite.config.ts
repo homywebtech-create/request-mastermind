@@ -19,5 +19,10 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     include: ['react', 'react-dom'],
   },
+  build: {
+    rollupOptions: {
+      external: ['path', 'fs', 'child_process'],
+    },
+  },
   base: '/',
 }));
