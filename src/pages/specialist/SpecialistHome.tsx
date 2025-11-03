@@ -22,6 +22,8 @@ interface Order {
   service_type: string;
   booking_date: string | null;
   booking_time: string | null;
+  booking_type: string | null;
+  hours_count: number | null;
   gps_latitude: number | null;
   gps_longitude: number | null;
   building_info: string | null;
@@ -241,6 +243,8 @@ export default function SpecialistHome() {
           service_type,
           booking_date,
           booking_time,
+          booking_type,
+          hours_count,
           gps_latitude,
           gps_longitude,
           building_info,
@@ -580,7 +584,44 @@ export default function SpecialistHome() {
                     </div>
                   </div>
 
-                  {/* Service and Price */}
+                  {/* Location Map */}
+                  {order.gps_latitude && order.gps_longitude && (
+                    <div className="rounded-lg overflow-hidden border-2 border-border">
+                      <iframe
+                        width="100%"
+                        height="200"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://www.google.com/maps?q=${order.gps_latitude},${order.gps_longitude}&output=embed`}
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
+
+                  {/* Booking Details */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Booking Type */}
+                    <div className="bg-purple-50 dark:bg-purple-950/30 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mb-1 font-medium">{isAr ? 'نوع الحجز' : 'Booking Type'}</p>
+                      <p className="font-bold text-sm text-purple-700 dark:text-purple-300">
+                        {order.booking_type === 'one_time' && (isAr ? '🏠 مرة واحدة' : '🏠 One Time')}
+                        {order.booking_type === 'weekly' && (isAr ? '📅 أسبوعي' : '📅 Weekly')}
+                        {order.booking_type === 'bi_weekly' && (isAr ? '📅 نصف شهري' : '📅 Bi-Weekly')}
+                        {order.booking_type === 'monthly' && (isAr ? '📅 شهري' : '📅 Monthly')}
+                        {!order.booking_type && (isAr ? 'غير محدد' : 'Not specified')}
+                      </p>
+                    </div>
+
+                    {/* Hours Count */}
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-1 font-medium">{isAr ? 'عدد الساعات' : 'Hours Count'}</p>
+                      <p className="font-bold text-sm text-blue-700 dark:text-blue-300">
+                        {order.hours_count ? `⏰ ${order.hours_count} ${isAr ? 'ساعة' : 'hours'}` : (isAr ? 'غير محدد' : 'Not specified')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Time and Service */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-primary/10 p-3 rounded-lg">
                       <div className="flex items-center gap-2 justify-between mb-1">
@@ -591,12 +632,32 @@ export default function SpecialistHome() {
                       </div>
                       <p className="font-bold text-sm">{order.translated?.service_type || order.service_type}</p>
                     </div>
-                    <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                      <p className="text-xs text-muted-foreground mb-1">{isAr ? 'السعر المتفق عليه' : 'Agreed price'}</p>
-                      <p className="font-bold text-sm text-green-700 dark:text-green-300">
-                        {order.order_specialist?.quoted_price}
+                    
+                    {/* Start Time - 12 hour format with AM/PM */}
+                    <div className="bg-orange-50 dark:bg-orange-950/30 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mb-1 font-medium">{isAr ? 'وقت البدء' : 'Start Time'}</p>
+                      <p className="font-bold text-sm text-orange-700 dark:text-orange-300">
+                        {order.booking_time ? (
+                          (() => {
+                            try {
+                              const dateTimeString = `${order.booking_date}T${order.booking_time}`;
+                              const time = format(parseISO(dateTimeString), "h:mm a", { locale: isAr ? ar : enUS });
+                              return `🕐 ${time}`;
+                            } catch {
+                              return order.booking_time;
+                            }
+                          })()
+                        ) : (isAr ? 'غير محدد' : 'Not specified')}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Agreed Price */}
+                  <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border-2 border-green-200 dark:border-green-800">
+                    <p className="text-xs text-green-600 dark:text-green-400 mb-1 font-medium">{isAr ? 'السعر المتفق عليه' : 'Agreed Price'}</p>
+                    <p className="font-bold text-lg text-green-700 dark:text-green-300">
+                      💰 {order.order_specialist?.quoted_price}
+                    </p>
                   </div>
 
                   {/* Countdown Timer - Show for both today and future orders */}
