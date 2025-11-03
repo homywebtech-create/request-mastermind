@@ -26,10 +26,12 @@ export function CompaniesLivePanel() {
   const [companies, setCompanies] = useState<CompanyStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChat, setSelectedChat] = useState<{ companyId: string; companyName: string; companyPhone?: string; companyLogo?: string } | null>(null);
+  const [adminName, setAdminName] = useState<string>("");
   const previousUnreadCounts = useRef<Record<string, number>>({});
 
   useEffect(() => {
     fetchCompaniesStatus();
+    fetchAdminName();
 
     // Subscribe to realtime changes
     const channel = supabase
@@ -51,6 +53,25 @@ export function CompaniesLivePanel() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const fetchAdminName = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (profile) {
+          setAdminName(profile.full_name);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching admin name:", error);
+    }
+  };
 
   const fetchCompaniesStatus = async () => {
     try {
@@ -242,6 +263,7 @@ export function CompaniesLivePanel() {
           companyName={selectedChat.companyName}
           companyPhone={selectedChat.companyPhone}
           companyLogo={selectedChat.companyLogo}
+          adminName={adminName}
           isAdminView={true}
         />
       )}

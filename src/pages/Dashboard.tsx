@@ -25,6 +25,7 @@ import { useTranslation } from "@/i18n";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { CompaniesLivePanel } from "@/components/company/CompaniesLivePanel";
+import moboLogo from "@/assets/mobo-logo.png";
 
 interface Order {
   id: string;
@@ -716,12 +717,19 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="h-4 w-px bg-border" />
-              <h2 className="text-lg font-medium">
+              <h2 className="text-lg font-medium flex-1">
                 {language === 'ar' 
                   ? `مرحباً، ${userProfile.full_name}` 
                   : `Welcome, ${userProfile.full_name}`
                 }
               </h2>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+                <img 
+                  src={moboLogo} 
+                  alt="MOBO Technology" 
+                  className="h-8 w-auto object-contain"
+                />
+              </div>
             </div>
           )}
           

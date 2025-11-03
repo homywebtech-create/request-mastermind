@@ -22,6 +22,7 @@ interface CompanyChatDialogProps {
   companyName: string;
   companyPhone?: string;
   companyLogo?: string;
+  adminName?: string; // Name of admin user for display in chat
   isAdminView?: boolean; // If true, this is admin viewing, if false/undefined, company viewing
 }
 
@@ -40,6 +41,7 @@ export function CompanyChatDialog({
   companyName,
   companyPhone,
   companyLogo,
+  adminName,
   isAdminView = false,
 }: CompanyChatDialogProps) {
   const { language } = useLanguage();
@@ -253,8 +255,12 @@ export function CompanyChatDialog({
                 : msg.sender_type === "company";
               
               const senderName = isCurrentUser 
-                ? (isAdminView ? (language === "ar" ? "الإدارة" : "Admin") : companyName)
-                : (isAdminView ? companyName : (language === "ar" ? "الإدارة" : "Admin"));
+                ? (isAdminView 
+                    ? (adminName ? `MOBO - ${adminName}` : "MOBO Technology") 
+                    : companyName)
+                : (isAdminView 
+                    ? companyName 
+                    : (adminName ? `MOBO - ${adminName}` : "MOBO Technology"));
               
               return (
                 <div
