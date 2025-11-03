@@ -371,12 +371,75 @@ export default function OrderTracking() {
   };
 
   const handleStartMoving = async () => {
-    setStage('moving');
-    await updateOrderStage('moving');
-    toast({
-      title: "بدء التحرك",
-      description: "تم تسجيل بدء التحرك نحو العميل",
-    });
+    try {
+      // Get current user's profile to find their phone
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.phone) throw new Error('User phone not found');
+
+      // Get specialist by phone
+      const { data: specialistData } = await supabase
+        .from('specialists')
+        .select('id, company_id')
+        .eq('phone', profile.phone)
+        .single();
+
+      if (!specialistData) {
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' ? "لم يتم العثور على بيانات المحترف" : "Specialist data not found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update order with company_id from specialist
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({ 
+          company_id: specialistData.company_id,
+          tracking_stage: 'moving',
+          status: 'in-progress'
+        })
+        .eq('id', orderId);
+
+      if (orderError) throw orderError;
+
+      // Mark specialist as accepted in order_specialists
+      const { error: acceptError } = await supabase
+        .from('order_specialists')
+        .update({ 
+          is_accepted: true,
+          quoted_at: new Date().toISOString()
+        })
+        .eq('order_id', orderId)
+        .eq('specialist_id', specialistData.id);
+
+      if (acceptError) throw acceptError;
+
+      // Reload order data to reflect changes
+      await fetchOrder();
+
+      setStage('moving');
+      toast({
+        title: language === 'ar' ? "بدء التحرك" : "Started Moving",
+        description: language === 'ar' ? "تم تسجيل بدء التحرك نحو العميل" : "Movement to customer recorded",
+      });
+    } catch (error) {
+      console.error('Error starting movement:', error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "حدث خطأ أثناء بدء التحرك" : "Error starting movement",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateOrderStage = async (newStage: Stage) => {
