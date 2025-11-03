@@ -565,8 +565,10 @@ export type Database = {
           customer_rating: number | null
           customer_review_notes: string | null
           expires_at: string | null
+          final_amount: number | null
           gps_latitude: number | null
           gps_longitude: number | null
+          hourly_rate: number | null
           hours_count: number | null
           id: string
           last_sent_at: string | null
@@ -576,6 +578,8 @@ export type Database = {
           notified_expiry: boolean | null
           order_link: string | null
           order_number: string | null
+          payment_not_received_reason: string | null
+          payment_status: string | null
           selected_booking_type: string | null
           send_to_all_companies: boolean
           service_type: string
@@ -601,8 +605,10 @@ export type Database = {
           customer_rating?: number | null
           customer_review_notes?: string | null
           expires_at?: string | null
+          final_amount?: number | null
           gps_latitude?: number | null
           gps_longitude?: number | null
+          hourly_rate?: number | null
           hours_count?: number | null
           id?: string
           last_sent_at?: string | null
@@ -612,6 +618,8 @@ export type Database = {
           notified_expiry?: boolean | null
           order_link?: string | null
           order_number?: string | null
+          payment_not_received_reason?: string | null
+          payment_status?: string | null
           selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type: string
@@ -637,8 +645,10 @@ export type Database = {
           customer_rating?: number | null
           customer_review_notes?: string | null
           expires_at?: string | null
+          final_amount?: number | null
           gps_latitude?: number | null
           gps_longitude?: number | null
+          hourly_rate?: number | null
           hours_count?: number | null
           id?: string
           last_sent_at?: string | null
@@ -648,6 +658,8 @@ export type Database = {
           notified_expiry?: boolean | null
           order_link?: string | null
           order_number?: string | null
+          payment_not_received_reason?: string | null
+          payment_status?: string | null
           selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type?: string

@@ -40,6 +40,10 @@ interface Order {
   gps_longitude: number | null;
   building_info: string | null;
   company_id: string | null;
+  hourly_rate: number | null;
+  final_amount: number | null;
+  payment_status: string | null;
+  payment_not_received_reason: string | null;
   customer: {
     name: string;
     whatsapp_number: string;
@@ -85,6 +89,9 @@ export default function OrderTracking() {
   const [invoiceAmount, setInvoiceAmount] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(true);
+  const [showPaymentNotReceivedDialog, setShowPaymentNotReceivedDialog] = useState(false);
+  const [paymentNotReceivedReason, setPaymentNotReceivedReason] = useState('');
+  const [otherPaymentReason, setOtherPaymentReason] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -349,16 +356,29 @@ export default function OrderTracking() {
       
       setOrder(orderData);
       
-      // Calculate invoice amount from accepted quote
-      if (orderData?.order_specialists) {
+      // Calculate invoice amount from hourly_rate or quoted_price
+      let calculatedAmount = 0;
+      
+      // First priority: use hourly_rate if available
+      if (orderData?.hourly_rate && orderData?.hours_count) {
+        calculatedAmount = Number(orderData.hourly_rate) * Number(orderData.hours_count);
+      }
+      // Second priority: get quoted price from order_specialists
+      else if (orderData?.order_specialists) {
         const acceptedQuote = orderData.order_specialists.find((os: any) => os.is_accepted === true);
         if (acceptedQuote?.quoted_price) {
           const priceMatch = acceptedQuote.quoted_price.match(/(\d+(\.\d+)?)/);
           if (priceMatch) {
-            setInvoiceAmount(parseFloat(priceMatch[1]));
+            calculatedAmount = parseFloat(priceMatch[1]);
           }
         }
       }
+      // Fallback: try to use final_amount
+      else if (orderData?.final_amount) {
+        calculatedAmount = Number(orderData.final_amount);
+      }
+      
+      setInvoiceAmount(calculatedAmount);
     } catch (error) {
       console.error('Error fetching order:', error);
       toast({
@@ -725,6 +745,15 @@ export default function OrderTracking() {
     stopTimeExpiredAlert();
     setTimeExpired(false);
     
+    // Update order with final_amount
+    const finalAmount = invoiceAmount - discount;
+    await supabase
+      .from('orders')
+      .update({ 
+        final_amount: finalAmount
+      })
+      .eq('id', orderId);
+    
     await updateOrderStage('invoice_requested');
     setStage('invoice_details');
     toast({
@@ -735,10 +764,59 @@ export default function OrderTracking() {
   };
 
   const handlePaymentReceived = async () => {
+    // Update payment status
+    await supabase
+      .from('orders')
+      .update({ 
+        payment_status: 'received'
+      })
+      .eq('id', orderId);
+      
     setStage('customer_rating');
     toast({
       title: "Payment Confirmed",
       description: "Please rate the customer",
+    });
+  };
+
+  const handlePaymentNotReceived = async () => {
+    if (!paymentNotReceivedReason) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار سبب عدم الدفع",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (paymentNotReceivedReason === 'other' && !otherPaymentReason.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى كتابة السبب",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reason = paymentNotReceivedReason === 'other' 
+      ? otherPaymentReason 
+      : paymentNotReceivedReason;
+
+    // Update payment status and reason
+    await supabase
+      .from('orders')
+      .update({ 
+        payment_status: 'not_received',
+        payment_not_received_reason: reason
+      })
+      .eq('id', orderId);
+
+    setShowPaymentNotReceivedDialog(false);
+    setStage('customer_rating');
+    
+    toast({
+      title: "تم التسجيل",
+      description: "تم تسجيل عدم استلام الدفع",
     });
   };
 
@@ -1515,15 +1593,74 @@ export default function OrderTracking() {
             </div>
 
             {/* Fixed Button at Bottom - Always Visible */}
-            <div className="p-4 border-t-2 bg-background shadow-[0_-4px_12px_rgba(0,0,0,0.1)] sticky bottom-0">
+            <div className="p-4 border-t-2 bg-background shadow-[0_-4px_12px_rgba(0,0,0,0.1)] sticky bottom-0 space-y-2">
               <Button
                 onClick={handlePaymentReceived}
-                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg animate-pulse"
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
                 size="lg"
               >
                 <CheckCircle className="ml-2 h-5 w-5" />
                 تأكيد استلام الدفع
               </Button>
+              
+              <Dialog open={showPaymentNotReceivedDialog} onOpenChange={setShowPaymentNotReceivedDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 text-base border-red-500 text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="ml-2 h-5 w-5" />
+                    لم يتم الدفع
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>سبب عدم الدفع</DialogTitle>
+                    <DialogDescription>
+                      يرجى اختيار سبب عدم استلام الدفع
+                    </DialogDescription>
+                  </DialogHeader>
+                  <RadioGroup value={paymentNotReceivedReason} onValueChange={setPaymentNotReceivedReason}>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="customer_refused" id="customer_refused" />
+                      <Label htmlFor="customer_refused">العميل رفض الدفع</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="no_cash" id="no_cash" />
+                      <Label htmlFor="no_cash">العميل ليس معه نقود</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="dispute" id="dispute" />
+                      <Label htmlFor="dispute">خلاف على المبلغ أو الخدمة</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="will_pay_later" id="will_pay_later" />
+                      <Label htmlFor="will_pay_later">وعد بالدفع لاحقاً</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="other" id="other" />
+                      <Label htmlFor="other">سبب آخر</Label>
+                    </div>
+                  </RadioGroup>
+                  
+                  {paymentNotReceivedReason === 'other' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="other_payment_reason">اكتب السبب</Label>
+                      <Textarea
+                        id="other_payment_reason"
+                        value={otherPaymentReason}
+                        onChange={(e) => setOtherPaymentReason(e.target.value)}
+                        placeholder="اكتب سبب عدم الدفع..."
+                        rows={4}
+                      />
+                    </div>
+                  )}
+                  
+                  <Button onClick={handlePaymentNotReceived} className="w-full">
+                    تأكيد
+                  </Button>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         )}
