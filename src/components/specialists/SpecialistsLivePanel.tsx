@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,7 +81,18 @@ const notificationActionConfig = {
 export default function SpecialistsLivePanel({ companyId, isAdmin = false }: SpecialistsLivePanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const { specialists, isLoading } = useSpecialistsLiveStatus(companyId, isAdmin);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const { specialists, isLoading, refresh } = useSpecialistsLiveStatus(companyId, isAdmin);
+  
+  // Auto-refresh every 30 seconds for more accurate real-time status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refresh();
+      setLastUpdate(new Date());
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [refresh]);
 
   const filteredSpecialists = specialists.filter(spec =>
     spec.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -93,20 +104,40 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
     const StatusIcon = statusInfo.icon;
     const lastNotifTime = specialist.last_notification_status.time;
     const lastNotifAction = specialist.last_notification_status.action;
+    const upcomingTime = specialist.upcoming_order_time;
+    
+    // Check if specialist has recent activity (last 5 minutes)
+    const hasRecentActivity = lastNotifTime && 
+      (Date.now() - new Date(lastNotifTime).getTime()) < 5 * 60 * 1000;
+    
+    // Check if specialist has upcoming order within 1 hour
+    const hasUpcomingSoon = upcomingTime && 
+      (new Date(upcomingTime).getTime() - Date.now()) > 0 &&
+      (new Date(upcomingTime).getTime() - Date.now()) < 60 * 60 * 1000; // 1 hour
+    
+    // Check if specialist is busy or working (active now)
+    const isActiveNow = ['busy', 'on_the_way', 'working'].includes(specialist.status);
+    
+    // Add pulse animation if there's recent activity, active work, or upcoming order soon
+    const shouldPulse = hasRecentActivity || isActiveNow || hasUpcomingSoon;
 
     return (
       <Card 
         key={specialist.id} 
-        className={`p-3 mb-2 border ${statusInfo.borderColor} ${statusInfo.bgColor}`}
+        className={`p-3 mb-2 border transition-all duration-300 ${statusInfo.borderColor} ${statusInfo.bgColor} ${
+          shouldPulse ? 'animate-pulse shadow-lg ring-2 ring-primary/20' : ''
+        }`}
       >
         <div className="flex items-start gap-3">
           {/* Avatar */}
           <div className="relative">
-            <Avatar className="h-12 w-12">
+            <Avatar className={`h-12 w-12 ${shouldPulse ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
               <AvatarImage src={specialist.image_url || undefined} />
               <AvatarFallback>{specialist.name.substring(0, 2)}</AvatarFallback>
             </Avatar>
-            <div className={`absolute -bottom-1 -right-1 p-1 rounded-full bg-background border-2 ${statusInfo.color}`}>
+            <div className={`absolute -bottom-1 -right-1 p-1 rounded-full bg-background border-2 ${statusInfo.color} ${
+              shouldPulse ? 'animate-pulse' : ''
+            }`}>
               <StatusIcon className="h-3 w-3" />
             </div>
           </div>
@@ -138,7 +169,7 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
 
             {/* Last Notification */}
             {lastNotifTime && lastNotifAction && (
-              <div className="text-xs text-muted-foreground">
+              <div className={`text-xs ${hasRecentActivity ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
                 آخر إشعار: 
                 <span className={`mx-1 ${notificationActionConfig[lastNotifAction].color}`}>
                   {notificationActionConfig[lastNotifAction].label}
@@ -147,6 +178,27 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
                   addSuffix: true, 
                   locale: ar 
                 })}
+                {hasRecentActivity && (
+                  <Badge variant="secondary" className="mr-1 animate-pulse">
+                    جديد
+                  </Badge>
+                )}
+              </div>
+            )}
+            
+            {/* Upcoming Order Alert */}
+            {upcomingTime && (
+              <div className={`text-xs mt-1 ${hasUpcomingSoon ? 'font-semibold text-primary animate-pulse' : 'text-muted-foreground'}`}>
+                <Clock className="inline h-3 w-3 mr-1" />
+                طلب قادم: {formatDistanceToNow(new Date(upcomingTime), { 
+                  addSuffix: true, 
+                  locale: ar 
+                })}
+                {hasUpcomingSoon && (
+                  <Badge variant="default" className="mr-1 bg-orange-500 animate-pulse">
+                    قريباً
+                  </Badge>
+                )}
               </div>
             )}
             
@@ -170,6 +222,12 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
             <Users className="h-5 w-5 text-primary" />
             <h3 className="font-semibold">المحترفون</h3>
             <Badge variant="secondary">{filteredSpecialists.length}</Badge>
+            <div className="relative group">
+              <Circle className="h-2 w-2 text-green-500 animate-pulse" />
+              <span className="absolute hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 -top-8 right-0 whitespace-nowrap">
+                تحديث مباشر
+              </span>
+            </div>
           </div>
           <Button
             variant="ghost"
@@ -178,6 +236,10 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
           >
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
+        </div>
+        
+        <div className="text-xs text-muted-foreground mb-2">
+          آخر تحديث: {formatDistanceToNow(lastUpdate, { addSuffix: true, locale: ar })}
         </div>
 
         {isExpanded && (

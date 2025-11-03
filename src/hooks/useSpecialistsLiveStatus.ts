@@ -17,6 +17,7 @@ export interface SpecialistLiveStatus {
     time: string | null;
     action: 'received' | 'ignored' | 'no_response' | null;
   };
+  upcoming_order_time: string | null;
 }
 
 export function useSpecialistsLiveStatus(companyId: string | null | undefined, isAdmin: boolean = false) {
@@ -73,7 +74,9 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
             id,
             tracking_stage,
             status,
-            order_number
+            order_number,
+            booking_date,
+            booking_time
           )
         `)
         .in('specialist_id', specialistsData?.map(s => s.id) || [])
@@ -105,6 +108,29 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
         // Get the most recent active order
         const mostRecentOrder = specialistActiveOrders[0];
         const orderWithTracking = mostRecentOrder?.orders;
+        
+        // Find upcoming order (with booking_date in the future)
+        let upcomingOrderTime: string | null = null;
+        const upcomingOrders = specialistActiveOrders
+          .filter((ao: any) => ao.orders?.booking_date)
+          .sort((a: any, b: any) => {
+            const dateA = new Date(a.orders.booking_date);
+            const dateB = new Date(b.orders.booking_date);
+            return dateA.getTime() - dateB.getTime();
+          });
+        
+        if (upcomingOrders.length > 0) {
+          const nextOrder = upcomingOrders[0];
+          const bookingDate = nextOrder.orders?.booking_date;
+          const bookingTime = nextOrder.orders?.booking_time;
+          
+          if (bookingDate) {
+            // Combine date and time if available
+            upcomingOrderTime = bookingTime 
+              ? `${bookingDate} ${bookingTime}`
+              : bookingDate;
+          }
+        }
 
         // Determine status
         let status: SpecialistLiveStatus['status'] = 'not_logged_in';
@@ -198,7 +224,8 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           status,
           accepted_today,
           rejected_today,
-          last_notification_status: lastNotificationStatus
+          last_notification_status: lastNotificationStatus,
+          upcoming_order_time: upcomingOrderTime
         };
       });
 
