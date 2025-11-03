@@ -13,6 +13,7 @@ import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
 import { UpdateDialog } from "@/components/update/UpdateDialog";
+import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -40,6 +41,7 @@ export default function SpecialistHome() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [specialistId, setSpecialistId] = useState('');
+  const [companyId, setCompanyId] = useState('');
   const [specialistName, setSpecialistName] = useState('');
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -153,7 +155,7 @@ export default function SpecialistHome() {
         
         const { data: specialist, error: specialistError } = await supabase
           .from('specialists')
-          .select('id, name, phone, preferred_language, is_active, suspension_type, suspension_reason')
+          .select('id, name, phone, preferred_language, is_active, suspension_type, suspension_reason, company_id')
           .eq('phone', profile.phone)
           .single();
 
@@ -423,21 +425,29 @@ export default function SpecialistHome() {
               <h1 className="text-2xl font-bold mb-1 drop-shadow-lg">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
               <p className="text-sm opacity-95 font-medium">{isAr ? '✅ طلباتك المؤكدة' : '✅ Your Confirmed Bookings'}</p>
             </div>
-            <Button
-              onClick={() => {
-                console.log('🔄 [MANUAL] Manual refresh triggered');
-                if (specialistId) {
-                  fetchOrders(specialistId);
-                  fetchNewOrdersCount(specialistId);
-                }
-              }}
-              variant="secondary"
-              size="sm"
-              className="gap-2 shadow-lg hover:scale-105 transition-transform"
-            >
-              <Clock className="h-4 w-4" />
-              {isAr ? 'تحديث' : 'Refresh'}
-            </Button>
+            <div className="flex items-center gap-2">
+              {specialistId && companyId && (
+                <SpecialistMessagesButton 
+                  specialistId={specialistId}
+                  companyId={companyId}
+                />
+              )}
+              <Button
+                onClick={() => {
+                  console.log('🔄 [MANUAL] Manual refresh triggered');
+                  if (specialistId) {
+                    fetchOrders(specialistId);
+                    fetchNewOrdersCount(specialistId);
+                  }
+                }}
+                variant="secondary"
+                size="sm"
+                className="gap-2 shadow-lg hover:scale-105 transition-transform"
+              >
+                <Clock className="h-4 w-4" />
+                {isAr ? 'تحديث' : 'Refresh'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

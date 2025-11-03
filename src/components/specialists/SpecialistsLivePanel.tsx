@@ -19,12 +19,14 @@ import {
   Bell,
   BellOff,
   AlertCircle,
-  Ban
+  Ban,
+  MessageSquare
 } from 'lucide-react';
 import { useSpecialistsLiveStatus, SpecialistLiveStatus } from '@/hooks/useSpecialistsLiveStatus';
 import { formatDistanceToNow } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/hooks/useLanguage';
+import { SpecialistChatDialog } from '../specialist/SpecialistChatDialog';
 
 interface SpecialistsLivePanelProps {
   companyId: string | null | undefined;
@@ -97,6 +99,7 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { specialists, isLoading, refresh } = useSpecialistsLiveStatus(companyId, isAdmin);
   const { language } = useLanguage();
+  const [selectedChat, setSelectedChat] = useState<{ specialistId: string; specialistName: string; companyId: string } | null>(null);
   
   const statusConfig = getStatusConfig(language);
   const notificationActionConfig = getNotificationActionConfig(language);
@@ -307,6 +310,26 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
                 </Badge>
               </div>
             )}
+            
+            {/* Chat Button - Only show for companies (not admin view) */}
+            {!isAdmin && companyId && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full mt-2 h-6 text-[10px]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedChat({
+                    specialistId: specialist.id,
+                    specialistName: specialist.name,
+                    companyId: companyId,
+                  });
+                }}
+              >
+                <MessageSquare className="h-2.5 w-2.5 mr-1" />
+                {language === 'ar' ? 'محادثة' : 'Chat'}
+              </Button>
+            )}
           </div>
         </div>
       </Card>
@@ -314,6 +337,7 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
   };
 
   return (
+    <>
     <Card className="h-[calc(100vh-4rem)] flex flex-col">
       {/* Header */}
       <div className="p-3 border-b flex-shrink-0">
@@ -381,5 +405,18 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
         </div>
       )}
     </Card>
+    
+    {/* Chat Dialog */}
+    {selectedChat && companyId && (
+      <SpecialistChatDialog
+        open={!!selectedChat}
+        onOpenChange={(open) => !open && setSelectedChat(null)}
+        specialistId={selectedChat.specialistId}
+        specialistName={selectedChat.specialistName}
+        companyId={companyId}
+        isSpecialistView={false}
+      />
+    )}
+    </>
   );
 }
