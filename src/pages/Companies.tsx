@@ -1030,7 +1030,7 @@ export default function Companies() {
           </div>
 
           {/* Specialists Live Panel */}
-          <div className="w-96 hidden xl:block">
+          <div className="w-80 lg:w-96 hidden lg:block">
             <div className="sticky top-6">
               <SpecialistsLivePanel 
                 companyId={undefined} 

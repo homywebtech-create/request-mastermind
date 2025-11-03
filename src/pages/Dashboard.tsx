@@ -971,15 +971,15 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* Specialists Live Panel */}
-          <div className="w-96 hidden xl:block">
-            <div className="sticky top-6">
-              <SpecialistsLivePanel 
-                companyId={undefined} 
-                isAdmin={true}
-              />
-            </div>
+        {/* Specialists Live Panel */}
+        <div className="w-80 lg:w-96 hidden lg:block">
+          <div className="sticky top-6">
+            <SpecialistsLivePanel 
+              companyId={undefined} 
+              isAdmin={true}
+            />
           </div>
+        </div>
         </div>
       </main>
     </div>
