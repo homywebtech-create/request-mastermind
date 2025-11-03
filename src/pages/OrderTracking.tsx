@@ -400,11 +400,12 @@ export default function OrderTracking() {
         return;
       }
 
-      // Update order with company_id from specialist
+      // Update order with company_id and turn off send_to_all_companies
       const { error: orderError } = await supabase
         .from('orders')
         .update({ 
           company_id: specialistData.company_id,
+          send_to_all_companies: false, // Important: turn off to avoid constraint violation
           tracking_stage: 'moving',
           status: 'in-progress'
         })
