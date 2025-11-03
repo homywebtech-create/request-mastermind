@@ -1,9 +1,9 @@
 // App version information
 export const APP_VERSION = {
-  version: '1.0.1',
-  code: 2, // Android versionCode - increment for each release
+  version: '1.0.2',
+  code: 3, // Android versionCode - increment for each release
   buildDate: '2025-11-03',
-  buildTime: '10:15:00',
+  buildTime: '15:45:00',
 };
 
 export function getAppVersion() {
