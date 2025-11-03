@@ -334,14 +334,15 @@ export default function Dashboard() {
     // Awaiting Response: Orders with at least one quote, not accepted yet, and tracking not started
     const awaitingOrders = ordersList.filter(o => {
       const hasSpecialistAssigned = o.specialist_id != null;
+      const isUpcoming = o.status === 'upcoming';
       const hasQuotes = o.order_specialists && o.order_specialists.some(os => os.quoted_price);
       const hasAnyAccepted = o.order_specialists?.some(os => os.is_accepted === true);
       const notStartedTracking = !o.tracking_stage || o.tracking_stage === null;
       const notCompleted = o.status !== 'completed';
       
-      // استبعاد الطلبات المقبولة أو التي لديها specialist محدد
-      if (hasAnyAccepted || hasSpecialistAssigned) {
-        console.log(`❌ Order ${o.order_number} excluded from awaiting: accepted=${hasAnyAccepted}, has_specialist=${hasSpecialistAssigned}`);
+      // استبعاد الطلبات المقبولة أو التي لديها specialist محدد أو status=upcoming
+      if (hasAnyAccepted || hasSpecialistAssigned || isUpcoming) {
+        console.log(`❌ Order ${o.order_number} excluded from awaiting: accepted=${hasAnyAccepted}, has_specialist=${hasSpecialistAssigned}, upcoming=${isUpcoming}`);
         return false;
       }
       
