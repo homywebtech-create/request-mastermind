@@ -1086,6 +1086,8 @@ Thank you for contacting us! 🌟`;
                 <TableHead className="text-left">{t.area}</TableHead>
                 <TableHead className="text-left">{t.customerBudget}</TableHead>
                 <TableHead className="text-left">{t.service}</TableHead>
+                <TableHead className="text-left">{language === 'ar' ? 'الشركة' : 'Company'}</TableHead>
+                <TableHead className="text-left">{language === 'ar' ? 'المحترف' : 'Specialist'}</TableHead>
                 <TableHead className="text-left">{language === 'ar' ? 'تفاصيل الحجز' : 'Booking Details'}</TableHead>
                 <TableHead className="text-left">
                   {filter === 'awaiting-response' ? t.companyQuotes : (filter === 'cancelled' ? (language === 'ar' ? 'تفاصيل الإلغاء' : 'Cancellation Details') : t.notes)}
@@ -1097,7 +1099,7 @@ Thank you for contacting us! 🌟`;
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     {t.noOrders}
                   </TableCell>
                 </TableRow>
@@ -1170,6 +1172,46 @@ Thank you for contacting us! 🌟`;
                             </Badge>
                           </div>
                         </div>
+                      </TableCell>
+
+                      {/* Company Column */}
+                      <TableCell>
+                        {order.companies ? (
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">{order.companies.name}</span>
+                          </div>
+                        ) : order.send_to_all_companies ? (
+                          <Badge variant="outline" className="text-xs">
+                            {language === 'ar' ? 'جميع الشركات' : 'All Companies'}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not assigned'}</span>
+                        )}
+                      </TableCell>
+
+                      {/* Specialist Column */}
+                      <TableCell>
+                        {(() => {
+                          const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
+                          if (acceptedSpecialist?.specialists) {
+                            return (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm font-medium">{acceptedSpecialist.specialists.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Phone className="h-3 w-3" />
+                                  <span dir="ltr">{acceptedSpecialist.specialists.phone}</span>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return (
+                            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'لم يتم التعيين' : 'Not assigned'}</span>
+                          );
+                        })()}
                       </TableCell>
 
                       {/* Booking Details Column */}
