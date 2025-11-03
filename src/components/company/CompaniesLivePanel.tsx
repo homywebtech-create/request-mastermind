@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, Users, MessageSquare, AlertTriangle } from "lucide-react";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CompanyChatDialog } from "./CompanyChatDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getSoundNotification } from "@/lib/soundNotification";
 
 interface CompanyStatus {
   id: string;
@@ -24,6 +25,7 @@ export function CompaniesLivePanel() {
   const [companies, setCompanies] = useState<CompanyStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChat, setSelectedChat] = useState<{ companyId: string; companyName: string } | null>(null);
+  const previousUnreadCounts = useRef<Record<string, number>>({});
 
   useEffect(() => {
     fetchCompaniesStatus();
@@ -86,14 +88,27 @@ export function CompaniesLivePanel() {
           (o) => o.company_id === company.id
         ).length;
         const chat = chatsData?.find((c) => c.company_id === company.id);
+        const currentUnreadCount = chat?.unread_count || 0;
+
+        // Check if there are new unread messages
+        const previousCount = previousUnreadCounts.current[company.id] || 0;
+        if (currentUnreadCount > previousCount && previousCount > 0) {
+          // Play notification sound for new messages
+          getSoundNotification().playNewQuoteSound();
+        }
 
         return {
           ...company,
           specialists_count: companySpecialists.length,
           active_specialists: activeSpecialists.length,
           pending_orders: pendingOrders,
-          unread_messages: chat?.unread_count || 0,
+          unread_messages: currentUnreadCount,
         };
+      });
+
+      // Update previous unread counts
+      companiesStatus.forEach((company) => {
+        previousUnreadCounts.current[company.id] = company.unread_messages;
       });
 
       setCompanies(companiesStatus);
@@ -126,7 +141,14 @@ export function CompaniesLivePanel() {
             ) : (
               <div className="space-y-3">
                 {companies.map((company) => (
-                  <Card key={company.id} className="relative">
+                  <Card 
+                    key={company.id} 
+                    className={`relative transition-all ${
+                      company.unread_messages > 0 
+                        ? 'animate-pulse border-destructive border-2 shadow-lg shadow-destructive/20' 
+                        : ''
+                    }`}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3 mb-3">
                         {company.logo_url && (
@@ -179,14 +201,23 @@ export function CompaniesLivePanel() {
 
                       <Button
                         size="sm"
-                        className="w-full"
-                        variant="outline"
+                        className={`w-full ${
+                          company.unread_messages > 0 
+                            ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse' 
+                            : ''
+                        }`}
+                        variant={company.unread_messages > 0 ? "default" : "outline"}
                         onClick={() =>
                           setSelectedChat({ companyId: company.id, companyName: company.name })
                         }
                       >
                         <MessageSquare className="h-3 w-3 mr-2" />
                         {language === "ar" ? "المحادثة" : "Chat"}
+                        {company.unread_messages > 0 && (
+                          <Badge variant="secondary" className="mr-2">
+                            {company.unread_messages}
+                          </Badge>
+                        )}
                       </Button>
                     </CardContent>
                   </Card>
