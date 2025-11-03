@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams, useBlocker } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +70,7 @@ export default function OrderTracking() {
   const [totalWorkSeconds, setTotalWorkSeconds] = useState(0);
   const [timeExpired, setTimeExpired] = useState(false);
   const [alertInterval, setAlertInterval] = useState<NodeJS.Timeout | null>(null);
+  const alertAudioRef = useRef<HTMLAudioElement | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -231,9 +232,16 @@ export default function OrderTracking() {
   }, [order]);
 
   const startTimeExpiredAlert = () => {
+    // Stop any existing audio first
+    if (alertAudioRef.current) {
+      alertAudioRef.current.pause();
+      alertAudioRef.current.currentTime = 0;
+    }
+
     // Play notification sound
     const audio = new Audio('/notification-sound.mp3');
     audio.loop = true;
+    alertAudioRef.current = audio;
     audio.play().catch(err => console.error('Audio play error:', err));
 
     // Vibrate (if supported)
@@ -253,7 +261,14 @@ export default function OrderTracking() {
   };
 
   const stopTimeExpiredAlert = () => {
-    // Stop any playing audio
+    // Stop the alert audio if it exists
+    if (alertAudioRef.current) {
+      alertAudioRef.current.pause();
+      alertAudioRef.current.currentTime = 0;
+      alertAudioRef.current = null;
+    }
+
+    // Stop any other playing audio elements as fallback
     const audios = document.querySelectorAll('audio');
     audios.forEach(audio => {
       audio.pause();
