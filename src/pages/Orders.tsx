@@ -130,6 +130,7 @@ export default function Orders() {
           order_number,
           customer_id,
           company_id,
+          specialist_id,
           service_type,
           status,
           tracking_stage,
