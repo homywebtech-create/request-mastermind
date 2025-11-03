@@ -32,6 +32,7 @@ interface Order {
   order_number?: string;
   customer_id: string;
   company_id: string | null;
+  specialist_id?: string | null;
   service_type: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
   tracking_stage?: string | null;
@@ -331,14 +332,16 @@ export default function Dashboard() {
     
     // Awaiting Response: Orders with at least one quote, not accepted yet, and tracking not started
     const awaitingOrders = ordersList.filter(o => {
+      const hasSpecialistAssigned = o.specialist_id != null;
       const hasQuotes = o.order_specialists && o.order_specialists.some(os => os.quoted_price);
       const hasAnyAccepted = o.order_specialists?.some(os => os.is_accepted === true);
       const notStartedTracking = !o.tracking_stage || o.tracking_stage === null;
       const notCompleted = o.status !== 'completed';
       
-      // Debug logging
-      if (hasQuotes && hasAnyAccepted) {
-        console.log(`❌ Order ${o.order_number} excluded from awaiting: has accepted quote`);
+      // استبعاد الطلبات المقبولة أو التي لديها specialist محدد
+      if (hasAnyAccepted || hasSpecialistAssigned) {
+        console.log(`❌ Order ${o.order_number} excluded from awaiting: accepted=${hasAnyAccepted}, has_specialist=${hasSpecialistAssigned}`);
+        return false;
       }
       
       return hasQuotes && !hasAnyAccepted && notStartedTracking && notCompleted;
