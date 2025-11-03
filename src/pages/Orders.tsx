@@ -13,6 +13,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { SpecialistAvailabilityDialog } from "@/components/orders/SpecialistAvailabilityDialog";
+import SpecialistsLivePanel from "@/components/specialists/SpecialistsLivePanel";
 
 interface OrderFormData {
   customerName: string;
@@ -621,47 +622,62 @@ export default function Orders() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t.title}</h1>
-          <p className="text-muted-foreground mt-2">
-            {t.subtitle}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          
-          {!showForm && userHasPermission('create_order') && (
-            <Button onClick={() => setShowForm(true)} size="lg">
-              <Plus className="h-5 w-5 ml-2" />
-              {t.newOrder}
-            </Button>
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex gap-6">
+        {/* Main Content */}
+        <div className="flex-1 space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">{t.title}</h1>
+              <p className="text-muted-foreground mt-2">
+                {t.subtitle}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              
+              {!showForm && userHasPermission('create_order') && (
+                <Button onClick={() => setShowForm(true)} size="lg">
+                  <Plus className="h-5 w-5 ml-2" />
+                  {t.newOrder}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {showForm && userHasPermission('create_order') && (
+            <OrderForm 
+              onSubmit={handleCreateOrder}
+              onCancel={() => setShowForm(false)}
+            />
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <OrdersTable
+              orders={orders}
+              onUpdateStatus={handleUpdateStatus}
+              onLinkCopied={handleLinkCopied}
+              filter={filter}
+              onFilterChange={setFilter}
+            />
           )}
         </div>
-      </div>
 
-      {showForm && userHasPermission('create_order') && (
-        <OrderForm 
-          onSubmit={handleCreateOrder}
-          onCancel={() => setShowForm(false)}
-        />
-      )}
-
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        {/* Specialists Live Panel */}
+        <div className="w-96 hidden xl:block">
+          <div className="sticky top-6">
+            <SpecialistsLivePanel 
+              companyId={userProfile?.company_id} 
+              isAdmin={role === 'admin' || role === 'admin_full' || role === 'admin_manager'}
+            />
+          </div>
         </div>
-      ) : (
-        <OrdersTable
-          orders={orders}
-          onUpdateStatus={handleUpdateStatus}
-          onLinkCopied={handleLinkCopied}
-          filter={filter}
-          onFilterChange={setFilter}
-        />
-      )}
+      </div>
 
       <SpecialistAvailabilityDialog
         open={unavailableDialog.open}
