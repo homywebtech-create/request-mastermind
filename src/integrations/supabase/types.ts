@@ -1092,10 +1092,13 @@ export type Database = {
           id_card_front_url: string | null
           image_url: string | null
           is_active: boolean
+          is_online: boolean | null
           languages_spoken: string[] | null
           name: string
           nationality: string | null
           notes: string | null
+          offline_reason: string | null
+          offline_until: string | null
           phone: string
           preferred_language: string | null
           rating: number | null
@@ -1126,10 +1129,13 @@ export type Database = {
           id_card_front_url?: string | null
           image_url?: string | null
           is_active?: boolean
+          is_online?: boolean | null
           languages_spoken?: string[] | null
           name: string
           nationality?: string | null
           notes?: string | null
+          offline_reason?: string | null
+          offline_until?: string | null
           phone: string
           preferred_language?: string | null
           rating?: number | null
@@ -1160,10 +1166,13 @@ export type Database = {
           id_card_front_url?: string | null
           image_url?: string | null
           is_active?: boolean
+          is_online?: boolean | null
           languages_spoken?: string[] | null
           name?: string
           nationality?: string | null
           notes?: string | null
+          offline_reason?: string | null
+          offline_until?: string | null
           phone?: string
           preferred_language?: string | null
           rating?: number | null
@@ -1314,6 +1323,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_set_specialist_online: { Args: never; Returns: undefined }
       check_expired_id_cards: { Args: never; Returns: undefined }
       check_verification_rate_limit: {
         Args: { phone_number: string }

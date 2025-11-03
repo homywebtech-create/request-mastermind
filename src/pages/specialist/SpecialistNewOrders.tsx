@@ -24,6 +24,7 @@ import { App } from '@capacitor/app';
 import { getSoundNotification } from "@/lib/soundNotification";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { NotificationStatusChecker } from "@/components/specialist/NotificationStatusChecker";
+import { OnlineStatusToggle } from "@/components/specialist/OnlineStatusToggle";
 
 interface Order {
   id: string;
@@ -870,8 +871,11 @@ export default function SpecialistNewOrders() {
       </div>
 
       {/* Notification Status Warning */}
-      <div className="max-w-screen-lg mx-auto px-4 pt-4">
+      <div className="max-w-screen-lg mx-auto px-4 pt-4 space-y-4">
         <NotificationStatusChecker specialistId={specialistId} />
+        
+        {/* Online/Offline Status Toggle */}
+        <OnlineStatusToggle specialistId={specialistId} />
       </div>
 
       {/* Orders List */}

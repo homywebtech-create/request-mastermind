@@ -92,6 +92,46 @@ serve(async (req) => {
 
     console.log(`📱 [FCM] Sending to ${specialistIds.length} specialists...`);
 
+    // Filter out offline specialists
+    const { data: specialistsData, error: specialistsError } = await supabase
+      .from('specialists')
+      .select('id, is_online, offline_until')
+      .in('id', specialistIds);
+
+    if (specialistsError) {
+      console.error('❌ [FCM] Error fetching specialists status:', specialistsError);
+      throw specialistsError;
+    }
+
+    // Filter specialists: only include those who are online or whose offline period has expired
+    const now = new Date();
+    const onlineSpecialistIds = specialistsData
+      ?.filter(spec => {
+        if (!spec.is_online && spec.offline_until) {
+          const offlineUntil = new Date(spec.offline_until);
+          // Check if offline period has expired
+          if (offlineUntil > now) {
+            console.log(`⏸️ [FCM] Specialist ${spec.id} is offline until ${offlineUntil.toISOString()}`);
+            return false;
+          }
+          // Offline period expired - should be set back online (this will happen via auto function)
+          console.log(`✅ [FCM] Specialist ${spec.id} offline period expired - including in notifications`);
+          return true;
+        }
+        return spec.is_online;
+      })
+      .map(spec => spec.id) || [];
+
+    if (onlineSpecialistIds.length === 0) {
+      console.log('⏸️ [FCM] All specialists are offline - no notifications sent');
+      return new Response(
+        JSON.stringify({ success: true, sent: 0, message: 'All specialists are offline' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`✅ [FCM] ${onlineSpecialistIds.length} of ${specialistIds.length} specialists are online`);
+
     // Get OAuth2 access token for Firebase Admin SDK
     const tokenResponse = await getAccessToken(serviceAccountJson);
     if (!tokenResponse) {
@@ -99,11 +139,11 @@ serve(async (req) => {
     }
     console.log('✅ [FCM] Got access token');
 
-    // Get device tokens for these specialists
+    // Get device tokens for online specialists only
     const { data: tokens, error: tokensError } = await supabase
       .from('device_tokens')
       .select('token, platform, specialist_id, device_model, device_os, device_os_version, app_version')
-      .in('specialist_id', specialistIds);
+      .in('specialist_id', onlineSpecialistIds);
 
     if (tokensError) {
       console.error('❌ [FCM] Error fetching tokens:', tokensError);
