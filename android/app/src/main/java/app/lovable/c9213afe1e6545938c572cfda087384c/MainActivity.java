@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.media.AudioAttributes;
 import android.provider.Settings;
 import android.view.WindowManager;
+import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -17,6 +18,8 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 public class MainActivity extends BridgeActivity {
+    private static WebView webView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -24,10 +27,21 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BatteryOptimizationPlugin.class);
         registerPlugin(NotificationRoutePlugin.class);
         registerPlugin(ApkInstallerPlugin.class);
+        
+        // Register update broadcast receiver
+        UpdateBroadcastReceiver.register(this);
+        
+        // Store webview reference
+        webView = getBridge().getWebView();
+        
         createNotificationChannel();
         checkAndRequestPermissions();
         ensureWakeAndShowIfFromNotification(getIntent());
         handleNotificationRoute(getIntent());
+    }
+
+    public static WebView getWebView() {
+        return webView;
     }
 
     @Override

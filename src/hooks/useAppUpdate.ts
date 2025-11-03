@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { App } from '@capacitor/app';
 import { useUpdateNotificationHandler, UpdateNotificationData } from './useUpdateNotificationHandler';
+import { useUpdateBroadcastReceiver } from './useUpdateBroadcastReceiver';
 
 export interface AppVersion {
   id: string;
@@ -68,6 +69,9 @@ export const useAppUpdate = () => {
 
   // Listen for push notifications
   useUpdateNotificationHandler(handleUpdateNotification);
+
+  // Listen for update actions from Android activity
+  useUpdateBroadcastReceiver(handleUpdateNotification);
 
   // Periodic update checks (every 6 hours)
   useEffect(() => {
