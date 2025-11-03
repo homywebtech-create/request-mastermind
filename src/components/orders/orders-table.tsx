@@ -195,7 +195,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
       }
     }
     
-    if (filter === 'upcoming') {
+    if (filter === 'confirmed') {
       if (isCompanyView && companyId) {
         // For companies: show orders where company specialist was accepted but not started tracking yet
         const hasAcceptedSpecialist = order.order_specialists?.some(os => 
@@ -1396,8 +1396,8 @@ Thank you for contacting us! 🌟`;
                               <span className="text-muted-foreground text-sm">{t.noQuotes}</span>
                             );
                           })()
-                        ) : (filter === 'upcoming' || filter === 'in-progress' || filter === 'completed') ? (
-                          // Show accepted specialist info for upcoming, in-progress, and completed orders
+                        ) : (filter === 'confirmed' || filter === 'in-progress' || filter === 'completed') ? (
+                          // Show accepted specialist info for confirmed, in-progress, and completed orders
                           (() => {
                             const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
                             if (acceptedSpecialist) {

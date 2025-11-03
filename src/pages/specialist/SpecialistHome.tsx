@@ -216,8 +216,25 @@ export default function SpecialistHome() {
       const { data: { user } } = await supabase.auth.getUser();
       console.log('🔐 [FETCH] Current user:', user?.id);
 
-      // Get all orders assigned to this specialist based on order.specialist_id field
-      const { data: ordersData, error: ordersError } = await supabase
+      // Get all accepted orders for this specialist from order_specialists
+      const { data: acceptedOrderSpecs, error: orderSpecsError } = await supabase
+        .from('order_specialists')
+        .select('order_id')
+        .eq('specialist_id', specId)
+        .eq('is_accepted', true);
+
+      if (orderSpecsError) {
+        console.error('❌ Error fetching accepted order specialists:', orderSpecsError);
+        throw orderSpecsError;
+      }
+
+      const acceptedOrderIds = acceptedOrderSpecs?.map(os => os.order_id) || [];
+      console.log('✅ Accepted order IDs:', acceptedOrderIds);
+
+      // Get orders that are either:
+      // 1. Assigned directly via specialist_id field
+      // 2. Accepted through order_specialists (is_accepted = true)
+      let query = supabase
         .from('orders')
         .select(`
           id,
@@ -234,11 +251,20 @@ export default function SpecialistHome() {
             area
           )
         `)
-        .eq('specialist_id', specId)
-        .gte('booking_date', today) // Only show today and future orders
-        .neq('status', 'completed') // Hide completed orders
-        .neq('status', 'cancelled') // Hide cancelled orders
+        .gte('booking_date', today)
+        .neq('status', 'completed')
+        .neq('status', 'cancelled')
         .order('booking_date', { ascending: true });
+
+      // Filter to show orders where:
+      // - specialist_id matches OR order_id is in accepted orders list
+      if (acceptedOrderIds.length > 0) {
+        query = query.or(`specialist_id.eq.${specId},id.in.(${acceptedOrderIds.join(',')})`);
+      } else {
+        query = query.eq('specialist_id', specId);
+      }
+
+      const { data: ordersData, error: ordersError } = await query;
 
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('📊 [SpecialistHome] Orders query result:');

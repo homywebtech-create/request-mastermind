@@ -664,13 +664,13 @@ export default function CompanyPortal() {
                   isActive={filter === 'awaiting-response'}
                 />
               </div>
-              <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
+              <div onClick={() => setFilter('confirmed')} className="cursor-pointer">
                 <StatsCard
-                  title="Upcoming"
+                  title="الطلبات المؤكدة / Confirmed"
                   value={stats.upcoming}
                   icon={<Calendar className="h-4 w-4" />}
                   variant="success"
-                  isActive={filter === 'upcoming'}
+                  isActive={filter === 'confirmed'}
                 />
               </div>
               <div onClick={() => setFilter('in-progress')} className="cursor-pointer">

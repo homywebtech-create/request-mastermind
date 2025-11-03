@@ -908,13 +908,13 @@ export default function Dashboard() {
                 </div>
               )}
               {userHasPermission('view_upcoming') && (
-                <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
+                <div onClick={() => setFilter('confirmed')} className="cursor-pointer">
                   <StatsCard
-                    title="Upcoming"
+                    title="Confirmed / الطلبات المؤكدة"
                     value={stats.upcoming}
                     icon={<CheckCircle className="h-4 w-4" />}
                     variant="success"
-                    isActive={filter === 'upcoming'}
+                    isActive={filter === 'confirmed'}
                   />
                 </div>
               )}
