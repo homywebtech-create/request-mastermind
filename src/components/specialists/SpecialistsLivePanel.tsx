@@ -220,12 +220,23 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
             
             {/* Notification Status Badge */}
             {specialist.has_device_token ? (
-              <div className="flex items-center gap-1 mt-2">
-                <Bell className="h-3 w-3 text-green-600" />
-                <Badge variant="outline" className="text-xs border-green-600 text-green-600">
-                  {language === 'ar' ? 'متاح - بانتظار عروض جديدة' : 'Available - Waiting for new offers'}
-                </Badge>
-              </div>
+              // If specialist is busy, on the way, or working - they are NOT available for new offers
+              isActiveNow ? (
+                <div className="flex items-center gap-1 mt-2">
+                  <BellOff className="h-3 w-3 text-orange-600" />
+                  <Badge variant="outline" className="text-xs border-orange-600 text-orange-600 bg-orange-50">
+                    {language === 'ar' ? 'غير متاح - مشغول بطلب حالي' : 'Not Available - Busy with current order'}
+                  </Badge>
+                </div>
+              ) : (
+                // Otherwise, they are available and waiting for new offers
+                <div className="flex items-center gap-1 mt-2">
+                  <Bell className="h-3 w-3 text-green-600" />
+                  <Badge variant="outline" className="text-xs border-green-600 text-green-600 bg-green-50">
+                    {language === 'ar' ? 'متاح - بانتظار عروض جديدة' : 'Available - Waiting for new offers'}
+                  </Badge>
+                </div>
+              )
             ) : (
               <div className="flex items-center gap-1 mt-2">
                 <BellOff className="h-3 w-3 text-red-600" />
