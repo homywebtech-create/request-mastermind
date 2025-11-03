@@ -505,6 +505,61 @@ export default function OrderTracking() {
     });
   };
 
+  const shareCustomerLocationViaWhatsApp = async () => {
+    if (!order?.gps_latitude || !order?.gps_longitude) {
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "موقع العميل غير متوفر" : "Customer location not available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create Google Maps URL for sharing
+    const locationUrl = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
+    const shareText = language === 'ar' 
+      ? `موقع العميل: ${locationUrl}`
+      : `Customer Location: ${locationUrl}`;
+
+    try {
+      // Use WhatsApp share
+      await openWhatsApp('', shareText);
+      toast({
+        title: language === 'ar' ? "جاري فتح واتساب" : "Opening WhatsApp",
+        description: language === 'ar' ? "يمكنك الآن مشاركة الموقع مع السائق" : "You can now share the location with the driver",
+      });
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error);
+      // Fallback: Try Web Share API or clipboard
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: language === 'ar' ? 'موقع العميل' : 'Customer Location',
+            text: shareText,
+          });
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(locationUrl);
+          toast({
+            title: language === 'ar' ? "تم النسخ" : "Copied",
+            description: language === 'ar' ? "تم نسخ رابط موقع العميل، يمكنك مشاركته الآن" : "Customer location link copied",
+          });
+        } else {
+          toast({
+            title: language === 'ar' ? "رابط موقع العميل" : "Customer Location Link",
+            description: locationUrl,
+            duration: 10000,
+          });
+        }
+      } catch (fallbackError) {
+        toast({
+          title: language === 'ar' ? "رابط موقع العميل" : "Customer Location",
+          description: locationUrl,
+          duration: 10000,
+        });
+      }
+    }
+  };
+
   const handleArrived = async () => {
     // First time tracking_stage is set - when specialist confirms arrival
     if (movingTimer > 0) {
@@ -851,6 +906,17 @@ export default function OrderTracking() {
               <span>{language === 'ar' ? 'اضغط لموقع العميل' : 'Click Customer Location'}</span>
             </Button>
 
+            {/* Share Customer Location via WhatsApp */}
+            <Button 
+              onClick={shareCustomerLocationViaWhatsApp} 
+              variant="outline"
+              className="w-full h-14 text-lg font-bold shadow-lg hover:shadow-xl transition-all border-2"
+              size="lg"
+            >
+              <Share2 className="h-6 w-6 ml-2" />
+              <span>{language === 'ar' ? 'مشاركة موقع العميل' : 'Share Customer Location'}</span>
+            </Button>
+
             {/* Spacer to push button down */}
             <div className="min-h-[200px]" />
 
@@ -899,7 +965,7 @@ export default function OrderTracking() {
               </div>
             </Button>
 
-            {/* Share Location Button - Secondary with Attention Effects */}
+            {/* Share My Location Button */}
             <Button
               onClick={shareLocation}
               variant="outline"
@@ -907,6 +973,16 @@ export default function OrderTracking() {
             >
               <Share2 className="h-5 w-5 ml-2 animate-pulse" />
               <span className="font-semibold">{language === 'ar' ? 'مشاركة موقعي مع العميل' : 'Share My Location with Customer'}</span>
+            </Button>
+
+            {/* Share Customer Location via WhatsApp */}
+            <Button
+              onClick={shareCustomerLocationViaWhatsApp}
+              variant="outline"
+              className="w-full h-14 border-2 hover:bg-accent transition-all hover:scale-105 hover:shadow-lg animate-fade-in"
+            >
+              <Navigation className="h-5 w-5 ml-2" />
+              <span className="font-semibold">{language === 'ar' ? 'مشاركة موقع العميل' : 'Share Customer Location'}</span>
             </Button>
 
             {/* Fixed Arrival Button */}
