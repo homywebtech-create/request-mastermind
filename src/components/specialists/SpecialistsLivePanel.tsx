@@ -139,52 +139,52 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
     return (
       <Card 
         key={specialist.id} 
-        className={`p-3 mb-2 border transition-all duration-300 ${statusInfo.borderColor} ${statusInfo.bgColor} ${
+        className={`p-2.5 mb-2 border transition-all duration-300 ${statusInfo.borderColor} ${statusInfo.bgColor} ${
           shouldPulse ? 'animate-pulse shadow-lg ring-2 ring-primary/20' : ''
         }`}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2.5">
           {/* Avatar */}
           <div className="relative">
-            <Avatar className={`h-12 w-12 ${shouldPulse ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+            <Avatar className={`h-10 w-10 ${shouldPulse ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
               <AvatarImage src={specialist.image_url || undefined} />
-              <AvatarFallback>{specialist.name.substring(0, 2)}</AvatarFallback>
+              <AvatarFallback className="text-xs">{specialist.name.substring(0, 2)}</AvatarFallback>
             </Avatar>
-            <div className={`absolute -bottom-1 -right-1 p-1 rounded-full bg-background border-2 ${statusInfo.color} ${
+            <div className={`absolute -bottom-0.5 -right-0.5 p-0.5 rounded-full bg-background border-2 ${statusInfo.color} ${
               shouldPulse ? 'animate-pulse' : ''
             }`}>
-              <StatusIcon className="h-3 w-3" />
+              <StatusIcon className="h-2.5 w-2.5" />
             </div>
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <h4 className="font-medium text-sm truncate">{specialist.name}</h4>
-              <Badge variant="outline" className={`text-xs ${statusInfo.color}`}>
+            <div className="flex items-center justify-between gap-2 mb-0.5">
+              <h4 className="font-medium text-xs truncate">{specialist.name}</h4>
+              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${statusInfo.color}`}>
                 {statusInfo.label}
               </Badge>
             </div>
 
-            <p className="text-xs text-muted-foreground mb-2" dir="ltr">
+            <p className="text-[10px] text-muted-foreground mb-1.5" dir="ltr">
               {specialist.phone}
             </p>
 
             {/* Daily Stats */}
-            <div className="flex items-center gap-3 mb-2 text-xs">
-              <div className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-green-600" />
+            <div className="flex items-center gap-2.5 mb-1.5 text-[10px]">
+              <div className="flex items-center gap-0.5">
+                <CheckCircle2 className="h-2.5 w-2.5 text-green-600" />
                 <span className="text-green-600">{specialist.accepted_today}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <XCircle className="h-3 w-3 text-red-600" />
+              <div className="flex items-center gap-0.5">
+                <XCircle className="h-2.5 w-2.5 text-red-600" />
                 <span className="text-red-600">{specialist.rejected_today}</span>
               </div>
             </div>
 
             {/* Last Notification */}
             {lastNotifTime && lastNotifAction && (
-              <div className={`text-xs ${hasRecentActivity ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
+              <div className={`text-[10px] ${hasRecentActivity ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
                 {language === 'ar' ? 'آخر إشعار' : 'Last notification'}: 
                 <span className={`mx-1 ${notificationActionConfig[lastNotifAction].color}`}>
                   {notificationActionConfig[lastNotifAction].label}
@@ -194,7 +194,7 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
                   locale: language === 'ar' ? ar : enUS 
                 })}
                 {hasRecentActivity && (
-                  <Badge variant="secondary" className="mr-1 animate-pulse">
+                  <Badge variant="secondary" className="mr-1 text-[9px] px-1 py-0 animate-pulse">
                     {language === 'ar' ? 'جديد' : 'New'}
                   </Badge>
                 )}
@@ -203,14 +203,14 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
             
             {/* Upcoming Order Alert */}
             {upcomingTime && (
-              <div className={`text-xs mt-1 ${hasUpcomingSoon ? 'font-semibold text-primary animate-pulse' : 'text-muted-foreground'}`}>
-                <Clock className="inline h-3 w-3 mr-1" />
+              <div className={`text-[10px] mt-1 ${hasUpcomingSoon ? 'font-semibold text-primary animate-pulse' : 'text-muted-foreground'}`}>
+                <Clock className="inline h-2.5 w-2.5 mr-1" />
                 {language === 'ar' ? 'طلب قادم' : 'Upcoming order'}: {formatDistanceToNow(new Date(upcomingTime), { 
                   addSuffix: true, 
                   locale: language === 'ar' ? ar : enUS 
                 })}
                 {hasUpcomingSoon && (
-                  <Badge variant="default" className="mr-1 bg-orange-500 animate-pulse">
+                  <Badge variant="default" className="mr-1 text-[9px] px-1 py-0 bg-orange-500 animate-pulse">
                     {language === 'ar' ? 'قريباً' : 'Soon'}
                   </Badge>
                 )}
@@ -221,26 +221,26 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
             {specialist.has_device_token ? (
               // If specialist is busy, on the way, or working - they are NOT available for new offers
               isActiveNow ? (
-                <div className="flex items-center gap-1 mt-2">
-                  <BellOff className="h-3 w-3 text-orange-600" />
-                  <Badge variant="outline" className="text-xs border-orange-600 text-orange-600 bg-orange-50">
-                    {language === 'ar' ? 'غير متاح - مشغول بطلب حالي' : 'Not Available - Busy with current order'}
+                <div className="flex items-center gap-1 mt-1.5">
+                  <BellOff className="h-2.5 w-2.5 text-orange-600" />
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-orange-600 text-orange-600 bg-orange-50">
+                    {language === 'ar' ? 'غير متاح' : 'Not Available'}
                   </Badge>
                 </div>
               ) : (
                 // Otherwise, they are available and waiting for new offers
-                <div className="flex items-center gap-1 mt-2">
-                  <Bell className="h-3 w-3 text-green-600" />
-                  <Badge variant="outline" className="text-xs border-green-600 text-green-600 bg-green-50">
-                    {language === 'ar' ? 'متاح - بانتظار عروض جديدة' : 'Available - Waiting for new offers'}
+                <div className="flex items-center gap-1 mt-1.5">
+                  <Bell className="h-2.5 w-2.5 text-green-600" />
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-green-600 text-green-600 bg-green-50">
+                    {language === 'ar' ? 'متاح' : 'Available'}
                   </Badge>
                 </div>
               )
             ) : (
-              <div className="flex items-center gap-1 mt-2">
-                <BellOff className="h-3 w-3 text-red-600" />
-                <Badge variant="destructive" className="text-xs">
-                  {language === 'ar' ? 'لن يتلقى أي إشعارات' : 'Will not receive notifications'}
+              <div className="flex items-center gap-1 mt-1.5">
+                <BellOff className="h-2.5 w-2.5 text-red-600" />
+                <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
+                  {language === 'ar' ? 'لن يتلقى إشعارات' : 'No notifications'}
                 </Badge>
               </div>
             )}
@@ -251,17 +251,17 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
   };
 
   return (
-    <Card className="h-[calc(100vh-8rem)] flex flex-col">
+    <Card className="h-[calc(100vh-4rem)] flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
+      <div className="p-3 border-b flex-shrink-0">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">{language === 'ar' ? 'المحترفون' : 'Specialists'}</h3>
-            <Badge variant="secondary">{filteredSpecialists.length}</Badge>
+            <Users className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold text-sm">{language === 'ar' ? 'المحترفون' : 'Specialists'}</h3>
+            <Badge variant="secondary" className="text-xs">{filteredSpecialists.length}</Badge>
             <div className="relative group">
-              <Circle className="h-2 w-2 text-green-500 animate-pulse" />
-              <span className="absolute hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 -top-8 right-0 whitespace-nowrap z-50">
+              <Circle className="h-1.5 w-1.5 text-green-500 animate-pulse" />
+              <span className="absolute hidden group-hover:block bg-black text-white text-[10px] rounded px-2 py-1 -top-7 right-0 whitespace-nowrap z-50">
                 {language === 'ar' ? 'تحديث مباشر' : 'Live Update'}
               </span>
             </div>
@@ -269,13 +269,14 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
           <Button
             variant="ghost"
             size="sm"
+            className="h-6 w-6 p-0"
             onClick={() => setIsExpanded(!isExpanded)}
           >
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </Button>
         </div>
         
-        <div className="text-xs text-muted-foreground mb-2">
+        <div className="text-[10px] text-muted-foreground mb-2">
           {language === 'ar' ? 'آخر تحديث' : 'Last update'}: {formatDistanceToNow(lastUpdate, { 
             addSuffix: true, 
             locale: language === 'ar' ? ar : enUS 
@@ -284,12 +285,12 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
 
         {isExpanded && (
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute right-2.5 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
-              placeholder={language === 'ar' ? 'بحث بالاسم أو الهاتف...' : 'Search by name or phone...'}
+              placeholder={language === 'ar' ? 'بحث...' : 'Search...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10"
+              className="pr-8 h-8 text-xs"
             />
           </div>
         )}
@@ -297,14 +298,14 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
 
       {/* List */}
       {isExpanded && (
-        <div className="flex-1 overflow-y-auto p-4 min-h-0">
-          <div className="space-y-2">
+        <div className="flex-1 overflow-y-auto p-2.5 min-h-0">
+          <div className="space-y-1.5">
             {isLoading ? (
-              <div className="text-center text-muted-foreground py-8">
+              <div className="text-center text-muted-foreground py-6 text-xs">
                 {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
               </div>
             ) : filteredSpecialists.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
+              <div className="text-center text-muted-foreground py-6 text-xs">
                 {searchQuery 
                   ? (language === 'ar' ? 'لا توجد نتائج' : 'No results') 
                   : (language === 'ar' ? 'لا يوجد محترفون' : 'No specialists')
