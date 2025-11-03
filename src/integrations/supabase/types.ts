@@ -122,6 +122,82 @@ export type Database = {
         }
         Relationships: []
       }
+      company_chat_messages: {
+        Row: {
+          chat_id: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          sender_id: string
+          sender_type: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          sender_id: string
+          sender_type: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          sender_id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "company_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_chats: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          last_message: string | null
+          last_message_at: string | null
+          unread_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          unread_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          unread_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_chats_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_services: {
         Row: {
           company_id: string

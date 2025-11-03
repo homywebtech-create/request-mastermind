@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy, Upload, Image as ImageIcon, Phone, Mail, MapPin, Pencil, Trash2 } from "lucide-react";
+import { Plus, Building2, ArrowRight, Settings, Wrench, Edit, Send, Copy, Upload, Image as ImageIcon, Phone, Mail, MapPin, Pencil, Trash2, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -21,6 +21,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { openWhatsApp } from "@/lib/externalLinks";
 import SpecialistsLivePanel from "@/components/specialists/SpecialistsLivePanel";
+import { CompanyChatDialog } from "@/components/company/CompanyChatDialog";
 
 interface Service {
   id: string;
@@ -79,6 +80,7 @@ export default function Companies() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [chatCompany, setChatCompany] = useState<{ id: string; name: string } | null>(null);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -1001,6 +1003,15 @@ export default function Companies() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  onClick={() => setChatCompany({ id: company.id, name: company.name })}
+                                  title={language === "ar" ? "فتح المحادثة" : "Open Chat"}
+                                  className="text-primary hover:text-primary"
+                                >
+                                  <MessageSquare className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
                                   onClick={() => handleDeleteRequest(company)}
                                   title={t.deleteCompany}
                                   className="text-destructive hover:text-destructive"
@@ -1317,6 +1328,16 @@ export default function Companies() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Chat Dialog */}
+      {chatCompany && (
+        <CompanyChatDialog
+          open={!!chatCompany}
+          onOpenChange={(open) => !open && setChatCompany(null)}
+          companyId={chatCompany.id}
+          companyName={chatCompany.name}
+        />
+      )}
     </div>
   );
 }
