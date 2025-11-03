@@ -17,7 +17,9 @@ import {
   WifiOff,
   Users,
   Bell,
-  BellOff
+  BellOff,
+  AlertCircle,
+  Ban
 } from 'lucide-react';
 import { useSpecialistsLiveStatus, SpecialistLiveStatus } from '@/hooks/useSpecialistsLiveStatus';
 import { formatDistanceToNow } from 'date-fns';
@@ -136,6 +138,61 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
     // Add pulse animation if there's recent activity, active work, or upcoming order soon
     const shouldPulse = hasRecentActivity || isActiveNow || hasUpcomingSoon;
 
+    // حالة الإيقاف
+    const getSuspensionIndicator = () => {
+      if (specialist.suspension_type === 'permanent') {
+        return (
+          <Badge variant="destructive" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 bg-red-600">
+            <Ban className="h-2 w-2" />
+            {language === 'ar' ? 'موقوف نهائياً' : 'Permanent'}
+          </Badge>
+        );
+      }
+      
+      if (specialist.suspension_type === 'temporary') {
+        return (
+          <Badge variant="secondary" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 bg-blue-100 text-blue-800">
+            <Clock className="h-2 w-2" />
+            {language === 'ar' ? 'موقف مؤقتاً' : 'Temp. Suspended'}
+          </Badge>
+        );
+      }
+      
+      return null;
+    };
+
+    // حالة البطاقة
+    const getIdCardIndicator = () => {
+      if (!specialist.id_card_expiry_date) return null;
+      
+      const expiryDate = new Date(specialist.id_card_expiry_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysUntilExpiry < 0) {
+        return (
+          <Badge variant="destructive" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 animate-pulse">
+            <AlertCircle className="h-2 w-2" />
+            {language === 'ar' ? 'بطاقة منتهية' : 'ID Expired'}
+          </Badge>
+        );
+      }
+      
+      if (daysUntilExpiry <= 5) {
+        return (
+          <Badge variant="secondary" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 bg-orange-100 text-orange-800">
+            <Clock className="h-2 w-2" />
+            {language === 'ar' ? `${daysUntilExpiry}د` : `${daysUntilExpiry}d`}
+          </Badge>
+        );
+      }
+      
+      return null;
+    };
+
     return (
       <Card 
         key={specialist.id} 
@@ -169,6 +226,12 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
             <p className="text-[10px] text-muted-foreground mb-1.5" dir="ltr">
               {specialist.phone}
             </p>
+
+            {/* Warning Indicators - Suspension & ID Card */}
+            <div className="flex items-center gap-1 mb-1.5">
+              {getSuspensionIndicator()}
+              {getIdCardIndicator()}
+            </div>
 
             {/* Daily Stats */}
             <div className="flex items-center gap-2.5 mb-1.5 text-[10px]">

@@ -8,6 +8,8 @@ export interface SpecialistLiveStatus {
   phone: string;
   is_active: boolean;
   current_order_id: string | null;
+  suspension_type: string | null;
+  id_card_expiry_date: string | null;
   last_token_used: string | null;
   has_device_token: boolean;
   status: 'online' | 'offline' | 'busy' | 'not_logged_in' | 'on_the_way' | 'working';
@@ -36,7 +38,7 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
       // Get specialists with their current orders
       let query = supabase
         .from('specialists')
-        .select('id, name, image_url, phone, is_active, current_order_id');
+        .select('id, name, image_url, phone, is_active, current_order_id, suspension_type, id_card_expiry_date');
       
       // If not admin, filter by company
       if (!isAdmin && companyId) {
@@ -219,6 +221,8 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           phone: spec.phone,
           is_active: spec.is_active,
           current_order_id: spec.current_order_id,
+          suspension_type: spec.suspension_type,
+          id_card_expiry_date: spec.id_card_expiry_date,
           last_token_used: token?.last_used_at || null,
           has_device_token: !!token,
           status,

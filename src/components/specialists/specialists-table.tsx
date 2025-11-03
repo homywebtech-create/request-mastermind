@@ -327,23 +327,45 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
   };
 
   const getSuspensionBadge = (specialist: Specialist) => {
-    if (!specialist.suspension_type) return null;
+    if (!specialist.suspension_type && specialist.is_active) return null;
     
+    // إيقاف دائم - أحمر غامق مع أيقونة
     if (specialist.suspension_type === 'permanent') {
-      return <Badge variant="destructive" className="flex items-center gap-1">
-        <Ban className="h-3 w-3" />
-        {language === 'ar' ? 'إيقاف دائم' : 'Permanent'}
-      </Badge>;
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1 bg-red-600 hover:bg-red-700">
+          <Ban className="h-3 w-3" />
+          {language === 'ar' ? '🚫 موقوف نهائياً' : '🚫 Permanent'}
+        </Badge>
+      );
     }
     
+    // إيقاف مؤقت - أزرق فاتح
     if (specialist.suspension_type === 'temporary') {
       const endDate = specialist.suspension_end_date ? new Date(specialist.suspension_end_date) : null;
       const isExpired = endDate && endDate < new Date();
       
-      return <Badge variant="secondary" className="flex items-center gap-1">
-        <Clock className="h-3 w-3" />
-        {isExpired ? 'منتهي / Expired' : `مؤقت / Until ${endDate?.toLocaleDateString()}`}
-      </Badge>;
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+          <Clock className="h-3 w-3" />
+          {isExpired 
+            ? (language === 'ar' ? 'منتهي / Expired' : 'Expired')
+            : (language === 'ar' 
+                ? `موقف / حتى ${endDate?.toLocaleDateString('ar-EG')}` 
+                : `Until ${endDate?.toLocaleDateString('en-US')}`
+              )
+          }
+        </Badge>
+      );
+    }
+    
+    // غير نشط بدون إيقاف محدد
+    if (!specialist.is_active) {
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <XCircle className="h-3 w-3" />
+          {language === 'ar' ? 'غير نشط' : 'Inactive'}
+        </Badge>
+      );
     }
     
     return null;
@@ -355,25 +377,41 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     
     const expiryDate = new Date(specialist.id_card_expiry_date);
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
+    expiryDate.setHours(0, 0, 0, 0);
+    
     const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
-    // منتهية
+    // منتهية - أحمر مع تأثير نبض
     if (daysUntilExpiry < 0) {
-      return <Badge variant="destructive" className="flex items-center gap-1 animate-pulse">
-        <AlertCircle className="h-3 w-3" />
-        {language === 'ar' ? 'بطاقة منتهية' : 'ID Expired'}
-      </Badge>;
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1 animate-pulse bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300">
+          <AlertCircle className="h-3 w-3" />
+          {language === 'ar' ? '⚠️ بطاقة منتهية' : '⚠️ ID Expired'}
+        </Badge>
+      );
     }
     
-    // ستنتهي خلال 30 يوم
+    // ستنتهي خلال 30 يوم - برتقالي/أصفر
     if (daysUntilExpiry <= 30) {
-      return <Badge variant="secondary" className="flex items-center gap-1 bg-orange-100 text-orange-800">
-        <Clock className="h-3 w-3" />
-        {language === 'ar' ? `ستنتهي خلال ${daysUntilExpiry} يوم` : `Expires in ${daysUntilExpiry} days`}
-      </Badge>;
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1 bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300">
+          <Clock className="h-3 w-3" />
+          {language === 'ar' 
+            ? `⏰ ستنتهي خلال ${daysUntilExpiry} يوم` 
+            : `⏰ Expires in ${daysUntilExpiry} days`
+          }
+        </Badge>
+      );
     }
     
-    return null;
+    // صالحة - أخضر فاتح
+    return (
+      <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300">
+        <CheckCircle className="h-3 w-3" />
+        {language === 'ar' ? '✓ صالحة' : '✓ Valid'}
+      </Badge>
+    );
   };
 
   return (

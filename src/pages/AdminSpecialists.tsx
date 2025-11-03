@@ -21,7 +21,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { LogOut, Building2, Users, AlertCircle, Clock, Ban } from "lucide-react";
+import { LogOut, Building2, Users, AlertCircle, Clock, Ban, XCircle, CheckCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 interface Specialist {
@@ -33,6 +33,7 @@ interface Specialist {
   suspension_type: string | null;
   suspension_reason: string | null;
   suspension_end_date: string | null;
+  id_card_expiry_date: string | null;
   is_active: boolean;
 }
 
@@ -88,7 +89,7 @@ export default function AdminSpecialists() {
           // Get suspended specialists
           const { data: suspendedData, error: suspendedError } = await supabase
             .from('specialists')
-            .select('*')
+            .select('id, name, phone, nationality, image_url, suspension_type, suspension_reason, suspension_end_date, id_card_expiry_date, is_active')
             .eq('company_id', company.id)
             .or('is_active.eq.false,suspension_type.not.is.null')
             .order('name');
@@ -121,31 +122,93 @@ export default function AdminSpecialists() {
   };
 
   const getSuspensionBadge = (specialist: Specialist) => {
-    if (!specialist.is_active) {
-      if (specialist.suspension_type === 'permanent') {
-        return (
-          <Badge variant="destructive" className="gap-1">
-            <Ban className="h-3 w-3" />
-            {language === 'ar' ? 'إيقاف دائم' : 'Permanent Suspension'}
-          </Badge>
-        );
-      } else if (specialist.suspension_type === 'temporary') {
-        return (
-          <Badge variant="secondary" className="gap-1">
-            <Clock className="h-3 w-3" />
-            {language === 'ar' ? 'إيقاف مؤقت' : 'Temporary Suspension'}
-          </Badge>
-        );
-      } else {
-        return (
-          <Badge variant="outline" className="gap-1">
-            <AlertCircle className="h-3 w-3" />
-            {language === 'ar' ? 'غير نشط' : 'Inactive'}
-          </Badge>
-        );
-      }
+    if (!specialist.suspension_type && specialist.is_active) return null;
+    
+    // إيقاف دائم - أحمر غامق مع أيقونة
+    if (specialist.suspension_type === 'permanent') {
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1 bg-red-600 hover:bg-red-700">
+          <Ban className="h-3 w-3" />
+          {language === 'ar' ? '🚫 موقوف نهائياً' : '🚫 Permanent'}
+        </Badge>
+      );
     }
+    
+    // إيقاف مؤقت - أزرق فاتح
+    if (specialist.suspension_type === 'temporary') {
+      const endDate = specialist.suspension_end_date ? new Date(specialist.suspension_end_date) : null;
+      const isExpired = endDate && endDate < new Date();
+      
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+          <Clock className="h-3 w-3" />
+          {isExpired 
+            ? (language === 'ar' ? 'منتهي / Expired' : 'Expired')
+            : (language === 'ar' 
+                ? `موقف / حتى ${endDate?.toLocaleDateString('ar-EG')}` 
+                : `Until ${endDate?.toLocaleDateString('en-US')}`
+              )
+          }
+        </Badge>
+      );
+    }
+    
+    // غير نشط بدون إيقاف محدد
+    if (!specialist.is_active) {
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <XCircle className="h-3 w-3" />
+          {language === 'ar' ? 'غير نشط' : 'Inactive'}
+        </Badge>
+      );
+    }
+    
     return null;
+  };
+
+  // دالة للتحقق من البطاقة المنتهية
+  const getIdCardStatusBadge = (specialist: Specialist) => {
+    if (!specialist.id_card_expiry_date) return (
+      <span className="text-xs text-muted-foreground">-</span>
+    );
+    
+    const expiryDate = new Date(specialist.id_card_expiry_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expiryDate.setHours(0, 0, 0, 0);
+    
+    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // منتهية - أحمر مع تأثير نبض
+    if (daysUntilExpiry < 0) {
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1 animate-pulse bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300">
+          <AlertCircle className="h-3 w-3" />
+          {language === 'ar' ? '⚠️ بطاقة منتهية' : '⚠️ ID Expired'}
+        </Badge>
+      );
+    }
+    
+    // ستنتهي خلال 30 يوم - برتقالي/أصفر
+    if (daysUntilExpiry <= 30) {
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1 bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300">
+          <Clock className="h-3 w-3" />
+          {language === 'ar' 
+            ? `⏰ ستنتهي خلال ${daysUntilExpiry} يوم` 
+            : `⏰ Expires in ${daysUntilExpiry} days`
+          }
+        </Badge>
+      );
+    }
+    
+    // صالحة - أخضر فاتح
+    return (
+      <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300">
+        <CheckCircle className="h-3 w-3" />
+        {language === 'ar' ? '✓ صالحة' : '✓ Valid'}
+      </Badge>
+    );
   };
 
   const formatDate = (dateString: string | null) => {
@@ -276,6 +339,7 @@ export default function AdminSpecialists() {
                                 <TableHead>{language === 'ar' ? 'الاسم' : 'Name'}</TableHead>
                                 <TableHead>{language === 'ar' ? 'الهاتف' : 'Phone'}</TableHead>
                                 <TableHead>{language === 'ar' ? 'الجنسية' : 'Nationality'}</TableHead>
+                                <TableHead>{language === 'ar' ? 'حالة البطاقة' : 'ID Card Status'}</TableHead>
                                 <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
                                 <TableHead>{language === 'ar' ? 'نوع التعليق' : 'Suspension Type'}</TableHead>
                                 <TableHead>{language === 'ar' ? 'السبب' : 'Reason'}</TableHead>
@@ -302,6 +366,9 @@ export default function AdminSpecialists() {
                                   </TableCell>
                                   <TableCell>
                                     {specialist.nationality || '-'}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getIdCardStatusBadge(specialist)}
                                   </TableCell>
                                   <TableCell>
                                     <Badge variant={specialist.is_active ? "default" : "destructive"}>
