@@ -98,7 +98,7 @@ export function CompanyChatButton({ companyId, companyName }: CompanyChatButtonP
         onClick={() => setIsOpen(true)}
         className={`relative ${
           unreadCount > 0
-            ? "bg-destructive hover:bg-destructive/90 animate-pulse shadow-lg shadow-destructive/30"
+            ? "bg-green-600 hover:bg-green-700 animate-pulse shadow-lg shadow-green-600/30 text-white"
             : "bg-primary hover:bg-primary/90"
         }`}
       >
@@ -107,7 +107,7 @@ export function CompanyChatButton({ companyId, companyName }: CompanyChatButtonP
         {unreadCount > 0 && (
           <Badge 
             variant="secondary" 
-            className="ml-2 animate-bounce bg-white text-destructive font-bold"
+            className="ml-2 animate-bounce bg-white text-green-700 font-bold"
           >
             {unreadCount}
           </Badge>
