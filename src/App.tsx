@@ -37,7 +37,6 @@ import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
 import AppVersionManagement from "./pages/AppVersionManagement";
-import AdminDashboard from "./pages/AdminDashboard";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -331,14 +330,6 @@ function AppRouter() {
           element={
             <RoleProtectedRoute requiredPermission="view_orders" fallbackPath="/orders">
               <Dashboard />
-            </RoleProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin-dashboard"
-          element={
-            <RoleProtectedRoute requiredPermission="view_companies">
-              <AdminDashboard />
             </RoleProtectedRoute>
           }
         />
