@@ -30,6 +30,7 @@ interface SpecialistTokenStatus {
   token_count: number;
   last_token_update: string | null;
   platform: string | null;
+  is_active: boolean;
 }
 
 export default function NotificationDiagnostics() {
@@ -43,8 +44,7 @@ export default function NotificationDiagnostics() {
       // Get all specialists with their token status
       const { data: specialistsData, error: specError } = await supabase
         .from('specialists')
-        .select('id, name, phone')
-        .eq('is_active', true)
+        .select('id, name, phone, is_active')
         .order('name');
 
       if (specError) throw specError;
@@ -71,7 +71,8 @@ export default function NotificationDiagnostics() {
           has_token: tokens.length > 0,
           token_count: tokens.length,
           last_token_update: latestToken?.last_used_at || latestToken?.created_at || null,
-          platform: latestToken?.platform || null
+          platform: latestToken?.platform || null,
+          is_active: spec.is_active
         };
       });
 
@@ -92,12 +93,14 @@ export default function NotificationDiagnostics() {
     fetchDiagnostics();
   }, []);
 
+  const activeSpecialists = specialists.filter(s => s.is_active);
   const stats = {
     total: specialists.length,
-    withTokens: specialists.filter(s => s.has_token).length,
-    withoutTokens: specialists.filter(s => !s.has_token).length,
-    coverage: specialists.length > 0 
-      ? Math.round((specialists.filter(s => s.has_token).length / specialists.length) * 100)
+    totalActive: activeSpecialists.length,
+    withTokens: activeSpecialists.filter(s => s.has_token).length,
+    withoutTokens: activeSpecialists.filter(s => !s.has_token).length,
+    coverage: activeSpecialists.length > 0 
+      ? Math.round((activeSpecialists.filter(s => s.has_token).length / activeSpecialists.length) * 100)
       : 0
   };
 
@@ -121,6 +124,7 @@ export default function NotificationDiagnostics() {
             <div>
               <p className="text-sm text-muted-foreground">إجمالي المحترفين</p>
               <p className="text-3xl font-bold">{stats.total}</p>
+              <p className="text-xs text-muted-foreground mt-1">نشط: {stats.totalActive}</p>
             </div>
             <User className="h-8 w-8 text-primary" />
           </div>
@@ -193,7 +197,8 @@ export default function NotificationDiagnostics() {
                 <TableRow>
                   <TableHead className="text-right">الاسم</TableHead>
                   <TableHead className="text-right">رقم الهاتف</TableHead>
-                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-right">حالة الحساب</TableHead>
+                  <TableHead className="text-right">حالة الإشعارات</TableHead>
                   <TableHead className="text-right">المنصة</TableHead>
                   <TableHead className="text-right">عدد الأجهزة</TableHead>
                   <TableHead className="text-right">آخر تحديث</TableHead>
@@ -201,9 +206,20 @@ export default function NotificationDiagnostics() {
               </TableHeader>
               <TableBody>
                 {specialists.map((spec) => (
-                  <TableRow key={spec.specialist_id}>
+                  <TableRow key={spec.specialist_id} className={!spec.is_active ? 'bg-muted/50' : ''}>
                     <TableCell className="font-medium">{spec.specialist_name}</TableCell>
                     <TableCell dir="ltr" className="text-right">{spec.phone}</TableCell>
+                    <TableCell>
+                      {spec.is_active ? (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400">
+                          نشط
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400">
+                          موقوف
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {spec.has_token ? (
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
