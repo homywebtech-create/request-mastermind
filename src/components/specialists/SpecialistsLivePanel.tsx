@@ -16,73 +16,89 @@ import {
   Truck,
   Briefcase,
   WifiOff,
-  Users
+  Users,
+  Bell,
+  BellOff
 } from 'lucide-react';
 import { useSpecialistsLiveStatus, SpecialistLiveStatus } from '@/hooks/useSpecialistsLiveStatus';
 import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { ar, enUS } from 'date-fns/locale';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface SpecialistsLivePanelProps {
   companyId: string | null | undefined;
   isAdmin?: boolean;
 }
 
-const statusConfig = {
+const getStatusConfig = (language: string) => ({
   online: { 
-    label: 'متصل', 
+    label: language === 'ar' ? 'متصل' : 'Online',
     icon: Circle, 
     color: 'text-green-500',
     bgColor: 'bg-green-50 dark:bg-green-950',
     borderColor: 'border-green-200 dark:border-green-800'
   },
   offline: { 
-    label: 'غير متصل', 
+    label: language === 'ar' ? 'غير متصل' : 'Offline',
     icon: WifiOff, 
     color: 'text-gray-400',
     bgColor: 'bg-gray-50 dark:bg-gray-950',
     borderColor: 'border-gray-200 dark:border-gray-800'
   },
   busy: { 
-    label: 'مشغول', 
+    label: language === 'ar' ? 'مشغول' : 'Busy',
     icon: Clock, 
     color: 'text-orange-500',
     bgColor: 'bg-orange-50 dark:bg-orange-950',
     borderColor: 'border-orange-200 dark:border-orange-800'
   },
   not_logged_in: { 
-    label: 'لم يسجل دخول', 
+    label: language === 'ar' ? 'لم يسجل دخول' : 'Not Logged In',
     icon: XCircle, 
     color: 'text-red-400',
     bgColor: 'bg-red-50 dark:bg-red-950',
     borderColor: 'border-red-200 dark:border-red-800'
   },
   on_the_way: { 
-    label: 'في الطريق', 
+    label: language === 'ar' ? 'في الطريق' : 'On The Way',
     icon: Truck, 
     color: 'text-blue-500',
     bgColor: 'bg-blue-50 dark:bg-blue-950',
     borderColor: 'border-blue-200 dark:border-blue-800'
   },
   working: { 
-    label: 'يعمل الآن', 
+    label: language === 'ar' ? 'يعمل الآن' : 'Working Now',
     icon: Briefcase, 
     color: 'text-purple-500',
     bgColor: 'bg-purple-50 dark:bg-purple-950',
     borderColor: 'border-purple-200 dark:border-purple-800'
   }
-};
+});
 
-const notificationActionConfig = {
-  received: { label: 'استلم', color: 'text-green-600' },
-  ignored: { label: 'تجاهل', color: 'text-orange-600' },
-  no_response: { label: 'لا رد', color: 'text-red-600' }
-};
+const getNotificationActionConfig = (language: string) => ({
+  received: { 
+    label: language === 'ar' ? 'استلم' : 'Received',
+    color: 'text-green-600' 
+  },
+  ignored: { 
+    label: language === 'ar' ? 'تجاهل' : 'Ignored',
+    color: 'text-orange-600' 
+  },
+  no_response: { 
+    label: language === 'ar' ? 'لا رد' : 'No Response',
+    color: 'text-red-600' 
+  }
+});
 
 export default function SpecialistsLivePanel({ companyId, isAdmin = false }: SpecialistsLivePanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { specialists, isLoading, refresh } = useSpecialistsLiveStatus(companyId, isAdmin);
+  const { language } = useLanguage();
+  
+  const statusConfig = getStatusConfig(language);
+  const notificationActionConfig = getNotificationActionConfig(language);
   
   // Auto-refresh every 30 seconds for more accurate real-time status
   useEffect(() => {
@@ -170,17 +186,17 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
             {/* Last Notification */}
             {lastNotifTime && lastNotifAction && (
               <div className={`text-xs ${hasRecentActivity ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
-                آخر إشعار: 
+                {language === 'ar' ? 'آخر إشعار' : 'Last notification'}: 
                 <span className={`mx-1 ${notificationActionConfig[lastNotifAction].color}`}>
                   {notificationActionConfig[lastNotifAction].label}
                 </span>
                 {formatDistanceToNow(new Date(lastNotifTime), { 
                   addSuffix: true, 
-                  locale: ar 
+                  locale: language === 'ar' ? ar : enUS 
                 })}
                 {hasRecentActivity && (
                   <Badge variant="secondary" className="mr-1 animate-pulse">
-                    جديد
+                    {language === 'ar' ? 'جديد' : 'New'}
                   </Badge>
                 )}
               </div>
@@ -190,22 +206,33 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
             {upcomingTime && (
               <div className={`text-xs mt-1 ${hasUpcomingSoon ? 'font-semibold text-primary animate-pulse' : 'text-muted-foreground'}`}>
                 <Clock className="inline h-3 w-3 mr-1" />
-                طلب قادم: {formatDistanceToNow(new Date(upcomingTime), { 
+                {language === 'ar' ? 'طلب قادم' : 'Upcoming order'}: {formatDistanceToNow(new Date(upcomingTime), { 
                   addSuffix: true, 
-                  locale: ar 
+                  locale: language === 'ar' ? ar : enUS 
                 })}
                 {hasUpcomingSoon && (
                   <Badge variant="default" className="mr-1 bg-orange-500 animate-pulse">
-                    قريباً
+                    {language === 'ar' ? 'قريباً' : 'Soon'}
                   </Badge>
                 )}
               </div>
             )}
             
-            {!specialist.has_device_token && (
-              <Badge variant="destructive" className="text-xs mt-1">
-                لا يستقبل إشعارات
-              </Badge>
+            {/* Notification Status Badge */}
+            {specialist.has_device_token ? (
+              <div className="flex items-center gap-1 mt-2">
+                <Bell className="h-3 w-3 text-green-600" />
+                <Badge variant="outline" className="text-xs border-green-600 text-green-600">
+                  {language === 'ar' ? 'متاح - بانتظار عروض جديدة' : 'Available - Waiting for new offers'}
+                </Badge>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 mt-2">
+                <BellOff className="h-3 w-3 text-red-600" />
+                <Badge variant="destructive" className="text-xs">
+                  {language === 'ar' ? 'لن يتلقى أي إشعارات' : 'Will not receive notifications'}
+                </Badge>
+              </div>
             )}
           </div>
         </div>
@@ -220,12 +247,12 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">المحترفون</h3>
+            <h3 className="font-semibold">{language === 'ar' ? 'المحترفون' : 'Specialists'}</h3>
             <Badge variant="secondary">{filteredSpecialists.length}</Badge>
             <div className="relative group">
               <Circle className="h-2 w-2 text-green-500 animate-pulse" />
-              <span className="absolute hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 -top-8 right-0 whitespace-nowrap">
-                تحديث مباشر
+              <span className="absolute hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 -top-8 right-0 whitespace-nowrap z-50">
+                {language === 'ar' ? 'تحديث مباشر' : 'Live Update'}
               </span>
             </div>
           </div>
@@ -239,14 +266,17 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
         </div>
         
         <div className="text-xs text-muted-foreground mb-2">
-          آخر تحديث: {formatDistanceToNow(lastUpdate, { addSuffix: true, locale: ar })}
+          {language === 'ar' ? 'آخر تحديث' : 'Last update'}: {formatDistanceToNow(lastUpdate, { 
+            addSuffix: true, 
+            locale: language === 'ar' ? ar : enUS 
+          })}
         </div>
 
         {isExpanded && (
           <div className="relative">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="بحث بالاسم أو الهاتف..."
+              placeholder={language === 'ar' ? 'بحث بالاسم أو الهاتف...' : 'Search by name or phone...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10"
@@ -257,18 +287,23 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
 
       {/* List */}
       {isExpanded && (
-        <ScrollArea className="flex-1 p-4">
-          {isLoading ? (
-            <div className="text-center text-muted-foreground py-8">
-              جاري التحميل...
-            </div>
-          ) : filteredSpecialists.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              {searchQuery ? 'لا توجد نتائج' : 'لا يوجد محترفون'}
-            </div>
-          ) : (
-            filteredSpecialists.map(renderSpecialistCard)
-          )}
+        <ScrollArea className="flex-1 p-4" type="always">
+          <div className="space-y-2">
+            {isLoading ? (
+              <div className="text-center text-muted-foreground py-8">
+                {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+              </div>
+            ) : filteredSpecialists.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                {searchQuery 
+                  ? (language === 'ar' ? 'لا توجد نتائج' : 'No results') 
+                  : (language === 'ar' ? 'لا يوجد محترفون' : 'No specialists')
+                }
+              </div>
+            ) : (
+              filteredSpecialists.map(renderSpecialistCard)
+            )}
+          </div>
         </ScrollArea>
       )}
     </Card>
