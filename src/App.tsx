@@ -32,6 +32,7 @@ import SetPassword from "./pages/SetPassword";
 import ContractManagement from "./pages/ContractManagement";
 import AdminSpecialists from "./pages/AdminSpecialists";
 import PushNotificationTest from "./pages/PushNotificationTest";
+import NotificationDiagnostics from "./pages/NotificationDiagnostics";
 import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
@@ -432,6 +433,13 @@ function AppRouter() {
         <Route path="/push-test" element={
           <RoleProtectedRoute requiredPermission="view_dashboard">
             <PushNotificationTest />
+          </RoleProtectedRoute>
+        } />
+        
+        {/* Notification diagnostics (admin only) */}
+        <Route path="/notification-diagnostics" element={
+          <RoleProtectedRoute requiredPermission="view_dashboard">
+            <NotificationDiagnostics />
           </RoleProtectedRoute>
         } />
         

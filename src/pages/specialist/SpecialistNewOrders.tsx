@@ -23,6 +23,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { App } from '@capacitor/app';
 import { getSoundNotification } from "@/lib/soundNotification";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
+import { NotificationStatusChecker } from "@/components/specialist/NotificationStatusChecker";
 
 interface Order {
   id: string;
@@ -852,6 +853,11 @@ export default function SpecialistNewOrders() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Notification Status Warning */}
+      <div className="max-w-screen-lg mx-auto px-4 pt-4">
+        <NotificationStatusChecker specialistId={specialistId} />
       </div>
 
       {/* Orders List */}
