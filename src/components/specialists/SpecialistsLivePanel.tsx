@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -252,9 +251,9 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-[calc(100vh-8rem)] flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
@@ -298,7 +297,7 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
 
       {/* List */}
       {isExpanded && (
-        <ScrollArea className="flex-1 p-4" type="always">
+        <div className="flex-1 overflow-y-auto p-4 min-h-0">
           <div className="space-y-2">
             {isLoading ? (
               <div className="text-center text-muted-foreground py-8">
@@ -315,7 +314,7 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
               filteredSpecialists.map(renderSpecialistCard)
             )}
           </div>
-        </ScrollArea>
+        </div>
       )}
     </Card>
   );
