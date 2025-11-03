@@ -65,7 +65,8 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
         .in('specialist_id', specialistsData?.map(s => s.id) || [])
         .gte('created_at', today.toISOString());
 
-      // Get all active orders for specialists (from order_specialists table)
+      // Get all ACCEPTED orders for specialists (from order_specialists table)
+      // Only accepted orders should make a specialist busy
       const { data: acceptedOrdersData } = await supabase
         .from('order_specialists')
         .select(`
@@ -82,7 +83,7 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           )
         `)
         .in('specialist_id', specialistsData?.map(s => s.id) || [])
-        .or('is_accepted.eq.true,is_accepted.is.null')
+        .eq('is_accepted', true)
         .neq('orders.status', 'cancelled')
         .neq('orders.status', 'completed');
       
