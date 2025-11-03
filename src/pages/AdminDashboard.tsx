@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Building2, Users, MessageSquare, AlertTriangle, LogOut } from "lucide-react";
+import { Building2, Users, MessageSquare, AlertTriangle, LogOut, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -128,6 +128,10 @@ export default function AdminDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => navigate('/admin')}>
+                <Home className="h-4 w-4 mr-2" />
+                {language === "ar" ? "الرئيسية" : "Home"}
+              </Button>
               <LanguageSwitcher />
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />

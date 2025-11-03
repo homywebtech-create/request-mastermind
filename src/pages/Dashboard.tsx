@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -849,10 +849,16 @@ export default function Dashboard() {
                       )}
 
                       {userHasPermission('view_companies') && (
-                        <DropdownMenuItem onClick={() => navigate('/companies')}>
-                          <Building2 className="h-4 w-4 mr-2" />
-                          {language === 'ar' ? 'الشركات' : 'Companies'}
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuItem onClick={() => navigate('/companies')}>
+                            <Building2 className="h-4 w-4 mr-2" />
+                            {language === 'ar' ? 'الشركات' : 'Companies'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate('/admin-dashboard')}>
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            {language === 'ar' ? 'داشبورد الشركات' : 'Companies Dashboard'}
+                          </DropdownMenuItem>
+                        </>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
