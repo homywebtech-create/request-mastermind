@@ -21,6 +21,7 @@ interface Order {
   id: string;
   service_type: string;
   booking_date: string | null;
+  booking_time: string | null;
   gps_latitude: number | null;
   gps_longitude: number | null;
   building_info: string | null;
@@ -222,6 +223,7 @@ export default function SpecialistHome() {
           id,
           service_type,
           booking_date,
+          booking_time,
           gps_latitude,
           gps_longitude,
           building_info,
@@ -346,11 +348,15 @@ export default function SpecialistHome() {
     }
   };
 
-  const canMoveNow = (bookingDate: string | null) => {
+  const canMoveNow = (bookingDate: string | null, bookingTime: string | null) => {
     if (!bookingDate) return false;
     
     try {
-      const bookingDateTime = parseISO(bookingDate);
+      // Combine date and time if time is available
+      const dateTimeString = bookingTime 
+        ? `${bookingDate}T${bookingTime}`
+        : bookingDate;
+      const bookingDateTime = parseISO(dateTimeString);
       const moveTime = new Date(bookingDateTime.getTime() - 60 * 60 * 1000);
       return currentTime >= moveTime;
     } catch (error) {
@@ -358,11 +364,15 @@ export default function SpecialistHome() {
     }
   };
 
-  const getTimeUntilMovement = (bookingDate: string | null) => {
+  const getTimeUntilMovement = (bookingDate: string | null, bookingTime: string | null) => {
     if (!bookingDate) return null;
     
     try {
-      const bookingDateTime = parseISO(bookingDate);
+      // Combine date and time if time is available
+      const dateTimeString = bookingTime 
+        ? `${bookingDate}T${bookingTime}`
+        : bookingDate;
+      const bookingDateTime = parseISO(dateTimeString);
       const moveTime = new Date(bookingDateTime.getTime() - 60 * 60 * 1000);
       const totalSeconds = Math.floor((moveTime.getTime() - currentTime.getTime()) / 1000);
       
@@ -462,8 +472,8 @@ export default function SpecialistHome() {
           displayOrders.map((order) => {
             const isTodayOrder = isOrderToday(order.booking_date);
             const isFutureOrder = isOrderFuture(order.booking_date);
-            const canMove = canMoveNow(order.booking_date);
-            const timeUntil = getTimeUntilMovement(order.booking_date);
+            const canMove = canMoveNow(order.booking_date, order.booking_time);
+            const timeUntil = getTimeUntilMovement(order.booking_date, order.booking_time);
 
             return (
               <Card 
@@ -499,7 +509,17 @@ export default function SpecialistHome() {
                     {order.booking_date && (
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {format(parseISO(order.booking_date), "d MMMM yyyy - h:mm a", { locale: isAr ? ar : enUS })}
+                        {(() => {
+                          try {
+                            // Combine date and time if time is available
+                            const dateTimeString = order.booking_time 
+                              ? `${order.booking_date}T${order.booking_time}`
+                              : order.booking_date;
+                            return format(parseISO(dateTimeString), "d MMMM yyyy - h:mm a", { locale: isAr ? ar : enUS });
+                          } catch (error) {
+                            return format(parseISO(order.booking_date), "d MMMM yyyy", { locale: isAr ? ar : enUS });
+                          }
+                        })()}
                       </div>
                     )}
                   </div>
