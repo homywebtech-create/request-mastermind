@@ -1502,14 +1502,15 @@ export default function OrderTracking() {
                   </Dialog>
                 )}
 
-                {/* Finish Work Button - Always visible */}
+                {/* Finish Work Button - Only enabled when timer expires */}
                 <Button 
                   onClick={() => {
                     stopTimeExpiredAlert();
                     setTimeExpired(false);
                     confirmEarlyFinish();
                   }}
-                  className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold shadow-lg"
+                  disabled={!timeExpired}
+                  className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CheckCircle className="ml-2 h-6 w-6" />
                   إنهاء العمل الآن
