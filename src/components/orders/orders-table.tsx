@@ -30,7 +30,7 @@ interface Order {
   company_id: string | null;
   specialist_id?: string | null;
   service_type: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'upcoming';
   tracking_stage?: string | null;
   notes?: string;
   order_link?: string;
@@ -61,6 +61,7 @@ interface Order {
   } | null;
   order_specialists?: Array<{
     id: string;
+    specialist_id?: string;
     quoted_price: string | null;
     quoted_at: string | null;
     is_accepted: boolean | null;
@@ -213,22 +214,34 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     
     if (filter === 'confirmed') {
       if (isCompanyView && companyId) {
-        // For companies: show orders where company specialist was accepted but not started tracking yet
+        // For companies: show confirmed orders (has accepted specialist OR has specialist_id OR status=upcoming)
         const hasAcceptedSpecialist = order.order_specialists?.some(os => 
           os.is_accepted === true && os.specialists?.company_id === companyId
         );
+        const hasAssignedSpecialistFromCompany = order.specialist_id && 
+          order.order_specialists?.some(os => 
+            os.specialist_id === order.specialist_id && os.specialists?.company_id === companyId
+          );
+        const isUpcoming = order.status === 'upcoming';
         const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
         const notCompleted = order.status !== 'completed';
         const notCancelled = order.status !== 'cancelled';
-        return hasAcceptedSpecialist && notStartedTracking && notCompleted && notCancelled;
+        
+        return (hasAcceptedSpecialist || hasAssignedSpecialistFromCompany || isUpcoming) && 
+               notStartedTracking && notCompleted && notCancelled;
       } else {
-        // For admin: show orders with accepted quotes that haven't started tracking yet
-        const hasAcceptedQuote = order.order_specialists && 
-                                 order.order_specialists.some(os => os.is_accepted === true);
+        // For admin: show confirmed orders (has accepted quote OR has specialist_id OR status=upcoming)
+        const hasAcceptedQuote = order.order_specialists?.some(os => os.is_accepted === true);
+        const hasSpecialistAssigned = order.specialist_id != null;
+        const isUpcoming = order.status === 'upcoming';
         const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
         const notCompleted = order.status !== 'completed';
         const notCancelled = order.status !== 'cancelled';
-        return hasAcceptedQuote && notStartedTracking && notCompleted && notCancelled;
+        
+        console.log(`[${order.order_number}] Confirmed check: accepted=${hasAcceptedQuote}, has_specialist=${hasSpecialistAssigned}, upcoming=${isUpcoming}`);
+        
+        return (hasAcceptedQuote || hasSpecialistAssigned || isUpcoming) && 
+               notStartedTracking && notCompleted && notCancelled;
       }
     }
     

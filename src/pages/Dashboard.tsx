@@ -34,7 +34,7 @@ interface Order {
   company_id: string | null;
   specialist_id?: string | null;
   service_type: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'upcoming';
   tracking_stage?: string | null;
   notes?: string;
   order_link?: string;
@@ -64,6 +64,7 @@ interface Order {
   } | null;
   order_specialists?: Array<{
     id: string;
+    specialist_id?: string;
     quoted_price: string | null;
     quoted_at: string | null;
     is_accepted: boolean | null;
@@ -349,20 +350,22 @@ export default function Dashboard() {
     
     console.log('✅ Awaiting Response orders:', awaitingOrders.length);
     
-    // Upcoming: Orders with accepted quotes but tracking hasn't started yet
+    // Upcoming/Confirmed: Orders with accepted quotes OR specialist_id OR status=upcoming (but tracking not started)
     const upcomingOrders = ordersList.filter(o => {
-      const hasAcceptedQuote = o.order_specialists && 
-                               o.order_specialists.some(os => os.is_accepted === true);
+      const hasAcceptedQuote = o.order_specialists?.some(os => os.is_accepted === true);
+      const hasSpecialistAssigned = o.specialist_id != null;
+      const isUpcoming = o.status === 'upcoming';
       const notStartedTracking = !o.tracking_stage || o.tracking_stage === null;
       const notCompleted = o.status !== 'completed';
       const notCancelled = o.status !== 'cancelled';
       
       // Debug logging
-      if (hasAcceptedQuote && notStartedTracking && notCompleted && notCancelled) {
-        console.log(`✅ Order ${o.order_number} is confirmed (has accepted quote)`);
+      if ((hasAcceptedQuote || hasSpecialistAssigned || isUpcoming) && notStartedTracking && notCompleted && notCancelled) {
+        console.log(`✅ Order ${o.order_number} is confirmed: accepted=${hasAcceptedQuote}, has_specialist=${hasSpecialistAssigned}, upcoming=${isUpcoming}`);
       }
       
-      return hasAcceptedQuote && notStartedTracking && notCompleted && notCancelled;
+      return (hasAcceptedQuote || hasSpecialistAssigned || isUpcoming) && 
+             notStartedTracking && notCompleted && notCancelled;
     });
     
     console.log('✅ Confirmed orders:', upcomingOrders.length);
