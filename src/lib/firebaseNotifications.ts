@@ -192,6 +192,19 @@ export class FirebaseNotificationManager {
         console.warn('⚠️ Could not get device info:', e);
       }
       
+      // First, delete any duplicate tokens for this specialist
+      const { error: deleteError } = await supabase
+        .from('device_tokens')
+        .delete()
+        .eq('specialist_id', specialistId)
+        .neq('token', token);
+
+      if (deleteError) {
+        console.warn('⚠️ [DB] Could not delete old tokens:', deleteError);
+      } else {
+        console.log('🧹 [DB] Cleaned up old tokens for specialist');
+      }
+      
       // Upsert token (insert or update if exists)
       const { error } = await supabase
         .from('device_tokens')
