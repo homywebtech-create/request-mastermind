@@ -175,7 +175,16 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
       if (isCompanyView && companyId) {
         // For companies: show orders where company specialists have quoted but not accepted yet
         // استبعاد الطلبات المؤكدة (التي لديها specialist_id أو status=upcoming أو is_accepted=true)
+        console.log(`🔍 Checking [${order.order_number}] for awaiting-response (company view)`);
+        
         const hasSpecialistAssigned = order.specialist_id != null;
+        const isUpcoming = order.status === 'upcoming';
+        
+        if (hasSpecialistAssigned || isUpcoming) {
+          console.log(`❌ [${order.order_number}] Excluded from Awaiting (Company): has_specialist=${hasSpecialistAssigned}, status=${order.status}`);
+          return false;
+        }
+        
         const companySpecialists = order.order_specialists?.filter(os => 
           os.specialists?.company_id === companyId
         );
@@ -186,24 +195,21 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
         const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
         const notCompleted = order.status !== 'completed';
         
-        // استبعاد الطلبات التي لديها عروض مقبولة أو specialist محدد
-        if (!noAcceptedQuoteFromAnyCompany || hasSpecialistAssigned) {
-          console.log(`[${order.order_number}] Excluded from Awaiting: has_accepted=${!noAcceptedQuoteFromAnyCompany}, has_specialist=${hasSpecialistAssigned}`);
-          return false;
-        }
-        
         return hasQuoteNotAccepted && noAcceptedQuote && noAcceptedQuoteFromAnyCompany && notStartedTracking && notCompleted;
       } else {
         // For admin: show orders with quotes but NO quote accepted yet AND not started tracking
+        console.log(`🔍 Checking [${order.order_number}] - specialist_id=${order.specialist_id}, status=${order.status}`);
+        
         const hasSpecialistAssigned = order.specialist_id != null;
+        const isUpcoming = order.status === 'upcoming';
         const hasAnyAccepted = order.order_specialists?.some(os => os.is_accepted === true);
         const hasQuotes = order.order_specialists?.some(os => os.quoted_price);
         const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
         const notCompleted = order.status !== 'completed';
         
-        // استبعاد الطلبات التي لديها عروض مقبولة أو specialist محدد
-        if (hasAnyAccepted || hasSpecialistAssigned) {
-          console.log(`[${order.order_number}] Excluded from Awaiting: accepted=${hasAnyAccepted}, has_specialist=${hasSpecialistAssigned}`);
+        // استبعاد الطلبات التي لديها specialist_id أو status=upcoming
+        if (hasSpecialistAssigned || isUpcoming || hasAnyAccepted) {
+          console.log(`❌ [${order.order_number}] Excluded from Awaiting: specialist=${hasSpecialistAssigned}, upcoming=${isUpcoming}, accepted=${hasAnyAccepted}`);
           return false;
         }
         
