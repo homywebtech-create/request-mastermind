@@ -24,6 +24,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import SpecialistsLivePanel from "@/components/specialists/SpecialistsLivePanel";
 
 interface Order {
   id: string;
@@ -871,100 +872,115 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
-          {userHasPermission('view_new_requests') && (
-            <div onClick={() => setFilter('pending')} className="cursor-pointer">
-              <StatsCard
-                title="New Requests"
-                value={stats.pending}
-                icon={<Package className="h-4 w-4" />}
-                variant="pending"
-                isActive={filter === 'pending'}
-              />
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex gap-6">
+          {/* Main Content */}
+          <div className="flex-1 space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
+              {userHasPermission('view_new_requests') && (
+                <div onClick={() => setFilter('pending')} className="cursor-pointer">
+                  <StatsCard
+                    title="New Requests"
+                    value={stats.pending}
+                    icon={<Package className="h-4 w-4" />}
+                    variant="pending"
+                    isActive={filter === 'pending'}
+                  />
+                </div>
+              )}
+              {userHasPermission('view_awaiting_response') && (
+                <div onClick={() => setFilter('awaiting-response')} className="cursor-pointer">
+                  <StatsCard
+                    title="Awaiting Response"
+                    value={stats.awaitingResponse}
+                    icon={<Clock className="h-4 w-4" />}
+                    variant="awaiting"
+                    isActive={filter === 'awaiting-response'}
+                  />
+                </div>
+              )}
+              {userHasPermission('view_upcoming') && (
+                <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
+                  <StatsCard
+                    title="Upcoming"
+                    value={stats.upcoming}
+                    icon={<CheckCircle className="h-4 w-4" />}
+                    variant="success"
+                    isActive={filter === 'upcoming'}
+                  />
+                </div>
+              )}
+              {userHasPermission('view_in_progress') && (
+                <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
+                  <StatsCard
+                    title="In Progress"
+                    value={stats.inProgress}
+                    icon={<Users className="h-4 w-4" />}
+                    variant="warning"
+                    isActive={filter === 'in-progress'}
+                  />
+                </div>
+              )}
+              {userHasPermission('view_completed') && (
+                <div onClick={() => setFilter('completed')} className="cursor-pointer">
+                  <StatsCard
+                    title="Completed"
+                    value={stats.completed}
+                    icon={<CheckCircle className="h-4 w-4" />}
+                    variant="success"
+                    isActive={filter === 'completed'}
+                  />
+                </div>
+              )}
+              <div onClick={() => setFilter('cancelled')} className="cursor-pointer">
+                <StatsCard
+                  title={language === 'ar' ? 'ملغاة' : 'Cancelled'}
+                  value={stats.cancelled}
+                  icon={<XCircle className="h-4 w-4" />}
+                  variant="destructive"
+                  isActive={filter === 'cancelled'}
+                />
+              </div>
             </div>
-          )}
-          {userHasPermission('view_awaiting_response') && (
-            <div onClick={() => setFilter('awaiting-response')} className="cursor-pointer">
-              <StatsCard
-                title="Awaiting Response"
-                value={stats.awaitingResponse}
-                icon={<Clock className="h-4 w-4" />}
-                variant="awaiting"
-                isActive={filter === 'awaiting-response'}
-              />
-            </div>
-          )}
-          {userHasPermission('view_upcoming') && (
-            <div onClick={() => setFilter('upcoming')} className="cursor-pointer">
-              <StatsCard
-                title="Upcoming"
-                value={stats.upcoming}
-                icon={<CheckCircle className="h-4 w-4" />}
-                variant="success"
-                isActive={filter === 'upcoming'}
-              />
-            </div>
-          )}
-          {userHasPermission('view_in_progress') && (
-            <div onClick={() => setFilter('in-progress')} className="cursor-pointer">
-              <StatsCard
-                title="In Progress"
-                value={stats.inProgress}
-                icon={<Users className="h-4 w-4" />}
-                variant="warning"
-                isActive={filter === 'in-progress'}
-              />
-            </div>
-          )}
-          {userHasPermission('view_completed') && (
-            <div onClick={() => setFilter('completed')} className="cursor-pointer">
-              <StatsCard
-                title="Completed"
-                value={stats.completed}
-                icon={<CheckCircle className="h-4 w-4" />}
-                variant="success"
-                isActive={filter === 'completed'}
-              />
-            </div>
-          )}
-          <div onClick={() => setFilter('cancelled')} className="cursor-pointer">
-            <StatsCard
-              title={language === 'ar' ? 'ملغاة' : 'Cancelled'}
-              value={stats.cancelled}
-              icon={<XCircle className="h-4 w-4" />}
-              variant="destructive"
-              isActive={filter === 'cancelled'}
+
+            {userHasPermission('create_order') && (
+              <div className="flex justify-start">
+                <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      New Order
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <OrderForm 
+                      onSubmit={handleCreateOrder}
+                      onCancel={() => setIsFormOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+
+            <OrdersTable
+              orders={orders}
+              onUpdateStatus={handleUpdateStatus}
+              onLinkCopied={handleLinkCopied}
+              filter={filter}
+              onFilterChange={setFilter}
             />
           </div>
-        </div>
 
-        {userHasPermission('create_order') && (
-          <div className="flex justify-start">
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  New Order
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <OrderForm 
-                  onSubmit={handleCreateOrder}
-                  onCancel={() => setIsFormOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
+          {/* Specialists Live Panel */}
+          <div className="w-96 hidden xl:block">
+            <div className="sticky top-6">
+              <SpecialistsLivePanel 
+                companyId={undefined} 
+                isAdmin={true}
+              />
+            </div>
           </div>
-        )}
-
-        <OrdersTable
-          orders={orders}
-          onUpdateStatus={handleUpdateStatus}
-          onLinkCopied={handleLinkCopied}
-          filter={filter}
-          onFilterChange={setFilter}
-        />
+        </div>
       </main>
     </div>
   );
