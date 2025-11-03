@@ -1190,6 +1190,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      reactivate_specialists_with_valid_cards: {
+        Args: never
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
