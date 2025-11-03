@@ -599,6 +599,51 @@ export default function SpecialistHome() {
                     </div>
                   </div>
 
+                  {/* Countdown Timer - Show for both today and future orders */}
+                  {timeUntil && !canMove && (
+                    <div className={cn(
+                      "p-5 rounded-xl space-y-3 text-center",
+                      isTodayOrder ? "bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800" : "bg-destructive/10 border-2 border-destructive/20"
+                    )}>
+                      <div className="flex items-center justify-center gap-2">
+                        <Clock className={cn(
+                          "h-5 w-5",
+                          isTodayOrder ? "text-blue-600 dark:text-blue-400" : "text-destructive"
+                        )} />
+                        <p className={cn(
+                          "font-bold text-sm",
+                          isTodayOrder ? "text-blue-700 dark:text-blue-300" : "text-destructive"
+                        )}>
+                          {isAr ? 'سيفتح الطلب بعد' : 'Order opens in'}
+                        </p>
+                      </div>
+                      
+                      {/* Large Countdown Display */}
+                      <div className={cn(
+                        "font-mono font-bold text-4xl tracking-wider",
+                        isTodayOrder ? "text-blue-700 dark:text-blue-300" : "text-destructive"
+                      )}>
+                        {timeUntil.days > 0 && (
+                          <div className="flex items-center justify-center gap-2 mb-2">
+                            <span className="text-5xl">{timeUntil.days}</span>
+                            <span className="text-xl">{isAr ? 'يوم' : 'day'}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-center gap-1">
+                          <span>{String(timeUntil.hours).padStart(2, '0')}</span>
+                          <span className="animate-pulse">:</span>
+                          <span>{String(timeUntil.minutes).padStart(2, '0')}</span>
+                          <span className="animate-pulse">:</span>
+                          <span>{String(timeUntil.seconds).padStart(2, '0')}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-muted-foreground">
+                        {isAr ? 'سيتم فتح الطلب قبل الموعد بساعة واحدة' : 'Order opens one hour before appointment'}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Action Button */}
                   {isTodayOrder && (
                     <Button
@@ -609,45 +654,17 @@ export default function SpecialistHome() {
                         canMove && "bg-green-600 hover:bg-green-700 animate-pulse"
                       )}
                     >
-                      <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <Navigation className="h-5 w-5" />
-                        <span>{canMove ? (isAr ? "افتح الحجز" : "Open Booking") : (isAr ? "انتظر الموعد" : "Wait for time")}</span>
-                      </div>
-                        {timeUntil && (
-                          <div className={cn(
-                            "flex items-center gap-2 px-3 py-1 rounded-full font-mono text-sm",
-                            canMove ? "bg-white/20" : "bg-destructive/20"
-                          )}>
-                            <Clock className="h-4 w-4" />
-                            <span>
-                              {timeUntil.days > 0 && `${timeUntil.days}${isAr ? 'ي ' : 'd '}`}
-                              {String(timeUntil.hours).padStart(2, '0')}:
-                              {String(timeUntil.minutes).padStart(2, '0')}:
-                              {String(timeUntil.seconds).padStart(2, '0')}
-                            </span>
-                          </div>
-                        )}
+                        <span>{canMove ? (isAr ? "افتح الحجز الآن" : "Open Booking Now") : (isAr ? "انتظر الموعد" : "Wait for time")}</span>
                       </div>
                     </Button>
                   )}
 
-                  {isFutureOrder && timeUntil && (
-                    <div className="text-center p-4 bg-destructive/10 rounded-lg space-y-2">
-                      <p className="text-sm text-destructive font-bold">
-                        {isAr ? '⏳ سيفتح الطلب قبل الموعد بساعة' : '⏳ Order opens one hour before appointment'}
-                      </p>
-                      <div className="flex items-center justify-center gap-2 text-destructive font-mono text-lg">
-                        <Clock className="h-5 w-5" />
-                        <span>
-                          {timeUntil.days > 0 && (isAr ? `${timeUntil.days} يوم و ` : `${timeUntil.days} day and `)}
-                          {String(timeUntil.hours).padStart(2, '0')}:
-                          {String(timeUntil.minutes).padStart(2, '0')}:
-                          {String(timeUntil.seconds).padStart(2, '0')}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {isAr ? 'الوقت المتبقي حتى فتح الطلب' : 'Time remaining until opening'}
+                  {isFutureOrder && !canMove && (
+                    <div className="text-center p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        {isAr ? '⏰ سيتم تفعيل الطلب تلقائياً قبل الموعد بساعة' : '⏰ Order will activate automatically one hour before'}
                       </p>
                     </div>
                   )}
