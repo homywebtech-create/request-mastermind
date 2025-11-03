@@ -723,12 +723,11 @@ export default function Dashboard() {
                   : `Welcome, ${userProfile.full_name}`
                 }
               </h2>
-              <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-                <span className="text-sm font-medium text-foreground">
-                  Orders Management Dashboard
+              <div className="flex flex-col items-end gap-0.5 px-4 py-2 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+                <span className="text-base font-semibold text-foreground tracking-wide">
+                  Mobo Technology
                 </span>
-                <div className="h-4 w-px bg-border/50" />
-                <span className="text-xs font-bold text-primary">
+                <span className="text-sm font-bold text-primary tracking-wider">
                   OMD SYSTEM
                 </span>
               </div>
