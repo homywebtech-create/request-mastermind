@@ -447,6 +447,12 @@ export default function CompanyPortal() {
           order_link: orderLink,
           hours_count: orderData.hoursCount,
           send_to_all_companies: false, // Always false for company orders
+          booking_type: orderData.bookingType,
+          booking_date: orderData.bookingDate,
+          booking_time: orderData.bookingTime,
+          gps_latitude: orderData.gpsLatitude,
+          gps_longitude: orderData.gpsLongitude,
+          building_info: orderData.buildingInfo,
         })
         .select()
         .single();

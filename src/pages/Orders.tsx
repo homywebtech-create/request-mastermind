@@ -29,6 +29,12 @@ interface OrderFormData {
   notes: string;
   servicePrice?: number | null;
   pricingType?: string | null;
+  bookingType: string;
+  bookingDate: string | null;
+  bookingTime: string;
+  gpsLatitude: number | null;
+  gpsLongitude: number | null;
+  buildingInfo: string;
 }
 
 interface Order {
@@ -360,9 +366,15 @@ export default function Orders() {
           hours_count: formData.hoursCount ? parseFloat(formData.hoursCount) : null,
           notes: formData.notes,
           status: 'pending',
-          created_by: user?.id
+          created_by: user?.id,
+          booking_type: formData.bookingType,
+          booking_date: formData.bookingDate,
+          booking_time: formData.bookingTime,
+          gps_latitude: formData.gpsLatitude,
+          gps_longitude: formData.gpsLongitude,
+          building_info: formData.buildingInfo,
         }])
-        .select('id')
+        .select('id, order_number')
         .single();
 
       if (orderError) throw orderError;
