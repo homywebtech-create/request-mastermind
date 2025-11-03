@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/hooks/useLanguage";
 import SpecialistsLivePanel from "@/components/specialists/SpecialistsLivePanel";
+import { CompanyChatButton } from "@/components/company/CompanyChatButton";
 
 interface Company {
   id: string;
@@ -566,6 +567,12 @@ export default function CompanyPortal() {
             
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
+              
+              {/* Support Chat Button */}
+              <CompanyChatButton 
+                companyId={company.id}
+                companyName={company.name}
+              />
               
               {/* Team Management - only for users with manage_team permission */}
               {hasPermission('manage_team') && (

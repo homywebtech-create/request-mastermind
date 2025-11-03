@@ -19,6 +19,7 @@ interface CompanyChatDialogProps {
   onOpenChange: (open: boolean) => void;
   companyId: string;
   companyName: string;
+  isAdminView?: boolean; // If true, this is admin viewing, if false/undefined, company viewing
 }
 
 interface Message {
@@ -34,6 +35,7 @@ export function CompanyChatDialog({
   onOpenChange,
   companyId,
   companyName,
+  isAdminView = false,
 }: CompanyChatDialogProps) {
   const { language } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -116,13 +118,32 @@ export function CompanyChatDialog({
       if (messagesError) throw messagesError;
       setMessages((messagesData as Message[]) || []);
 
-      // Mark messages as read
-      await supabase
-        .from("company_chat_messages")
-        .update({ is_read: true })
-        .eq("chat_id", existingChat.id)
-        .eq("sender_type", "company")
-        .eq("is_read", false);
+      // Mark messages as read based on who is viewing
+      if (isAdminView) {
+        // Admin is viewing - mark company messages as read
+        await supabase
+          .from("company_chat_messages")
+          .update({ is_read: true })
+          .eq("chat_id", existingChat.id)
+          .eq("sender_type", "company")
+          .eq("is_read", false);
+
+        // Reset unread count when admin opens chat
+        await supabase
+          .from("company_chats")
+          .update({ unread_count: 0 })
+          .eq("id", existingChat.id);
+      } else {
+        // Company is viewing - mark admin messages as read
+        await supabase
+          .from("company_chat_messages")
+          .update({ is_read: true })
+          .eq("chat_id", existingChat.id)
+          .eq("sender_type", "admin")
+          .eq("is_read", false);
+      }
+
+
     } catch (error) {
       console.error("Error initializing chat:", error);
       toast.error(language === "ar" ? "فشل تحميل المحادثة" : "Failed to load chat");
@@ -140,11 +161,13 @@ export function CompanyChatDialog({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const senderType = isAdminView ? "admin" : "company";
+
       const { error: messageError } = await supabase
         .from("company_chat_messages")
         .insert({
           chat_id: chatId,
-          sender_type: "admin",
+          sender_type: senderType,
           sender_id: user.id,
           message: newMessage.trim(),
         });
@@ -152,13 +175,33 @@ export function CompanyChatDialog({
       if (messageError) throw messageError;
 
       // Update chat last message
-      await supabase
-        .from("company_chats")
-        .update({
-          last_message: newMessage.trim(),
-          last_message_at: new Date().toISOString(),
-        })
-        .eq("id", chatId);
+      // If company is sending, increment unread count for admin
+      if (isAdminView) {
+        // Admin sending - just update last message, unread stays 0
+        await supabase
+          .from("company_chats")
+          .update({
+            last_message: newMessage.trim(),
+            last_message_at: new Date().toISOString(),
+          })
+          .eq("id", chatId);
+      } else {
+        // Company sending - increment unread count for admin
+        const { data: currentChat } = await supabase
+          .from("company_chats")
+          .select("unread_count")
+          .eq("id", chatId)
+          .single();
+
+        await supabase
+          .from("company_chats")
+          .update({
+            last_message: newMessage.trim(),
+            last_message_at: new Date().toISOString(),
+            unread_count: (currentChat?.unread_count || 0) + 1,
+          })
+          .eq("id", chatId);
+      }
 
       setNewMessage("");
     } catch (error) {
@@ -188,27 +231,33 @@ export function CompanyChatDialog({
               {language === "ar" ? "لا توجد رسائل بعد" : "No messages yet"}
             </div>
           ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}
-              >
+            messages.map((msg) => {
+              const isCurrentUser = isAdminView 
+                ? msg.sender_type === "admin" 
+                : msg.sender_type === "company";
+              
+              return (
                 <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
-                    msg.sender_type === "admin"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card border"
-                  }`}
+                  key={msg.id}
+                  className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                  <p className={`text-xs mt-1 ${msg.sender_type === "admin" ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                    {format(new Date(msg.created_at), "PPp", {
-                      locale: language === "ar" ? ar : undefined,
-                    })}
-                  </p>
+                  <div
+                    className={`max-w-[70%] rounded-lg p-3 ${
+                      isCurrentUser
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                    <p className={`text-xs mt-1 ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                      {format(new Date(msg.created_at), "PPp", {
+                        locale: language === "ar" ? ar : undefined,
+                      })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>

@@ -234,6 +234,7 @@ export function CompaniesLivePanel() {
           onOpenChange={(open) => !open && setSelectedChat(null)}
           companyId={selectedChat.companyId}
           companyName={selectedChat.companyName}
+          isAdminView={true}
         />
       )}
     </>
