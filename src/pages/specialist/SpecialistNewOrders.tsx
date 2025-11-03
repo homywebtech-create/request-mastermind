@@ -502,11 +502,25 @@ export default function SpecialistNewOrders() {
         
         const { data: specialist } = await supabase
           .from('specialists')
-          .select('id, name, preferred_language')
+          .select('id, name, preferred_language, is_active, suspension_type, suspension_reason')
           .eq('phone', profile.phone)
           .single();
 
       if (specialist) {
+        // Check for PERMANENT suspension - force logout
+        if (!specialist.is_active && specialist.suspension_type === 'permanent') {
+          console.log('🚫 [PERMANENT SUSPENSION] Logging out specialist');
+          await supabase.auth.signOut();
+          toast({
+            title: "حساب موقوف نهائياً 🚫",
+            description: 'تم إيقاف حسابك بشكل نهائي. للمزيد من المعلومات، يرجى مراجعة الإدارة.',
+            variant: "destructive",
+            duration: 10000,
+          });
+          navigate('/specialist-auth');
+          return;
+        }
+
         setSpecialistId(specialist.id);
         setSpecialistName(specialist.name);
         const prefLang = specialist.preferred_language || 'ar';

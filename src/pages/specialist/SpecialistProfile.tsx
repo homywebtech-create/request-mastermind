@@ -147,6 +147,22 @@ export default function SpecialistProfile() {
             .single();
 
           if (specialistData) {
+            // Check for PERMANENT suspension - force logout
+            if (!specialistData.is_active && specialistData.suspension_type === 'permanent') {
+              console.log('🚫 [PERMANENT SUSPENSION] Logging out specialist');
+              await supabase.auth.signOut();
+              toast({
+                title: isAr ? "حساب موقوف نهائياً 🚫" : "Account Permanently Suspended 🚫",
+                description: isAr 
+                  ? 'تم إيقاف حسابك بشكل نهائي. للمزيد من المعلومات، يرجى مراجعة الإدارة.'
+                  : 'Your account has been permanently suspended. For more information, please contact administration.',
+                variant: "destructive",
+                duration: 10000,
+              });
+              navigate('/specialist-auth');
+              return;
+            }
+
             setSpecialist(specialistData);
             fetchNewOrdersCount(specialistData.id);
           }

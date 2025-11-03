@@ -102,7 +102,7 @@ export default function SpecialistAuth() {
 
       const { data: specialist, error: specialistError } = await supabase
         .from('specialists')
-        .select('id, name, is_active, suspension_type, suspension_end_date, suspension_reason, id_card_expiry_date')
+        .select('id, name, is_active, suspension_type, suspension_end_date, suspension_reason, id_card_expiry_date, id_card_front_url, id_card_back_url')
         .eq('phone', fullPhone)
         .maybeSingle();
 
@@ -116,48 +116,43 @@ export default function SpecialistAuth() {
         return;
       }
 
-      // Check if specialist is suspended due to expired ID card
-      if (specialist.suspension_type === 'temporary' && 
-          specialist.suspension_reason?.includes('انتهت صلاحية البطاقة')) {
-        setExpiredCardData({
-          id: specialist.id,
-          name: specialist.name,
-          expiryDate: specialist.id_card_expiry_date,
-        });
-        setShowExpiredCardDialog(true);
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if specialist is permanently suspended
-      if (specialist.suspension_type === 'permanent') {
-        toast({
-          title: "حساب موقوف / Account Suspended",
-          description: "تم إيقاف حسابك نهائياً. يرجى التواصل مع الإدارة / Your account has been permanently suspended. Please contact administration",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Check for other temporary suspensions
-      if (specialist.suspension_type === 'temporary' && specialist.suspension_end_date) {
-        const endDate = new Date(specialist.suspension_end_date);
-        if (endDate > new Date()) {
+      // Check specialist status
+      if (!specialist.is_active) {
+        // Check for PERMANENT suspension first - force logout
+        if (specialist.suspension_type === 'permanent') {
           toast({
-            title: "حساب موقوف مؤقتاً / Account Temporarily Suspended",
-            description: `حسابك موقوف حتى ${endDate.toLocaleDateString('ar')} / Your account is suspended until ${endDate.toLocaleDateString()}`,
+            title: language === 'ar' ? "حساب موقوف نهائياً 🚫" : "Account Permanently Suspended 🚫",
+            description: language === 'ar' 
+              ? 'تم إيقاف حسابك بشكل نهائي. للمزيد من المعلومات، يرجى مراجعة الإدارة.'
+              : 'Your account has been permanently suspended. For more information, please contact administration.',
             variant: "destructive",
+            duration: 10000,
           });
           setIsLoading(false);
           return;
         }
-      }
 
-      if (!specialist.is_active) {
+        // Check if ID card is expired
+        if (specialist.id_card_expiry_date) {
+          const expiryDate = new Date(specialist.id_card_expiry_date);
+          const today = new Date();
+          
+          if (expiryDate < today && specialist.suspension_reason?.includes('انتهت صلاحية البطاقة')) {
+            setExpiredCardData({
+              id: specialist.id,
+              name: specialist.name,
+              expiryDate: specialist.id_card_expiry_date
+            });
+            setShowExpiredCardDialog(true);
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // For other temporary suspension reasons, show error
         toast({
-          title: t.common.error,
-          description: "حسابك غير نشط. يرجى التواصل مع الإدارة / Your account is inactive. Please contact administration",
+          title: language === 'ar' ? "حساب موقوف مؤقتاً ⏸️" : "Account Temporarily Suspended ⏸️",
+          description: specialist.suspension_reason || (language === 'ar' ? 'تم إيقاف حسابك مؤقتاً. للمزيد من المعلومات، تواصل مع الإدارة.' : 'Your account has been temporarily suspended. For more information, contact administration.'),
           variant: "destructive",
         });
         setIsLoading(false);

@@ -153,13 +153,29 @@ export default function SpecialistHome() {
         
         const { data: specialist, error: specialistError } = await supabase
           .from('specialists')
-          .select('id, name, phone, preferred_language')
+          .select('id, name, phone, preferred_language, is_active, suspension_type, suspension_reason')
           .eq('phone', profile.phone)
           .single();
 
         console.log('⭐ [SPECIALIST] Specialist data:', specialist, 'Error:', specialistError);
 
         if (specialist) {
+          // Check for PERMANENT suspension - force logout
+          if (!specialist.is_active && specialist.suspension_type === 'permanent') {
+            console.log('🚫 [PERMANENT SUSPENSION] Logging out specialist');
+            await supabase.auth.signOut();
+            toast({
+              title: isAr ? "حساب موقوف نهائياً 🚫" : "Account Permanently Suspended 🚫",
+              description: isAr 
+                ? 'تم إيقاف حسابك بشكل نهائي. للمزيد من المعلومات، يرجى مراجعة الإدارة.'
+                : 'Your account has been permanently suspended. For more information, please contact administration.',
+              variant: "destructive",
+              duration: 10000,
+            });
+            navigate('/specialist-auth');
+            return;
+          }
+
           console.log('✅ [SPECIALIST] Setting specialist ID:', specialist.id);
           setSpecialistId(specialist.id);
           setPreferredLanguage(specialist.preferred_language || 'ar');

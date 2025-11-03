@@ -516,6 +516,20 @@ export default function SpecialistOrders() {
 
       setSpecialistData(specialist);
 
+      // فحص الإيقاف الدائم - أولوية قصوى، تسجيل خروج فوري
+      if (specialist.suspension_type === 'permanent') {
+        toast({
+          title: "حساب موقوف نهائياً 🚫 / Account Permanently Suspended 🚫",
+          description: "تم إيقاف حسابك بشكل نهائي. للمزيد من المعلومات، يرجى مراجعة الإدارة. / Your account has been permanently suspended. For more information, please contact administration.",
+          variant: "destructive",
+          duration: 10000,
+        });
+        // تسجيل خروج فوري
+        await supabase.auth.signOut();
+        navigate('/specialist-auth');
+        return;
+      }
+
       // فحص البطاقة المنتهية
       if (specialist.id_card_expiry_date) {
         const expiryDate = new Date(specialist.id_card_expiry_date);
@@ -534,16 +548,6 @@ export default function SpecialistOrders() {
           endDate: specialist.suspension_end_date
         });
         setShowSuspensionAlert(true);
-        return;
-      }
-
-      // فحص الإيقاف الدائم
-      if (specialist.suspension_type === 'permanent') {
-        toast({
-          title: "حساب موقوف نهائياً / Account Permanently Suspended",
-          description: "تم إيقاف حسابك نهائياً. يرجى التواصل مع الإدارة / Your account has been permanently suspended. Please contact administration",
-          variant: "destructive",
-        });
         return;
       }
 
