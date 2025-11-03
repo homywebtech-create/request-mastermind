@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock, FileUser, MoreVertical } from "lucide-react";
+import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock, FileUser, MoreVertical, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SpecialistForm } from "./specialist-form";
 import { SpecialistProfileDialog } from "./SpecialistProfileDialog";
+import { TemporaryAccessDialog } from "./TemporaryAccessDialog";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,6 +97,8 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
   const [suspensionEndDate, setSuspensionEndDate] = useState('');
   const [suspensionReason, setSuspensionReason] = useState('');
   const [showProfile, setShowProfile] = useState<Specialist | null>(null);
+  const [tempAccessSpecialist, setTempAccessSpecialist] = useState<Specialist | null>(null);
+  const [showTempAccessDialog, setShowTempAccessDialog] = useState(false);
 
   const openWhatsApp = (phoneNumber: string) => {
     openWhatsAppHelper(phoneNumber);
@@ -346,6 +349,33 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     return null;
   };
 
+  // دالة للتحقق من البطاقة المنتهية
+  const getIdCardStatusBadge = (specialist: Specialist) => {
+    if (!specialist.id_card_expiry_date) return null;
+    
+    const expiryDate = new Date(specialist.id_card_expiry_date);
+    const today = new Date();
+    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // منتهية
+    if (daysUntilExpiry < 0) {
+      return <Badge variant="destructive" className="flex items-center gap-1 animate-pulse">
+        <AlertCircle className="h-3 w-3" />
+        {language === 'ar' ? 'بطاقة منتهية' : 'ID Expired'}
+      </Badge>;
+    }
+    
+    // ستنتهي خلال 30 يوم
+    if (daysUntilExpiry <= 30) {
+      return <Badge variant="secondary" className="flex items-center gap-1 bg-orange-100 text-orange-800">
+        <Clock className="h-3 w-3" />
+        {language === 'ar' ? `ستنتهي خلال ${daysUntilExpiry} يوم` : `Expires in ${daysUntilExpiry} days`}
+      </Badge>;
+    }
+    
+    return null;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -365,6 +395,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                 <TableHead className="text-left">Experience</TableHead>
                 <TableHead className="text-left">Phone Number</TableHead>
                 <TableHead className="text-left">Approval Status</TableHead>
+                <TableHead className="text-left">ID Card Status</TableHead>
                 <TableHead className="text-left">Suspension</TableHead>
                 <TableHead className="text-left">Status</TableHead>
                 <TableHead className="text-left">Actions</TableHead>
@@ -436,6 +467,9 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                       {getApprovalStatusBadge(specialist.approval_status, specialist.registration_completed_at)}
                     </TableCell>
                     <TableCell>
+                      {getIdCardStatusBadge(specialist)}
+                    </TableCell>
+                    <TableCell>
                       {getSuspensionBadge(specialist)}
                     </TableCell>
                     <TableCell>
@@ -487,6 +521,21 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                             <DropdownMenuItem onClick={() => setSuspendingSpecialist(specialist)}>
                               <Ban className="mr-2 h-4 w-4" />
                               {language === 'ar' ? 'إيقاف' : 'Suspend'}
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {/* خيار السماح المؤقت للبطاقات المنتهية */}
+                          {specialist.id_card_expiry_date && 
+                           new Date(specialist.id_card_expiry_date) < new Date() && (
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setTempAccessSpecialist(specialist);
+                                setShowTempAccessDialog(true);
+                              }}
+                              className="text-orange-600"
+                            >
+                              <Clock className="mr-2 h-4 w-4" />
+                              {language === 'ar' ? 'سماح مؤقت' : 'Temporary Access'}
                             </DropdownMenuItem>
                           )}
                           
@@ -684,6 +733,24 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
           showApprovalButtons={true}
           onApprove={handleApproval}
           onReject={(id) => handleApproval(id, 'rejected')}
+        />
+      )}
+      
+      {/* Temporary Access Dialog */}
+      {tempAccessSpecialist && (
+        <TemporaryAccessDialog
+          open={showTempAccessDialog}
+          onOpenChange={setShowTempAccessDialog}
+          specialist={{
+            id: tempAccessSpecialist.id,
+            name: tempAccessSpecialist.name,
+            phone: tempAccessSpecialist.phone,
+            id_card_expiry_date: tempAccessSpecialist.id_card_expiry_date,
+          }}
+          onSuccess={() => {
+            setTempAccessSpecialist(null);
+            onUpdate();
+          }}
         />
       )}
     </Card>
