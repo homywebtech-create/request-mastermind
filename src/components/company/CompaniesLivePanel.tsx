@@ -13,6 +13,7 @@ interface CompanyStatus {
   id: string;
   name: string;
   logo_url?: string;
+  phone?: string;
   is_active: boolean;
   specialists_count: number;
   active_specialists: number;
@@ -24,7 +25,7 @@ export function CompaniesLivePanel() {
   const { language } = useLanguage();
   const [companies, setCompanies] = useState<CompanyStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedChat, setSelectedChat] = useState<{ companyId: string; companyName: string } | null>(null);
+  const [selectedChat, setSelectedChat] = useState<{ companyId: string; companyName: string; companyPhone?: string; companyLogo?: string } | null>(null);
   const previousUnreadCounts = useRef<Record<string, number>>({});
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export function CompaniesLivePanel() {
       // Fetch companies
       const { data: companiesData, error: companiesError } = await supabase
         .from("companies")
-        .select("id, name, logo_url, is_active")
+        .select("id, name, logo_url, is_active, phone")
         .order("name");
 
       if (companiesError) throw companiesError;
@@ -208,7 +209,12 @@ export function CompaniesLivePanel() {
                         }`}
                         variant={company.unread_messages > 0 ? "default" : "outline"}
                         onClick={() =>
-                          setSelectedChat({ companyId: company.id, companyName: company.name })
+                          setSelectedChat({ 
+                            companyId: company.id, 
+                            companyName: company.name,
+                            companyPhone: company.phone,
+                            companyLogo: company.logo_url
+                          })
                         }
                       >
                         <MessageSquare className="h-3 w-3 mr-2" />
@@ -234,6 +240,8 @@ export function CompaniesLivePanel() {
           onOpenChange={(open) => !open && setSelectedChat(null)}
           companyId={selectedChat.companyId}
           companyName={selectedChat.companyName}
+          companyPhone={selectedChat.companyPhone}
+          companyLogo={selectedChat.companyLogo}
           isAdminView={true}
         />
       )}

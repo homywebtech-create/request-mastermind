@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -99,11 +100,38 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { specialists, isLoading, refresh } = useSpecialistsLiveStatus(companyId, isAdmin);
   const { language } = useLanguage();
-  const [selectedChat, setSelectedChat] = useState<{ specialistId: string; specialistName: string; companyId: string } | null>(null);
+  const [selectedChat, setSelectedChat] = useState<{ 
+    specialistId: string; 
+    specialistName: string; 
+    specialistPhone?: string;
+    specialistImage?: string;
+    companyId: string;
+    companyName?: string;
+  } | null>(null);
+  const [companyName, setCompanyName] = useState<string>("");
   
   const statusConfig = getStatusConfig(language);
   const notificationActionConfig = getNotificationActionConfig(language);
   
+  // Fetch company name
+  useEffect(() => {
+    const fetchCompanyName = async () => {
+      if (companyId) {
+        const { data } = await supabase
+          .from("companies")
+          .select("name")
+          .eq("id", companyId)
+          .single();
+        
+        if (data) {
+          setCompanyName(data.name);
+        }
+      }
+    };
+    
+    fetchCompanyName();
+  }, [companyId]);
+
   // Auto-refresh every 30 seconds for more accurate real-time status
   useEffect(() => {
     const interval = setInterval(() => {
@@ -322,7 +350,10 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
                   setSelectedChat({
                     specialistId: specialist.id,
                     specialistName: specialist.name,
+                    specialistPhone: specialist.phone,
+                    specialistImage: specialist.image_url,
                     companyId: companyId,
+                    companyName: companyName,
                   });
                 }}
               >
@@ -413,7 +444,10 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
         onOpenChange={(open) => !open && setSelectedChat(null)}
         specialistId={selectedChat.specialistId}
         specialistName={selectedChat.specialistName}
+        specialistPhone={selectedChat.specialistPhone}
+        specialistImage={selectedChat.specialistImage}
         companyId={companyId}
+        companyName={selectedChat.companyName}
         isSpecialistView={false}
       />
     )}

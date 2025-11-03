@@ -204,8 +204,9 @@ export function SpecialistMessagesButton({
           open={!!selectedChat}
           onOpenChange={(open) => !open && setSelectedChat(null)}
           specialistId={selectedChat.specialistId}
-          specialistName={language === "ar" ? "الشركة" : "Company"}
+          specialistName={language === "ar" ? "أنت" : "You"}
           companyId={selectedChat.companyId}
+          companyName={selectedChat.companyName}
           isSpecialistView={true}
         />
       )}

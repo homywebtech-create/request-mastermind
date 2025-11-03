@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +20,8 @@ interface CompanyChatDialogProps {
   onOpenChange: (open: boolean) => void;
   companyId: string;
   companyName: string;
+  companyPhone?: string;
+  companyLogo?: string;
   isAdminView?: boolean; // If true, this is admin viewing, if false/undefined, company viewing
 }
 
@@ -35,6 +38,8 @@ export function CompanyChatDialog({
   onOpenChange,
   companyId,
   companyName,
+  companyPhone,
+  companyLogo,
   isAdminView = false,
 }: CompanyChatDialogProps) {
   const { language } = useLanguage();
@@ -216,8 +221,19 @@ export function CompanyChatDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[600px] flex flex-col">
         <DialogHeader>
-          <DialogTitle>
-            {language === "ar" ? `محادثة مع ${companyName}` : `Chat with ${companyName}`}
+          <DialogTitle className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={companyLogo} alt={companyName} />
+              <AvatarFallback>{companyName[0]}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col items-start">
+              <span>{companyName}</span>
+              {companyPhone && (
+                <span className="text-xs text-muted-foreground font-normal">
+                  {companyPhone}
+                </span>
+              )}
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -236,25 +252,48 @@ export function CompanyChatDialog({
                 ? msg.sender_type === "admin" 
                 : msg.sender_type === "company";
               
+              const senderName = isCurrentUser 
+                ? (isAdminView ? (language === "ar" ? "الإدارة" : "Admin") : companyName)
+                : (isAdminView ? companyName : (language === "ar" ? "الإدارة" : "Admin"));
+              
               return (
                 <div
                   key={msg.id}
-                  className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                  className={`flex gap-2 ${isCurrentUser ? "justify-end" : "justify-start"}`}
                 >
-                  <div
-                    className={`max-w-[70%] rounded-lg p-3 ${
-                      isCurrentUser
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border"
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                    <p className={`text-xs mt-1 ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                      {format(new Date(msg.created_at), "PPp", {
-                        locale: language === "ar" ? ar : undefined,
-                      })}
-                    </p>
+                  {!isCurrentUser && (
+                    <Avatar className="h-8 w-8 mt-1">
+                      <AvatarImage src={companyLogo} alt={senderName} />
+                      <AvatarFallback>{senderName[0]}</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    {!isCurrentUser && (
+                      <span className="text-xs text-muted-foreground px-1">
+                        {senderName}
+                      </span>
+                    )}
+                    <div
+                      className={`max-w-[70%] rounded-lg p-3 ${
+                        isCurrentUser
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card border"
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                      <p className={`text-xs mt-1 ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                        {format(new Date(msg.created_at), "PPp", {
+                          locale: language === "ar" ? ar : undefined,
+                        })}
+                      </p>
+                    </div>
                   </div>
+                  {isCurrentUser && (
+                    <Avatar className="h-8 w-8 mt-1">
+                      <AvatarImage src={companyLogo} alt={senderName} />
+                      <AvatarFallback>{senderName[0]}</AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
               );
             })

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +20,10 @@ interface SpecialistChatDialogProps {
   onOpenChange: (open: boolean) => void;
   specialistId: string;
   specialistName: string;
+  specialistPhone?: string;
+  specialistImage?: string;
   companyId: string;
+  companyName?: string;
   isSpecialistView?: boolean; // true if specialist is viewing, false if company is viewing
 }
 
@@ -36,7 +40,10 @@ export function SpecialistChatDialog({
   onOpenChange,
   specialistId,
   specialistName,
+  specialistPhone,
+  specialistImage,
   companyId,
+  companyName,
   isSpecialistView = false,
 }: SpecialistChatDialogProps) {
   const { language } = useLanguage();
@@ -220,10 +227,23 @@ export function SpecialistChatDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[600px] flex flex-col">
         <DialogHeader>
-          <DialogTitle>
-            {language === "ar"
-              ? `محادثة مع ${specialistName}`
-              : `Chat with ${specialistName}`}
+          <DialogTitle className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={specialistImage} alt={specialistName} />
+              <AvatarFallback>{specialistName[0]}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col items-start">
+              <span>
+                {isSpecialistView 
+                  ? (companyName || (language === "ar" ? "الشركة" : "Company"))
+                  : specialistName}
+              </span>
+              {specialistPhone && !isSpecialistView && (
+                <span className="text-xs text-muted-foreground font-normal">
+                  {specialistPhone}
+                </span>
+              )}
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -242,31 +262,54 @@ export function SpecialistChatDialog({
                 ? msg.sender_type === "specialist"
                 : msg.sender_type === "company";
 
+              const senderName = isCurrentUser
+                ? (isSpecialistView ? specialistName : (companyName || (language === "ar" ? "الشركة" : "Company")))
+                : (isSpecialistView ? (companyName || (language === "ar" ? "الشركة" : "Company")) : specialistName);
+
               return (
                 <div
                   key={msg.id}
-                  className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                  className={`flex gap-2 ${isCurrentUser ? "justify-end" : "justify-start"}`}
                 >
-                  <div
-                    className={`max-w-[70%] rounded-lg p-3 ${
-                      isCurrentUser
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border"
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                    <p
-                      className={`text-xs mt-1 ${
+                  {!isCurrentUser && (
+                    <Avatar className="h-8 w-8 mt-1">
+                      <AvatarImage src={specialistImage} alt={senderName} />
+                      <AvatarFallback>{senderName[0]}</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    {!isCurrentUser && (
+                      <span className="text-xs text-muted-foreground px-1">
+                        {senderName}
+                      </span>
+                    )}
+                    <div
+                      className={`max-w-[70%] rounded-lg p-3 ${
                         isCurrentUser
-                          ? "text-primary-foreground/70"
-                          : "text-muted-foreground"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card border"
                       }`}
                     >
-                      {format(new Date(msg.created_at), "PPp", {
-                        locale: language === "ar" ? ar : undefined,
-                      })}
-                    </p>
+                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                      <p
+                        className={`text-xs mt-1 ${
+                          isCurrentUser
+                            ? "text-primary-foreground/70"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {format(new Date(msg.created_at), "PPp", {
+                          locale: language === "ar" ? ar : undefined,
+                        })}
+                      </p>
+                    </div>
                   </div>
+                  {isCurrentUser && (
+                    <Avatar className="h-8 w-8 mt-1">
+                      <AvatarImage src={specialistImage} alt={senderName} />
+                      <AvatarFallback>{senderName[0]}</AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
               );
             })
