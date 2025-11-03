@@ -357,9 +357,17 @@ export default function SpecialistHome() {
         ? `${bookingDate}T${bookingTime}`
         : bookingDate;
       const bookingDateTime = parseISO(dateTimeString);
+      
+      // Check if the parsed date is valid
+      if (isNaN(bookingDateTime.getTime())) {
+        console.error('Invalid date parsed in canMoveNow:', { bookingDate, bookingTime, dateTimeString });
+        return false;
+      }
+      
       const moveTime = new Date(bookingDateTime.getTime() - 60 * 60 * 1000);
       return currentTime >= moveTime;
     } catch (error) {
+      console.error('Error in canMoveNow:', error, { bookingDate, bookingTime });
       return false;
     }
   };
@@ -373,6 +381,13 @@ export default function SpecialistHome() {
         ? `${bookingDate}T${bookingTime}`
         : bookingDate;
       const bookingDateTime = parseISO(dateTimeString);
+      
+      // Check if the parsed date is valid
+      if (isNaN(bookingDateTime.getTime())) {
+        console.error('Invalid date parsed:', { bookingDate, bookingTime, dateTimeString });
+        return null;
+      }
+      
       const moveTime = new Date(bookingDateTime.getTime() - 60 * 60 * 1000);
       const totalSeconds = Math.floor((moveTime.getTime() - currentTime.getTime()) / 1000);
       
@@ -387,6 +402,7 @@ export default function SpecialistHome() {
       
       return { days, hours, minutes, seconds };
     } catch (error) {
+      console.error('Error calculating time until movement:', error, { bookingDate, bookingTime });
       return null;
     }
   };
