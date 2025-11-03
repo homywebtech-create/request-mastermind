@@ -24,6 +24,7 @@ import { countries } from "@/data/countries";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { AppLoader } from "@/components/ui/app-loader";
+import { ExpiredIdCardDialog } from "@/components/specialist/ExpiredIdCardDialog";
 
 export default function SpecialistAuth() {
   const [step, setStep] = useState<'phone' | 'code'>('phone');
@@ -32,6 +33,12 @@ export default function SpecialistAuth() {
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [showExpiredCardDialog, setShowExpiredCardDialog] = useState(false);
+  const [expiredCardData, setExpiredCardData] = useState<{
+    id: string;
+    name: string;
+    expiryDate?: string;
+  } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -95,7 +102,7 @@ export default function SpecialistAuth() {
 
       const { data: specialist, error: specialistError } = await supabase
         .from('specialists')
-        .select('id, name, is_active, suspension_type, suspension_end_date')
+        .select('id, name, is_active, suspension_type, suspension_end_date, suspension_reason, id_card_expiry_date')
         .eq('phone', fullPhone)
         .maybeSingle();
 
@@ -109,7 +116,20 @@ export default function SpecialistAuth() {
         return;
       }
 
-      // Check if specialist is suspended
+      // Check if specialist is suspended due to expired ID card
+      if (specialist.suspension_type === 'temporary' && 
+          specialist.suspension_reason?.includes('انتهت صلاحية البطاقة')) {
+        setExpiredCardData({
+          id: specialist.id,
+          name: specialist.name,
+          expiryDate: specialist.id_card_expiry_date,
+        });
+        setShowExpiredCardDialog(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if specialist is permanently suspended
       if (specialist.suspension_type === 'permanent') {
         toast({
           title: "حساب موقوف / Account Suspended",
@@ -120,6 +140,7 @@ export default function SpecialistAuth() {
         return;
       }
 
+      // Check for other temporary suspensions
       if (specialist.suspension_type === 'temporary' && specialist.suspension_end_date) {
         const endDate = new Date(specialist.suspension_end_date);
         if (endDate > new Date()) {
@@ -315,8 +336,26 @@ export default function SpecialistAuth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
+    <>
+      {expiredCardData && (
+        <ExpiredIdCardDialog
+          open={showExpiredCardDialog}
+          onOpenChange={setShowExpiredCardDialog}
+          specialistId={expiredCardData.id}
+          specialistName={expiredCardData.name}
+          currentExpiryDate={expiredCardData.expiryDate}
+          onSuccess={() => {
+            setExpiredCardData(null);
+            toast({
+              title: "تم بنجاح / Success",
+              description: "يمكنك الآن إكمال تسجيل الدخول / You can now continue with login",
+            });
+          }}
+        />
+      )}
+      
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <Card className="w-full max-w-md p-8 space-y-6">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
             <User className="w-8 h-8 text-primary" />
@@ -434,7 +473,8 @@ export default function SpecialistAuth() {
             </Button>
           </div>
         )}
-      </Card>
-    </div>
+        </Card>
+      </div>
+    </>
   );
 }
