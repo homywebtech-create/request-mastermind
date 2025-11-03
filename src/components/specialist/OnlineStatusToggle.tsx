@@ -204,52 +204,50 @@ export function OnlineStatusToggle({ specialistId }: OnlineStatusToggleProps) {
 
   return (
     <>
-      <div className="flex items-center gap-3 p-4 bg-card border rounded-lg">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+        <div className="flex items-center gap-2">
+          <div className={`p-1.5 rounded-full ${
+            isOnline 
+              ? 'bg-green-500' 
+              : 'bg-gray-400'
+          }`}>
             {isOnline ? (
-              <Wifi className="h-5 w-5 text-green-600" />
+              <Wifi className="h-3.5 w-3.5 text-white" />
             ) : (
-              <WifiOff className="h-5 w-5 text-gray-400" />
+              <WifiOff className="h-3.5 w-3.5 text-white" />
             )}
-            <span className="font-medium">
-              {language === "ar" ? "حالة استقبال العروض" : "Order Reception Status"}
-            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge
+          <div className="text-white">
+            <Badge 
               variant={isOnline ? "default" : "secondary"}
-              className={isOnline ? "bg-green-600" : "bg-gray-400"}
+              className={`text-xs font-semibold ${
+                isOnline 
+                  ? 'bg-green-500 hover:bg-green-600' 
+                  : 'bg-gray-500'
+              }`}
             >
               {isOnline
-                ? language === "ar"
-                  ? "أونلاين"
-                  : "Online"
-                : language === "ar"
-                ? "أوفلاين"
-                : "Offline"}
+                ? language === "ar" ? "أونلاين" : "Online"
+                : language === "ar" ? "أوفلاين" : "Offline"}
             </Badge>
             {!isOnline && offlineUntil && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {language === "ar" ? "متبقي" : "Remaining"}: {getTimeRemaining()}
-              </span>
+              <div className="text-[10px] opacity-90 mt-0.5 flex items-center gap-1">
+                <Clock className="h-2.5 w-2.5" />
+                {getTimeRemaining()}
+              </div>
             )}
           </div>
         </div>
         <Button
-          variant={isOnline ? "destructive" : "default"}
-          size="sm"
           onClick={handleToggle}
           disabled={loading}
+          variant={isOnline ? "destructive" : "default"}
+          size="sm"
+          className="h-8 min-w-[85px] text-xs"
         >
           {isOnline
-            ? language === "ar"
-              ? "قو أوفلاين"
-              : "Go Offline"
-            : language === "ar"
-            ? "قو أونلاين"
-            : "Go Online"}
+            ? language === "ar" ? "قو أوفلاين" : "Go Offline"
+            : language === "ar" ? "قو أونلاين" : "Go Online"}
         </Button>
       </div>
 

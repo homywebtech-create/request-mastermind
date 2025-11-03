@@ -858,28 +858,34 @@ export default function SpecialistNewOrders() {
   return (
     <BusyGuard specialistId={specialistId} allowWhenBusy={true}>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white p-6 shadow-2xl">
-        <div className="max-w-screen-lg mx-auto">
-          <div className="mb-2">
-            <h1 className="text-2xl font-bold mb-1 drop-shadow-lg">{t.specialist.newOffersTitle}</h1>
-            <p className="text-sm opacity-95 font-medium">
-              {orders.length} {orders.length === 1 ? t.specialist.availableOffers : t.specialist.availableOffersPlural}
-            </p>
+      {/* Fixed Header with Online Status */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-2xl">
+        <div className="max-w-screen-lg mx-auto p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-bold drop-shadow-lg">{t.specialist.newOffersTitle}</h1>
+              <p className="text-xs opacity-95 font-medium">
+                {orders.length} {orders.length === 1 ? t.specialist.availableOffers : t.specialist.availableOffersPlural}
+              </p>
+            </div>
+            {/* Online/Offline Status Toggle - Compact in Header */}
+            <div className="flex-shrink-0">
+              <OnlineStatusToggle specialistId={specialistId} />
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Spacer for fixed header */}
+      <div className="h-[100px]"></div>
+
       {/* Notification Status Warning */}
-      <div className="max-w-screen-lg mx-auto px-4 pt-4 space-y-4">
+      <div className="max-w-screen-lg mx-auto px-4 pb-4">
         <NotificationStatusChecker specialistId={specialistId} />
-        
-        {/* Online/Offline Status Toggle */}
-        <OnlineStatusToggle specialistId={specialistId} />
       </div>
 
       {/* Orders List */}
-      <div className="max-w-screen-lg mx-auto p-4 space-y-4">
+      <div className="max-w-screen-lg mx-auto px-4 space-y-4">
         {orders.length === 0 ? (
           <Card className="p-8 text-center">
             <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
