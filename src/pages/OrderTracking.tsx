@@ -820,14 +820,17 @@ export default function OrderTracking() {
             {/* Map Location Button */}
             <Button 
               onClick={openMaps} 
-              className="w-full h-14 text-lg font-bold shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-blue-500 to-blue-600"
+              className="w-full h-14 text-lg font-bold shadow-lg hover:shadow-xl transition-all"
               size="lg"
             >
               <MapPin className="h-6 w-6 ml-2" />
-              <span>{language === 'ar' ? 'عرض موقع العميل على الخريطة' : 'Show Customer Location on Map'}</span>
+              <span>{language === 'ar' ? 'اضغط لموقع العميل' : 'Click Customer Location'}</span>
             </Button>
 
-            {/* Start Moving Button */}
+            {/* Spacer to push button down */}
+            <div className="min-h-[200px]" />
+
+            {/* Start Moving Button - Moved to bottom */}
             <Button 
               onClick={handleStartMoving} 
               className="w-full h-16 text-xl font-black shadow-xl hover:shadow-2xl transition-all bg-gradient-to-r from-green-500 to-green-600 hover:scale-[1.02]"
