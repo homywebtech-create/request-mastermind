@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/carousel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSpecialistCompanyCountry } from "@/hooks/useCompanyCountry";
+import { ExpiredIdCardDialog } from "@/components/specialist/ExpiredIdCardDialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface OrderSpecialist {
   id: string;
@@ -78,6 +80,21 @@ export default function SpecialistOrders() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeFilter, setActiveFilter] = useState<'new' | 'quoted' | 'accepted' | 'skipped' | 'rejected' | 'cancelled'>('new');
+  const [showExpiredCardDialog, setShowExpiredCardDialog] = useState(false);
+  const [showSuspensionAlert, setShowSuspensionAlert] = useState(false);
+  const [suspensionInfo, setSuspensionInfo] = useState<{
+    reason: string;
+    endDate?: string;
+  } | null>(null);
+  const [specialistData, setSpecialistData] = useState<{
+    id: string;
+    name: string;
+    is_active: boolean;
+    suspension_type?: string;
+    suspension_reason?: string;
+    suspension_end_date?: string;
+    id_card_expiry_date?: string;
+  } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
@@ -302,15 +319,16 @@ export default function SpecialistOrders() {
       if (profile) {
         setSpecialistName(profile.full_name);
         
-        // Get specialist ID
+        // Get specialist ID with full details including suspension and ID card status
         const { data: specialist } = await supabase
           .from('specialists')
-          .select('id')
+          .select('id, name, is_active, suspension_type, suspension_reason, suspension_end_date, id_card_expiry_date')
           .eq('phone', profile.phone)
           .single();
 
         if (specialist) {
           setSpecialistId(specialist.id);
+          setSpecialistData(specialist);
           await fetchOrders(specialist.id);
           
           // 🔥 Initialize Firebase Push Notifications
@@ -474,6 +492,80 @@ export default function SpecialistOrders() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // دالة للتحقق من حالة المحترف قبل السماح بتقديم العرض
+  const handleOpenQuoteDialog = async (orderId: string) => {
+    // إعادة جلب بيانات المحترف للتأكد من الحالة الحالية
+    try {
+      const { data: specialist, error } = await supabase
+        .from('specialists')
+        .select('id, name, is_active, suspension_type, suspension_reason, suspension_end_date, id_card_expiry_date')
+        .eq('id', specialistId)
+        .single();
+
+      if (error || !specialist) {
+        toast({
+          title: "خطأ / Error",
+          description: "فشل التحقق من حالة الحساب / Failed to verify account status",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSpecialistData(specialist);
+
+      // فحص البطاقة المنتهية
+      if (specialist.id_card_expiry_date) {
+        const expiryDate = new Date(specialist.id_card_expiry_date);
+        if (expiryDate < new Date()) {
+          setShowExpiredCardDialog(true);
+          return;
+        }
+      }
+
+      // فحص الإيقاف المؤقت
+      if (specialist.suspension_type === 'temporary') {
+        const endDate = specialist.suspension_end_date ? new Date(specialist.suspension_end_date) : null;
+        
+        setSuspensionInfo({
+          reason: specialist.suspension_reason || 'تم إيقاف حسابك مؤقتاً',
+          endDate: specialist.suspension_end_date
+        });
+        setShowSuspensionAlert(true);
+        return;
+      }
+
+      // فحص الإيقاف الدائم
+      if (specialist.suspension_type === 'permanent') {
+        toast({
+          title: "حساب موقوف نهائياً / Account Permanently Suspended",
+          description: "تم إيقاف حسابك نهائياً. يرجى التواصل مع الإدارة / Your account has been permanently suspended. Please contact administration",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // فحص الحساب غير النشط
+      if (!specialist.is_active) {
+        toast({
+          title: "حساب غير نشط / Account Inactive",
+          description: "حسابك غير نشط. يرجى التواصل مع الإدارة / Your account is inactive. Please contact administration",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // كل شيء على ما يرام، فتح حوار التسعير
+      setQuoteDialog({ open: true, orderId });
+    } catch (error) {
+      console.error('Error checking specialist status:', error);
+      toast({
+        title: "خطأ / Error",
+        description: "فشل التحقق من حالة الحساب / Failed to verify account status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -839,7 +931,7 @@ export default function SpecialistOrders() {
             }}>
               <DialogTrigger asChild>
                 <Button
-                  onClick={() => setQuoteDialog({ open: true, orderId: order.id })}
+                  onClick={() => handleOpenQuoteDialog(order.id)}
                   className="w-full gap-2 h-12 text-base font-bold shadow-lg hover:shadow-xl transition-all"
                   size="lg"
                 >
@@ -1256,6 +1348,61 @@ export default function SpecialistOrders() {
           )}
         </div>
       </div>
+      
+      {/* Expired ID Card Dialog */}
+      {specialistData && (
+        <ExpiredIdCardDialog
+          open={showExpiredCardDialog}
+          onOpenChange={setShowExpiredCardDialog}
+          specialistId={specialistData.id}
+          specialistName={specialistData.name}
+          currentExpiryDate={specialistData.id_card_expiry_date}
+          onSuccess={() => {
+            checkAuth(); // إعادة جلب البيانات بعد التحديث
+            toast({
+              title: "تم بنجاح / Success",
+              description: "تم تحديث بطاقتك وإعادة تفعيل حسابك. يمكنك الآن تقديم عروضك / Your ID card has been updated and your account reactivated. You can now submit quotes",
+            });
+          }}
+        />
+      )}
+
+      {/* Suspension Alert Dialog */}
+      {showSuspensionAlert && suspensionInfo && (
+        <Dialog open={showSuspensionAlert} onOpenChange={setShowSuspensionAlert}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-orange-500" />
+                حساب موقوف مؤقتاً / Account Temporarily Suspended
+              </DialogTitle>
+            </DialogHeader>
+            <Alert className="bg-orange-50 border-orange-200">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription>
+                <div className="space-y-2">
+                  <p className="font-semibold">
+                    {suspensionInfo.reason}
+                  </p>
+                  {suspensionInfo.endDate && (
+                    <p>
+                      <strong>حتى تاريخ / Until:</strong> {new Date(suspensionInfo.endDate).toLocaleDateString('ar-SA')}
+                    </p>
+                  )}
+                  <p className="text-sm mt-3">
+                    يمكنك مشاهدة العروض لكن لا يمكنك تقديم عروض جديدة حالياً. يرجى التواصل مع الإدارة.
+                    <br />
+                    You can view orders but cannot submit new quotes currently. Please contact administration.
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+            <Button onClick={() => setShowSuspensionAlert(false)} className="w-full">
+              فهمت / Understood
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
