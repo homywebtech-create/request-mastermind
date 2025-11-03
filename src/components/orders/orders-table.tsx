@@ -172,17 +172,18 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     if (filter === 'awaiting-response') {
       if (isCompanyView && companyId) {
         // For companies: show orders where company specialists have quoted but not accepted yet
-        // Must NOT have any accepted quotes AND must NOT have started tracking
+        // Must NOT have any accepted quotes from ANY company AND must NOT have started tracking
         const companySpecialists = order.order_specialists?.filter(os => 
           os.specialists?.company_id === companyId
         );
         const hasQuoteNotAccepted = companySpecialists && 
                                      companySpecialists.some(os => os.quoted_price && os.is_accepted !== true);
         const noAcceptedQuote = !companySpecialists?.some(os => os.is_accepted === true);
+        const noAcceptedQuoteFromAnyCompany = !order.order_specialists?.some(os => os.is_accepted === true);
         const notStartedTracking = !order.tracking_stage || order.tracking_stage === null;
         const notCompleted = order.status !== 'completed';
         
-        return hasQuoteNotAccepted && noAcceptedQuote && notStartedTracking && notCompleted;
+        return hasQuoteNotAccepted && noAcceptedQuote && noAcceptedQuoteFromAnyCompany && notStartedTracking && notCompleted;
       } else {
         // For admin: show orders with quotes but NO quote accepted yet AND not started tracking
         const hasAnyAccepted = order.order_specialists?.some(os => os.is_accepted === true);

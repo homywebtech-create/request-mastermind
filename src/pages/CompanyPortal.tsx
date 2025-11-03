@@ -296,16 +296,25 @@ export default function CompanyPortal() {
     
     // Awaiting Response (بانتظار الرد): تم تقديم عرض من محترفات الشركة ولم يتم قبوله بعد
     // ولكن لم يبدأ التتبع بعد (استثناء الطلبات التي في مرحلة التنفيذ)
+    // ويجب ألا يكون أي عرض من أي شركة مقبولاً
     const awaitingOrders = ordersList.filter(o => {
       const companySpecialists = o.order_specialists?.filter(os => 
         os.specialists?.company_id === company?.id
       );
       const hasQuoteNotAccepted = companySpecialists && 
                                    companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+      const noAcceptedQuoteFromAnyCompany = !o.order_specialists?.some(os => os.is_accepted === true);
       const notInProgress = !o.tracking_stage && o.status !== 'completed';
       
-      return hasQuoteNotAccepted && notInProgress;
+      // Debug logging
+      if (hasQuoteNotAccepted && !noAcceptedQuoteFromAnyCompany) {
+        console.log(`❌ Order ${o.order_number} excluded from awaiting: another company's quote was accepted`);
+      }
+      
+      return hasQuoteNotAccepted && noAcceptedQuoteFromAnyCompany && notInProgress;
     });
+    
+    console.log(`✅ Company ${company?.name} Awaiting Response orders:`, awaitingOrders.length);
     
     // Upcoming (القادمة): تم قبول عرض محترفة من الشركة لكن لم يبدأ التتبع بعد
     const upcomingOrders = ordersList.filter(o => {
@@ -315,8 +324,15 @@ export default function CompanyPortal() {
       const notStartedTracking = !o.tracking_stage;
       const notCompleted = o.status !== 'completed';
       
+      // Debug logging
+      if (hasAcceptedSpecialist && notStartedTracking && notCompleted) {
+        console.log(`✅ Order ${o.order_number} is confirmed for company ${company?.name}`);
+      }
+      
       return hasAcceptedSpecialist && notStartedTracking && notCompleted;
     });
+    
+    console.log(`✅ Company ${company?.name} Confirmed orders:`, upcomingOrders.length);
     
     // In Progress (تحت الإجراء): تم قبول عرض محترفة من الشركة وبدأ المحترف في التتبع
     const inProgressOrders = ordersList.filter(o => {

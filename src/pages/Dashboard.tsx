@@ -336,8 +336,15 @@ export default function Dashboard() {
       const notStartedTracking = !o.tracking_stage || o.tracking_stage === null;
       const notCompleted = o.status !== 'completed';
       
+      // Debug logging
+      if (hasQuotes && hasAnyAccepted) {
+        console.log(`❌ Order ${o.order_number} excluded from awaiting: has accepted quote`);
+      }
+      
       return hasQuotes && !hasAnyAccepted && notStartedTracking && notCompleted;
     });
+    
+    console.log('✅ Awaiting Response orders:', awaitingOrders.length);
     
     // Upcoming: Orders with accepted quotes but tracking hasn't started yet
     const upcomingOrders = ordersList.filter(o => {
@@ -347,8 +354,15 @@ export default function Dashboard() {
       const notCompleted = o.status !== 'completed';
       const notCancelled = o.status !== 'cancelled';
       
+      // Debug logging
+      if (hasAcceptedQuote && notStartedTracking && notCompleted && notCancelled) {
+        console.log(`✅ Order ${o.order_number} is confirmed (has accepted quote)`);
+      }
+      
       return hasAcceptedQuote && notStartedTracking && notCompleted && notCancelled;
     });
+    
+    console.log('✅ Confirmed orders:', upcomingOrders.length);
     
     // In Progress: Orders where specialist has started tracking
     const inProgressOrders = ordersList.filter(o => {
