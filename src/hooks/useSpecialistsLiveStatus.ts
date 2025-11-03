@@ -62,14 +62,33 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
         .in('specialist_id', specialistsData?.map(s => s.id) || [])
         .gte('created_at', today.toISOString());
 
-      // Get current orders for tracking stage
+      // Get all active orders for specialists (from order_specialists table)
+      const { data: acceptedOrdersData } = await supabase
+        .from('order_specialists')
+        .select(`
+          specialist_id,
+          order_id,
+          is_accepted,
+          orders!inner (
+            id,
+            tracking_stage,
+            status,
+            order_number
+          )
+        `)
+        .in('specialist_id', specialistsData?.map(s => s.id) || [])
+        .or('is_accepted.eq.true,is_accepted.is.null')
+        .neq('orders.status', 'cancelled')
+        .neq('orders.status', 'completed');
+      
+      // Get current orders for tracking stage (fallback for current_order_id field)
       const activeOrderIds = specialistsData
         ?.filter(s => s.current_order_id)
         .map(s => s.current_order_id) || [];
       
       const { data: activeOrdersData } = await supabase
         .from('orders')
-        .select('id, tracking_stage')
+        .select('id, tracking_stage, status')
         .in('id', activeOrderIds);
 
       // Combine data
@@ -77,29 +96,64 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
         const token = tokensData?.find(t => t.specialist_id === spec.id);
         const orders = ordersData?.filter(o => o.specialist_id === spec.id) || [];
         const activeOrder = activeOrdersData?.find(o => o.id === spec.current_order_id);
+        
+        // Find any active order from order_specialists (more reliable than current_order_id)
+        const specialistActiveOrders = acceptedOrdersData?.filter(
+          (ao: any) => ao.specialist_id === spec.id
+        ) || [];
+        
+        // Get the most recent active order
+        const mostRecentOrder = specialistActiveOrders[0];
+        const orderWithTracking = mostRecentOrder?.orders;
 
         // Determine status
         let status: SpecialistLiveStatus['status'] = 'not_logged_in';
         
         if (!spec.is_active) {
           status = 'offline';
-        } else if (token?.last_used_at) {
-          const lastUsed = new Date(token.last_used_at);
-          const minutesAgo = (Date.now() - lastUsed.getTime()) / 1000 / 60;
+        } else {
+          // Check for active order from either current_order_id or accepted orders
+          const hasActiveOrder = spec.current_order_id || specialistActiveOrders.length > 0;
+          const trackingStage = orderWithTracking?.tracking_stage || activeOrder?.tracking_stage;
+          const hasDeviceToken = !!token;
           
-          if (spec.current_order_id) {
-            // Has active order - check tracking stage
-            if (activeOrder?.tracking_stage === 'on_the_way') {
+          if (hasActiveOrder && hasDeviceToken) {
+            // Has active order and has logged in before - determine work stage
+            if (trackingStage === 'moving' || trackingStage === 'on_the_way') {
               status = 'on_the_way';
-            } else if (activeOrder?.tracking_stage === 'in_progress') {
+            } else if (trackingStage === 'arrived' || trackingStage === 'working' || trackingStage === 'in_progress') {
               status = 'working';
             } else {
+              // Has accepted order but no tracking stage yet - means busy/preparing
               status = 'busy';
             }
-          } else if (minutesAgo < 5) {
-            status = 'online';
+          } else if (hasDeviceToken && token?.last_used_at) {
+            // Has device token - check last activity
+            const lastUsed = new Date(token.last_used_at);
+            const minutesAgo = (Date.now() - lastUsed.getTime()) / 1000 / 60;
+            
+            // Check if specialist had any recent activity in order_specialists
+            const recentOrderActivity = orders.length > 0 && orders[0];
+            let lastActivityTime = lastUsed;
+            
+            if (recentOrderActivity) {
+              const activityTime = new Date(recentOrderActivity.quoted_at || recentOrderActivity.rejected_at || lastUsed);
+              if (activityTime > lastUsed) {
+                lastActivityTime = activityTime;
+              }
+            }
+            
+            const minutesSinceActivity = (Date.now() - lastActivityTime.getTime()) / 1000 / 60;
+            
+            if (minutesSinceActivity < 30) {
+              // Active within last 30 minutes
+              status = 'online';
+            } else {
+              status = 'offline';
+            }
           } else {
-            status = 'offline';
+            // No device token registered
+            status = 'not_logged_in';
           }
         }
 
@@ -180,6 +234,17 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           event: '*',
           schema: 'public',
           table: 'device_tokens'
+        },
+        () => {
+          fetchSpecialistsStatus();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_specialists'
         },
         () => {
           fetchSpecialistsStatus();
