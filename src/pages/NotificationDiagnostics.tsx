@@ -54,7 +54,17 @@ export default function NotificationDiagnostics() {
         .from('device_tokens')
         .select('specialist_id, platform, last_used_at, created_at');
 
-      if (tokensError) throw tokensError;
+      console.log('🔍 [DIAGNOSTICS] Device tokens query result:', {
+        count: tokensData?.length || 0,
+        hasError: !!tokensError,
+        error: tokensError,
+        sampleTokens: tokensData?.slice(0, 3)
+      });
+
+      if (tokensError) {
+        console.error('❌ [DIAGNOSTICS] Error fetching device tokens:', tokensError);
+        // Continue without throwing - show specialists without token info
+      }
 
       // Combine data
       const diagnostics = (specialistsData || []).map(spec => {
@@ -64,7 +74,7 @@ export default function NotificationDiagnostics() {
           new Date(a.last_used_at || a.created_at).getTime()
         )[0];
 
-        return {
+        const result = {
           specialist_id: spec.id,
           specialist_name: spec.name,
           phone: spec.phone,
@@ -74,6 +84,17 @@ export default function NotificationDiagnostics() {
           platform: latestToken?.platform || null,
           is_active: spec.is_active
         };
+
+        // Log Fatima's data specifically for debugging
+        if (spec.name?.toLowerCase().includes('fatima')) {
+          console.log('👩 [DIAGNOSTICS] Fatima data:', {
+            specialist: spec,
+            tokens: tokens,
+            result: result
+          });
+        }
+
+        return result;
       });
 
       setSpecialists(diagnostics);
