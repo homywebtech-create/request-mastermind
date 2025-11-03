@@ -142,12 +142,10 @@ Deno.serve(async (req) => {
               data: dataPayload,
               android: isAndroid
                 ? {
-                    priority: 'HIGH',
+                    priority: 'high',
+                    direct_boot_ok: true,
                     notification: {
                       channel_id: 'app-updates',
-                      sound: 'notification_sound',
-                      priority: 'HIGH',
-                      default_vibrate_timings: true,
                     },
                   }
                 : undefined,
@@ -188,17 +186,10 @@ Deno.serve(async (req) => {
               icon: 'ic_stat_icon_config_sample',
               color: '#FF0000',
               priority: 'high',
-              click_action: 'OPEN_UPDATE_DIALOG',
             },
             data: dataPayload,
             android: {
               priority: 'high',
-              notification: {
-                channel_id: 'app-updates',
-                sound: 'notification_sound',
-                priority: 'high',
-                default_vibrate_timings: true,
-              },
             },
           };
 
