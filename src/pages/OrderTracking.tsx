@@ -869,24 +869,31 @@ export default function OrderTracking() {
         {/* Moving Stage - Compact */}
         {stage === 'moving' && (
           <div className="space-y-3 pb-24">
-            {/* Primary Location Button - Large and Clear with Animations */}
+            {/* Guidance Text Above Button */}
+            <div className="text-center px-4 py-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                {language === 'ar' ? 'العميل بانتظارك، قم بالتحرك إليه لتكون هناك في الوقت' : 'Customer is waiting, move to them to be there on time'}
+              </p>
+            </div>
+
+            {/* Primary Location Button - Simplified and Professional */}
             <Button
               onClick={openMaps}
-              className="w-full min-h-[120px] bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-none shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] rounded-xl animate-pulse hover:animate-none relative overflow-hidden group"
+              className="w-full h-24 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-none shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] rounded-xl hover:animate-none relative overflow-hidden group"
             >
               {/* Animated Glow Effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[slide-in-right_2s_ease-in-out_infinite]" />
               
-              <div className="flex flex-col items-center gap-3 py-2 relative z-10">
-                <div className="flex items-center justify-center w-14 h-14 bg-white/20 rounded-full backdrop-blur-sm animate-[scale-in_1s_ease-in-out_infinite] group-hover:animate-none">
-                  <MapPin className="h-7 w-7 animate-bounce" />
+              <div className="flex items-center justify-center gap-4 relative z-10">
+                <div className="flex items-center justify-center w-12 h-12 bg-white/20 rounded-full backdrop-blur-sm">
+                  <MapPin className="h-6 w-6" />
                 </div>
-                <div className="text-center space-y-1">
-                  <p className="text-lg font-bold text-white leading-tight">
-                    {language === 'ar' ? 'العميل بانتظارك، قم بالتحرك إليه لتكون هناك في الوقت' : 'Customer is waiting, move to them to be there on time'}
+                <div className="text-center">
+                  <p className="text-xl font-bold text-white">
+                    {language === 'ar' ? 'فتح خريطة الموقع' : 'Open Location Map'}
                   </p>
-                  <p className="text-sm font-medium text-blue-100">
-                    {language === 'ar' ? 'اضغط هنا لفتح خريطة الموقع' : 'Click here to open location map'}
+                  <p className="text-xs font-medium text-blue-50 mt-1">
+                    {language === 'ar' ? 'اضغط للتوجه إلى العميل' : 'Click to navigate to customer'}
                   </p>
                 </div>
               </div>
