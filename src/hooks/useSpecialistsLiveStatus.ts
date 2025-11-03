@@ -146,6 +146,23 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           const trackingStage = orderWithTracking?.tracking_stage || activeOrder?.tracking_stage;
           const hasDeviceToken = !!token;
           
+          // Helper function to check if order time has arrived (1 hour before booking)
+          const isOrderTimeReady = (bookingDate: string | null, bookingTime: string | null): boolean => {
+            if (!bookingDate) return false;
+            
+            try {
+              // Combine date and time if available
+              const dateTimeString = bookingTime 
+                ? `${bookingDate}T${bookingTime}`
+                : bookingDate;
+              const bookingDateTime = new Date(dateTimeString);
+              const moveTime = new Date(bookingDateTime.getTime() - 60 * 60 * 1000); // 1 hour before
+              return Date.now() >= moveTime.getTime();
+            } catch (error) {
+              return false;
+            }
+          };
+          
           if (hasActiveOrder && hasDeviceToken) {
             // Has active order and has logged in before - determine work stage
             if (trackingStage === 'moving' || trackingStage === 'on_the_way') {
@@ -153,8 +170,18 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
             } else if (trackingStage === 'arrived' || trackingStage === 'working' || trackingStage === 'in_progress') {
               status = 'working';
             } else {
-              // Has accepted order but no tracking stage yet - means busy/preparing
-              status = 'busy';
+              // Has accepted order but no tracking stage yet
+              // Check if order time has arrived (1 hour before booking)
+              const orderBookingDate = orderWithTracking?.booking_date || mostRecentOrder?.orders?.booking_date;
+              const orderBookingTime = orderWithTracking?.booking_time || mostRecentOrder?.orders?.booking_time;
+              
+              if (isOrderTimeReady(orderBookingDate, orderBookingTime)) {
+                // Order time is ready - specialist should be preparing/busy
+                status = 'busy';
+              } else {
+                // Order time not ready yet - specialist is available
+                status = 'online';
+              }
             }
           } else if (hasDeviceToken && token?.last_used_at) {
             // Has device token - check last activity
