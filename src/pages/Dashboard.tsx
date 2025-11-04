@@ -724,37 +724,23 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          {/* Welcome Message with User Status */}
-          {userProfile && (
-            <div className="mb-4 flex items-center gap-3 pb-3 border-b">
-              <div className="flex items-center gap-2">
-                <div className={`h-3 w-3 rounded-full ${userProfile.is_active ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                <span className="text-sm text-muted-foreground">
-                  {userProfile.is_active 
-                    ? (language === 'ar' ? 'متصل' : 'Online')
-                    : (language === 'ar' ? 'غير متصل' : 'Offline')
-                  }
-                </span>
+        <div className="w-full px-6 lg:px-8 xl:px-12 py-4">
+          {/* Main Header with Logo */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b">
+            <div className="flex items-center gap-4">
+              <img 
+                src={moboLogo} 
+                alt="Mobo Technology" 
+                className="h-16 w-auto object-contain"
+              />
+              <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold text-foreground tracking-wide">
+                  Mobo Technology
+                </h1>
+                <p className="text-xl font-semibold text-primary tracking-wider">
+                  OMD SYSTEM
+                </p>
               </div>
-              <div className="h-4 w-px bg-border" />
-               <h2 className="text-lg font-medium flex-1">
-                {language === 'ar' 
-                  ? `مرحباً، ${userProfile.full_name}` 
-                  : `Welcome, ${userProfile.full_name}`
-                }
-              </h2>
-            </div>
-          )}
-          
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-3xl font-bold text-foreground tracking-wide">
-                Mobo Technology
-              </h1>
-              <p className="text-xl font-semibold text-primary tracking-wider">
-                OMD SYSTEM
-              </p>
             </div>
             
             <div className="flex flex-wrap gap-2 items-center">
@@ -898,6 +884,28 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
+
+          {/* Welcome Message with User Status */}
+          {userProfile && (
+            <div className="mt-4 flex items-center gap-3 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <div className={`h-3 w-3 rounded-full ${userProfile.is_active ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                <span className="text-sm text-muted-foreground">
+                  {userProfile.is_active 
+                    ? (language === 'ar' ? 'متصل' : 'Online')
+                    : (language === 'ar' ? 'غير متصل' : 'Offline')
+                  }
+                </span>
+              </div>
+              <div className="h-4 w-px bg-border" />
+              <h2 className="text-lg font-medium flex-1">
+                {language === 'ar' 
+                  ? `مرحباً، ${userProfile.full_name}` 
+                  : `Welcome, ${userProfile.full_name}`
+                }
+              </h2>
+            </div>
+          )}
         </div>
       </header>
 

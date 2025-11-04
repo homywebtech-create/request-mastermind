@@ -22,6 +22,7 @@ import { useTranslation } from "@/i18n";
 import { openWhatsApp } from "@/lib/externalLinks";
 import SpecialistsLivePanel from "@/components/specialists/SpecialistsLivePanel";
 import { CompanyChatDialog } from "@/components/company/CompanyChatDialog";
+import moboLogo from "@/assets/mobo-logo.png";
 
 interface Service {
   id: string;
@@ -658,18 +659,25 @@ export default function Companies() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground font-cairo">
-                {t.title}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {t.manageCompaniesSpecialists}
-              </p>
+        <div className="w-full px-6 lg:px-8 xl:px-12 py-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <div className="flex items-center gap-4">
+              <img 
+                src={moboLogo} 
+                alt="Mobo Technology" 
+                className="h-16 w-auto object-contain"
+              />
+              <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold text-foreground tracking-wide">
+                  Mobo Technology
+                </h1>
+                <p className="text-xl font-semibold text-primary tracking-wider">
+                  OMD SYSTEM
+                </p>
+              </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               <LanguageSwitcher />
               
               <Button
@@ -864,13 +872,23 @@ export default function Companies() {
               </Dialog>
             </div>
           </div>
+
+          {/* Page Title and Description */}
+          <div className="pt-4 border-t">
+            <h2 className="text-2xl font-bold text-foreground font-cairo">
+              {t.title}
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              {t.manageCompaniesSpecialists}
+            </p>
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex gap-6">
+      <main className="w-full px-6 lg:px-8 xl:px-12 py-8">
+        <div className="flex gap-6 lg:gap-8 xl:gap-10 max-w-full">
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {companies.length > 0 ? (
               <Card>
                 <CardContent className="p-0">
@@ -1041,7 +1059,7 @@ export default function Companies() {
           </div>
 
           {/* Specialists Live Panel */}
-          <div className="w-80 lg:w-96 hidden lg:block">
+          <div className="w-80 lg:w-96 xl:w-[420px] 2xl:w-[460px] hidden lg:block flex-shrink-0">
             <div className="sticky top-6">
               <SpecialistsLivePanel 
                 companyId={undefined} 
