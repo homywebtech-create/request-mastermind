@@ -8,15 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
-import { MapLocationPicker } from "@/components/booking/MapLocationPicker";
 import { countries } from "@/data/countries";
 import { qatarAreas } from "@/data/areas";
-import { Plus, Phone, User, Users, Check, ChevronsUpDown, ArrowRight, ArrowLeft, MapPin, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Plus, Phone, User, Users, Check, ChevronsUpDown, ArrowRight, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 
 interface Service {
   id: string;
@@ -49,12 +46,6 @@ interface OrderFormData {
   companyId: string;
   specialistIds: string[];
   notes: string;
-  bookingType: string;
-  bookingDate: Date | undefined;
-  bookingTime: string;
-  gpsLatitude: number | null;
-  gpsLongitude: number | null;
-  buildingInfo: string;
 }
 
 interface SubmittedOrderData {
@@ -71,12 +62,6 @@ interface SubmittedOrderData {
   notes: string;
   servicePrice?: number | null;
   pricingType?: string | null;
-  bookingType: string;
-  bookingDate: string | null;
-  bookingTime: string;
-  gpsLatitude: number | null;
-  gpsLongitude: number | null;
-  buildingInfo: string;
 }
 
 interface Company {
@@ -122,15 +107,9 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
     companyId: '',
     specialistIds: [],
     notes: '',
-    bookingType: 'once',
-    bookingDate: undefined,
-    bookingTime: '',
-    gpsLatitude: null,
-    gpsLongitude: null,
-    buildingInfo: '',
   });
 
-  const totalSteps = 4;
+  const totalSteps = 3;
 
   useEffect(() => {
     fetchServices();
@@ -338,35 +317,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
           }
         }
         
-        // Validate booking type
-        if (!formData.bookingType) {
-          toast({
-            title: "بيانات ناقصة / Missing Data",
-            description: "يرجى اختيار نوع الحجز / Please select booking type",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        // Validate booking date and time
-        if (!formData.bookingDate) {
-          toast({
-            title: "بيانات ناقصة / Missing Data",
-            description: "يرجى اختيار تاريخ الحجز / Please select booking date",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        if (!formData.bookingTime) {
-          toast({
-            title: "بيانات ناقصة / Missing Data",
-            description: "يرجى اختيار وقت الحجز / Please select booking time",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
         return true;
 
       case 3:
@@ -391,9 +341,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
             return false;
           }
         }
-        return true;
-
-      case 4:
         return true;
 
       default:
@@ -446,12 +393,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       notes: formData.notes,
       servicePrice,
       pricingType,
-      bookingType: formData.bookingType,
-      bookingDate: formData.bookingDate ? format(formData.bookingDate, 'yyyy-MM-dd') : null,
-      bookingTime: formData.bookingTime,
-      gpsLatitude: formData.gpsLatitude,
-      gpsLongitude: formData.gpsLongitude,
-      buildingInfo: formData.buildingInfo,
     };
     
     onSubmit(submittedData);
@@ -470,12 +411,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       companyId: '',
       specialistIds: [],
       notes: '',
-      bookingType: 'once',
-      bookingDate: undefined,
-      bookingTime: '',
-      gpsLatitude: null,
-      gpsLongitude: null,
-      buildingInfo: '',
     });
     setSelectedService(null);
     setCurrentStep(1);
@@ -486,7 +421,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       { number: 1, title: 'بيانات العميل', titleEn: 'Customer Info' },
       { number: 2, title: 'الخدمة', titleEn: 'Service' },
       { number: 3, title: 'الشركة', titleEn: 'Company' },
-      { number: 4, title: 'ملاحظات', titleEn: 'Notes' }
     ];
 
     return (
@@ -1056,146 +990,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               );
             })()}
 
-            {/* Booking Type */}
-            <div className="space-y-2">
-              <Label htmlFor="bookingType">نوع الحجز / Booking Type *</Label>
-              <Select 
-                value={formData.bookingType} 
-                onValueChange={(value) => handleInputChange('bookingType', value)}
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="اختر نوع الحجز / Select booking type" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="once">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">مرة واحدة</span>
-                      <span className="text-xs text-muted-foreground">One Time</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="weekly">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">أسبوعي</span>
-                      <span className="text-xs text-muted-foreground">Weekly</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="monthly">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">شهري</span>
-                      <span className="text-xs text-muted-foreground">Monthly</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Booking Date and Time */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>تاريخ الحجز / Booking Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal bg-background",
-                        !formData.bookingDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.bookingDate ? format(formData.bookingDate, "PPP") : <span>اختر التاريخ / Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-background" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.bookingDate}
-                      onSelect={(date) => handleInputChange('bookingDate', date as any)}
-                      initialFocus
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bookingTime">وقت الحجز / Booking Time *</Label>
-                <Select 
-                  value={formData.bookingTime} 
-                  onValueChange={(value) => handleInputChange('bookingTime', value)}
-                >
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="اختر الوقت / Select time" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="morning">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">صباحاً (8:00 AM)</span>
-                          <span className="text-xs text-muted-foreground">Morning</span>
-                        </div>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="afternoon">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">ظهراً (2:00 PM)</span>
-                          <span className="text-xs text-muted-foreground">Afternoon</span>
-                        </div>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="evening">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">مساءً (6:00 PM)</span>
-                          <span className="text-xs text-muted-foreground">Evening</span>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Location Picker */}
-            <div className="space-y-2">
-              <Label>
-                <MapPin className="inline h-4 w-4 ml-1" />
-                الموقع على الخريطة / Location on Map
-              </Label>
-              <MapLocationPicker
-                onLocationSelect={(lat, lng) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    gpsLatitude: lat,
-                    gpsLongitude: lng,
-                  }));
-                }}
-                initialLat={formData.gpsLatitude}
-                initialLng={formData.gpsLongitude}
-              />
-              {formData.gpsLatitude && formData.gpsLongitude && (
-                <p className="text-xs text-muted-foreground">
-                  تم تحديد الموقع / Location selected
-                </p>
-              )}
-            </div>
-
-            {/* Building Info */}
-            <div className="space-y-2">
-              <Label htmlFor="buildingInfo">معلومات المبنى / Building Info</Label>
-              <Textarea
-                id="buildingInfo"
-                value={formData.buildingInfo}
-                onChange={(e) => handleInputChange('buildingInfo', e.target.value)}
-                placeholder="رقم الشقة، الدور، معلومات إضافية... / Apartment number, floor, additional info..."
-                rows={3}
-                dir="auto"
-              />
-            </div>
             </div>
           )}
 
@@ -1425,25 +1219,18 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
             </div>
           )}
 
-          {/* Step 4: Notes */}
-          {currentStep === 4 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">ملاحظات إضافية / Additional Notes</h3>
-              
-              <div className="space-y-2">
-                <Label htmlFor="notes">ملاحظات / Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  placeholder="أدخل أي ملاحظات إضافية... / Enter any additional notes..."
-                  rows={5}
-                  dir="auto"
-                />
-                <p className="text-xs text-muted-foreground">
-                  اختياري - يمكنك ترك هذا الحقل فارغاً / Optional - you can leave this field empty
-                </p>
-              </div>
+          {/* Notes Section - Add to Step 3 */}
+          {currentStep === 3 && (
+            <div className="space-y-2 pt-4 border-t mt-4">
+              <Label htmlFor="notes">ملاحظات إضافية / Additional Notes (اختياري)</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="أدخل أي ملاحظات إضافية... / Enter any additional notes..."
+                rows={3}
+                dir="auto"
+              />
             </div>
           )}
 

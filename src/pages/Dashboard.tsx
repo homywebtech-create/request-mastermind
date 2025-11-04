@@ -460,7 +460,6 @@ export default function Dashboard() {
           specialist_id: null,
           send_to_all_companies: formData.sendToAll || false,
           service_type: formData.serviceType,
-          booking_type: formData.bookingType || null,
           hours_count: formData.hoursCount || null,
           notes: formData.notes,
           order_link: orderLink,
