@@ -30,6 +30,7 @@ import {
 import { useLanguage } from "@/hooks/useLanguage";
 import { ar } from "@/i18n/ar";
 import { en } from "@/i18n/en";
+import { APP_VERSION } from "@/lib/appVersion";
 
 interface Profile {
   full_name: string;
@@ -668,15 +669,15 @@ export default function SpecialistProfile() {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">{isAr ? "رقم الإصدار" : "Version"}</span>
-                      <span className="font-bold text-primary">1.0.0</span>
+                      <span className="font-bold text-primary">{APP_VERSION.version}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">{isAr ? "تاريخ التحديث" : "Update Date"}</span>
-                      <span className="font-medium">2025-01-30</span>
+                      <span className="font-medium">{APP_VERSION.buildDate}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">{isAr ? "وقت التحديث" : "Update Time"}</span>
-                      <span className="font-medium">09:45:00</span>
+                      <span className="font-medium">{APP_VERSION.buildTime}</span>
                     </div>
                   </div>
                 </div>
