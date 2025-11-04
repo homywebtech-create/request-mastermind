@@ -393,10 +393,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
     const subService = service?.sub_services.find(ss => ss.id === formData.subServiceId);
     const serviceType = subService ? `${service?.name} - ${subService.name}` : service?.name || "";
     
-    // Get pricing info from sub-service or service
-    const servicePrice = subService?.price || service?.price;
-    const pricingType = subService?.pricing_type || service?.pricing_type;
-    
     const submittedData: SubmittedOrderData = {
       customerName: formData.customerName,
       whatsappNumber: fullWhatsappNumber,
@@ -410,8 +406,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       companyId: isCompanyView ? companyId : (formData.sendToAll ? undefined : formData.companyId),
       specialistIds: formData.specialistIds.length > 0 ? formData.specialistIds : undefined,
       notes: formData.notes,
-      servicePrice,
-      pricingType,
     };
     
     onSubmit(submittedData);
@@ -780,129 +774,69 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               )}
             </div>
 
-            {/* Display price if service has fixed price */}
+            {/* Budget field - always show for customer's proposed budget */}
             {formData.serviceId && selectedService && (
-              <div className="p-4 bg-muted/50 rounded-lg border">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">السعر / Price:</span>
-                  <span className="text-lg font-bold text-primary">
-                    {(() => {
-                      const country = countries.find(c => c.code === formData.countryCode);
-                      const currencySymbol = country?.currencySymbol || 'SAR';
-                      
-                      // Check if sub-service is selected and has a price
-                      if (formData.subServiceId) {
-                        const subService = selectedService.sub_services.find(
-                          ss => ss.id === formData.subServiceId
-                        );
-                        if (subService?.price) {
-                          return `${subService.price} ${currencySymbol}`;
-                        }
-                      }
-                      // Otherwise, check if main service has a price
-                      if (selectedService.price) {
-                        return `${selectedService.price} ${currencySymbol}`;
-                      }
-                      // No fixed price
-                      return 'سعر غير ثابت / Not Fixed';
-                    })()}
-                  </span>
+              <div className="space-y-2">
+                <Label htmlFor="budget">ميزانية العميل المقترحة / Customer's Proposed Budget (اختياري / Optional)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={formData.budgetType} onValueChange={(value) => handleInputChange('budgetType', value)}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="نوع السعر / Price Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="hourly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">بالساعة</span>
+                          <span className="text-xs text-muted-foreground">Hourly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="daily">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">يومي</span>
+                          <span className="text-xs text-muted-foreground">Daily</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="task">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">بالمهمة</span>
+                          <span className="text-xs text-muted-foreground">Per Task</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="weekly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">أسبوعي</span>
+                          <span className="text-xs text-muted-foreground">Weekly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="monthly">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">شهري</span>
+                          <span className="text-xs text-muted-foreground">Monthly</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="service">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">للخدمة</span>
+                          <span className="text-xs text-muted-foreground">Per Service</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="budget"
+                    type="number"
+                    min="0"
+                    value={formData.budget}
+                    onChange={(e) => handleInputChange('budget', e.target.value)}
+                    placeholder="المبلغ / Amount"
+                    dir="ltr"
+                  />
                 </div>
-                {!(() => {
-                  if (formData.subServiceId) {
-                    const subService = selectedService.sub_services.find(
-                      ss => ss.id === formData.subServiceId
-                    );
-                    return subService?.price;
-                  }
-                  return selectedService.price;
-                })() && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    سيتم تحديد السعر من قبل المختصين / Price will be quoted by specialists
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  ميزانية العميل المقترحة - سيقوم المحترفون باختيار السعر المناسب / Customer's proposed budget - specialists will choose the appropriate price
+                </p>
               </div>
             )}
-
-            {/* Budget field - show only if service doesn't have fixed price */}
-            {formData.serviceId && selectedService && (() => {
-              // Check if selected service or sub-service has a fixed price
-              let hasFixedPrice = false;
-              
-              if (formData.subServiceId) {
-                const subService = selectedService.sub_services.find(ss => ss.id === formData.subServiceId);
-                hasFixedPrice = subService?.price !== null && subService?.price !== undefined;
-              } else {
-                hasFixedPrice = selectedService.price !== null && selectedService.price !== undefined;
-              }
-
-              // Only show budget field if no fixed price
-              if (!hasFixedPrice) {
-                return (
-                  <div className="space-y-2">
-                    <Label htmlFor="budget">ميزانية العميل / Customer Budget</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Select value={formData.budgetType} onValueChange={(value) => handleInputChange('budgetType', value)}>
-                        <SelectTrigger className="bg-background">
-                          <SelectValue placeholder="نوع السعر / Price Type" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
-                          <SelectItem value="hourly">
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium">بالساعة</span>
-                              <span className="text-xs text-muted-foreground">Hourly</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="daily">
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium">يومي</span>
-                              <span className="text-xs text-muted-foreground">Daily</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="task">
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium">بالمهمة</span>
-                              <span className="text-xs text-muted-foreground">Per Task</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="weekly">
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium">أسبوعي</span>
-                              <span className="text-xs text-muted-foreground">Weekly</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="monthly">
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium">شهري</span>
-                              <span className="text-xs text-muted-foreground">Monthly</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="service">
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium">للخدمة</span>
-                              <span className="text-xs text-muted-foreground">Per Service</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        id="budget"
-                        type="number"
-                        min="0"
-                        value={formData.budget}
-                        onChange={(e) => handleInputChange('budget', e.target.value)}
-                        placeholder="المبلغ / Amount"
-                        dir="ltr"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      ميزانية العميل المقترحة (اختياري) / Customer's proposed budget (optional)
-                    </p>
-                  </div>
-                );
-              }
-              return null;
-            })()}
 
             {formData.serviceId && (() => {
               // Get the pricing type from sub-service or main service
