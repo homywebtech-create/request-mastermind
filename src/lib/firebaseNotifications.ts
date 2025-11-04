@@ -72,6 +72,13 @@ export class FirebaseNotificationManager {
         await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
           console.log('📬 [FOREGROUND] إشعار في المقدمة:', notification);
           
+          // Avoid duplicate UI for app update notifications
+          const nType = (notification?.data?.type || '').toLowerCase();
+          if (nType === 'app_update') {
+            console.log('🔕 [FCM] Skipping local notification for app_update to avoid duplicates');
+            return;
+          }
+          
           // Import dynamically to avoid circular dependencies
           const { LocalNotifications } = await import('@capacitor/local-notifications');
           const { Haptics, ImpactStyle } = await import('@capacitor/haptics');

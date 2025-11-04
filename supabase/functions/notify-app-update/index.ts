@@ -135,18 +135,11 @@ Deno.serve(async (req) => {
           const message = {
             message: {
               token: deviceToken.token,
-              notification: {
-                title: `تحديث جديد متوفر - ${version.version_name}`,
-                body: version.changelog || 'إصدار جديد من التطبيق متاح للتحميل',
-              },
               data: dataPayload,
               android: isAndroid
                 ? {
                     priority: 'high',
                     direct_boot_ok: true,
-                    notification: {
-                      channel_id: 'app-updates',
-                    },
                   }
                 : undefined,
             },
@@ -178,19 +171,8 @@ Deno.serve(async (req) => {
         try {
           const notification = {
             to: deviceToken.token,
-            notification: {
-              title: `تحديث جديد متوفر - ${version.version_name}`,
-              body: version.changelog || 'إصدار جديد من التطبيق متاح للتحميل',
-              sound: 'notification_sound',
-              android_channel_id: 'app-updates',
-              icon: 'ic_stat_icon_config_sample',
-              color: '#FF0000',
-              priority: 'high',
-            },
             data: dataPayload,
-            android: {
-              priority: 'high',
-            },
+            priority: 'high'
           };
 
           const response = await fetch('https://fcm.googleapis.com/fcm/send', {
