@@ -339,6 +339,13 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
         return true;
 
       case 3:
+        console.log('🔍 Validating step 3:', { 
+          isCompanyView, 
+          sendToAll: formData.sendToAll, 
+          companyId: formData.companyId,
+          specialistIds: formData.specialistIds 
+        });
+        
         // For company view, validate specialist selection if not sending to all
         if (isCompanyView) {
           if (!formData.sendToAll && formData.specialistIds.length === 0) {
@@ -360,6 +367,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
             return false;
           }
         }
+        console.log('✅ Step 3 validation passed');
         return true;
 
       case 4:
@@ -372,8 +380,15 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+    console.log('📍 handleNext called, currentStep:', currentStep);
+    const isValid = validateStep(currentStep);
+    console.log('✅ validateStep result:', isValid);
+    if (isValid) {
+      const nextStep = Math.min(currentStep + 1, totalSteps);
+      console.log('➡️ Moving to step:', nextStep);
+      setCurrentStep(nextStep);
+    } else {
+      console.log('❌ Validation failed for step:', currentStep);
     }
   };
 
