@@ -93,21 +93,40 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [areaOpen, setAreaOpen] = useState(false);
   const [isCheckingCustomer, setIsCheckingCustomer] = useState(false);
-  const [formData, setFormData] = useState<OrderFormData>({
-    customerName: '',
-    countryCode: 'QA',
-    phoneNumber: '',
-    area: '',
-    budget: '',
-    budgetType: '',
-    serviceId: '',
-    subServiceId: '',
-    hoursCount: '',
-    sendToAll: true,
-    companyId: '',
-    specialistIds: [],
-    notes: '',
-  });
+  
+  // Load saved form data from localStorage
+  const loadSavedFormData = (): OrderFormData => {
+    const saved = localStorage.getItem('orderFormData');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error loading saved form data:', e);
+      }
+    }
+    return {
+      customerName: '',
+      countryCode: 'QA',
+      phoneNumber: '',
+      area: '',
+      budget: '',
+      budgetType: '',
+      serviceId: '',
+      subServiceId: '',
+      hoursCount: '',
+      sendToAll: true,
+      companyId: '',
+      specialistIds: [],
+      notes: '',
+    };
+  };
+  
+  const [formData, setFormData] = useState<OrderFormData>(loadSavedFormData());
+  
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('orderFormData', JSON.stringify(formData));
+  }, [formData]);
 
   const totalSteps = 3;
 
@@ -396,6 +415,9 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
     };
     
     onSubmit(submittedData);
+    
+    // Clear saved form data from localStorage after successful submission
+    localStorage.removeItem('orderFormData');
     
     setFormData({
       customerName: '',
