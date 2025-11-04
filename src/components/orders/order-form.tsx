@@ -128,7 +128,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
     localStorage.setItem('orderFormData', JSON.stringify(formData));
   }, [formData]);
 
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   useEffect(() => {
     fetchServices();
@@ -362,6 +362,10 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
         }
         return true;
 
+      case 4:
+        // Final confirmation step - no validation needed
+        return true;
+
       default:
         return false;
     }
@@ -437,6 +441,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       { number: 1, title: 'بيانات العميل', titleEn: 'Customer Info' },
       { number: 2, title: 'الخدمة', titleEn: 'Service' },
       { number: 3, title: 'الشركة', titleEn: 'Company' },
+      { number: 4, title: 'تأكيد', titleEn: 'Confirm' },
     ];
 
     return (
@@ -1189,6 +1194,70 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                 )}
                 </>
               )}
+            </div>
+          )}
+
+          {/* Step 4: Confirmation Summary */}
+          {currentStep === 4 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">تأكيد الطلب / Order Confirmation</h3>
+              
+              <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                {/* Customer Info */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground">بيانات العميل / Customer Information</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">الاسم / Name:</span> {formData.customerName}</p>
+                    <p><span className="font-medium">الواتساب / WhatsApp:</span> {countries.find(c => c.code === formData.countryCode)?.dialCode}{formData.phoneNumber}</p>
+                    <p><span className="font-medium">المنطقة / Area:</span> {formData.area}</p>
+                  </div>
+                </div>
+
+                {/* Service Info */}
+                <div className="space-y-2 pt-3 border-t">
+                  <h4 className="font-semibold text-sm text-muted-foreground">معلومات الخدمة / Service Information</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">الخدمة / Service:</span> {services.find(s => s.id === formData.serviceId)?.name}</p>
+                    {formData.subServiceId && (
+                      <p><span className="font-medium">الخدمة الفرعية / Sub-Service:</span> {selectedService?.sub_services.find(ss => ss.id === formData.subServiceId)?.name}</p>
+                    )}
+                    {formData.hoursCount && (
+                      <p><span className="font-medium">العدد / Count:</span> {formData.hoursCount}</p>
+                    )}
+                    {formData.budget && formData.budgetType && (
+                      <p><span className="font-medium">الميزانية المقترحة / Proposed Budget:</span> {formData.budget} ({formData.budgetType})</p>
+                    )}
+                    {formData.notes && (
+                      <p><span className="font-medium">ملاحظات / Notes:</span> {formData.notes}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Company/Specialist Selection */}
+                <div className="space-y-2 pt-3 border-t">
+                  <h4 className="font-semibold text-sm text-muted-foreground">إرسال الطلب / Send Order To</h4>
+                  <div className="space-y-1 text-sm">
+                    {formData.sendToAll ? (
+                      <p className="font-medium text-primary">✓ سيتم إرسال الطلب لجميع {isCompanyView ? 'المحترفين' : 'الشركات'} / Will be sent to all {isCompanyView ? 'specialists' : 'companies'}</p>
+                    ) : (
+                      <>
+                        {!isCompanyView && formData.companyId && (
+                          <p><span className="font-medium">الشركة / Company:</span> {companies.find(c => c.id === formData.companyId)?.name}</p>
+                        )}
+                        {formData.specialistIds.length > 0 && (
+                          <p><span className="font-medium">محترفين محددين / Specific Specialists:</span> {formData.specialistIds.length} محترف</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-sm text-center">
+                  ⚠️ تأكد من صحة البيانات قبل الإرسال / Please verify all information before submitting
+                </p>
+              </div>
             </div>
           )}
 
