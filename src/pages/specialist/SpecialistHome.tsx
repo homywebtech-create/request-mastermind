@@ -11,8 +11,6 @@ import { translateOrderDetails } from "@/lib/translateHelper";
 import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
-import { useAppUpdate } from "@/hooks/useAppUpdate";
-import { UpdateDialog } from "@/components/update/UpdateDialog";
 import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 
 import { useLanguage } from "@/hooks/useLanguage";
@@ -54,22 +52,6 @@ export default function SpecialistHome() {
   const { language } = useLanguage();
   const isAr = language === 'ar';
   
-  // App update handling
-  const { updateAvailable, latestVersion, checkForUpdates } = useAppUpdate();
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-
-  // Show update dialog when update becomes available
-  useEffect(() => {
-    if (updateAvailable && latestVersion) {
-      setShowUpdateDialog(true);
-    }
-  }, [updateAvailable, latestVersion]);
-
-  // Check for updates on mount
-  useEffect(() => {
-    checkForUpdates();
-  }, []);
-
   useEffect(() => {
     checkAuth();
   }, []);
@@ -744,15 +726,6 @@ export default function SpecialistHome() {
       </div>
 
       <BottomNavigation newOrdersCount={newOrdersCount} specialistId={specialistId} />
-      
-      {/* Update Dialog - shows automatically when update notification arrives */}
-      {latestVersion && (
-        <UpdateDialog
-          open={showUpdateDialog}
-          onOpenChange={setShowUpdateDialog}
-          version={latestVersion}
-        />
-      )}
       </div>
     </BusyGuard>
   );
