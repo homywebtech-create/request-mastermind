@@ -456,6 +456,11 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
     });
     setSelectedService(null);
     setCurrentStep(1);
+    
+    // Close dialog after successful submission
+    if (onCancel) {
+      onCancel();
+    }
   };
 
   const renderStepIndicator = () => {
