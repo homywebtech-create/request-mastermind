@@ -1120,15 +1120,20 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                   )}
                 </div>
 
-                {!formData.sendToAll && (
+                {!formData.sendToAll && companies.length > 0 && (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="companyId">اختر الشركة / Choose Company *</Label>
-                      <Select value={formData.companyId} onValueChange={(value) => handleInputChange('companyId', value)}>
-                        <SelectTrigger>
+                      <Select 
+                        value={formData.companyId} 
+                        onValueChange={(value) => {
+                          setFormData(prev => ({ ...prev, companyId: value, specialistIds: [] }));
+                        }}
+                      >
+                        <SelectTrigger className="bg-background">
                           <SelectValue placeholder="اختر الشركة / Choose company" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background z-50">
                           {companies.map((company) => (
                             <SelectItem key={company.id} value={company.id}>
                               {company.name}
