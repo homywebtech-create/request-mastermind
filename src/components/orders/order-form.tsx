@@ -990,6 +990,23 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               );
             })()}
 
+            {/* Customer Notes Field */}
+            <div className="space-y-2 pt-4 border-t">
+              <Label htmlFor="customerNotes">ملاحظات العميل / Customer Notes</Label>
+              <Textarea
+                id="customerNotes"
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="أدخل أي ملاحظات أو تفاصيل إضافية للعميل... / Enter any additional customer notes or details..."
+                rows={4}
+                dir="auto"
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                تفاصيل إضافية يريد العميل توضيحها (اختياري) / Additional details the customer wants to clarify (optional)
+              </p>
+            </div>
+
             </div>
           )}
 
@@ -1216,21 +1233,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                 )}
                 </>
               )}
-            </div>
-          )}
-
-          {/* Notes Section - Add to Step 3 */}
-          {currentStep === 3 && (
-            <div className="space-y-2 pt-4 border-t mt-4">
-              <Label htmlFor="notes">ملاحظات إضافية / Additional Notes (اختياري)</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="أدخل أي ملاحظات إضافية... / Enter any additional notes..."
-                rows={3}
-                dir="auto"
-              />
             </div>
           )}
 
