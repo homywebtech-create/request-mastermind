@@ -1305,7 +1305,12 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
             {currentStep < totalSteps ? (
               <Button 
                 type="button" 
-                onClick={handleNext}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔵 Next button clicked in step:', currentStep);
+                  handleNext();
+                }}
                 className="flex-1 flex items-center justify-center gap-2"
               >
                 متابعة / Next
@@ -1315,6 +1320,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               <Button 
                 type="submit" 
                 className="flex-1 flex items-center justify-center gap-2"
+                onClick={() => console.log('🟢 Submit button clicked')}
               >
                 <Plus className="h-4 w-4" />
                 تأكيد إنشاء الطلب / Create Order
