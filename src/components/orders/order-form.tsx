@@ -276,24 +276,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
           });
           return false;
         }
-        // Validate budget - both fields must be filled or both empty
-        if ((formData.budget && !formData.budgetType) || (!formData.budget && formData.budgetType)) {
-          toast({
-            title: "بيانات ناقصة / Missing Data",
-            description: "يرجى إدخال الميزانية ونوع السعر معاً / Please enter both budget and price type",
-            variant: "destructive",
-          });
-          return false;
-        }
-        // Validate budget is a number if provided
-        if (formData.budget && isNaN(Number(formData.budget))) {
-          toast({
-            title: "بيانات خاطئة / Invalid Data",
-            description: "يرجى إدخال رقم صحيح للميزانية / Please enter a valid budget number",
-            variant: "destructive",
-          });
-          return false;
-        }
         return true;
 
       case 2:
@@ -311,6 +293,24 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
           toast({
             title: "بيانات ناقصة / Missing Data",
             description: "يرجى اختيار الخدمة الفرعية / Please select a sub-service",
+            variant: "destructive",
+          });
+          return false;
+        }
+        // Validate budget - both fields must be filled or both empty
+        if ((formData.budget && !formData.budgetType) || (!formData.budget && formData.budgetType)) {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى إدخال الميزانية ونوع السعر معاً / Please enter both budget and price type",
+            variant: "destructive",
+          });
+          return false;
+        }
+        // Validate budget is a number if provided
+        if (formData.budget && isNaN(Number(formData.budget))) {
+          toast({
+            title: "بيانات خاطئة / Invalid Data",
+            description: "يرجى إدخال رقم صحيح للميزانية / Please enter a valid budget number",
             variant: "destructive",
           });
           return false;
