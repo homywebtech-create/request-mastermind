@@ -635,8 +635,8 @@ export default function Orders() {
   }
 
   return (
-    <div className="container mx-auto max-w-[1800px] py-8 px-6 lg:px-12">
-      <div className="flex gap-8">
+    <div className="w-full py-8 px-6 lg:px-8 xl:px-12">
+      <div className="flex gap-6 lg:gap-8 xl:gap-10 max-w-full">
         {/* Main Content */}
         <div className="flex-1 min-w-0 space-y-6">
           <div className="flex justify-between items-center">
@@ -682,7 +682,7 @@ export default function Orders() {
         </div>
 
         {/* Specialists Live Panel */}
-        <div className="w-96 xl:w-[420px] hidden lg:block flex-shrink-0">
+        <div className="w-80 lg:w-96 xl:w-[420px] 2xl:w-[460px] hidden lg:block flex-shrink-0">
           <div className="sticky top-6">
             <SpecialistsLivePanel
               companyId={userProfile?.company_id} 
