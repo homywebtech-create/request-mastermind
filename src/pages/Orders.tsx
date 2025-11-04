@@ -635,10 +635,10 @@ export default function Orders() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex gap-6">
+    <div className="container mx-auto max-w-[1800px] py-8 px-6 lg:px-12">
+      <div className="flex gap-8">
         {/* Main Content */}
-        <div className="flex-1 space-y-6">
+        <div className="flex-1 min-w-0 space-y-6">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-foreground">{t.title}</h1>
@@ -682,9 +682,9 @@ export default function Orders() {
         </div>
 
         {/* Specialists Live Panel */}
-        <div className="w-80 lg:w-96 hidden lg:block">
+        <div className="w-96 xl:w-[420px] hidden lg:block flex-shrink-0">
           <div className="sticky top-6">
-            <SpecialistsLivePanel 
+            <SpecialistsLivePanel
               companyId={userProfile?.company_id} 
               isAdmin={role === 'admin' || role === 'admin_full' || role === 'admin_manager'}
             />
