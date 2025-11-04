@@ -384,6 +384,13 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // If not on final step, just move to next step
+    if (currentStep < totalSteps) {
+      handleNext();
+      return;
+    }
+    
+    // Only submit when on final step (step 4)
     if (!validateStep(currentStep)) {
       return;
     }
