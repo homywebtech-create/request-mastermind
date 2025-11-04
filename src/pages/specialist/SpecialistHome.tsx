@@ -709,15 +709,14 @@ export default function SpecialistHome() {
                   {isTodayOrder && (
                     <Button
                       onClick={() => navigate(`/order-tracking/${order.id}`)}
-                      disabled={!canMove}
                       className={cn(
                         "w-full h-14 text-base font-bold shadow-lg transition-all",
-                        canMove && "bg-green-600 hover:bg-green-700 animate-pulse"
+                        canMove ? "bg-green-600 hover:bg-green-700 animate-pulse" : "bg-blue-500 hover:bg-blue-600"
                       )}
                     >
                       <div className="flex items-center justify-center gap-2">
                         <Navigation className="h-5 w-5" />
-                        <span>{canMove ? (isAr ? "افتح الحجز الآن" : "Open Booking Now") : (isAr ? "انتظر الموعد" : "Wait for time")}</span>
+                        <span>{canMove ? (isAr ? "افتح الحجز الآن" : "Open Booking Now") : (isAr ? "فتح الحجز" : "Open Booking")}</span>
                       </div>
                     </Button>
                   )}
