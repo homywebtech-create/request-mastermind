@@ -647,7 +647,7 @@ export default function SpecialistHome() {
                             height="100%"
                             frameBorder="0"
                             style={{ border: 0 }}
-                            src={`https://www.google.com/maps?q=${order.gps_latitude},${order.gps_longitude}&output=embed&z=16`}
+                            src={`https://www.google.com/maps?q=${order.gps_latitude},${order.gps_longitude}&output=embed&z=16&disableDefaultUI=1&gestureHandling=greedy`}
                             allowFullScreen
                           />
                         </div>
