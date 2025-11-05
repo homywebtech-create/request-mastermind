@@ -49,12 +49,29 @@ export const useAppUpdate = () => {
   };
 
   // Handle push notification for updates
-  const handleUpdateNotification = useCallback((data: UpdateNotificationData) => {
+  const handleUpdateNotification = useCallback(async (data: UpdateNotificationData) => {
     console.log('🔔 [Update] Notification received, setting version data:', data);
+    
+    // Get current installed version to compare
+    const appInfo = await App.getInfo();
+    const currentVersionCode = parseInt(appInfo.build);
+    const notificationVersionCode = parseInt(data.version_code);
+    
+    console.log('🔍 [Update] Version comparison:', {
+      current: currentVersionCode,
+      notification: notificationVersionCode,
+      needsUpdate: notificationVersionCode > currentVersionCode
+    });
+    
+    // Only show update if notification version is newer than installed
+    if (notificationVersionCode <= currentVersionCode) {
+      console.log('✅ [Update] Already on latest version, ignoring notification');
+      return;
+    }
     
     const version: AppVersion = {
       id: data.version_id,
-      version_code: parseInt(data.version_code),
+      version_code: notificationVersionCode,
       version_name: data.version_name,
       apk_url: data.apk_url,
       is_mandatory: data.is_mandatory === 'true',
@@ -73,12 +90,15 @@ export const useAppUpdate = () => {
   // Listen for update actions from Android activity
   useUpdateBroadcastReceiver(handleUpdateNotification);
 
-  // Periodic update checks (every 6 hours)
+  // Periodic update checks (every 1 minute for responsive updates)
   useEffect(() => {
+    // Check immediately on mount
+    checkForUpdates();
+    
     const interval = setInterval(() => {
       console.log('⏰ Periodic update check triggered');
       checkForUpdates();
-    }, 6 * 60 * 60 * 1000); // 6 hours
+    }, 1 * 60 * 1000); // 1 minute
 
     return () => clearInterval(interval);
   }, []);
