@@ -1150,12 +1150,14 @@ Thank you for contacting us! 🌟`;
                 <TableHead className="text-left">{t.area}</TableHead>
                 <TableHead className="text-left">{t.customerBudget}</TableHead>
                 <TableHead className="text-left">{t.service}</TableHead>
-                <TableHead className="text-left">{language === 'ar' ? 'الشركة' : 'Company'}</TableHead>
-                <TableHead className="text-left">{language === 'ar' ? 'المحترف' : 'Specialist'}</TableHead>
+                <TableHead className="text-left">{language === 'ar' ? 'الشركة والمحترف' : 'Company & Specialist'}</TableHead>
                 <TableHead className="text-left">{language === 'ar' ? 'تفاصيل الحجز' : 'Booking Details'}</TableHead>
                 <TableHead className="text-left">
-                  {filter === 'awaiting-response' ? t.companyQuotes : (filter === 'cancelled' ? (language === 'ar' ? 'تفاصيل الإلغاء' : 'Cancellation Details') : t.notes)}
+                  {filter === 'awaiting-response' ? t.companyQuotes : (filter === 'cancelled' ? (language === 'ar' ? 'تفاصيل الإلغاء' : 'Cancellation Details') : (language === 'ar' ? 'ملاحظات العميل' : 'Customer Notes'))}
                 </TableHead>
+                {(filter === 'upcoming' || filter === 'in-progress') && (
+                  <TableHead className="text-left">{language === 'ar' ? 'حالة الجاهزية' : 'Readiness Status'}</TableHead>
+                )}
                 <TableHead className="text-left">{t.dateAndStatus}</TableHead>
                 <TableHead className="text-left">{t.actions}</TableHead>
               </TableRow>
@@ -1264,44 +1266,53 @@ Thank you for contacting us! 🌟`;
                         </div>
                       </TableCell>
 
-                      {/* Company Column */}
+                      {/* Combined Company & Specialist Column */}
                       <TableCell>
-                        {order.companies ? (
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">{order.companies.name}</span>
-                          </div>
-                        ) : order.send_to_all_companies ? (
-                          <Badge variant="outline" className="text-xs">
-                            {language === 'ar' ? 'جميع الشركات' : 'All Companies'}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not assigned'}</span>
-                        )}
-                      </TableCell>
-
-                      {/* Specialist Column */}
-                      <TableCell>
-                        {(() => {
-                          const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
-                          if (acceptedSpecialist?.specialists) {
+                        <div className="space-y-2 min-w-[200px]">
+                          {/* Company Info */}
+                          {order.companies ? (
+                            <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
+                              <div className="flex items-center justify-center w-8 h-8 rounded bg-primary/10">
+                                <Building2 className="h-4 w-4 text-primary" />
+                              </div>
+                              <span className="text-sm font-medium">{order.companies.name}</span>
+                            </div>
+                          ) : order.send_to_all_companies ? (
+                            <Badge variant="outline" className="text-xs">
+                              {language === 'ar' ? 'جميع الشركات' : 'All Companies'}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not assigned'}</span>
+                          )}
+                          
+                          {/* Specialist Info */}
+                          {(() => {
+                            const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
+                            if (acceptedSpecialist?.specialists) {
+                              return (
+                                <div className="flex items-start gap-2 p-2 bg-green-50 dark:bg-green-950/20 rounded-md border border-green-200 dark:border-green-800/30">
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30">
+                                    <User className="h-4 w-4 text-green-700 dark:text-green-400" />
+                                  </div>
+                                  <div className="space-y-0.5 flex-1">
+                                    <div className="text-sm font-medium text-green-900 dark:text-green-100">
+                                      {acceptedSpecialist.specialists.name}
+                                    </div>
+                                    <div className="flex items-center gap-1 text-xs text-green-700 dark:text-green-300">
+                                      <Phone className="h-3 w-3" />
+                                      <span dir="ltr">{acceptedSpecialist.specialists.phone}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
                             return (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm font-medium">{acceptedSpecialist.specialists.name}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Phone className="h-3 w-3" />
-                                  <span dir="ltr">{acceptedSpecialist.specialists.phone}</span>
-                                </div>
+                              <div className="text-xs text-muted-foreground italic p-2">
+                                {language === 'ar' ? 'لم يتم تعيين محترف' : 'No specialist assigned'}
                               </div>
                             );
-                          }
-                          return (
-                            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'لم يتم التعيين' : 'Not assigned'}</span>
-                          );
-                        })()}
+                          })()}
+                        </div>
                       </TableCell>
 
                       {/* Booking Details Column */}
@@ -1526,27 +1537,49 @@ Thank you for contacting us! 🌟`;
                             );
                           })()
                         ) : (
-                          // Show notes for other filters
-                          <div className="space-y-1">
-                            {order.specialist_not_ready_reason && (
-                              <div>
-                                <Badge variant="destructive" className="mb-1 text-xs">
-                                  {language === 'ar' ? 'سبب عدم الجاهزية:' : 'Not Ready Reason:'}
-                                </Badge>
-                                <p className="text-sm text-destructive max-w-xs line-clamp-2">
-                                  {order.specialist_not_ready_reason}
-                                </p>
-                              </div>
-                            )}
-                            {order.notes && (
-                              <p className="text-sm max-w-xs line-clamp-2">{order.notes}</p>
-                            )}
-                            {!order.notes && !order.specialist_not_ready_reason && (
-                              <span className="text-muted-foreground text-sm">-</span>
-                            )}
-                          </div>
+                          // Show customer notes only
+                          order.notes ? (
+                            <div className="text-sm max-w-xs line-clamp-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800/30">
+                              <span className="text-blue-900 dark:text-blue-100">{order.notes}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )
                         )}
                       </TableCell>
+                      
+                      {/* Readiness Status Column - Only for upcoming/in-progress */}
+                      {(filter === 'upcoming' || filter === 'in-progress') && (
+                        <TableCell>
+                          <div className="space-y-1 min-w-[150px]">
+                            {order.specialist_readiness_status === 'ready' && (
+                              <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/50">
+                                🟡 {language === 'ar' ? 'جاهز / استعداد' : 'Ready / Standby'}
+                              </Badge>
+                            )}
+                            {order.specialist_readiness_status === 'not_ready' && (
+                              <div className="space-y-1">
+                                <Badge variant="destructive">
+                                  ⚠️ {language === 'ar' ? 'غير جاهز' : 'Not Ready'}
+                                </Badge>
+                                {order.specialist_not_ready_reason && (
+                                  <p className="text-xs text-destructive max-w-xs line-clamp-2 p-1 bg-destructive/10 rounded">
+                                    {order.specialist_not_ready_reason}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            {order.specialist_readiness_status === 'pending' && (
+                              <Badge variant="outline" className="text-xs">
+                                ⏳ {language === 'ar' ? 'في انتظار الرد' : 'Awaiting Response'}
+                              </Badge>
+                            )}
+                            {!order.specialist_readiness_status && (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                       
                       <TableCell>
                         <div className="space-y-2">
