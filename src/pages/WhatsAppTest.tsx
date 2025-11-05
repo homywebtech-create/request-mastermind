@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Send, CheckCircle2, XCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Send, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function WhatsAppTest() {
   const [phoneNumber, setPhoneNumber] = useState("+974");
@@ -209,12 +209,32 @@ export default function WhatsAppTest() {
             <CardTitle className="text-blue-900 dark:text-blue-100">📋 معلومات مهمة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-blue-900 dark:text-blue-100">
-            <p>• يجب أن يكون رقم الهاتف بالصيغة الدولية (+رمز الدولة + الرقم)</p>
-            <p>• الرسائل تُرسل من خلال Twilio WhatsApp Sender</p>
+            <p>• يجب أن يكون رقم الهاتف بالصيغة الدولية بدون مسافات (+رمز الدولة + الرقم)</p>
+            <p>• الرسائل تُرسل من خلال Twilio WhatsApp Sender (+97431260001)</p>
             <p>• تحقق من سجلات Twilio في حالة فشل الإرسال</p>
-            <p>• رقم السيندر الحالي: +97431260001</p>
           </CardContent>
         </Card>
+
+        {/* Warning Card */}
+        <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950/30">
+          <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <AlertTitle className="text-orange-900 dark:text-orange-100">
+            ⚠️ أسباب محتملة لعدم وصول الرسالة
+          </AlertTitle>
+          <AlertDescription className="space-y-2 text-orange-900 dark:text-orange-100">
+            <p className="font-semibold mt-2">إذا ظهرت رسالة "queued" ولم تصل الرسالة:</p>
+            <div className="space-y-1 mr-4">
+              <p>1. <span className="font-semibold">حساب Trial:</span> الرقم المستلم يجب أن يكون مسجلاً في Twilio Sandbox</p>
+              <p>2. <span className="font-semibold">Templates:</span> WhatsApp يتطلب استخدام قوالب معتمدة من Meta للرسائل التسويقية</p>
+              <p>3. <span className="font-semibold">Sender Approval:</span> السيندر (+97431260001) يحتاج موافقة من Meta</p>
+              <p>4. <span className="font-semibold">رقم خاطئ:</span> الرقم المستلم ليس لديه واتساب أو غير صحيح</p>
+            </div>
+            <div className="mt-3 p-3 bg-orange-100 dark:bg-orange-900/30 rounded-md">
+              <p className="font-semibold">💡 الحل:</p>
+              <p className="text-sm">تحقق من Twilio Dashboard → Messaging Logs للحصول على السبب الدقيق</p>
+            </div>
+          </AlertDescription>
+        </Alert>
       </div>
     </div>
   );
