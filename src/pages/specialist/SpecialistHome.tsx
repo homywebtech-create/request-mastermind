@@ -17,6 +17,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 interface Order {
   id: string;
+  order_number: string | null;
   service_type: string;
   booking_date: string | null;
   booking_time: string | null;
@@ -222,6 +223,7 @@ export default function SpecialistHome() {
         .from('orders')
         .select(`
           id,
+          order_number,
           service_type,
           booking_date,
           booking_time,
@@ -550,6 +552,14 @@ export default function SpecialistHome() {
                         })()}
                       </div>
                     )}
+                  </div>
+
+                  {/* Order Number - Prominent Display */}
+                  <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 p-3 rounded-lg border-2 border-primary/20">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium">{isAr ? 'رقم الطلب' : 'Order Number'}</span>
+                      <span className="text-lg font-bold text-primary">#{order.id.split('-')[0]}</span>
+                    </div>
                   </div>
 
                   {/* Customer Info */}
