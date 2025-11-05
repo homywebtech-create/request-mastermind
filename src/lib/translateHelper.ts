@@ -108,6 +108,7 @@ export async function translateOrderDetails(
     notes?: string;
     area?: string;
     bookingType?: string;
+    buildingInfo?: string;
   },
   targetLanguage: string
 ): Promise<typeof orderDetails> {
@@ -117,11 +118,12 @@ export async function translateOrderDetails(
 
   try {
     // Translate all fields in parallel for better performance
-    const [serviceType, notes, area, bookingType] = await Promise.all([
+    const [serviceType, notes, area, bookingType, buildingInfo] = await Promise.all([
       orderDetails.serviceType ? translateText(orderDetails.serviceType, targetLanguage) : undefined,
       orderDetails.notes ? translateText(orderDetails.notes, targetLanguage) : undefined,
       orderDetails.area ? translateText(orderDetails.area, targetLanguage) : undefined,
       orderDetails.bookingType ? translateText(orderDetails.bookingType, targetLanguage) : undefined,
+      orderDetails.buildingInfo ? translateText(orderDetails.buildingInfo, targetLanguage) : undefined,
     ]);
 
     return {
@@ -130,6 +132,7 @@ export async function translateOrderDetails(
       ...(notes && { notes }),
       ...(area && { area }),
       ...(bookingType && { bookingType }),
+      ...(buildingInfo && { buildingInfo }),
     };
   } catch (error) {
     console.error('Error translating order details:', error);

@@ -34,6 +34,7 @@ interface Order {
   gps_latitude: number | null;
   gps_longitude: number | null;
   building_info: string | null;
+  notes: string | null;
   status: string;
   customer: {
     name: string;
@@ -49,6 +50,8 @@ interface Order {
   translated?: {
     service_type?: string;
     area?: string;
+    building_info?: string;
+    notes?: string;
   };
 }
 
@@ -313,6 +316,8 @@ export default function SpecialistHome() {
           const translated = await translateOrderDetails({
             serviceType: order.service_type,
             area: order.customer?.area || undefined,
+            buildingInfo: order.building_info || undefined,
+            notes: order.notes || undefined,
           }, preferredLanguage);
           
           return {
@@ -320,6 +325,8 @@ export default function SpecialistHome() {
             translated: {
               service_type: translated.serviceType,
               area: translated.area,
+              building_info: translated.buildingInfo,
+              notes: translated.notes,
             }
           };
         })).then(translatedOrders => {
@@ -716,6 +723,30 @@ export default function SpecialistHome() {
                       💰 {order.order_specialist?.quoted_price}
                     </p>
                   </div>
+
+                  {/* Customer Notes */}
+                  {order.notes && (
+                    <div className="bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2 font-medium">
+                        💬 {isAr ? 'توصيات العميل' : 'Customer Notes'}
+                      </p>
+                      <p className="text-sm text-yellow-900 dark:text-yellow-100 leading-relaxed">
+                        {order.translated?.notes || order.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Building Info */}
+                  {order.building_info && (
+                    <div className="bg-cyan-50 dark:bg-cyan-950/30 p-4 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                      <p className="text-xs text-cyan-600 dark:text-cyan-400 mb-2 font-medium">
+                        🏢 {isAr ? 'معلومات المبنى' : 'Building Information'}
+                      </p>
+                      <p className="text-sm text-cyan-900 dark:text-cyan-100 leading-relaxed">
+                        {order.translated?.building_info || order.building_info}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Countdown Timer - Show for both today and future orders */}
                   {!canMove && timeUntil && (timeUntil.days > 0 || timeUntil.hours > 0 || timeUntil.minutes > 0 || timeUntil.seconds > 0) && (
