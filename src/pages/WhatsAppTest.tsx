@@ -219,19 +219,28 @@ export default function WhatsAppTest() {
         <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950/30">
           <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
           <AlertTitle className="text-orange-900 dark:text-orange-100">
-            ⚠️ أسباب محتملة لعدم وصول الرسالة
+            ⚠️ السبب الأكثر احتمالاً: Display Name قيد المراجعة
           </AlertTitle>
           <AlertDescription className="space-y-2 text-orange-900 dark:text-orange-100">
-            <p className="font-semibold mt-2">إذا ظهرت رسالة "queued" ولم تصل الرسالة:</p>
-            <div className="space-y-1 mr-4">
-              <p>1. <span className="font-semibold">حساب Trial:</span> الرقم المستلم يجب أن يكون مسجلاً في Twilio Sandbox</p>
-              <p>2. <span className="font-semibold">Templates:</span> WhatsApp يتطلب استخدام قوالب معتمدة من Meta للرسائل التسويقية</p>
-              <p>3. <span className="font-semibold">Sender Approval:</span> السيندر (+97431260001) يحتاج موافقة من Meta</p>
-              <p>4. <span className="font-semibold">رقم خاطئ:</span> الرقم المستلم ليس لديه واتساب أو غير صحيح</p>
+            <p className="font-semibold mt-2">✅ إذا ظهرت رسالة "queued" ولم تصل الرسالة:</p>
+            <div className="space-y-2 mr-4 mt-3">
+              <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-md">
+                <p className="font-semibold text-base">🔴 المشكلة الرئيسية:</p>
+                <p className="text-sm mt-1">اسم العرض "alnamilat general services" قيد المراجعة من Meta/WhatsApp</p>
+                <p className="text-sm mt-1">حتى تتم الموافقة، لن تُرسل الرسائل للمستخدمين</p>
+              </div>
+              
+              <p className="font-semibold mt-4">أسباب إضافية محتملة:</p>
+              <p>1️⃣ <span className="font-semibold">حساب Trial:</span> الرقم المستلم يجب تسجيله في Twilio WhatsApp Sandbox</p>
+              <p>2️⃣ <span className="font-semibold">Message Templates:</span> يجب استخدام قوالب معتمدة من Meta (ليس رسائل حرة)</p>
+              <p>3️⃣ <span className="font-semibold">Business Profile:</span> يحتاج إكمال معلومات الـ Business Profile في Meta</p>
+              <p>4️⃣ <span className="font-semibold">رقم خاطئ:</span> الرقم المستلم ليس لديه واتساب أو غير صحيح</p>
             </div>
-            <div className="mt-3 p-3 bg-orange-100 dark:bg-orange-900/30 rounded-md">
-              <p className="font-semibold">💡 الحل:</p>
-              <p className="text-sm">تحقق من Twilio Dashboard → Messaging Logs للحصول على السبب الدقيق</p>
+            <div className="mt-3 p-3 bg-green-100 dark:bg-green-900/30 rounded-md border border-green-300 dark:border-green-700">
+              <p className="font-semibold text-green-900 dark:text-green-100">💡 الحل الموصى به:</p>
+              <p className="text-sm text-green-900 dark:text-green-100 mt-1">• تحقق من Twilio Console → Messaging → Senders</p>
+              <p className="text-sm text-green-900 dark:text-green-100">• تأكد من اكتمال مراجعة Display Name من Meta</p>
+              <p className="text-sm text-green-900 dark:text-green-100">• أو استخدم Twilio Sandbox للاختبار مع أرقام مسجلة</p>
             </div>
           </AlertDescription>
         </Alert>
