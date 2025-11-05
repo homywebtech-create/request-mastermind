@@ -1141,10 +1141,9 @@ export default function SpecialistNewOrders() {
                                   onClick={() => handleSubmitQuote(option.value)}
                                   disabled={isSubmitting}
                                   variant="outline"
-                                  className="h-auto py-3 flex flex-col gap-1"
+                                  className="h-auto py-3"
                                 >
                                   <span className="text-base font-bold">{option.label}</span>
-                                  <span className="text-xs opacity-80">+{(index + 1) * 3}</span>
                                 </Button>
                               ))}
                             </div>
