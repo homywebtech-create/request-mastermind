@@ -718,19 +718,19 @@ export default function SpecialistHome() {
                   </div>
 
                   {/* Countdown Timer - Show for both today and future orders */}
-                  {timeUntil && !canMove && (
+                  {!canMove && timeUntil && (timeUntil.days > 0 || timeUntil.hours > 0 || timeUntil.minutes > 0 || timeUntil.seconds > 0) && (
                     <div className={cn(
                       "p-5 rounded-xl space-y-3 text-center",
-                      isTodayOrder ? "bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800" : "bg-destructive/10 border-2 border-destructive/20"
+                      isTodayOrder ? "bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800" : "bg-orange-50 dark:bg-orange-950/30 border-2 border-orange-200 dark:border-orange-800"
                     )}>
                       <div className="flex items-center justify-center gap-2">
                         <Clock className={cn(
-                          "h-5 w-5",
-                          isTodayOrder ? "text-blue-600 dark:text-blue-400" : "text-destructive"
+                          "h-5 w-5 animate-pulse",
+                          isTodayOrder ? "text-blue-600 dark:text-blue-400" : "text-orange-600 dark:text-orange-400"
                         )} />
                         <p className={cn(
                           "font-bold text-sm",
-                          isTodayOrder ? "text-blue-700 dark:text-blue-300" : "text-destructive"
+                          isTodayOrder ? "text-blue-700 dark:text-blue-300" : "text-orange-700 dark:text-orange-300"
                         )}>
                           {isAr ? 'سيفتح الطلب بعد' : 'Order opens in'}
                         </p>
@@ -739,12 +739,12 @@ export default function SpecialistHome() {
                       {/* Large Countdown Display */}
                       <div className={cn(
                         "font-mono font-bold text-4xl tracking-wider",
-                        isTodayOrder ? "text-blue-700 dark:text-blue-300" : "text-destructive"
+                        isTodayOrder ? "text-blue-700 dark:text-blue-300" : "text-orange-700 dark:text-orange-300"
                       )}>
                         {timeUntil.days > 0 && (
                           <div className="flex items-center justify-center gap-2 mb-2">
                             <span className="text-5xl">{timeUntil.days}</span>
-                            <span className="text-xl">{isAr ? 'يوم' : 'day'}</span>
+                            <span className="text-xl">{isAr ? 'يوم' : 'day'}{timeUntil.days > 1 ? 's' : ''}</span>
                           </div>
                         )}
                         <div className="flex items-center justify-center gap-1">
@@ -773,15 +773,6 @@ export default function SpecialistHome() {
                         <span>{isAr ? "🚀 ابدأ التحرك الآن" : "🚀 Start Moving Now"}</span>
                       </div>
                     </Button>
-                  )}
-
-                  {/* Future order message */}
-                  {!canMove && (
-                    <div className="text-center p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        {isAr ? '⏰ سيتم تفعيل الطلب تلقائياً قبل الموعد بساعة' : '⏰ Order will activate automatically one hour before'}
-                      </p>
-                    </div>
                   )}
                 </div>
               </Card>
