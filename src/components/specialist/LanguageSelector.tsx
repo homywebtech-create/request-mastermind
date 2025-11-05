@@ -17,19 +17,10 @@ interface LanguageSelectorProps {
   onLanguageChange?: (language: string) => void;
 }
 
-// Language options for content translation
-// Note: UI only supports 'ar' and 'en', but content can be translated to any of these
+// Language options - simplified to only Arabic and English for UI
 const languageOptions = [
-  { value: 'ar', label: 'العربية', flag: '🇸🇦', description: 'Arabic UI & Content' },
-  { value: 'en', label: 'English', flag: '🇬🇧', description: 'English UI & Content' },
-  { value: 'tl', label: 'Tagalog', flag: '🇵🇭', description: 'English UI + Tagalog Content' },
-  { value: 'hi', label: 'हिन्दी', flag: '🇮🇳', description: 'English UI + Hindi Content' },
-  { value: 'si', label: 'සිංහල', flag: '🇱🇰', description: 'English UI + Sinhala Content' },
-  { value: 'bn', label: 'বাংলা', flag: '🇧🇩', description: 'English UI + Bengali Content' },
-  { value: 'sw', label: 'Kiswahili', flag: '🇰🇪', description: 'English UI + Swahili Content' },
-  { value: 'am', label: 'አማርኛ', flag: '🇪🇹', description: 'English UI + Amharic Content' },
-  { value: 'ti', label: 'ትግርኛ', flag: '🇪🇷', description: 'English UI + Tigrinya Content' },
-  { value: 'fa', label: 'فارسی', flag: '🇮🇷', description: 'English UI + Farsi Content' },
+  { value: 'ar', label: 'العربية', flag: '🇸🇦', description: 'واجهة عربية' },
+  { value: 'en', label: 'English', flag: '🇬🇧', description: 'English Interface' },
 ];
 
 export default function LanguageSelector({ 
@@ -60,8 +51,8 @@ export default function LanguageSelector({
       toast({
         title: isAr ? "✅ تم التحديث" : "✅ Updated",
         description: isAr 
-          ? `تم تحديث لغة العرض بنجاح${newLanguage !== 'ar' && newLanguage !== 'en' ? ' (واجهة المستخدم بالإنجليزية + محتوى الطلبات بـ' + (languageOptions.find(o => o.value === newLanguage)?.label || newLanguage) + ')' : ''}`
-          : `Display language updated successfully${newLanguage !== 'ar' && newLanguage !== 'en' ? ' (English UI + ' + (languageOptions.find(o => o.value === newLanguage)?.label || newLanguage) + ' Content)' : ''}`,
+          ? `تم تحديث لغة الواجهة بنجاح`
+          : `Interface language updated successfully`,
       });
 
       if (onLanguageChange) {
