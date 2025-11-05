@@ -33,6 +33,7 @@ import ContractManagement from "./pages/ContractManagement";
 import AdminSpecialists from "./pages/AdminSpecialists";
 import PushNotificationTest from "./pages/PushNotificationTest";
 import NotificationDiagnostics from "./pages/NotificationDiagnostics";
+import WhatsAppTest from "./pages/WhatsAppTest";
 import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
@@ -440,6 +441,13 @@ function AppRouter() {
         <Route path="/notification-diagnostics" element={
           <RoleProtectedRoute requiredPermission="view_dashboard">
             <NotificationDiagnostics />
+          </RoleProtectedRoute>
+        } />
+        
+        {/* WhatsApp Test (admin only) */}
+        <Route path="/whatsapp-test" element={
+          <RoleProtectedRoute requiredPermission="view_dashboard">
+            <WhatsAppTest />
           </RoleProtectedRoute>
         } />
         
