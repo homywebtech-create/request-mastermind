@@ -2,6 +2,7 @@ package app.lovable.c9213afe1e6545938c572cfda087384c;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -42,6 +43,22 @@ public class UpdateNotificationActivity extends Activity {
         apkUrl = intent.getStringExtra("apk_url");
         isMandatory = "true".equals(intent.getStringExtra("is_mandatory"));
         changelog = intent.getStringExtra("changelog");
+
+        // If device is already on this version or newer, close immediately
+        try {
+            long currentVersionCode;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                currentVersionCode = getPackageManager().getPackageInfo(getPackageName(), 0).getLongVersionCode();
+            } else {
+                currentVersionCode = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+            }
+            long notificationVersionCode = Long.parseLong(versionCode);
+            if (notificationVersionCode <= currentVersionCode) {
+                // Already up-to-date, no need to show the sheet
+                finish();
+                return;
+            }
+        } catch (Exception ignored) { }
 
         // Setup UI
         notificationContainer = findViewById(R.id.notification_container);
