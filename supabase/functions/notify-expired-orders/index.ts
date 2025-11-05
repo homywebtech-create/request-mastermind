@@ -74,12 +74,37 @@ serve(async (req) => {
 // Helper function to process a single expired order
 async function processExpiredOrder(supabase: any, order: any) {
   try {
+    // Check if order has an accepted specialist (booking confirmed)
+    const { data: acceptedSpecialist, error: acceptedCheckError } = await supabase
+      .from('order_specialists')
+      .select('id')
+      .eq('order_id', order.id)
+      .eq('is_accepted', true)
+      .limit(1);
+
+    if (acceptedCheckError) {
+      console.error(`❌ [EXPIRY] Error checking for accepted specialist:`, acceptedCheckError);
+      return { success: false, orderId: order.id };
+    }
+
+    // If a specialist was already accepted (booking confirmed), don't send expiry notifications
+    if (acceptedSpecialist && acceptedSpecialist.length > 0) {
+      console.log(`ℹ️ [EXPIRY] Order ${order.order_number} already has confirmed booking - skipping expiry notification`);
+      // Mark as notified to prevent future checks
+      await supabase
+        .from('orders')
+        .update({ notified_expiry: true })
+        .eq('id', order.id);
+      return { success: true, orderId: order.id, specialistCount: 0, skipped: true };
+    }
+
     // Get all specialists who were notified about this order but didn't respond
     const { data: orderSpecialists, error: specialistsError } = await supabase
       .from('order_specialists')
       .select('specialist_id')
       .eq('order_id', order.id)
-      .is('quoted_price', null); // Didn't submit a quote
+      .is('quoted_price', null) // Didn't submit a quote
+      .neq('is_accepted', true); // Not accepted
 
     if (specialistsError) {
       console.error(`❌ [EXPIRY] Error fetching specialists for order ${order.order_number}:`, specialistsError);
