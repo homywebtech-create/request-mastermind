@@ -135,11 +135,20 @@ Deno.serve(async (req) => {
           const message = {
             message: {
               token: deviceToken.token,
+              notification: {
+                title: version.is_mandatory ? '⚠️ تحديث إجباري متاح' : '🔔 تحديث جديد متاح',
+                body: `الإصدار ${version.version_name} - ${version.changelog || 'تحسينات وإصلاحات'}`,
+              },
               data: dataPayload,
               android: isAndroid
                 ? {
                     priority: 'high',
                     direct_boot_ok: true,
+                    notification: {
+                      sound: 'notification_sound',
+                      channel_id: 'new_orders_channel',
+                      priority: 'max',
+                    },
                   }
                 : undefined,
             },
@@ -171,6 +180,11 @@ Deno.serve(async (req) => {
         try {
           const notification = {
             to: deviceToken.token,
+            notification: {
+              title: version.is_mandatory ? '⚠️ تحديث إجباري متاح' : '🔔 تحديث جديد متاح',
+              body: `الإصدار ${version.version_name} - ${version.changelog || 'تحسينات وإصلاحات'}`,
+              sound: 'notification_sound',
+            },
             data: dataPayload,
             priority: 'high'
           };
