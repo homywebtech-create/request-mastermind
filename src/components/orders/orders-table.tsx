@@ -1268,7 +1268,7 @@ Thank you for contacting us! 🌟`;
 
                       {/* Combined Company & Specialist Column */}
                       <TableCell>
-                        <div className="space-y-2 min-w-[200px]">
+                        <div className="space-y-2 min-w-[220px]">
                           {/* Company Info */}
                           {order.companies ? (
                             <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
@@ -1289,19 +1289,39 @@ Thank you for contacting us! 🌟`;
                           {(() => {
                             const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
                             if (acceptedSpecialist?.specialists) {
+                              const specialist = acceptedSpecialist.specialists;
                               return (
                                 <div className="flex items-start gap-2 p-2 bg-green-50 dark:bg-green-950/20 rounded-md border border-green-200 dark:border-green-800/30">
-                                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30">
-                                    <User className="h-4 w-4 text-green-700 dark:text-green-400" />
+                                  {/* Specialist Image */}
+                                  <div className="flex-shrink-0">
+                                    {specialist.image_url ? (
+                                      <img 
+                                        src={specialist.image_url} 
+                                        alt={specialist.name}
+                                        className="w-10 h-10 rounded-full object-cover border-2 border-green-300 dark:border-green-700"
+                                      />
+                                    ) : (
+                                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700">
+                                        <User className="h-5 w-5 text-green-700 dark:text-green-400" />
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="space-y-0.5 flex-1">
-                                    <div className="text-sm font-medium text-green-900 dark:text-green-100">
-                                      {acceptedSpecialist.specialists.name}
+                                  {/* Specialist Details */}
+                                  <div className="space-y-0.5 flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-green-900 dark:text-green-100 truncate">
+                                      {specialist.name}
                                     </div>
                                     <div className="flex items-center gap-1 text-xs text-green-700 dark:text-green-300">
-                                      <Phone className="h-3 w-3" />
-                                      <span dir="ltr">{acceptedSpecialist.specialists.phone}</span>
+                                      <Phone className="h-3 w-3 flex-shrink-0" />
+                                      <span dir="ltr" className="truncate">{specialist.phone}</span>
                                     </div>
+                                    {specialist.nationality && (
+                                      <div className="flex items-center gap-1">
+                                        <Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700">
+                                          {specialist.nationality}
+                                        </Badge>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );
