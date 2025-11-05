@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
+import { SpecialistProfileDialog } from "@/components/specialists/SpecialistProfileDialog";
 
 interface Order {
   id: string;
@@ -176,6 +177,8 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [selectedSpecialistIds, setSelectedSpecialistIds] = useState<string[]>([]);
+  const [selectedSpecialistId, setSelectedSpecialistId] = useState<string | null>(null);
+  const [specialistProfileOpen, setSpecialistProfileOpen] = useState(false);
   
   // Track recently sent orders with timestamps
   const [recentlySentOrders, setRecentlySentOrders] = useState<Map<string, number>>(new Map());
@@ -1292,20 +1295,27 @@ Thank you for contacting us! 🌟`;
                               const specialist = acceptedSpecialist.specialists;
                               return (
                                 <div className="flex items-start gap-2 p-2 bg-green-50 dark:bg-green-950/20 rounded-md border border-green-200 dark:border-green-800/30">
-                                  {/* Specialist Image */}
-                                  <div className="flex-shrink-0">
+                                  {/* Specialist Image - Clickable */}
+                                  <button
+                                    onClick={() => {
+                                      setSelectedSpecialistId(specialist.id);
+                                      setSpecialistProfileOpen(true);
+                                    }}
+                                    className="flex-shrink-0 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-green-500 rounded-full"
+                                    title={language === 'ar' ? 'عرض الملف الشخصي' : 'View Profile'}
+                                  >
                                     {specialist.image_url ? (
                                       <img 
                                         src={specialist.image_url} 
                                         alt={specialist.name}
-                                        className="w-10 h-10 rounded-full object-cover border-2 border-green-300 dark:border-green-700"
+                                        className="w-10 h-10 rounded-full object-cover border-2 border-green-300 dark:border-green-700 cursor-pointer"
                                       />
                                     ) : (
-                                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700">
+                                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700 cursor-pointer">
                                         <User className="h-5 w-5 text-green-700 dark:text-green-400" />
                                       </div>
                                     )}
-                                  </div>
+                                  </button>
                                   {/* Specialist Details */}
                                   <div className="space-y-0.5 flex-1 min-w-0">
                                     <div className="text-sm font-medium text-green-900 dark:text-green-100 truncate">
@@ -1869,6 +1879,17 @@ Thank you for contacting us! 🌟`;
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Specialist Profile Dialog */}
+      {selectedSpecialistId && (
+        <SpecialistProfileDialog
+          open={specialistProfileOpen}
+          onOpenChange={setSpecialistProfileOpen}
+          specialist={{ id: selectedSpecialistId } as any}
+          language={language}
+          hideIdCards={false}
+        />
+      )}
     </Card>
   );
 }
