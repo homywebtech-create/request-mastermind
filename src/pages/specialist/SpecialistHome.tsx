@@ -677,6 +677,15 @@ export default function SpecialistHome() {
                           </DialogDescription>
                         </DialogHeader>
                         <div className="relative rounded-lg overflow-hidden border border-border h-[500px]">
+                          <style dangerouslySetInnerHTML={{ __html: `
+                            .gm-style-iw-c,
+                            .gm-style-iw-t,
+                            a[href^="https://maps.google.com/maps"],
+                            .gm-style a[href^="https://maps.google.com/maps"],
+                            .gm-style-cc {
+                              display: none !important;
+                            }
+                          `}} />
                           <iframe
                             width="100%"
                             height="100%"
