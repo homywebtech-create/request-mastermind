@@ -688,22 +688,20 @@ export default function SpecialistHome() {
                   )}
 
                   {/* Action Button */}
-                  {isTodayOrder && (
+                  {isTodayOrder && canMove && (
                     <Button
                       onClick={() => navigate(`/order-tracking/${order.id}`)}
-                      className={cn(
-                        "w-full h-14 text-base font-bold shadow-lg transition-all",
-                        canMove ? "bg-green-600 hover:bg-green-700 animate-pulse" : "bg-blue-500 hover:bg-blue-600"
-                      )}
+                      className="w-full h-14 text-base font-bold shadow-lg transition-all bg-green-600 hover:bg-green-700 animate-pulse"
                     >
                       <div className="flex items-center justify-center gap-2">
                         <Navigation className="h-5 w-5" />
-                        <span>{canMove ? (isAr ? "افتح الحجز الآن" : "Open Booking Now") : (isAr ? "فتح الحجز" : "Open Booking")}</span>
+                        <span>{isAr ? "🚀 ابدأ التحرك الآن" : "🚀 Start Moving Now"}</span>
                       </div>
                     </Button>
                   )}
 
-                  {isFutureOrder && !canMove && (
+                  {/* Future order message */}
+                  {!canMove && (
                     <div className="text-center p-4 bg-muted/50 rounded-lg">
                       <p className="text-sm text-muted-foreground">
                         {isAr ? '⏰ سيتم تفعيل الطلب تلقائياً قبل الموعد بساعة' : '⏰ Order will activate automatically one hour before'}
