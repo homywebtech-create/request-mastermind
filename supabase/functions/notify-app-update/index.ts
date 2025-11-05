@@ -129,8 +129,13 @@ Deno.serve(async (req) => {
 
       console.log('[notify-app-update] Using FCM v1 for project:', projectId);
 
-      for (const deviceToken of tokens) {
+      for (let i = 0; i < tokens.length; i++) {
+        const deviceToken = tokens[i];
+        const tokenPreview = deviceToken.token.substring(0, 20) + '...';
+        
         try {
+          console.log(`📤 [${i + 1}/${tokens.length}] Sending to device: ${tokenPreview} (platform: ${deviceToken.platform})`);
+          
           const isAndroid = (deviceToken.platform || '').toLowerCase() === 'android';
           const message = {
             message: {
@@ -163,20 +168,39 @@ Deno.serve(async (req) => {
           });
 
           if (resp.ok) {
+            const result = await resp.json();
             successCount++;
+            console.log(`✅ [${i + 1}/${tokens.length}] SUCCESS - Device: ${tokenPreview}, Message ID: ${result.name || 'N/A'}`);
           } else {
             failCount++;
-            console.error('[notify-app-update] v1 send failed:', await resp.text());
+            const errorText = await resp.text();
+            let errorObj;
+            try {
+              errorObj = JSON.parse(errorText);
+            } catch {
+              errorObj = { message: errorText };
+            }
+            console.error(`❌ [${i + 1}/${tokens.length}] FAILED - Device: ${tokenPreview}`);
+            console.error(`   Status: ${resp.status} ${resp.statusText}`);
+            console.error(`   Error: ${errorObj.error?.message || errorObj.message || 'Unknown error'}`);
           }
         } catch (e) {
           failCount++;
-          console.error('[notify-app-update] v1 send error:', e);
+          console.error(`❌ [${i + 1}/${tokens.length}] EXCEPTION - Device: ${tokenPreview}`);
+          console.error(`   Error: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
     } else if (legacyServerKey) {
       // Fallback: legacy HTTP API
-      for (const deviceToken of tokens) {
+      console.log('[notify-app-update] Using legacy FCM HTTP API');
+      
+      for (let i = 0; i < tokens.length; i++) {
+        const deviceToken = tokens[i];
+        const tokenPreview = deviceToken.token.substring(0, 20) + '...';
+        
         try {
+          console.log(`📤 [${i + 1}/${tokens.length}] Sending to device: ${tokenPreview} (platform: ${deviceToken.platform})`);
+          
           const notification = {
             to: deviceToken.token,
             notification: {
@@ -198,19 +222,29 @@ Deno.serve(async (req) => {
           });
 
           if (response.ok) {
+            const result = await response.json();
             successCount++;
+            console.log(`✅ [${i + 1}/${tokens.length}] SUCCESS - Device: ${tokenPreview}, Message ID: ${result.message_id || 'N/A'}`);
           } else {
             failCount++;
-            console.error('[notify-app-update] legacy send failed:', await response.text());
+            const errorText = await response.text();
+            console.error(`❌ [${i + 1}/${tokens.length}] FAILED - Device: ${tokenPreview}`);
+            console.error(`   Status: ${response.status} ${response.statusText}`);
+            console.error(`   Error: ${errorText}`);
           }
         } catch (e) {
           failCount++;
-          console.error('[notify-app-update] legacy send error:', e);
+          console.error(`❌ [${i + 1}/${tokens.length}] EXCEPTION - Device: ${tokenPreview}`);
+          console.error(`   Error: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
     }
 
-    console.log(`[notify-app-update] Done. Sent: ${successCount}, Failed: ${failCount}, Total: ${tokens.length}`);
+    console.log(`\n📊 [notify-app-update] SUMMARY:`);
+    console.log(`   ✅ Successful: ${successCount}`);
+    console.log(`   ❌ Failed: ${failCount}`);
+    console.log(`   📱 Total Devices: ${tokens.length}`);
+    console.log(`   📈 Success Rate: ${tokens.length > 0 ? Math.round((successCount / tokens.length) * 100) : 0}%`);
 
     return new Response(
       JSON.stringify({
