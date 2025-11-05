@@ -5,6 +5,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Navigation, Calendar, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import BusyGuard from "@/components/specialist/BusyGuard";
 import { translateOrderDetails } from "@/lib/translateHelper";
@@ -591,7 +599,7 @@ export default function SpecialistHome() {
                   <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 p-3 rounded-lg border-2 border-primary/20">
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-xs text-muted-foreground font-medium">{isAr ? 'رقم الطلب' : 'Order Number'}</span>
-                      <span className="text-lg font-bold text-primary">#{order.id.split('-')[0]}</span>
+                      <span className="text-lg font-bold text-primary">{order.order_number || `#${order.id.split('-')[0]}`}</span>
                     </div>
                   </div>
 
@@ -609,18 +617,42 @@ export default function SpecialistHome() {
                     </div>
                   </div>
 
-                  {/* Location Map */}
+                  {/* Location Map - Static Image */}
                   {order.gps_latitude && order.gps_longitude && (
-                    <div className="rounded-lg overflow-hidden border-2 border-border">
-                      <iframe
-                        width="100%"
-                        height="200"
-                        frameBorder="0"
-                        style={{ border: 0 }}
-                        src={`https://www.google.com/maps?q=${order.gps_latitude},${order.gps_longitude}&output=embed`}
-                        allowFullScreen
-                      />
-                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <div className="relative rounded-lg overflow-hidden border-2 border-border cursor-pointer hover:opacity-90 transition-opacity group">
+                          <div className="w-full h-[200px] bg-muted flex items-center justify-center">
+                            <div className="text-center space-y-2">
+                              <MapPin className="h-12 w-12 text-primary mx-auto" />
+                              <p className="text-sm font-medium">{isAr ? 'اضغط لعرض الموقع' : 'Tap to view location'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {`${order.gps_latitude.toFixed(4)}°, ${order.gps_longitude.toFixed(4)}°`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl">
+                        <DialogHeader>
+                          <DialogTitle>{isAr ? 'موقع العميل' : 'Customer Location'}</DialogTitle>
+                          <DialogDescription>
+                            {order.customer?.area || (isAr ? 'موقع العميل على الخريطة' : 'Customer location on map')}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="relative rounded-lg overflow-hidden border border-border h-[500px]">
+                          <iframe
+                            width="100%"
+                            height="100%"
+                            frameBorder="0"
+                            style={{ border: 0 }}
+                            src={`https://www.google.com/maps?q=${order.gps_latitude},${order.gps_longitude}&output=embed&z=16`}
+                            allowFullScreen
+                          />
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   )}
 
                   {/* Booking Details */}
