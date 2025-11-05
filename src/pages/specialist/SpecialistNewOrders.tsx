@@ -69,7 +69,7 @@ export default function SpecialistNewOrders() {
   const soundNotification = useRef(getSoundNotification());
   
   // Language management
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, initializeLanguage } = useLanguage();
   const t = useTranslation(language);
 
   useEffect(() => {
@@ -182,6 +182,7 @@ export default function SpecialistNewOrders() {
   }, [navigate]);
 
   useEffect(() => {
+    initializeLanguage();
     checkAuth();
     
     console.log('🚀 [APP START] تطبيق المحترفين - جاهز');

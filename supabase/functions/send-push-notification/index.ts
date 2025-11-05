@@ -68,6 +68,49 @@ async function getAccessToken(serviceAccount: any) {
   return await tokenResponse.json();
 }
 
+// Helper function to translate notification text based on specialist's language
+function translateNotification(originalTitle: string, originalBody: string, language: string) {
+  if (!language || language === 'ar') {
+    return { title: originalTitle, body: originalBody };
+  }
+
+  // Translation mapping for common notification phrases
+  const translations: Record<string, Record<string, string>> = {
+    en: {
+      'طلب جديد': 'New Order',
+      'لديك طلب جديد': 'You have a new order',
+      'تأكيد الحجز': 'Booking Confirmed',
+      'تم تأكيد حجزك': 'Your booking has been confirmed',
+      'تم تأكيد حجزك بنجاح': 'Your booking was confirmed successfully',
+      '⏰ انتهى وقت العرض': '⏰ Offer Time Expired',
+      'انتهى وقت تقديم عرض للطلب': 'Time to submit offer has expired for order',
+      'تحديث الطلب': 'Order Update',
+      'تم تحديث حالة الطلب': 'Order status has been updated',
+      'عرض جديد': 'New Quote',
+      'رد على العرض': 'Quote Response',
+    }
+  };
+
+  let translatedTitle = originalTitle;
+  let translatedBody = originalBody;
+
+  // Translate title
+  if (translations[language] && translations[language][originalTitle]) {
+    translatedTitle = translations[language][originalTitle];
+  }
+
+  // Translate body - check for partial matches
+  if (translations[language]) {
+    for (const [arPhrase, enPhrase] of Object.entries(translations[language])) {
+      if (originalBody.includes(arPhrase)) {
+        translatedBody = translatedBody.replace(arPhrase, enPhrase);
+      }
+    }
+  }
+
+  return { title: translatedTitle, body: translatedBody };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -92,10 +135,10 @@ serve(async (req) => {
 
     console.log(`📱 [FCM] Sending to ${specialistIds.length} specialists...`);
 
-    // Filter out offline specialists
+    // Get specialist data including language preferences
     const { data: specialistsData, error: specialistsError } = await supabase
       .from('specialists')
-      .select('id, is_online, offline_until')
+      .select('id, is_online, offline_until, preferred_language')
       .in('id', specialistIds);
 
     if (specialistsError) {
@@ -165,11 +208,17 @@ serve(async (req) => {
       tokens.map(async (deviceToken) => {
         const isAndroid = (deviceToken.platform || '').toLowerCase() === 'android';
 
-        // Determine the correct route based on notification type
+        // Determine notification type and get specialist language
         const notificationType = (data.type as string) || 'new_order';
+        const specialist = specialistsData?.find(s => s.id === deviceToken.specialist_id);
+        const specialistLanguage = specialist?.preferred_language || 'ar';
+
+        // Translate notification based on specialist's language
+        const { title: translatedTitle, body: translatedBody } = translateNotification(title, body, specialistLanguage);
+
         let targetRoute = '/specialist/new-orders'; // Default to new orders page
-        
         console.log(`📍 [ROUTE] Determining route for type: ${notificationType}, orderId: ${data.orderId || 'none'}`);
+        console.log(`🌐 [LANG] Specialist language: ${specialistLanguage}, Title: ${translatedTitle}`);
         
         // Route mapping based on notification type
         if (notificationType === 'new_quote' || notificationType === 'quote_response') {
@@ -205,11 +254,11 @@ serve(async (req) => {
           console.log(`⚠️ [ROUTE] Unknown notification type: ${notificationType}, using default: ${targetRoute}`);
         }
 
-        // Build message payload
+        // Build message payload with translated text
         const baseData: Record<string, string> = {
           type: notificationType,
-          title: title || 'طلب جديد',
-          body: body || 'لديك طلب جديد',
+          title: translatedTitle,
+          body: translatedBody,
           route: targetRoute,
           click_action: 'FLUTTER_NOTIFICATION_CLICK',
           orderId: data.orderId?.toString() || '',
@@ -236,8 +285,8 @@ serve(async (req) => {
               message: {
                 token: deviceToken.token,
                 notification: {
-                  title: title || 'طلب جديد',
-                  body: body || 'لديك طلب جديد',
+                  title: translatedTitle,
+                  body: translatedBody,
                 },
                 data: baseData,
                 android: {

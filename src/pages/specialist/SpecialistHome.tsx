@@ -50,10 +50,11 @@ export default function SpecialistHome() {
   const [preferredLanguage, setPreferredLanguage] = useState('ar');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, initializeLanguage } = useLanguage();
   const isAr = language === 'ar';
   
   useEffect(() => {
+    initializeLanguage();
     checkAuth();
   }, []);
 

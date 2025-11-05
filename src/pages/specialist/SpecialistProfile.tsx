@@ -88,11 +88,12 @@ export default function SpecialistProfile() {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, initializeLanguage } = useLanguage();
   const isAr = language === 'ar';
   const t = isAr ? ar.specialist : en.specialist;
 
   useEffect(() => {
+    initializeLanguage();
     checkAuth();
   }, []);
 
