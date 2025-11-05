@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -866,6 +866,13 @@ export default function Dashboard() {
                         <DropdownMenuItem onClick={() => navigate('/admin/app-versions')}>
                           <Smartphone className="h-4 w-4 mr-2" />
                           {language === 'ar' ? 'إدارة الإصدارات' : 'App Versions'}
+                        </DropdownMenuItem>
+                      )}
+
+                      {userHasPermission('view_dashboard') && (
+                        <DropdownMenuItem onClick={() => navigate('/whatsapp-test')}>
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'اختبار واتساب' : 'WhatsApp Test'}
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
