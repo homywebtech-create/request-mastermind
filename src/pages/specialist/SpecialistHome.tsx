@@ -762,7 +762,7 @@ export default function SpecialistHome() {
                   </div>
 
                   {/* Customer Notes */}
-                  {order.notes && (
+                  {order.notes && order.notes.trim() !== '' && !order.notes.includes('Terms and Conditions') && (
                     <div className="bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
                       <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2 font-medium">
                         💬 {isAr ? 'توصيات العميل' : 'Customer Notes'}
@@ -773,17 +773,6 @@ export default function SpecialistHome() {
                     </div>
                   )}
 
-                  {/* Building Info */}
-                  {order.building_info && (
-                    <div className="bg-cyan-50 dark:bg-cyan-950/30 p-4 rounded-lg border border-cyan-200 dark:border-cyan-800">
-                      <p className="text-xs text-cyan-600 dark:text-cyan-400 mb-2 font-medium">
-                        🏢 {isAr ? 'معلومات المبنى' : 'Building Information'}
-                      </p>
-                      <p className="text-sm text-cyan-900 dark:text-cyan-100 leading-relaxed">
-                        {order.translated?.building_info || order.building_info}
-                      </p>
-                    </div>
-                  )}
 
                   {/* Countdown Timer - Show for both today and future orders */}
                   {!canMove && timeUntil && (timeUntil.days > 0 || timeUntil.hours > 0 || timeUntil.minutes > 0 || timeUntil.seconds > 0) && (
