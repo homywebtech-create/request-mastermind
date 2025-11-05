@@ -398,15 +398,37 @@ export default function SpecialistHome() {
     if (!bookingDate) return false;
     
     try {
+      // Extract start time if bookingTime is a range (e.g., "10:00-11:00" or "10:00 AM-11:00 AM")
+      let timeToUse = bookingTime;
+      if (bookingTime && bookingTime.includes('-')) {
+        timeToUse = bookingTime.split('-')[0].trim();
+      }
+      
+      // Convert 12-hour format to 24-hour format if needed (e.g., "10:00 AM" -> "10:00")
+      if (timeToUse && (timeToUse.includes('AM') || timeToUse.includes('PM'))) {
+        const isPM = timeToUse.includes('PM');
+        const timeOnly = timeToUse.replace(/\s?(AM|PM)/gi, '').trim();
+        const [hours, minutes] = timeOnly.split(':').map(Number);
+        
+        let hours24 = hours;
+        if (isPM && hours !== 12) {
+          hours24 = hours + 12;
+        } else if (!isPM && hours === 12) {
+          hours24 = 0;
+        }
+        
+        timeToUse = `${String(hours24).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`;
+      }
+      
       // Combine date and time if time is available
-      const dateTimeString = bookingTime 
-        ? `${bookingDate}T${bookingTime}`
+      const dateTimeString = timeToUse 
+        ? `${bookingDate}T${timeToUse}`
         : bookingDate;
       const bookingDateTime = parseISO(dateTimeString);
       
       // Check if the parsed date is valid
       if (isNaN(bookingDateTime.getTime())) {
-        console.error('Invalid date parsed in canMoveNow:', { bookingDate, bookingTime, dateTimeString });
+        console.error('Invalid date parsed in canMoveNow:', { bookingDate, bookingTime, timeToUse, dateTimeString });
         return false;
       }
       
@@ -422,15 +444,37 @@ export default function SpecialistHome() {
     if (!bookingDate) return null;
     
     try {
+      // Extract start time if bookingTime is a range (e.g., "10:00-11:00" or "10:00 AM-11:00 AM")
+      let timeToUse = bookingTime;
+      if (bookingTime && bookingTime.includes('-')) {
+        timeToUse = bookingTime.split('-')[0].trim();
+      }
+      
+      // Convert 12-hour format to 24-hour format if needed (e.g., "10:00 AM" -> "10:00")
+      if (timeToUse && (timeToUse.includes('AM') || timeToUse.includes('PM'))) {
+        const isPM = timeToUse.includes('PM');
+        const timeOnly = timeToUse.replace(/\s?(AM|PM)/gi, '').trim();
+        const [hours, minutes] = timeOnly.split(':').map(Number);
+        
+        let hours24 = hours;
+        if (isPM && hours !== 12) {
+          hours24 = hours + 12;
+        } else if (!isPM && hours === 12) {
+          hours24 = 0;
+        }
+        
+        timeToUse = `${String(hours24).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`;
+      }
+      
       // Combine date and time if time is available
-      const dateTimeString = bookingTime 
-        ? `${bookingDate}T${bookingTime}`
+      const dateTimeString = timeToUse 
+        ? `${bookingDate}T${timeToUse}`
         : bookingDate;
       const bookingDateTime = parseISO(dateTimeString);
       
       // Check if the parsed date is valid
       if (isNaN(bookingDateTime.getTime())) {
-        console.error('Invalid date parsed:', { bookingDate, bookingTime, dateTimeString });
+        console.error('Invalid date parsed:', { bookingDate, bookingTime, timeToUse, dateTimeString });
         return null;
       }
       
@@ -561,6 +605,22 @@ export default function SpecialistHome() {
             const canMove = canMoveNow(order.booking_date, order.booking_time);
             const timeUntil = getTimeUntilMovement(order.booking_date, order.booking_time);
             const isOverdue = isOrderOverdue(order);
+
+            // Debug logging
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('📋 Order Debug:', {
+              orderId: order.id,
+              orderNumber: order.order_number,
+              bookingDate: order.booking_date,
+              bookingTime: order.booking_time,
+              isTodayOrder,
+              isFutureOrder,
+              canMove,
+              timeUntil,
+              isOverdue,
+              currentTime: currentTime.toISOString(),
+            });
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
             return (
               <Card 
