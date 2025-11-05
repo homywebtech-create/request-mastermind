@@ -530,6 +530,22 @@ export const ar = {
     translating: "جاري الترجمة...",
     translated: "مترجم",
     showOriginal: "إظهار الأصلي",
+    overdue: "متأخر",
+    
+    // Specialist readiness
+    readinessCheck: "تأكيد الجاهزية",
+    readinessCheckDescription: "لديك طلب قادم خلال ساعة. هل أنت جاهز؟",
+    yesImReady: "نعم، أنا جاهز",
+    noImNotReady: "لا، لست جاهزاً",
+    reasonForNotReady: "سبب عدم الجاهزية",
+    enterReasonPlaceholder: "يرجى توضيح سبب عدم الجاهزية...",
+    readinessConfirmed: "تم تأكيد جاهزيتك للطلب",
+    responseRecorded: "تم تسجيل ردك",
+    failedToUpdateReadiness: "فشل في تحديث حالة الجاهزية",
+    pleaseProvideReason: "يرجى توضيح السبب",
+    standby: "جاهز / استعداد",
+    notReady: "غير جاهز",
+    notReadyReason: "سبب عدم الجاهزية",
     
     // New order notification
     newOrderReceived: "طلب جديد!",

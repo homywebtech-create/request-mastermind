@@ -656,10 +656,14 @@ export type Database = {
           order_number: string | null
           payment_not_received_reason: string | null
           payment_status: string | null
+          readiness_check_sent_at: string | null
           selected_booking_type: string | null
           send_to_all_companies: boolean
           service_type: string
           specialist_id: string | null
+          specialist_not_ready_reason: string | null
+          specialist_readiness_response_at: string | null
+          specialist_readiness_status: string | null
           status: string
           tracking_stage: string | null
           updated_at: string
@@ -696,10 +700,14 @@ export type Database = {
           order_number?: string | null
           payment_not_received_reason?: string | null
           payment_status?: string | null
+          readiness_check_sent_at?: string | null
           selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type: string
           specialist_id?: string | null
+          specialist_not_ready_reason?: string | null
+          specialist_readiness_response_at?: string | null
+          specialist_readiness_status?: string | null
           status?: string
           tracking_stage?: string | null
           updated_at?: string
@@ -736,10 +744,14 @@ export type Database = {
           order_number?: string | null
           payment_not_received_reason?: string | null
           payment_status?: string | null
+          readiness_check_sent_at?: string | null
           selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type?: string
           specialist_id?: string | null
+          specialist_not_ready_reason?: string | null
+          specialist_readiness_response_at?: string | null
+          specialist_readiness_status?: string | null
           status?: string
           tracking_stage?: string | null
           updated_at?: string

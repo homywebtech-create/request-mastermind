@@ -12,7 +12,7 @@ import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
-
+import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface Order {
@@ -53,6 +53,7 @@ export default function SpecialistHome() {
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [preferredLanguage, setPreferredLanguage] = useState('ar');
+  const [readinessCheckOrder, setReadinessCheckOrder] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language, initializeLanguage } = useLanguage();
@@ -100,10 +101,21 @@ export default function SpecialistHome() {
           schema: 'public',
           table: 'orders'
         },
-        () => {
+        (payload) => {
           console.log('🔄 [Realtime] orders changed, refreshing data...');
           fetchOrders(specialistId);
           fetchNewOrdersCount(specialistId);
+          
+          // Check if this is a readiness check update
+          if (payload.new && typeof payload.new === 'object') {
+            const newOrder = payload.new as any;
+            if (newOrder.specialist_id === specialistId &&
+                newOrder.specialist_readiness_status === 'pending' && 
+                newOrder.readiness_check_sent_at &&
+                !newOrder.specialist_readiness_response_at) {
+              setReadinessCheckOrder(newOrder.id);
+            }
+          }
         }
       )
       .subscribe();
@@ -755,6 +767,14 @@ export default function SpecialistHome() {
       </div>
 
       <BottomNavigation newOrdersCount={newOrdersCount} specialistId={specialistId} />
+      
+      {readinessCheckOrder && (
+        <ReadinessCheckDialog
+          orderId={readinessCheckOrder}
+          isOpen={!!readinessCheckOrder}
+          onClose={() => setReadinessCheckOrder(null)}
+        />
+      )}
       </div>
     </BusyGuard>
   );

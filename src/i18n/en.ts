@@ -530,6 +530,22 @@ export const en = {
     translating: "Translating...",
     translated: "Translated",
     showOriginal: "Show Original",
+    overdue: "Overdue",
+    
+    // Specialist readiness
+    readinessCheck: "Readiness Check",
+    readinessCheckDescription: "You have an upcoming order in one hour. Are you ready?",
+    yesImReady: "Yes, I'm Ready",
+    noImNotReady: "No, I'm Not Ready",
+    reasonForNotReady: "Reason for Not Ready",
+    enterReasonPlaceholder: "Please explain why you're not ready...",
+    readinessConfirmed: "Your readiness has been confirmed",
+    responseRecorded: "Your response has been recorded",
+    failedToUpdateReadiness: "Failed to update readiness status",
+    pleaseProvideReason: "Please provide a reason",
+    standby: "Ready / Standby",
+    notReady: "Not Ready",
+    notReadyReason: "Not Ready Reason",
     
     // New order notification
     newOrderReceived: "New Order!",

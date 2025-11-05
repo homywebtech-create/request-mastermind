@@ -49,6 +49,10 @@ interface Order {
   cancelled_by_role?: string | null;
   cancellation_reason?: string | null;
   cancelled_at?: string | null;
+  specialist_readiness_status?: string | null;
+  specialist_readiness_response_at?: string | null;
+  specialist_not_ready_reason?: string | null;
+  readiness_check_sent_at?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -1201,6 +1205,16 @@ Thank you for contacting us! 🌟`;
                               {language === 'ar' ? '⚠️ متأخر' : '⚠️ Overdue'}
                             </Badge>
                           )}
+                          {order.specialist_readiness_status === 'ready' && (
+                            <Badge variant="secondary" className="text-xs bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/50">
+                              🟡 {language === 'ar' ? 'جاهز / استعداد' : 'Ready / Standby'}
+                            </Badge>
+                          )}
+                          {order.specialist_readiness_status === 'not_ready' && (
+                            <Badge variant="destructive" className="text-xs">
+                              ⚠️ {language === 'ar' ? 'غير جاهز' : 'Not Ready'}
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       
@@ -1513,11 +1527,24 @@ Thank you for contacting us! 🌟`;
                           })()
                         ) : (
                           // Show notes for other filters
-                          order.notes ? (
-                            <p className="text-sm max-w-xs line-clamp-2">{order.notes}</p>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )
+                          <div className="space-y-1">
+                            {order.specialist_not_ready_reason && (
+                              <div>
+                                <Badge variant="destructive" className="mb-1 text-xs">
+                                  {language === 'ar' ? 'سبب عدم الجاهزية:' : 'Not Ready Reason:'}
+                                </Badge>
+                                <p className="text-sm text-destructive max-w-xs line-clamp-2">
+                                  {order.specialist_not_ready_reason}
+                                </p>
+                              </div>
+                            )}
+                            {order.notes && (
+                              <p className="text-sm max-w-xs line-clamp-2">{order.notes}</p>
+                            )}
+                            {!order.notes && !order.specialist_not_ready_reason && (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                       
