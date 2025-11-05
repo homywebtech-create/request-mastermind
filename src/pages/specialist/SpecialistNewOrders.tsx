@@ -28,6 +28,7 @@ import { OnlineStatusToggle } from "@/components/specialist/OnlineStatusToggle";
 
 interface Order {
   id: string;
+  order_number: string | null;
   created_at: string;
   expires_at: string | null;
   service_type: string;
@@ -623,6 +624,7 @@ export default function SpecialistNewOrders() {
         .from('orders')
         .select(`
           id,
+          order_number,
           created_at,
           expires_at,
           service_type,
@@ -952,6 +954,14 @@ export default function SpecialistNewOrders() {
                 </div>
 
                 <div className="p-3 space-y-3">
+                  {/* Order Number Badge */}
+                  <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 p-2 rounded-lg border-2 border-primary/20">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium">{language === 'ar' ? 'رقم الطلب' : 'Order Number'}</span>
+                      <span className="text-base font-bold text-primary">#{order.order_number || order.id.split('-')[0]}</span>
+                    </div>
+                  </div>
+
                   {/* Customer Info - Compact */}
                   <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
                     <div className="flex items-center gap-2">
