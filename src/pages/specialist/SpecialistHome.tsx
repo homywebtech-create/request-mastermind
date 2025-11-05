@@ -65,6 +65,7 @@ export default function SpecialistHome() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [preferredLanguage, setPreferredLanguage] = useState('ar');
   const [readinessCheckOrder, setReadinessCheckOrder] = useState<string | null>(null);
+  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language, initializeLanguage } = useLanguage();
@@ -73,7 +74,20 @@ export default function SpecialistHome() {
   useEffect(() => {
     initializeLanguage();
     checkAuth();
+    fetchGoogleMapsKey();
   }, []);
+
+  const fetchGoogleMapsKey = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+      if (error) throw error;
+      if (data?.apiKey) {
+        setGoogleMapsApiKey(data.apiKey);
+      }
+    } catch (error) {
+      console.error('Error fetching Google Maps API key:', error);
+    }
+  };
 
   // Update current time every second
   useEffect(() => {
@@ -629,7 +643,21 @@ export default function SpecialistHome() {
                     <Dialog>
                       <DialogTrigger asChild>
                         <div className="relative rounded-lg overflow-hidden border-2 border-border cursor-pointer hover:opacity-90 transition-opacity group">
-                          <div className="w-full h-[200px] bg-muted flex items-center justify-center">
+                          {googleMapsApiKey ? (
+                            <img
+                              src={`https://maps.googleapis.com/maps/api/staticmap?center=${order.gps_latitude},${order.gps_longitude}&zoom=15&size=600x300&markers=color:red%7C${order.gps_latitude},${order.gps_longitude}&key=${googleMapsApiKey}&scale=2`}
+                              alt={isAr ? 'موقع العميل' : 'Customer Location'}
+                              className="w-full h-[200px] object-cover"
+                              onError={(e) => {
+                                // Fallback to placeholder on error
+                                e.currentTarget.style.display = 'none';
+                                if (e.currentTarget.nextElementSibling) {
+                                  (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div className="w-full h-[200px] bg-muted flex items-center justify-center" style={{ display: googleMapsApiKey ? 'none' : 'flex' }}>
                             <div className="text-center space-y-2">
                               <MapPin className="h-12 w-12 text-primary mx-auto" />
                               <p className="text-sm font-medium">{isAr ? 'اضغط لعرض الموقع' : 'Tap to view location'}</p>
