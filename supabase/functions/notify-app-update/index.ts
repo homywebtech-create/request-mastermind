@@ -145,9 +145,8 @@ Deno.serve(async (req) => {
                     priority: 'high',
                     direct_boot_ok: true,
                     notification: {
+                      channel_id: 'new-orders-v6',
                       sound: 'notification_sound',
-                      channel_id: 'new_orders_channel',
-                      priority: 'max',
                     },
                   }
                 : undefined,
