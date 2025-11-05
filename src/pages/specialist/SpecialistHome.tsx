@@ -26,10 +26,15 @@ interface Order {
   gps_latitude: number | null;
   gps_longitude: number | null;
   building_info: string | null;
+  status: string;
   customer: {
     name: string;
     area: string | null;
   } | null;
+  customers?: {
+    name: string;
+    area: string | null;
+  };
   order_specialist?: {
     quoted_price: string | null;
   };
@@ -215,24 +220,15 @@ export default function SpecialistHome() {
       const acceptedOrderIds = acceptedOrderSpecs?.map(os => os.order_id) || [];
       console.log('✅ Accepted order IDs:', acceptedOrderIds);
 
-      // Get confirmed orders with status 'upcoming' or 'in_progress'
+      // Get confirmed orders (show all confirmed orders regardless of date)
       let query = supabase
         .from('orders')
         .select(`
-          id,
-          order_number,
-          service_type,
-          booking_date,
-          booking_time,
-          booking_type,
-          hours_count,
-          gps_latitude,
-          gps_longitude,
-          building_info,
-          status,
-          specialist_id,
-          customer:customers (
+          *,
+          customers (
+            id,
             name,
+            whatsapp_number,
             area
           )
         `)
@@ -276,10 +272,11 @@ export default function SpecialistHome() {
         .eq('specialist_id', specId)
         .in('order_id', orderIds);
 
-      const ordersWithQuotes = ordersData.map(order => {
+      const ordersWithQuotes = ordersData.map((order: any) => {
         const orderSpec = orderSpecialists?.find(os => os.order_id === order.id);
         return {
           ...order,
+          customer: order.customers || order.customer || null,
           order_specialist: orderSpec ? {
             quoted_price: orderSpec.quoted_price
           } : undefined
@@ -434,6 +431,30 @@ export default function SpecialistHome() {
     }
   };
 
+  const isOrderOverdue = (order: Order) => {
+    if (!order.booking_date || order.status === 'completed' || order.status === 'cancelled') return false;
+    
+    const bookingDateTime = new Date(order.booking_date);
+    
+    // Parse booking time
+    if (order.booking_time) {
+      if (order.booking_time === 'morning') {
+        bookingDateTime.setHours(8, 0, 0, 0);
+      } else if (order.booking_time === 'afternoon') {
+        bookingDateTime.setHours(14, 0, 0, 0);
+      } else if (order.booking_time === 'evening') {
+        bookingDateTime.setHours(18, 0, 0, 0);
+      } else {
+        const [hours, minutes] = order.booking_time.split(':').map(Number);
+        bookingDateTime.setHours(hours, minutes, 0, 0);
+      }
+    } else {
+      bookingDateTime.setHours(8, 0, 0, 0);
+    }
+    
+    return new Date() > bookingDateTime;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
@@ -498,6 +519,7 @@ export default function SpecialistHome() {
             const isFutureOrder = isOrderFuture(order.booking_date);
             const canMove = canMoveNow(order.booking_date, order.booking_time);
             const timeUntil = getTimeUntilMovement(order.booking_date, order.booking_time);
+            const isOverdue = isOrderOverdue(order);
 
             return (
               <Card 
@@ -506,7 +528,8 @@ export default function SpecialistHome() {
                   "overflow-hidden transition-all",
                   isTodayOrder && canMove && "border-green-500 border-2 shadow-lg shadow-green-500/20",
                   isTodayOrder && !canMove && "border-green-500 border-2 shadow-lg",
-                  isFutureOrder && "border-destructive border-2 opacity-75"
+                  isFutureOrder && !isOverdue && "border-destructive border-2 opacity-75",
+                  isOverdue && "border-destructive border-2 animate-pulse"
                 )}
               >
                 {/* Status Indicator */}
@@ -514,7 +537,8 @@ export default function SpecialistHome() {
                   "h-2 w-full",
                   isTodayOrder && canMove && "bg-green-500 animate-pulse",
                   isTodayOrder && !canMove && "bg-green-500",
-                  isFutureOrder && "bg-destructive"
+                  isFutureOrder && !isOverdue && "bg-destructive",
+                  isOverdue && "bg-destructive animate-pulse"
                 )} />
 
                 <div className="p-5 space-y-4">
@@ -523,11 +547,14 @@ export default function SpecialistHome() {
                     <div className={cn(
                       "px-3 py-1 rounded-full text-sm font-bold",
                       isTodayOrder && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-                      isFutureOrder && "bg-destructive/10 text-destructive"
+                      isFutureOrder && !isOverdue && "bg-destructive/10 text-destructive",
+                      isOverdue && "bg-destructive text-destructive-foreground animate-pulse"
                     )}>
-                      {isTodayOrder 
-                        ? (isAr ? "⭐ طلب اليوم" : "⭐ Today's Order")
-                        : (isAr ? "📅 طلب قادم" : "📅 Upcoming Order")
+                      {isOverdue
+                        ? (isAr ? "⚠️ متأخر - يجب الإلغاء أو البدء" : "⚠️ Overdue - Cancel or Start")
+                        : isTodayOrder 
+                          ? (isAr ? "⭐ طلب اليوم" : "⭐ Today's Order")
+                          : (isAr ? "📅 طلب قادم" : "📅 Upcoming Order")
                       }
                     </div>
                     {order.booking_date && (

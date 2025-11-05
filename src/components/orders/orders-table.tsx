@@ -139,6 +139,31 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const canManageOrders = isCompanyView 
     ? hasCompanyPermission('manage_orders')
     : hasPermission('manage_orders');
+
+  // Check if order is overdue
+  const isOrderOverdue = (order: Order) => {
+    if (!order.booking_date || order.status === 'completed' || order.status === 'cancelled') return false;
+    
+    const bookingDateTime = new Date(order.booking_date);
+    
+    // Parse booking time
+    if (order.booking_time) {
+      if (order.booking_time === 'morning') {
+        bookingDateTime.setHours(8, 0, 0, 0);
+      } else if (order.booking_time === 'afternoon') {
+        bookingDateTime.setHours(14, 0, 0, 0);
+      } else if (order.booking_time === 'evening') {
+        bookingDateTime.setHours(18, 0, 0, 0);
+      } else {
+        const [hours, minutes] = order.booking_time.split(':').map(Number);
+        bookingDateTime.setHours(hours, minutes, 0, 0);
+      }
+    } else {
+      bookingDateTime.setHours(8, 0, 0, 0);
+    }
+    
+    return new Date() > bookingDateTime;
+  };
   
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [resendDialogOpen, setResendDialogOpen] = useState(false);
@@ -1149,18 +1174,34 @@ Thank you for contacting us! 🌟`;
                   // Show delayed status for all orders that can be resent, not just pending ones
                   const canShowResendButton = canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView));
                   const isDelayed = isOverThreeMinutes(order) && canShowResendButton;
+                  const isOverdue = isOrderOverdue(order);
                   const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton;
                   const isOrderProcessing = isProcessing(order.id);
                   
                   return (
                     <TableRow 
                       key={order.id}
-                      className={isDelayed ? "bg-destructive/10 border-destructive/20" : isRecentlySent ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" : ""}
+                      className={
+                        isOverdue 
+                          ? "bg-destructive/10 border-destructive/20 animate-pulse" 
+                          : isDelayed 
+                            ? "bg-destructive/10 border-destructive/20" 
+                            : isRecentlySent 
+                              ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" 
+                              : ""
+                      }
                     >
                       <TableCell>
-                        <Badge variant="secondary" className="font-mono">
-                          {order.order_number || 'N/A'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="font-mono">
+                            {order.order_number || 'N/A'}
+                          </Badge>
+                          {isOverdue && (
+                            <Badge variant="destructive" className="text-xs animate-pulse">
+                              {language === 'ar' ? '⚠️ متأخر' : '⚠️ Overdue'}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       
                       <TableCell>
