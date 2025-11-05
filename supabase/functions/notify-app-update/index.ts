@@ -5,9 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper: get OAuth2 access token for Firebase v1 API using service account
+// Helper function to get OAuth2 access token
 async function getAccessToken(serviceAccount: any) {
   const jwtHeader = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  
   const now = Math.floor(Date.now() / 1000);
   const jwtClaimSet = {
     iss: serviceAccount.client_email,
@@ -16,27 +17,46 @@ async function getAccessToken(serviceAccount: any) {
     exp: now + 3600,
     iat: now,
   };
+  
   const jwtClaimSetEncoded = btoa(JSON.stringify(jwtClaimSet)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   const signatureInput = `${jwtHeader}.${jwtClaimSetEncoded}`;
-
+  
+  // Import private key
   const pemKey = serviceAccount.private_key;
   const pemContents = pemKey.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '');
   const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
-  const cryptoKey = await crypto.subtle.importKey('pkcs8', binaryKey, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
-  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(signatureInput));
-  const signatureEncoded = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryKey,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    cryptoKey,
+    new TextEncoder().encode(signatureInput)
+  );
+  
+  const signatureEncoded = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
   const jwt = `${signatureInput}.${signatureEncoded}`;
-
+  
+  // Exchange JWT for access token
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
-
+  
   if (!tokenResponse.ok) {
-    console.error('[notify-app-update] Failed to get access token:', await tokenResponse.text());
+    console.error('Failed to get access token:', await tokenResponse.text());
     return null;
   }
+  
   return await tokenResponse.json();
 }
 
@@ -46,68 +66,72 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    console.log('🔔 [notify-app-update] Starting app update notification...');
+
+    const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
+    if (!serviceAccountJson) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT not configured');
+    }
+    
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    console.log('✅ [notify-app-update] Service account loaded for project:', serviceAccount.project_id);
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { versionId } = await req.json();
-    console.log('[notify-app-update] Sending update notifications for version:', versionId);
+    console.log('📦 [notify-app-update] Version ID:', versionId);
 
-    // Get the version details
-    const { data: version, error: versionError } = await supabaseClient
+    // Get version details
+    const { data: version, error: versionError } = await supabase
       .from('app_versions')
       .select('*')
       .eq('id', versionId)
       .single();
 
     if (versionError || !version) {
-      console.error('[notify-app-update] Error fetching version:', versionError);
-      return new Response(
-        JSON.stringify({ error: 'Version not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error('❌ [notify-app-update] Error fetching version:', versionError);
+      throw new Error('Version not found');
     }
 
+    console.log('✅ [notify-app-update] Version:', version.version_name, '(', version.version_code, ')');
+
     // Get all device tokens
-    const { data: tokens, error: tokensError } = await supabaseClient
+    const { data: tokens, error: tokensError } = await supabase
       .from('device_tokens')
-      .select('token, platform');
+      .select('token, platform, specialist_id');
 
     if (tokensError) {
-      console.error('[notify-app-update] Error fetching tokens:', tokensError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch device tokens' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error('❌ [notify-app-update] Error fetching tokens:', tokensError);
+      throw tokensError;
     }
 
     if (!tokens || tokens.length === 0) {
-      console.log('[notify-app-update] No device tokens found');
+      console.log('⚠️ [notify-app-update] No device tokens found');
       return new Response(
-        JSON.stringify({ message: 'No devices to notify', sent: 0 }),
+        JSON.stringify({ success: true, sent: 0, message: 'No devices to notify' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const legacyServerKey = Deno.env.get('FIREBASE_SERVER_KEY');
-    const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
+    console.log(`✅ [notify-app-update] Found ${tokens.length} device tokens`);
 
-    console.log('[notify-app-update] Tokens:', tokens.length, 'Using', serviceAccountJson ? 'FCM v1' : legacyServerKey ? 'legacy FCM' : 'no Firebase config');
-
-    if (!serviceAccountJson && !legacyServerKey) {
-      return new Response(
-        JSON.stringify({ error: 'Firebase not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Get OAuth2 access token for Firebase Admin SDK
+    const tokenResponse = await getAccessToken(serviceAccount);
+    if (!tokenResponse) {
+      throw new Error('Failed to get Firebase access token');
     }
+    console.log('✅ [notify-app-update] Got access token');
 
-    let successCount = 0;
-    let failCount = 0;
-
-    // Prepare common data payload
-    const dataPayload: Record<string, string> = {
+    // Prepare notification data
+    const notificationTitle = version.is_mandatory ? '⚠️ تحديث إجباري متاح' : '🔔 تحديث جديد متاح';
+    const notificationBody = `الإصدار ${version.version_name} - ${version.changelog || 'تحسينات وإصلاحات'}`;
+    
+    const baseData: Record<string, string> = {
       type: 'app_update',
+      title: notificationTitle,
+      body: notificationBody,
       version_id: version.id,
       version_code: String(version.version_code),
       version_name: version.version_name,
@@ -115,151 +139,107 @@ Deno.serve(async (req) => {
       is_mandatory: String(!!version.is_mandatory),
       changelog: version.changelog || '',
       route: '/specialist-orders?showUpdate=true',
+      click_action: 'FLUTTER_NOTIFICATION_CLICK',
+      timestamp: new Date().toISOString(),
     };
 
-    if (serviceAccountJson) {
-      // Prefer FCM v1
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      const tokenResponse = await getAccessToken(serviceAccount);
-      if (!tokenResponse) {
-        throw new Error('Failed to obtain Firebase access token');
-      }
-      const accessToken = tokenResponse.access_token;
-      const projectId = serviceAccount.project_id;
+    // Send FCM notifications using Firebase Admin SDK v1 API (exactly like send-push-notification)
+    const results = await Promise.allSettled(
+      tokens.map(async (deviceToken) => {
+        const isAndroid = (deviceToken.platform || '').toLowerCase() === 'android';
 
-      console.log('[notify-app-update] Using FCM v1 for project:', projectId);
+        // Use app-updates channel for update notifications
+        const androidChannelId = 'app-updates';
 
-      for (let i = 0; i < tokens.length; i++) {
-        const deviceToken = tokens[i];
-        const tokenPreview = deviceToken.token.substring(0, 20) + '...';
-        
-        try {
-          console.log(`📤 [${i + 1}/${tokens.length}] Sending to device: ${tokenPreview} (platform: ${deviceToken.platform})`);
-          
-          const isAndroid = (deviceToken.platform || '').toLowerCase() === 'android';
-          const message = {
-            message: {
-              token: deviceToken.token,
-              notification: {
-                title: version.is_mandatory ? '⚠️ تحديث إجباري متاح' : '🔔 تحديث جديد متاح',
-                body: `الإصدار ${version.version_name} - ${version.changelog || 'تحسينات وإصلاحات'}`,
+        const message = isAndroid
+          ? {
+              message: {
+                token: deviceToken.token,
+                notification: {
+                  title: notificationTitle,
+                  body: notificationBody,
+                },
+                data: baseData,
+                android: {
+                  priority: 'high',
+                  direct_boot_ok: true,
+                  notification: {
+                    channel_id: androidChannelId,
+                  },
+                },
               },
-              data: dataPayload,
-              android: isAndroid
-                ? {
-                    priority: 'high',
-                    direct_boot_ok: true,
-                    notification: {
-                      channel_id: 'new-orders-v6',
-                      sound: 'notification_sound',
-                    },
-                  }
-                : undefined,
-            },
-          };
-
-          const resp = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(message),
-          });
-
-          if (resp.ok) {
-            const result = await resp.json();
-            successCount++;
-            console.log(`✅ [${i + 1}/${tokens.length}] SUCCESS - Device: ${tokenPreview}, Message ID: ${result.name || 'N/A'}`);
-          } else {
-            failCount++;
-            const errorText = await resp.text();
-            let errorObj;
-            try {
-              errorObj = JSON.parse(errorText);
-            } catch {
-              errorObj = { message: errorText };
             }
-            console.error(`❌ [${i + 1}/${tokens.length}] FAILED - Device: ${tokenPreview}`);
-            console.error(`   Status: ${resp.status} ${resp.statusText}`);
-            console.error(`   Error: ${errorObj.error?.message || errorObj.message || 'Unknown error'}`);
-          }
-        } catch (e) {
-          failCount++;
-          console.error(`❌ [${i + 1}/${tokens.length}] EXCEPTION - Device: ${tokenPreview}`);
-          console.error(`   Error: ${e instanceof Error ? e.message : String(e)}`);
-        }
-      }
-    } else if (legacyServerKey) {
-      // Fallback: legacy HTTP API
-      console.log('[notify-app-update] Using legacy FCM HTTP API');
-      
-      for (let i = 0; i < tokens.length; i++) {
-        const deviceToken = tokens[i];
-        const tokenPreview = deviceToken.token.substring(0, 20) + '...';
+          : {
+              message: {
+                token: deviceToken.token,
+                notification: {
+                  title: notificationTitle,
+                  body: notificationBody,
+                },
+                data: baseData,
+                apns: {
+                  payload: {
+                    aps: {
+                      sound: 'notification_sound.mp3',
+                    },
+                  },
+                },
+              },
+            };
+
+        console.log(`📤 [notify-app-update] Sending to specialist ${deviceToken.specialist_id} (${deviceToken.platform})...`);
+
+        const fcmUrl = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
         
-        try {
-          console.log(`📤 [${i + 1}/${tokens.length}] Sending to device: ${tokenPreview} (platform: ${deviceToken.platform})`);
-          
-          const notification = {
-            to: deviceToken.token,
-            notification: {
-              title: version.is_mandatory ? '⚠️ تحديث إجباري متاح' : '🔔 تحديث جديد متاح',
-              body: `الإصدار ${version.version_name} - ${version.changelog || 'تحسينات وإصلاحات'}`,
-              sound: 'notification_sound',
-            },
-            data: dataPayload,
-            priority: 'high'
-          };
+        const response = await fetch(fcmUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${tokenResponse.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(message),
+        });
 
-          const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `key=${legacyServerKey}`,
-            },
-            body: JSON.stringify(notification),
-          });
-
-          if (response.ok) {
-            const result = await response.json();
-            successCount++;
-            console.log(`✅ [${i + 1}/${tokens.length}] SUCCESS - Device: ${tokenPreview}, Message ID: ${result.message_id || 'N/A'}`);
-          } else {
-            failCount++;
-            const errorText = await response.text();
-            console.error(`❌ [${i + 1}/${tokens.length}] FAILED - Device: ${tokenPreview}`);
-            console.error(`   Status: ${response.status} ${response.statusText}`);
-            console.error(`   Error: ${errorText}`);
-          }
-        } catch (e) {
-          failCount++;
-          console.error(`❌ [${i + 1}/${tokens.length}] EXCEPTION - Device: ${tokenPreview}`);
-          console.error(`   Error: ${e instanceof Error ? e.message : String(e)}`);
+        console.log(`📝 [notify-app-update] HTTP Status: ${response.status} ${response.statusText}`);
+        
+        const responseText = await response.text();
+        console.log(`📝 [notify-app-update] Response:`, responseText);
+        
+        if (!response.ok) {
+          const result = JSON.parse(responseText);
+          throw new Error(result.error?.message || 'FCM send failed');
         }
-      }
-    }
+        
+        const result = JSON.parse(responseText);
+        console.log(`✅ [notify-app-update] Successfully sent to specialist ${deviceToken.specialist_id}`);
+        
+        return result;
+      })
+    );
 
-    console.log(`\n📊 [notify-app-update] SUMMARY:`);
-    console.log(`   ✅ Successful: ${successCount}`);
-    console.log(`   ❌ Failed: ${failCount}`);
-    console.log(`   📱 Total Devices: ${tokens.length}`);
-    console.log(`   📈 Success Rate: ${tokens.length > 0 ? Math.round((successCount / tokens.length) * 100) : 0}%`);
+    const successCount = results.filter(r => r.status === 'fulfilled').length;
+    const failedCount = results.filter(r => r.status === 'rejected').length;
+
+    console.log(`📊 [notify-app-update] Results: ${successCount} sent, ${failedCount} failed`);
 
     return new Response(
       JSON.stringify({
-        message: 'Update notifications sent',
+        success: true,
         sent: successCount,
-        failed: failCount,
+        failed: failedCount,
         total: tokens.length,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
-    console.error('[notify-app-update] Error:', error);
+    console.error('❌ [notify-app-update] Fatal error:', (error as any)?.message || error);
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: (error as any)?.message || 'Unknown error' }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
   }
 });
