@@ -191,10 +191,8 @@ export default function SpecialistHome() {
 
   const fetchOrders = async (specId: string) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('🔍 [SpecialistHome] Fetching orders for specialist:', specId);
-      console.log('📅 [SpecialistHome] Today date:', today);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setIsLoading(true);
 
@@ -217,9 +215,7 @@ export default function SpecialistHome() {
       const acceptedOrderIds = acceptedOrderSpecs?.map(os => os.order_id) || [];
       console.log('✅ Accepted order IDs:', acceptedOrderIds);
 
-      // Get orders that are either:
-      // 1. Assigned directly via specialist_id field
-      // 2. Accepted through order_specialists (is_accepted = true)
+      // Get confirmed orders with status 'upcoming' or 'in_progress'
       let query = supabase
         .from('orders')
         .select(`
@@ -240,9 +236,7 @@ export default function SpecialistHome() {
             area
           )
         `)
-        .gte('booking_date', today)
-        .neq('status', 'completed')
-        .neq('status', 'cancelled')
+        .in('status', ['upcoming', 'in_progress'])
         .order('booking_date', { ascending: true });
 
       // Filter to show orders where:
@@ -258,7 +252,6 @@ export default function SpecialistHome() {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('📊 [SpecialistHome] Orders query result:');
       console.log('   Specialist ID:', specId);
-      console.log('   Today:', today);
       console.log('   Count:', ordersData?.length || 0);
       console.log('   Error:', ordersError);
       console.log('   Orders:', JSON.stringify(ordersData, null, 2));
