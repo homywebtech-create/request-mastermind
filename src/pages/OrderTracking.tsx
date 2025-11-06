@@ -90,6 +90,10 @@ export default function OrderTracking() {
   const [customerReviewNotes, setCustomerReviewNotes] = useState('');
   const [invoiceAmount, setInvoiceAmount] = useState(0);
   const [discount, setDiscount] = useState(0);
+  const [hourlyRate, setHourlyRate] = useState(0);
+  const [originalHours, setOriginalHours] = useState(0);
+  const [workStartTime, setWorkStartTime] = useState<Date | null>(null);
+  const [workEndTime, setWorkEndTime] = useState<Date | null>(null);
   const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(true);
   const [showPaymentNotReceivedDialog, setShowPaymentNotReceivedDialog] = useState(false);
   const [paymentNotReceivedReason, setPaymentNotReceivedReason] = useState('');
@@ -443,10 +447,14 @@ export default function OrderTracking() {
       
       // Calculate invoice amount from hourly_rate or quoted_price
       let calculatedAmount = 0;
+      let rate = 0;
       
       // First priority: use hourly_rate if available
       if (orderData?.hourly_rate && orderData?.hours_count) {
-        calculatedAmount = Number(orderData.hourly_rate) * Number(orderData.hours_count);
+        rate = Number(orderData.hourly_rate);
+        calculatedAmount = rate * Number(orderData.hours_count);
+        setHourlyRate(rate);
+        setOriginalHours(Number(orderData.hours_count));
       }
       // Second priority: get quoted price from order_specialists
       else if (orderData?.order_specialists) {
@@ -455,6 +463,12 @@ export default function OrderTracking() {
           const priceMatch = acceptedQuote.quoted_price.match(/(\d+(\.\d+)?)/);
           if (priceMatch) {
             calculatedAmount = parseFloat(priceMatch[1]);
+            // If we have hours_count, calculate the rate
+            if (orderData?.hours_count) {
+              rate = calculatedAmount / Number(orderData.hours_count);
+              setHourlyRate(rate);
+              setOriginalHours(Number(orderData.hours_count));
+            }
           }
         }
       }
@@ -761,6 +775,7 @@ export default function OrderTracking() {
   };
 
   const handleStartWork = async () => {
+    setWorkStartTime(new Date());
     setStage('working');
     await updateOrderStage('working');
     toast({
@@ -829,9 +844,12 @@ export default function OrderTracking() {
     // Stop alert when requesting invoice
     stopTimeExpiredAlert();
     setTimeExpired(false);
+    setWorkEndTime(new Date());
     
-    // Update order with final_amount
-    const finalAmount = invoiceAmount - discount;
+    // Recalculate invoice amount based on actual hours
+    const actualAmount = hourlyRate * (order?.hours_count || 1);
+    const finalAmount = actualAmount - discount;
+    
     await supabase
       .from('orders')
       .update({ 
@@ -839,6 +857,7 @@ export default function OrderTracking() {
       })
       .eq('id', orderId);
     
+    setInvoiceAmount(actualAmount);
     await updateOrderStage('invoice_requested');
     setStage('invoice_details');
     toast({
@@ -1028,6 +1047,13 @@ export default function OrderTracking() {
         .from('orders')
         .update({ hours_count: newHoursCount })
         .eq('id', orderId);
+
+      // Recalculate invoice amount
+      const newAmount = hourlyRate * newHoursCount;
+      setInvoiceAmount(newAmount);
+      
+      // Update order state
+      setOrder(prev => prev ? { ...prev, hours_count: newHoursCount } : null);
 
       toast({
         title: language === 'ar' ? "تم التمديد" : "Extended",
@@ -1675,6 +1701,30 @@ export default function OrderTracking() {
             <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
               <div className="w-full max-w-md space-y-4">
                 <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-5 rounded-xl space-y-3 shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                  {/* Order Information */}
+                  <div className="space-y-2 pb-3 border-b border-slate-300 dark:border-slate-600">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">رقم الطلب</span>
+                      <span className="font-semibold text-base">{order.order_number}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">التاريخ</span>
+                      <span className="font-semibold text-sm">{order.booking_date ? new Date(order.booking_date).toLocaleDateString('ar-SA') : '-'}</span>
+                    </div>
+                    {workStartTime && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">وقت الوصول</span>
+                        <span className="font-semibold text-sm">{arrivedStartTime ? arrivedStartTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                      </div>
+                    )}
+                    {workEndTime && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">وقت الانتهاء</span>
+                        <span className="font-semibold text-sm">{workEndTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    )}
+                  </div>
+                  
                   {/* Service Type */}
                   <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
                     <span className="text-sm text-muted-foreground">نوع الخدمة</span>
@@ -1683,24 +1733,58 @@ export default function OrderTracking() {
                   
                   {/* Calculation Details */}
                   <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2.5">
-                    {/* Hours Count */}
-                    <div className="flex justify-between items-center text-base">
-                      <span className="text-blue-700 dark:text-blue-300 font-medium">عدد الساعات</span>
-                      <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{order.hours_count} ساعة</span>
-                    </div>
+                    {/* Original Hours */}
+                    {originalHours < (order.hours_count || 0) && (
+                      <>
+                        <div className="flex justify-between items-center text-base">
+                          <span className="text-blue-700 dark:text-blue-300 font-medium">الساعات الأصلية</span>
+                          <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{originalHours} ساعة</span>
+                        </div>
+                        <div className="flex justify-between items-center text-base">
+                          <span className="text-blue-700 dark:text-blue-300 font-medium">سعر الساعة</span>
+                          <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{hourlyRate.toFixed(2)} ر.ق</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm bg-blue-100 dark:bg-blue-900/40 p-2 rounded">
+                          <span className="text-blue-600 dark:text-blue-300">المجموع الأصلي</span>
+                          <span className="font-semibold text-blue-900 dark:text-blue-100">{(hourlyRate * originalHours).toFixed(2)} ر.ق</span>
+                        </div>
+                        
+                        {/* Extension */}
+                        <div className="pt-2 border-t border-blue-300 dark:border-blue-700">
+                          <div className="flex justify-between items-center text-base">
+                            <span className="text-orange-700 dark:text-orange-300 font-medium">تمديد</span>
+                            <span className="font-bold text-lg text-orange-900 dark:text-orange-100">{(order.hours_count || 0) - originalHours} ساعة</span>
+                          </div>
+                          <div className="flex justify-between items-center text-base mt-1">
+                            <span className="text-orange-700 dark:text-orange-300 font-medium">سعر التمديد</span>
+                            <span className="font-bold text-lg text-orange-900 dark:text-orange-100">{hourlyRate.toFixed(2)} ر.ق</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm bg-orange-100 dark:bg-orange-900/40 p-2 rounded mt-2">
+                            <span className="text-orange-600 dark:text-orange-300">مجموع التمديد</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-100">{(hourlyRate * ((order.hours_count || 0) - originalHours)).toFixed(2)} ر.ق</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                     
-                    {/* Price per Hour */}
-                    <div className="flex justify-between items-center text-base">
-                      <span className="text-blue-700 dark:text-blue-300 font-medium">سعر الساعة الواحدة</span>
-                      <span className="font-bold text-lg text-blue-900 dark:text-blue-100">
-                        {(invoiceAmount / (order.hours_count || 1)).toFixed(2)} ر.ق
-                      </span>
-                    </div>
+                    {/* Total Hours and Calculation */}
+                    {originalHours >= (order.hours_count || 0) && (
+                      <>
+                        <div className="flex justify-between items-center text-base">
+                          <span className="text-blue-700 dark:text-blue-300 font-medium">عدد الساعات</span>
+                          <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{order.hours_count} ساعة</span>
+                        </div>
+                        <div className="flex justify-between items-center text-base">
+                          <span className="text-blue-700 dark:text-blue-300 font-medium">سعر الساعة</span>
+                          <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{hourlyRate.toFixed(2)} ر.ق</span>
+                        </div>
+                      </>
+                    )}
                     
-                    {/* Calculation Formula */}
+                    {/* Total Calculation */}
                     <div className="pt-2 border-t border-blue-300 dark:border-blue-700">
                       <div className="text-center text-sm text-blue-600 dark:text-blue-400 font-medium">
-                        {order.hours_count} × {(invoiceAmount / (order.hours_count || 1)).toFixed(2)} = {invoiceAmount.toFixed(2)} ر.ق
+                        {order.hours_count} × {hourlyRate.toFixed(2)} = {invoiceAmount.toFixed(2)} ر.ق
                       </div>
                     </div>
                   </div>
