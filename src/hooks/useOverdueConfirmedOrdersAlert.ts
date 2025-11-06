@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getSoundNotification } from '@/lib/soundNotification';
 
@@ -20,6 +20,38 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
   const lastAlertTimeRef = useRef<number>(0);
   const hasShownToastRef = useRef(false);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
+  const [snoozedOrders, setSnoozedOrders] = useState<Map<string, number>>(new Map());
+  
+  // Snooze handler function that can be called from outside
+  const snoozeOrder = useCallback((orderId: string) => {
+    const snoozeUntil = Date.now() + (3 * 60 * 1000); // 3 minutes
+    setSnoozedOrders(prev => new Map(prev).set(orderId, snoozeUntil));
+    console.log(`⏰ Order ${orderId} snoozed until`, new Date(snoozeUntil).toLocaleTimeString());
+    
+    toast({
+      title: '⏰ تم تأجيل التنبيه',
+      description: 'سيتم إعادة التنبيه بعد 3 دقائق',
+      duration: 3000,
+    });
+    
+    // Clear snooze after 3 minutes
+    setTimeout(() => {
+      setSnoozedOrders(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(orderId);
+        return newMap;
+      });
+      console.log(`⏰ Snooze ended for order ${orderId}`);
+    }, 3 * 60 * 1000);
+  }, [toast]);
+  
+  // Expose snooze function globally
+  useEffect(() => {
+    (window as any).snoozeOverdueOrder = snoozeOrder;
+    return () => {
+      delete (window as any).snoozeOverdueOrder;
+    };
+  }, [snoozeOrder]);
 
   // Initialize audio on mount (requires user interaction)
   useEffect(() => {
@@ -69,8 +101,14 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
           overdueThreshold.setHours(23, 59, 59, 999); // End of booking day
           
           if (now > overdueThreshold) {
-            overdueOrderIds.push(order.id);
-            console.log('🚨 Found overdue order:', order.order_number, 'booking date:', order.booking_date);
+            // Check if order is snoozed
+            const snoozeUntil = snoozedOrders.get(order.id);
+            if (snoozeUntil && Date.now() < snoozeUntil) {
+              console.log('⏰ Order', order.order_number, 'is snoozed until', new Date(snoozeUntil).toLocaleTimeString());
+            } else {
+              overdueOrderIds.push(order.id);
+              console.log('🚨 Found overdue order:', order.order_number, 'booking date:', order.booking_date);
+            }
           }
         }
       }
@@ -128,7 +166,7 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
         alertIntervalRef.current = null;
       }
     };
-  }, [orders, toast]);
+  }, [orders, toast, snoozedOrders]);
 
-  return {};
+  return { snoozeOrder };
 }

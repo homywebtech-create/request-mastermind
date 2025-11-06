@@ -26,15 +26,25 @@ export class SoundNotification {
       // Try HTML Audio element first (more reliable for continuous playback)
       if (this.audioElement) {
         console.log('🔊 Using HTML Audio element...');
-        // Reset and play the audio
-        this.audioElement.currentTime = 0;
-        const playPromise = this.audioElement.play();
+        console.log('🔊 Audio element state - paused:', this.audioElement.paused, 'duration:', this.audioElement.duration, 'volume:', this.audioElement.volume);
         
-        if (playPromise !== undefined) {
-          await playPromise;
-          console.log('✅ Audio playing successfully!');
+        try {
+          // Reset and play the audio
+          this.audioElement.currentTime = 0;
+          this.audioElement.volume = 1.0; // Max volume
+          const playPromise = this.audioElement.play();
+          
+          if (playPromise !== undefined) {
+            await playPromise;
+            console.log('✅ Audio playing successfully!');
+            return;
+          }
+        } catch (playError) {
+          console.error('❌ HTML Audio play failed:', playError);
+          // Fall through to Web Audio API
         }
-        return;
+      } else {
+        console.error('❌ No audio element available');
       }
 
       // Fallback to Web Audio API
@@ -73,8 +83,8 @@ export class SoundNotification {
               oscillator.type = 'sine';
               oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime);
 
-              // Medium volume for pleasant but attention-grabbing sound
-              gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime);
+              // Higher volume for attention-grabbing sound
+              gainNode.gain.setValueAtTime(0.6, this.audioContext.currentTime);
               gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
 
               oscillator.start(this.audioContext.currentTime);

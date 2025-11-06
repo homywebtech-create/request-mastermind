@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock } from "lucide-react";
+import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock, Volume2, VolumeX } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
@@ -1327,9 +1327,26 @@ Thank you for contacting us! 🌟`;
                             {order.order_number || 'N/A'}
                           </Badge>
                           {isOverdueConfirmed && (
-                            <Badge className="text-xs animate-pulse bg-red-600 text-white border-2 border-red-800 shadow-lg">
-                              🚨 {language === 'ar' ? 'متأخر جداً!' : 'Very Overdue!'}
-                            </Badge>
+                            <>
+                              <Badge className="text-xs animate-pulse bg-red-600 text-white border-2 border-red-800 shadow-lg">
+                                🚨 {language === 'ar' ? 'متأخر جداً!' : 'Very Overdue!'}
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-900 dark:text-yellow-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if ((window as any).snoozeOverdueOrder) {
+                                    (window as any).snoozeOverdueOrder(order.id);
+                                  }
+                                }}
+                                title={language === 'ar' ? 'تأجيل التنبيه لمدة 3 دقائق' : 'Snooze for 3 minutes'}
+                              >
+                                <VolumeX className="h-3 w-3 mr-1" />
+                                {language === 'ar' ? 'إيقاف مؤقت' : 'Snooze'}
+                              </Button>
+                            </>
                           )}
                           {!isOverdueConfirmed && isOverdue && (
                             <Badge variant="destructive" className="text-xs animate-pulse">

@@ -124,7 +124,7 @@ export default function Dashboard() {
   useOrderReadinessNotifications();
   
   // Enable alerts for overdue confirmed orders
-  useOverdueConfirmedOrdersAlert(orders);
+  const { snoozeOrder } = useOverdueConfirmedOrdersAlert(orders);
 
   // Fetch user profile
   useEffect(() => {
