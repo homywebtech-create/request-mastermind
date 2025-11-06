@@ -108,51 +108,71 @@ serve(async (req) => {
     formData.append('To', toNumber);
     formData.append('From', fromNumber);
 
-    // If specialists array is provided, send interactive list message
+    // If specialists array is provided, send formatted message with media
     if (specialists && specialists.length > 0) {
-      console.log(`📱 [Twilio WhatsApp] Sending interactive list with ${specialists.length} specialists`);
+      console.log(`📱 [Twilio WhatsApp] Sending specialist offers with ${specialists.length} specialists`);
       
-      // First, send the specialist image if available
-      if (specialists.length === 1 && specialists[0].imageUrl) {
-        console.log(`📸 [Twilio WhatsApp] Sending specialist image first`);
-        const imageFormData = new URLSearchParams();
-        imageFormData.append('To', toNumber);
-        imageFormData.append('From', fromNumber);
-        imageFormData.append('MediaUrl', specialists[0].imageUrl);
-        imageFormData.append('Body', `${specialists[0].name} - ${specialists[0].nationality}`);
+      // Send each specialist as a separate rich message with image and details
+      for (const specialist of specialists) {
+        console.log(`📸 [Twilio WhatsApp] Sending specialist: ${specialist.name}`);
+        
+        // Build the message body with specialist details
+        let specialistMessage = `🎉 *عرض جديد من محترف!*\n\n`;
+        specialistMessage += `📋 *رقم الطلب:* ${orderDetails?.orderNumber || 'N/A'}\n`;
+        specialistMessage += `🔧 *الخدمة:* ${orderDetails?.serviceType || 'N/A'}\n\n`;
+        specialistMessage += `━━━━━━━━━━━━━━━\n`;
+        specialistMessage += `👤 *${specialist.name}*\n`;
+        specialistMessage += `🌍 الجنسية: ${specialist.nationality}\n`;
+        specialistMessage += `💰 السعر: ${specialist.price} ريال/ساعة\n\n`;
+        specialistMessage += `🔗 *للحجز اضغط على الرابط:*\n${specialist.companyPageUrl}\n\n`;
+        specialistMessage += `✨ _اضغط لإتمام الحجز مع هذا المحترف_`;
+        
+        const specialistFormData = new URLSearchParams();
+        specialistFormData.append('To', toNumber);
+        specialistFormData.append('From', fromNumber);
+        specialistFormData.append('Body', specialistMessage);
+        
+        // Add image if available
+        if (specialist.imageUrl) {
+          specialistFormData.append('MediaUrl', specialist.imageUrl);
+        }
         
         try {
-          await fetch(twilioUrl, {
+          const specialistResponse = await fetch(twilioUrl, {
             method: 'POST',
             headers: {
               'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
               'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: imageFormData,
+            body: specialistFormData,
           });
+          
+          if (!specialistResponse.ok) {
+            console.error(`❌ [Twilio WhatsApp] Failed to send specialist ${specialist.name}`);
+          } else {
+            console.log(`✅ [Twilio WhatsApp] Sent specialist ${specialist.name} successfully`);
+          }
+          
+          // Add small delay between messages to avoid rate limiting
+          if (specialists.length > 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
         } catch (err) {
-          console.error('❌ [Twilio WhatsApp] Failed to send image:', err);
+          console.error(`❌ [Twilio WhatsApp] Error sending specialist ${specialist.name}:`, err);
         }
       }
       
-      // Build list message with specialists
-      let listMessage = `🎉 *تم استلام عروض من المحترفين!*\n\n`;
-      listMessage += `📋 *رقم الطلب:* ${orderDetails?.orderNumber || 'N/A'}\n`;
-      listMessage += `🔧 *الخدمة:* ${orderDetails?.serviceType || 'N/A'}\n\n`;
-      listMessage += `*💼 العروض المتاحة (${specialists.length}):*\n\n`;
-      
-      specialists.forEach((specialist, index) => {
-        listMessage += `━━━━━━━━━━━━━━━\n`;
-        listMessage += `*${index + 1}. ${specialist.name}*\n`;
-        listMessage += `🌍 الجنسية: ${specialist.nationality}\n`;
-        listMessage += `💰 السعر: ${specialist.price} ريال/ساعة\n\n`;
-        listMessage += `🔗 *للحجز اضغط هنا:*\n${specialist.companyPageUrl}\n\n`;
-      });
-      
-      listMessage += `━━━━━━━━━━━━━━━\n`;
-      listMessage += `✨ _اختر المحترف المناسب واضغط على الرابط للحجز مباشرة_`;
-      
-      formData.append('Body', listMessage);
+      // Return early since we've already sent all messages
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Sent ${specialists.length} specialist offers successfully`
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     } else {
       // Regular text message
       console.log(`📱 [Twilio WhatsApp] Sending regular text message (${message.length} chars)`);
