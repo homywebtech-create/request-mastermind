@@ -72,8 +72,39 @@ export class FirebaseNotificationManager {
         await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
           console.log('📬 [FOREGROUND] إشعار في المقدمة:', notification);
           
-          // Avoid duplicate UI for app update notifications
           const nType = (notification?.data?.type || '').toLowerCase();
+          
+          // Handle readiness check notification
+          if (nType === 'readiness_check') {
+            console.log('⏰ [READINESS CHECK] Received readiness check notification');
+            
+            // Dispatch event to show readiness dialog
+            window.dispatchEvent(new CustomEvent('readiness-check-received', {
+              detail: {
+                orderId: notification.data?.orderId,
+                title: notification.title,
+                body: notification.body
+              }
+            }));
+            
+            // Import haptics and sound
+            const { Haptics } = await import('@capacitor/haptics');
+            
+            // Strong vibration pattern for urgency
+            try {
+              for (let i = 0; i < 3; i++) {
+                await Haptics.vibrate({ duration: 500 });
+                await new Promise(resolve => setTimeout(resolve, 300));
+              }
+            } catch (e) {
+              console.log('Haptics not available');
+            }
+            
+            console.log('✅ Readiness check event dispatched');
+            return;
+          }
+          
+          // Avoid duplicate UI for app update notifications
           if (nType === 'app_update') {
             console.log('🔕 [FCM] Skipping local notification for app_update to avoid duplicates');
             return;
@@ -118,6 +149,29 @@ export class FirebaseNotificationManager {
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('👆 [NOTIFICATION TAP] User tapped notification');
           console.log('📦 Full notification data:', JSON.stringify(notification, null, 2));
+          
+          const nType = notification.notification.data?.type;
+          
+          // Handle readiness check tap
+          if (nType === 'readiness_check') {
+            console.log('⏰ [READINESS TAP] Opening readiness check dialog');
+            
+            // Dispatch event to show readiness dialog
+            window.dispatchEvent(new CustomEvent('readiness-check-received', {
+              detail: {
+                orderId: notification.notification.data?.orderId,
+                title: notification.notification.title,
+                body: notification.notification.body
+              }
+            }));
+            
+            // Navigate to home if not already there
+            window.dispatchEvent(new CustomEvent('notificationNavigate', {
+              detail: { route: '/specialist/home' }
+            }));
+            
+            return;
+          }
           
           // Get the route from notification data
           const route = notification.notification.data?.route || '/specialist-orders/new';

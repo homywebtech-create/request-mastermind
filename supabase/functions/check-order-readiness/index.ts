@@ -105,12 +105,13 @@ Deno.serve(async (req) => {
           {
             body: {
               specialistIds: [order.specialist_id],
-              title: 'تأكيد الجاهزية',
-              body: 'هل أنت جاهز للطلب القادم؟ يرجى التأكيد',
+              title: 'تأكيد الجاهزية ⏰',
+              body: 'هل أنت جاهز للطلب القادم بعد ساعة؟ يرجى التأكيد الآن',
               data: {
                 type: 'readiness_check',
                 orderId: order.id,
-                requiresAction: true
+                requiresAction: 'true',
+                route: '/specialist/home'
               }
             }
           }

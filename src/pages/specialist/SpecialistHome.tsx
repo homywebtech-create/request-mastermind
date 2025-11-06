@@ -22,6 +22,7 @@ import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 import { useLanguage } from "@/hooks/useLanguage";
+import { getSoundNotification } from "@/lib/soundNotification";
 
 interface Order {
   id: string;
@@ -152,13 +153,42 @@ export default function SpecialistHome() {
       fetchNewOrdersCount(specialistId);
     };
 
+    // Listen for readiness check notifications
+    const handleReadinessCheck = (event: any) => {
+      console.log('⏰ [READINESS EVENT] Received:', event.detail);
+      const { orderId } = event.detail;
+      
+      if (orderId) {
+        // Play urgent sound notification
+        const soundNotif = getSoundNotification();
+        soundNotif.playNewOrderSound();
+        
+        // Show readiness dialog
+        setReadinessCheckOrder(orderId);
+        
+        // Show toast
+        toast({
+          title: isAr ? "⏰ تأكيد الجاهزية" : "⏰ Readiness Check",
+          description: isAr 
+            ? "هل أنت جاهز للطلب القادم؟ يرجى التأكيد" 
+            : "Are you ready for the upcoming order? Please confirm",
+          duration: 10000,
+        });
+        
+        // Refresh orders
+        fetchOrders(specialistId);
+      }
+    };
+
     window.addEventListener('specialist-navigate', handleNavigationEvent);
+    window.addEventListener('readiness-check-received', handleReadinessCheck);
 
     return () => {
       supabase.removeChannel(channel);
       window.removeEventListener('specialist-navigate', handleNavigationEvent);
+      window.removeEventListener('readiness-check-received', handleReadinessCheck);
     };
-  }, [specialistId]);
+  }, [specialistId, isAr, toast]);
 
   const checkAuth = async () => {
     try {
