@@ -9,6 +9,7 @@ interface Order {
   booking_date?: string | null;
   booking_date_type?: string | null;
   booking_time?: string | null;
+  tracking_stage?: string | null;
   order_specialists?: Array<{
     is_accepted: boolean | null;
   }>;
@@ -103,7 +104,17 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
       const hasAcceptedQuote = order.order_specialists?.some(os => os.is_accepted === true);
       const isUpcoming = order.status === 'upcoming';
       
-      console.log(`📋 [${order.order_number}] status=${order.status}, accepted=${hasAcceptedQuote}, upcoming=${isUpcoming}, booking_date=${order.booking_date}`);
+      // Skip orders that are already in progress (tracking stages)
+      const isInProgressStage = order.tracking_stage && ['moving', 'arrived', 'working', 'completed'].includes(order.tracking_stage);
+      const isCompletedOrCancelled = ['in-progress', 'completed', 'cancelled'].includes(order.status);
+      
+      console.log(`📋 [${order.order_number}] status=${order.status}, accepted=${hasAcceptedQuote}, upcoming=${isUpcoming}, tracking_stage=${order.tracking_stage}, skip=${isInProgressStage || isCompletedOrCancelled}`);
+      
+      // Skip if order is already in progress, completed, or cancelled
+      if (isInProgressStage || isCompletedOrCancelled) {
+        console.log(`⏭️ [${order.order_number}] Skipping - order is in progress or completed`);
+        return;
+      }
       
       // Check if order is confirmed
       if (hasAcceptedQuote || isUpcoming) {
