@@ -1073,8 +1073,9 @@ export default function CompanyBooking() {
     if (specialists.length === 0) return null;
     const prices = specialists
       .map((s) => {
-        const pricePerHour = parseFloat(s.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-        return pricePerHour * hoursCount;
+        // The quoted_price is already the total price for the entire order
+        const price = parseFloat(s.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+        return price;
       })
       .filter((p) => !isNaN(p));
     return Math.min(...prices);
@@ -1084,11 +1085,8 @@ export default function CompanyBooking() {
 
   // Calculate total price for a specialist
   const calculateTotalPrice = (specialist: Specialist) => {
-    const pricePerHour = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-    const total = pricePerHour * hoursCount;
-    // Extract currency from original price string
-    const currency = specialist.quoted_price?.replace(/[\d.,]/g, '').trim() || '';
-    return `${total} ${currency}`;
+    // The quoted_price is already the total price for the entire order, not per hour
+    return specialist.quoted_price || '0';
   };
 
   // Fetch reviews for a specialist
@@ -1700,14 +1698,14 @@ export default function CompanyBooking() {
                             if (isBookedA && !isBookedB) return 1; // a is booked, b is not -> b comes first
                             if (!isBookedA && isBookedB) return -1; // a is not booked, b is -> a comes first
                             
-                            // If both have the same availability status, sort by price
-                            const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0') * hoursCount;
-                            const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0') * hoursCount;
+                            // If both have the same availability status, sort by price (total price)
+                            const priceA = parseFloat(a.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                            const priceB = parseFloat(b.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
                             return priceA - priceB;
                           })
                           .map((specialist) => {
-                            const pricePerHour = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                            const totalPrice = pricePerHour * hoursCount;
+                            // The quoted_price is already the total price
+                            const totalPrice = parseFloat(specialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
                             const isLowest = totalPrice === lowestPrice;
                             const isSelected = selectedSpecialistIds.includes(specialist.id);
                             // Check if specialist has available time slots on selected date
