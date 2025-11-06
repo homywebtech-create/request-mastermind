@@ -1256,6 +1256,20 @@ export default function OrderTracking() {
                   </div>
                 </div>
               )}
+              
+              {/* Auto-Start Warning */}
+              <div className="bg-blue-50 border-2 border-blue-300 p-3 rounded-lg">
+                <div className="flex items-center gap-2 justify-center text-center">
+                  <div className="p-1.5 rounded-full bg-blue-100">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <p className="text-xs font-medium text-blue-800">
+                    {language === 'ar' 
+                      ? 'في حالة عدم الضغط على الزر، سيبدأ العمل تلقائياً بعد 5 دقائق من الوصول' 
+                      : 'If you don\'t press the button, work will start automatically after 5 minutes'}
+                  </p>
+                </div>
+              </div>
 
               {/* Start Work Button - Simplified */}
               <Button
