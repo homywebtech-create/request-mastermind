@@ -141,6 +141,38 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const { hasPermission } = useUserPermissions(user?.id, role);
   const { hasPermission: hasCompanyPermission } = useCompanyUserPermissions(user?.id);
   
+  // State for highlighted orders with readiness alerts
+  const [highlightedOrders, setHighlightedOrders] = useState<Record<string, { type: 'sent' | 'ready' | 'not_ready', timestamp: number }>>({});
+  
+  // Listen for readiness alert events
+  useEffect(() => {
+    const handleReadinessAlert = (event: CustomEvent) => {
+      const { orderId, type } = event.detail;
+      console.log('🎨 Highlighting order:', orderId, 'type:', type);
+      
+      // Add to highlighted orders
+      setHighlightedOrders(prev => ({
+        ...prev,
+        [orderId]: { type, timestamp: Date.now() }
+      }));
+      
+      // Remove highlight after 10 seconds
+      setTimeout(() => {
+        setHighlightedOrders(prev => {
+          const newHighlights = { ...prev };
+          delete newHighlights[orderId];
+          return newHighlights;
+        });
+      }, 10000);
+    };
+    
+    window.addEventListener('order-readiness-alert', handleReadinessAlert as EventListener);
+    
+    return () => {
+      window.removeEventListener('order-readiness-alert', handleReadinessAlert as EventListener);
+    };
+  }, []);
+  
   // Determine if user can manage orders based on view type
   const canManageOrders = isCompanyView 
     ? hasCompanyPermission('manage_orders')
@@ -1188,17 +1220,26 @@ Thank you for contacting us! 🌟`;
                   const isRecentlySent = isWithinThreeMinutes(order) && canShowResendButton;
                   const isOrderProcessing = isProcessing(order.id);
                   
+                  // Check if order has readiness alert highlight
+                  const readinessHighlight = highlightedOrders[order.id];
+                  
                   return (
                     <TableRow 
                       key={order.id}
                       className={
-                        isOverdue 
-                          ? "bg-destructive/10 border-destructive/20 animate-pulse" 
-                          : isDelayed 
-                            ? "bg-destructive/10 border-destructive/20" 
-                            : isRecentlySent 
-                              ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" 
-                              : ""
+                        readinessHighlight?.type === 'sent'
+                          ? "bg-blue-100 dark:bg-blue-950/30 border-blue-500 dark:border-blue-700 animate-pulse shadow-lg shadow-blue-500/50"
+                          : readinessHighlight?.type === 'ready'
+                            ? "bg-yellow-100 dark:bg-yellow-950/30 border-yellow-500 dark:border-yellow-700 animate-pulse shadow-lg shadow-yellow-500/50"
+                            : readinessHighlight?.type === 'not_ready'
+                              ? "bg-red-100 dark:bg-red-950/30 border-red-500 dark:border-red-700 animate-pulse shadow-lg shadow-red-500/50"
+                              : isOverdue 
+                                ? "bg-destructive/10 border-destructive/20 animate-pulse" 
+                                : isDelayed 
+                                  ? "bg-destructive/10 border-destructive/20" 
+                                  : isRecentlySent 
+                                    ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" 
+                                    : ""
                       }
                     >
                       <TableCell>

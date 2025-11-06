@@ -1,14 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
-import { Bell, CheckCircle, XCircle } from 'lucide-react';
+import { getSoundNotification } from '@/lib/soundNotification';
 
 export function useOrderReadinessNotifications() {
   const { toast } = useToast();
   const { language } = useLanguage();
+  const soundNotification = useRef(getSoundNotification());
 
   useEffect(() => {
+    console.log('🔔 Setting up order readiness notifications...');
+    
     const channel = supabase
       .channel('order-readiness-updates')
       .on(
@@ -17,21 +20,32 @@ export function useOrderReadinessNotifications() {
           event: 'UPDATE',
           schema: 'public',
           table: 'orders',
-          filter: 'status=in.(confirmed,upcoming,in_progress)'
         },
         (payload) => {
+          console.log('📨 Order update received:', payload);
           const oldOrder = payload.old;
           const newOrder = payload.new;
 
           // Check if readiness check was just sent
           if (!oldOrder.readiness_check_sent_at && newOrder.readiness_check_sent_at) {
+            console.log('🔔 Readiness check sent for order:', newOrder.order_number);
+            
+            // Play sound notification
+            soundNotification.current.playNewOrderSound();
+            
             toast({
               title: language === 'ar' ? '🔔 تم إرسال تنبيه الجاهزية' : '🔔 Readiness Alert Sent',
               description: language === 'ar' 
                 ? `تم إرسال تنبيه الجاهزية للمحترف في الطلب ${newOrder.order_number}. بانتظار الاستجابة...`
                 : `Readiness alert sent to specialist for order ${newOrder.order_number}. Awaiting response...`,
               duration: 5000,
+              className: 'bg-blue-50 border-blue-500 dark:bg-blue-950',
             });
+            
+            // Trigger a custom event for the orders table to highlight the row
+            window.dispatchEvent(new CustomEvent('order-readiness-alert', { 
+              detail: { orderId: newOrder.id, type: 'sent' } 
+            }));
           }
 
           // Check if specialist responded "ready"
@@ -39,13 +53,24 @@ export function useOrderReadinessNotifications() {
             oldOrder.specialist_readiness_status !== 'ready' && 
             newOrder.specialist_readiness_status === 'ready'
           ) {
+            console.log('🟡 Specialist ready for order:', newOrder.order_number);
+            
+            // Play sound notification
+            soundNotification.current.playNewQuoteSound();
+            
             toast({
               title: language === 'ar' ? '🟡 المحترفة جاهزة!' : '🟡 Specialist Ready!',
               description: language === 'ar' 
                 ? `المحترفة أكدت جاهزيتها للطلب ${newOrder.order_number} وستذهب للموعد`
                 : `Specialist confirmed readiness for order ${newOrder.order_number} and will attend`,
               duration: 6000,
+              className: 'bg-yellow-50 border-yellow-500 dark:bg-yellow-950',
             });
+            
+            // Trigger a custom event for highlighting
+            window.dispatchEvent(new CustomEvent('order-readiness-alert', { 
+              detail: { orderId: newOrder.id, type: 'ready' } 
+            }));
           }
 
           // Check if specialist responded "not ready"
@@ -53,6 +78,11 @@ export function useOrderReadinessNotifications() {
             oldOrder.specialist_readiness_status !== 'not_ready' && 
             newOrder.specialist_readiness_status === 'not_ready'
           ) {
+            console.log('🔴 Specialist not ready for order:', newOrder.order_number);
+            
+            // Play alert sound
+            soundNotification.current.playNewOrderSound();
+            
             const reason = newOrder.specialist_not_ready_reason 
               ? (language === 'ar' ? `\nالسبب: ${newOrder.specialist_not_ready_reason}` : `\nReason: ${newOrder.specialist_not_ready_reason}`)
               : '';
@@ -65,12 +95,20 @@ export function useOrderReadinessNotifications() {
               variant: 'destructive',
               duration: 8000,
             });
+            
+            // Trigger a custom event for highlighting
+            window.dispatchEvent(new CustomEvent('order-readiness-alert', { 
+              detail: { orderId: newOrder.id, type: 'not_ready' } 
+            }));
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+      });
 
     return () => {
+      console.log('🔇 Cleaning up order readiness notifications');
       supabase.removeChannel(channel);
     };
   }, [toast, language]);
