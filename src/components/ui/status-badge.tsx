@@ -3,7 +3,7 @@ import { Clock, AlertCircle, CheckCircle2, XCircle, MessageSquare, Calendar } fr
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface StatusBadgeProps {
-  status: 'pending' | 'awaiting-response' | 'upcoming' | 'in-progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'awaiting-response' | 'waiting_quotes' | 'upcoming' | 'in-progress' | 'completed' | 'cancelled';
   className?: string;
 }
 
@@ -19,6 +19,12 @@ const statusConfig = {
     labelEn: 'Awaiting Response',
     icon: MessageSquare,
     className: 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+  },
+  'waiting_quotes': {
+    labelAr: 'بانتظار العروض',
+    labelEn: 'Waiting Quotes',
+    icon: MessageSquare,
+    className: 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
   },
   'upcoming': {
     labelAr: 'قادم',

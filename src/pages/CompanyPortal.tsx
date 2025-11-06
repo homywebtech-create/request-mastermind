@@ -34,7 +34,7 @@ interface Order {
   customer_id: string;
   company_id: string | null;
   service_type: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'waiting_quotes' | 'upcoming' | 'in-progress' | 'completed' | 'cancelled';
   tracking_stage?: string | null;
   notes?: string;
   order_link?: string;
@@ -52,6 +52,7 @@ interface Order {
   cancelled_by_role?: string | null;
   cancellation_reason?: string | null;
   cancelled_at?: string | null;
+  specialist_id?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -320,33 +321,30 @@ export default function CompanyPortal() {
     
     console.log(`✅ Company ${company?.name} Awaiting Response orders:`, awaitingOrders.length);
     
-    // Upcoming (القادمة): تم قبول عرض محترفة من الشركة لكن لم يبدأ التتبع بعد
+    // Upcoming (القادمة): تم قبول عرض محترفة من الشركة وحالته upcoming
     const upcomingOrders = ordersList.filter(o => {
       const hasAcceptedSpecialist = o.order_specialists?.some(os => 
         os.is_accepted === true && os.specialists?.company_id === company?.id
       );
-      const notStartedTracking = !o.tracking_stage;
-      const notCompleted = o.status !== 'completed';
+      const isUpcomingStatus = o.status === 'upcoming';
       
       // Debug logging
-      if (hasAcceptedSpecialist && notStartedTracking && notCompleted) {
+      if (hasAcceptedSpecialist && isUpcomingStatus) {
         console.log(`✅ Order ${o.order_number} is confirmed for company ${company?.name}`);
       }
       
-      return hasAcceptedSpecialist && notStartedTracking && notCompleted;
+      return hasAcceptedSpecialist && isUpcomingStatus;
     });
     
-    console.log(`✅ Company ${company?.name} Confirmed orders:`, upcomingOrders.length);
+    console.log(`✅ Company ${company?.name} Confirmed orders:`, upcomingOrders.length, upcomingOrders.map(o => o.order_number));
     
-    // In Progress (تحت الإجراء): تم قبول عرض محترفة من الشركة وبدأ المحترف في التتبع
+    // In Progress (تحت الإجراء): تم قبول عرض محترفة من الشركة وحالته in-progress
     const inProgressOrders = ordersList.filter(o => {
       const hasAcceptedSpecialist = o.order_specialists?.some(os => 
         os.is_accepted === true && os.specialists?.company_id === company?.id
       );
-      const trackingStage = o.tracking_stage;
-      return hasAcceptedSpecialist && 
-             trackingStage && 
-             ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
+      const isInProgress = o.status === 'in-progress';
+      return hasAcceptedSpecialist && isInProgress;
     });
     
     // Completed (منتهية): تم إكمال الطلب لمحترفة من الشركة
@@ -354,9 +352,8 @@ export default function CompanyPortal() {
       const hasAcceptedSpecialist = o.order_specialists?.some(os => 
         os.is_accepted === true && os.specialists?.company_id === company?.id
       );
-      const trackingStage = o.tracking_stage;
-      return hasAcceptedSpecialist && 
-             (trackingStage === 'payment_received' || o.status === 'completed');
+      const isCompleted = o.status === 'completed';
+      return hasAcceptedSpecialist && isCompleted;
     });
     
     // Cancelled (ملغاة): الطلبات الملغاة للشركة

@@ -32,7 +32,7 @@ interface Order {
   company_id: string | null;
   specialist_id?: string | null;
   service_type: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'upcoming';
+  status: 'pending' | 'waiting_quotes' | 'in-progress' | 'completed' | 'cancelled' | 'upcoming';
   tracking_stage?: string | null;
   notes?: string;
   order_link?: string;
