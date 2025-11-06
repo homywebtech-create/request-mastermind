@@ -143,6 +143,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   
   // State for highlighted orders with readiness alerts
   const [highlightedOrders, setHighlightedOrders] = useState<Record<string, { type: 'sent' | 'ready' | 'not_ready', timestamp: number }>>({});
+  const [overdueConfirmedOrderIds, setOverdueConfirmedOrderIds] = useState<string[]>([]);
   
   // Listen for readiness alert events
   useEffect(() => {
@@ -166,10 +167,18 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
       }, 10000);
     };
     
+    const handleOverdueConfirmedOrders = (event: CustomEvent) => {
+      const { orderIds } = event.detail;
+      console.log('🚨 Overdue confirmed orders event received:', orderIds);
+      setOverdueConfirmedOrderIds(orderIds);
+    };
+    
     window.addEventListener('order-readiness-alert', handleReadinessAlert as EventListener);
+    window.addEventListener('overdue-confirmed-orders', handleOverdueConfirmedOrders as EventListener);
     
     return () => {
       window.removeEventListener('order-readiness-alert', handleReadinessAlert as EventListener);
+      window.removeEventListener('overdue-confirmed-orders', handleOverdueConfirmedOrders as EventListener);
     };
   }, []);
   
@@ -1287,23 +1296,29 @@ Thank you for contacting us! 🌟`;
                   // Check if order has readiness alert highlight
                   const readinessHighlight = highlightedOrders[order.id];
                   
+                  // Check if this is a confirmed order that's overdue (needs strong visual alert)
+                  const isOverdueConfirmed = overdueConfirmedOrderIds.includes(order.id) && 
+                                            (filter === 'confirmed' || filter === 'upcoming');
+                  
                   return (
                     <TableRow 
                       key={order.id}
                       className={
-                        readinessHighlight?.type === 'sent'
-                          ? "bg-blue-100 dark:bg-blue-950/30 border-blue-500 dark:border-blue-700 animate-pulse shadow-lg shadow-blue-500/50"
-                          : readinessHighlight?.type === 'ready'
-                            ? "bg-yellow-100 dark:bg-yellow-950/30 border-yellow-500 dark:border-yellow-700 animate-pulse shadow-lg shadow-yellow-500/50"
-                            : readinessHighlight?.type === 'not_ready'
-                              ? "bg-red-100 dark:bg-red-950/30 border-red-500 dark:border-red-700 animate-pulse shadow-lg shadow-red-500/50"
-                              : isOverdue 
-                                ? "bg-destructive/10 border-destructive/20 animate-pulse" 
-                                : isDelayed 
-                                  ? "bg-destructive/10 border-destructive/20" 
-                                  : isRecentlySent 
-                                    ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" 
-                                    : ""
+                        isOverdueConfirmed
+                          ? "bg-red-500/20 border-4 border-red-600 dark:border-red-500 animate-pulse shadow-2xl shadow-red-500/60 ring-4 ring-red-500/30 backdrop-blur-sm"
+                          : readinessHighlight?.type === 'sent'
+                            ? "bg-blue-100 dark:bg-blue-950/30 border-blue-500 dark:border-blue-700 animate-pulse shadow-lg shadow-blue-500/50"
+                            : readinessHighlight?.type === 'ready'
+                              ? "bg-yellow-100 dark:bg-yellow-950/30 border-yellow-500 dark:border-yellow-700 animate-pulse shadow-lg shadow-yellow-500/50"
+                              : readinessHighlight?.type === 'not_ready'
+                                ? "bg-red-100 dark:bg-red-950/30 border-red-500 dark:border-red-700 animate-pulse shadow-lg shadow-red-500/50"
+                                : isOverdue 
+                                  ? "bg-destructive/10 border-destructive/20 animate-pulse" 
+                                  : isDelayed 
+                                    ? "bg-destructive/10 border-destructive/20" 
+                                    : isRecentlySent 
+                                      ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30" 
+                                      : ""
                       }
                     >
                       <TableCell>
@@ -1311,7 +1326,12 @@ Thank you for contacting us! 🌟`;
                           <Badge variant="secondary" className="font-mono">
                             {order.order_number || 'N/A'}
                           </Badge>
-                          {isOverdue && (
+                          {isOverdueConfirmed && (
+                            <Badge className="text-xs animate-pulse bg-red-600 text-white border-2 border-red-800 shadow-lg">
+                              🚨 {language === 'ar' ? 'متأخر جداً!' : 'Very Overdue!'}
+                            </Badge>
+                          )}
+                          {!isOverdueConfirmed && isOverdue && (
                             <Badge variant="destructive" className="text-xs animate-pulse">
                               {language === 'ar' ? '⚠️ متأخر' : '⚠️ Overdue'}
                             </Badge>
