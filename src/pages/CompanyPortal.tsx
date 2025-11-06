@@ -301,23 +301,28 @@ export default function CompanyPortal() {
     );
     
     // Awaiting Response (بانتظار الرد): تم تقديم عرض من محترفات الشركة ولم يتم قبوله بعد
-    // ولكن لم يبدأ التتبع بعد (استثناء الطلبات التي في مرحلة التنفيذ)
-    // ويجب ألا يكون أي عرض من أي شركة مقبولاً
+    // نفس منطق orders-table للشركات
     const awaitingOrders = ordersList.filter(o => {
+      // استبعاد الطلبات المؤكدة (التي لديها specialist_id أو status=upcoming)
+      const hasSpecialistAssigned = o.specialist_id != null;
+      const isUpcoming = o.status === 'upcoming';
+      
+      if (hasSpecialistAssigned || isUpcoming) {
+        console.log(`❌ Order ${o.order_number} excluded from Awaiting: has_specialist=${hasSpecialistAssigned}, status=${o.status}`);
+        return false;
+      }
+      
       const companySpecialists = o.order_specialists?.filter(os => 
         os.specialists?.company_id === company?.id
       );
       const hasQuoteNotAccepted = companySpecialists && 
-                                   companySpecialists.some(os => os.quoted_price && os.is_accepted === null);
+                                   companySpecialists.some(os => os.quoted_price && os.is_accepted !== true);
+      const noAcceptedQuote = !companySpecialists?.some(os => os.is_accepted === true);
       const noAcceptedQuoteFromAnyCompany = !o.order_specialists?.some(os => os.is_accepted === true);
-      const notInProgress = !o.tracking_stage && o.status !== 'completed';
+      const notStartedTracking = !o.tracking_stage || o.tracking_stage === null;
+      const notCompleted = o.status !== 'completed';
       
-      // Debug logging
-      if (hasQuoteNotAccepted && !noAcceptedQuoteFromAnyCompany) {
-        console.log(`❌ Order ${o.order_number} excluded from awaiting: another company's quote was accepted`);
-      }
-      
-      return hasQuoteNotAccepted && noAcceptedQuoteFromAnyCompany && notInProgress;
+      return hasQuoteNotAccepted && noAcceptedQuote && noAcceptedQuoteFromAnyCompany && notStartedTracking && notCompleted;
     });
     
     console.log(`✅ Company ${company?.name} Awaiting Response orders:`, awaitingOrders.length);
