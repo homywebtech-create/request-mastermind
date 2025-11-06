@@ -21,30 +21,42 @@ export class SoundNotification {
    */
   async playNewOrderSound() {
     try {
-      console.log('🔊 Attempting to play overdue order sound...');
+      console.log('🔊 [AUDIO] Attempting to play overdue order sound...');
+      console.log('🔊 [AUDIO] Audio element exists:', !!this.audioElement);
+      console.log('🔊 [AUDIO] Audio context exists:', !!this.audioContext);
+      console.log('🔊 [AUDIO] Is initialized:', this.isInitialized);
       
       // Try HTML Audio element first (more reliable for continuous playback)
       if (this.audioElement) {
-        console.log('🔊 Using HTML Audio element...');
-        console.log('🔊 Audio element state - paused:', this.audioElement.paused, 'duration:', this.audioElement.duration, 'volume:', this.audioElement.volume);
+        console.log('🔊 [AUDIO] Using HTML Audio element...');
+        console.log('🔊 [AUDIO] State - paused:', this.audioElement.paused, 'readyState:', this.audioElement.readyState, 'volume:', this.audioElement.volume);
+        console.log('🔊 [AUDIO] Audio src:', this.audioElement.src);
         
         try {
+          // Force reload if needed
+          if (this.audioElement.readyState < 2) {
+            console.log('🔄 [AUDIO] Reloading audio element...');
+            await this.audioElement.load();
+          }
+          
           // Reset and play the audio
           this.audioElement.currentTime = 0;
           this.audioElement.volume = 1.0; // Max volume
+          
+          console.log('▶️ [AUDIO] Calling play()...');
           const playPromise = this.audioElement.play();
           
           if (playPromise !== undefined) {
             await playPromise;
-            console.log('✅ Audio playing successfully!');
+            console.log('✅ [AUDIO] Audio playing successfully!');
             return;
           }
-        } catch (playError) {
-          console.error('❌ HTML Audio play failed:', playError);
+        } catch (playError: any) {
+          console.error('❌ [AUDIO] HTML Audio play failed:', playError.name, playError.message);
           // Fall through to Web Audio API
         }
       } else {
-        console.error('❌ No audio element available');
+        console.error('❌ [AUDIO] No audio element available');
       }
 
       // Fallback to Web Audio API
