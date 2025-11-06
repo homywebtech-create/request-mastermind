@@ -118,14 +118,17 @@ serve(async (req) => {
         
         // Build the message body with specialist details
         let specialistMessage = `🎉 *عرض جديد من محترف!*\n\n`;
-        specialistMessage += `📋 *رقم الطلب:* ${orderDetails?.orderNumber || 'N/A'}\n`;
-        specialistMessage += `🔧 *الخدمة:* ${orderDetails?.serviceType || 'N/A'}\n\n`;
         specialistMessage += `━━━━━━━━━━━━━━━\n`;
-        specialistMessage += `👤 *${specialist.name}*\n`;
+        specialistMessage += `📋 *رقم الطلب:* ${orderDetails?.orderNumber || 'N/A'}\n`;
+        specialistMessage += `🔧 *الخدمة:* ${orderDetails?.serviceType || 'N/A'}\n`;
+        specialistMessage += `━━━━━━━━━━━━━━━\n\n`;
+        specialistMessage += `👤 *${specialist.name}* 🧹\n`;
         specialistMessage += `🌍 الجنسية: ${specialist.nationality}\n`;
-        specialistMessage += `💰 السعر: ${specialist.price} ريال/ساعة\n\n`;
-        specialistMessage += `🔗 *للحجز اضغط على الرابط:*\n${specialist.companyPageUrl}\n\n`;
-        specialistMessage += `✨ _اضغط لإتمام الحجز مع هذا المحترف_`;
+        specialistMessage += `💰 السعر: *${specialist.price} ریال/ساعة*\n\n`;
+        specialistMessage += `━━━━━━━━━━━━━━━\n`;
+        specialistMessage += `🔗 *للحجز اضغط على الرابط:* 👇\n\n`;
+        specialistMessage += `${specialist.companyPageUrl}\n\n`;
+        specialistMessage += `✅ _اضغط لإتمام الحجز مع هذا المحترف المختار_`;
         
         const specialistFormData = new URLSearchParams();
         specialistFormData.append('To', toNumber);
