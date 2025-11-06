@@ -869,7 +869,7 @@ export default function OrderTracking() {
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -1531,15 +1531,14 @@ export default function OrderTracking() {
                   </Dialog>
                 )}
 
-                {/* Finish Work Button - Only enabled when timer expires */}
+                {/* Finish Work Button - Always enabled */}
                 <Button 
                   onClick={() => {
                     stopTimeExpiredAlert();
                     setTimeExpired(false);
                     confirmEarlyFinish();
                   }}
-                  disabled={!timeExpired}
-                  className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold shadow-lg"
                 >
                   <CheckCircle className="ml-2 h-6 w-6" />
                   إنهاء العمل الآن
