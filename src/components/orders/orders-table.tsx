@@ -24,6 +24,7 @@ import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 import { SpecialistProfileDialog } from "@/components/specialists/SpecialistProfileDialog";
 import { ReadinessStatusIndicator } from "./ReadinessStatusIndicator";
+import { TrackingTimeInfo } from "./TrackingTimeInfo";
 
 interface Order {
   id: string;
@@ -37,6 +38,7 @@ interface Order {
   notes?: string;
   order_link?: string;
   created_at: string;
+  updated_at: string;
   last_sent_at?: string;
   send_to_all_companies?: boolean;
   booking_type?: string | null;
@@ -1835,7 +1837,14 @@ Thank you for contacting us! 🌟`;
                           </div>
                           <StatusBadge status={order.status} />
                           {order.tracking_stage && (
-                            <TrackingStageBadge stage={order.tracking_stage} />
+                            <>
+                              <TrackingStageBadge stage={order.tracking_stage} />
+                              <TrackingTimeInfo 
+                                trackingStage={order.tracking_stage}
+                                updatedAt={order.updated_at}
+                                hoursCount={order.hours_count}
+                              />
+                            </>
                           )}
                           {isPending && (
                             <div className={`text-xs font-medium ${isDelayed ? 'text-destructive' : isRecentlySent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>

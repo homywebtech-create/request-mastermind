@@ -43,6 +43,7 @@ interface Order {
   notes?: string;
   order_link?: string;
   created_at: string;
+  updated_at: string;
   send_to_all_companies?: boolean;
   customers: {
     name: string;
