@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 import { useOrderReadinessNotifications } from "@/hooks/useOrderReadinessNotifications";
+import { useOverdueConfirmedOrdersAlert } from "@/hooks/useOverdueConfirmedOrdersAlert";
 import { Button } from "@/components/ui/button";
 import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck, BarChart, XCircle } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
@@ -44,6 +45,7 @@ interface Order {
   booking_type?: string | null;
   booking_date?: string | null;
   booking_date_type?: string | null;
+  booking_time?: string | null;
   hours_count?: number | null;
   building_info?: string | null;
   gps_latitude?: number | null;
@@ -117,6 +119,9 @@ export default function CompanyPortal() {
     completed: 0,
     cancelled: 0,
   });
+  
+  // Enable alerts for overdue confirmed orders
+  const { snoozeOrder } = useOverdueConfirmedOrdersAlert(orders);
 
   useEffect(() => {
     checkAuth();
@@ -245,6 +250,7 @@ export default function CompanyPortal() {
           booking_type,
           booking_date,
           booking_date_type,
+          booking_time,
           hours_count,
           building_info,
           gps_latitude,
