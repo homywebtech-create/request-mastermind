@@ -68,13 +68,13 @@ export const fetchQuotesForOrder = async (orderId: string): Promise<SpecialistQu
   try {
     console.log('🔍 Fetching quotes for order:', orderId);
 
-    // First, get order_specialists with quoted prices
+    // First, get order_specialists with quoted prices (including null is_accepted)
     const { data: orderSpecialists, error: osError } = await supabase
       .from('order_specialists')
       .select('specialist_id, quoted_price')
       .eq('order_id', orderId)
       .not('quoted_price', 'is', null)
-      .eq('is_accepted', false);
+      .or('is_accepted.is.null,is_accepted.eq.false');
 
     if (osError) {
       console.error('Error fetching order_specialists:', osError);
