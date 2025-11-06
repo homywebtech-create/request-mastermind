@@ -14,6 +14,7 @@ import { useTranslation } from "@/i18n";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { SpecialistAvailabilityDialog } from "@/components/orders/SpecialistAvailabilityDialog";
 import SpecialistsLivePanel from "@/components/specialists/SpecialistsLivePanel";
+import { useOrderReadinessNotifications } from "@/hooks/useOrderReadinessNotifications";
 
 interface OrderFormData {
   customerName: string;
@@ -85,6 +86,9 @@ export default function Orders() {
     specialists: Array<{ id: string; name: string }>;
   }>({ open: false, specialists: [] });
   const [pendingOrderData, setPendingOrderData] = useState<OrderFormData | null>(null);
+
+  // Enable real-time notifications for order readiness with sound alerts
+  useOrderReadinessNotifications();
 
   useEffect(() => {
     if (!authLoading && !user) {
