@@ -1572,32 +1572,42 @@ export default function OrderTracking() {
                     <span className="font-bold text-base">{order.service_type}</span>
                   </div>
                   
-                  {/* Hours Count */}
-                  <div className="flex justify-between items-center text-base">
-                    <span className="text-muted-foreground">عدد الساعات</span>
-                    <span className="font-bold text-lg">{order.hours_count} ساعة</span>
-                  </div>
-                  
-                  {/* Price per Hour */}
-                  <div className="flex justify-between items-center text-base">
-                    <span className="text-muted-foreground">سعر الساعة</span>
-                    <span className="font-bold text-lg">
-                      {(invoiceAmount / (order.hours_count || 1)).toFixed(2)} ر.ق
-                    </span>
+                  {/* Calculation Details */}
+                  <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2.5">
+                    {/* Hours Count */}
+                    <div className="flex justify-between items-center text-base">
+                      <span className="text-blue-700 dark:text-blue-300 font-medium">عدد الساعات</span>
+                      <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{order.hours_count} ساعة</span>
+                    </div>
+                    
+                    {/* Price per Hour */}
+                    <div className="flex justify-between items-center text-base">
+                      <span className="text-blue-700 dark:text-blue-300 font-medium">سعر الساعة الواحدة</span>
+                      <span className="font-bold text-lg text-blue-900 dark:text-blue-100">
+                        {(invoiceAmount / (order.hours_count || 1)).toFixed(2)} ر.ق
+                      </span>
+                    </div>
+                    
+                    {/* Calculation Formula */}
+                    <div className="pt-2 border-t border-blue-300 dark:border-blue-700">
+                      <div className="text-center text-sm text-blue-600 dark:text-blue-400 font-medium">
+                        {order.hours_count} × {(invoiceAmount / (order.hours_count || 1)).toFixed(2)} = {invoiceAmount.toFixed(2)} ر.ق
+                      </div>
+                    </div>
                   </div>
                   
                   {/* Discount if any */}
                   {discount > 0 && (
-                    <div className="flex justify-between items-center text-green-600 dark:text-green-400 text-base">
+                    <div className="flex justify-between items-center text-green-600 dark:text-green-400 text-base bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
                       <span className="font-medium">الخصم</span>
-                      <span className="font-bold">-{discount.toFixed(2)} ر.ق</span>
+                      <span className="font-bold text-lg">-{discount.toFixed(2)} ر.ق</span>
                     </div>
                   )}
                   
                   {/* Total Amount - Prominent */}
-                  <div className="border-t-2 border-slate-400 dark:border-slate-500 pt-3 mt-3">
+                  <div className="border-t-2 border-slate-400 dark:border-slate-500 pt-4 mt-4">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-lg">المبلغ الإجمالي</span>
+                      <span className="font-bold text-xl">المبلغ الإجمالي</span>
                       <span className="font-black text-green-600 text-3xl">
                         {(invoiceAmount - discount).toFixed(2)} <span className="text-xl">ر.ق</span>
                       </span>

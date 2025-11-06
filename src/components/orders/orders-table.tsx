@@ -1611,13 +1611,25 @@ Thank you for contacting us! 🌟`;
                                           {company.companyName}
                                         </span>
                                       </div>
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                       <Badge variant="secondary" className="whitespace-nowrap text-xs">
-                                          {company.quotesCount} {company.quotesCount === 1 ? t.quote : t.quotePlural}
-                                        </Badge>
-                                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 whitespace-nowrap text-xs">
-                                          {company.lowestPriceFormatted}
-                                        </Badge>
+                                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="secondary" className="whitespace-nowrap text-xs">
+                                            {company.quotesCount} {company.quotesCount === 1 ? t.quote : t.quotePlural}
+                                          </Badge>
+                                          <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 whitespace-nowrap text-xs">
+                                            {company.lowestPriceFormatted}
+                                          </Badge>
+                                        </div>
+                                        {order.hours_count && (
+                                          <div className="text-xs text-muted-foreground whitespace-nowrap">
+                                            {(() => {
+                                              const totalPrice = company.lowestPrice;
+                                              const pricePerHour = totalPrice / order.hours_count;
+                                              const currency = company.lowestPriceFormatted.replace(/[\d.,]/g, '').trim() || '';
+                                              return `${pricePerHour.toFixed(2)} ${currency}/ساعة × ${order.hours_count} ساعات`;
+                                            })()}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     <div className="mt-2 flex gap-2">
@@ -1685,9 +1697,21 @@ Thank you for contacting us! 🌟`;
                                       <span dir="ltr">{acceptedSpecialist.specialists?.phone}</span>
                                     </div>
                                     {acceptedSpecialist.quoted_price && (
-                                      <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
-                                        {acceptedSpecialist.quoted_price}
-                                      </Badge>
+                                      <div className="space-y-1">
+                                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 text-sm">
+                                          {acceptedSpecialist.quoted_price}
+                                        </Badge>
+                                        {order.hours_count && (
+                                          <div className="text-xs text-muted-foreground">
+                                            {(() => {
+                                              const totalPrice = parseFloat(acceptedSpecialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
+                                              const pricePerHour = totalPrice / order.hours_count;
+                                              const currency = acceptedSpecialist.quoted_price?.replace(/[\d.,]/g, '').trim() || '';
+                                              return `${pricePerHour.toFixed(2)} ${currency}/ساعة × ${order.hours_count} ساعات`;
+                                            })()}
+                                          </div>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
