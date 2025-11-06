@@ -23,6 +23,7 @@ import { useUserRole } from "@/contexts/UserRoleContext";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 import { SpecialistProfileDialog } from "@/components/specialists/SpecialistProfileDialog";
+import { ReadinessStatusIndicator } from "./ReadinessStatusIndicator";
 
 interface Order {
   id: string;
@@ -1158,8 +1159,8 @@ Thank you for contacting us! 🌟`;
                 <TableHead className="text-left">
                   {filter === 'awaiting-response' ? t.companyQuotes : (filter === 'cancelled' ? (language === 'ar' ? 'تفاصيل الإلغاء' : 'Cancellation Details') : (language === 'ar' ? 'ملاحظات العميل' : 'Customer Notes'))}
                 </TableHead>
-                {(filter === 'upcoming' || filter === 'in-progress') && (
-                  <TableHead className="text-left">{language === 'ar' ? 'حالة الجاهزية' : 'Readiness Status'}</TableHead>
+                {(filter === 'confirmed' || filter === 'upcoming' || filter === 'in-progress') && (
+                  <TableHead className="text-left">{language === 'ar' ? 'حالة الجاهزية / الوقت المتبقي' : 'Readiness / Time Remaining'}</TableHead>
                 )}
                 <TableHead className="text-left">{t.dateAndStatus}</TableHead>
                 <TableHead className="text-left">{t.actions}</TableHead>
@@ -1578,36 +1579,19 @@ Thank you for contacting us! 🌟`;
                         )}
                       </TableCell>
                       
-                      {/* Readiness Status Column - Only for upcoming/in-progress */}
-                      {(filter === 'upcoming' || filter === 'in-progress') && (
+                      {/* Readiness Status Column - For confirmed, upcoming and in-progress */}
+                      {(filter === 'confirmed' || filter === 'upcoming' || filter === 'in-progress') && (
                         <TableCell>
-                          <div className="space-y-1 min-w-[150px]">
-                            {order.specialist_readiness_status === 'ready' && (
-                              <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/50">
-                                🟡 {language === 'ar' ? 'جاهز / استعداد' : 'Ready / Standby'}
-                              </Badge>
-                            )}
-                            {order.specialist_readiness_status === 'not_ready' && (
-                              <div className="space-y-1">
-                                <Badge variant="destructive">
-                                  ⚠️ {language === 'ar' ? 'غير جاهز' : 'Not Ready'}
-                                </Badge>
-                                {order.specialist_not_ready_reason && (
-                                  <p className="text-xs text-destructive max-w-xs line-clamp-2 p-1 bg-destructive/10 rounded">
-                                    {order.specialist_not_ready_reason}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                            {order.specialist_readiness_status === 'pending' && (
-                              <Badge variant="outline" className="text-xs">
-                                ⏳ {language === 'ar' ? 'في انتظار الرد' : 'Awaiting Response'}
-                              </Badge>
-                            )}
-                            {!order.specialist_readiness_status && (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
-                          </div>
+                          <ReadinessStatusIndicator
+                            bookingDate={order.booking_date}
+                            bookingTime={order.booking_time}
+                            readinessCheckSentAt={order.readiness_check_sent_at}
+                            specialistReadinessStatus={order.specialist_readiness_status}
+                            specialistReadinessResponseAt={order.specialist_readiness_response_at}
+                            specialistNotReadyReason={order.specialist_not_ready_reason}
+                            canManage={canManageOrders}
+                            onReassign={() => openResendDialog(order)}
+                          />
                         </TableCell>
                       )}
                       
