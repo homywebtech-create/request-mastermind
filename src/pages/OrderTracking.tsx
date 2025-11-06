@@ -985,7 +985,7 @@ export default function OrderTracking() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-6">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-32">
       <div className="max-w-2xl mx-auto space-y-6 p-4">
         {/* Order Info Card - Collapsible */}
         <Collapsible open={isOrderInfoOpen} onOpenChange={setIsOrderInfoOpen}>
@@ -1085,19 +1085,22 @@ export default function OrderTracking() {
               <Share2 className="h-6 w-6 ml-2" />
               <span>{language === 'ar' ? 'مشاركة موقع العميل' : 'Share Customer Location'}</span>
             </Button>
-
-            {/* Spacer to push button down */}
-            <div className="min-h-[200px]" />
-
-            {/* Start Moving Button - Moved to bottom */}
-            <Button 
-              onClick={handleStartMoving} 
-              className="w-full h-16 text-xl font-black shadow-xl hover:shadow-2xl transition-all bg-gradient-to-r from-green-500 to-green-600 hover:scale-[1.02]"
-              size="lg"
-            >
-              <ArrowRight className="h-7 w-7 ml-2" />
-              <span>{language === 'ar' ? 'ابدأ التحرك للعمل' : 'Start Moving to Work'}</span>
-            </Button>
+          </div>
+        )}
+        
+        {/* Fixed Start Moving Button at Bottom */}
+        {stage === 'initial' && (
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent">
+            <div className="max-w-2xl mx-auto">
+              <Button 
+                onClick={handleStartMoving} 
+                className="w-full h-16 text-xl font-black shadow-xl hover:shadow-2xl transition-all bg-gradient-to-r from-green-500 to-green-600 hover:scale-[1.02]"
+                size="lg"
+              >
+                <ArrowRight className="h-7 w-7 ml-2" />
+                <span>{language === 'ar' ? 'ابدأ التحرك للعمل' : 'Start Moving to Work'}</span>
+              </Button>
+            </div>
           </div>
         )}
 
