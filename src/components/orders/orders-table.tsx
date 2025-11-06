@@ -128,9 +128,10 @@ interface OrdersTableProps {
   onFilterChange: (filter: string) => void;
   isCompanyView?: boolean;
   companyId?: string;
+  isSnoozed?: (orderId: string) => boolean;
 }
 
-export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false, companyId }: OrdersTableProps) {
+export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false, companyId, isSnoozed }: OrdersTableProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -1329,6 +1330,7 @@ Thank you for contacting us! 🌟`;
                   // Check if this is a confirmed order that's overdue (needs strong visual alert)
                   const isOverdueConfirmed = overdueConfirmedOrderIds.includes(order.id) && 
                                             (filter === 'confirmed' || filter === 'upcoming');
+                  const isOrderSnoozed = isSnoozed ? isSnoozed(order.id) : false;
                   
                   return (
                     <TableRow 
@@ -1361,26 +1363,28 @@ Thank you for contacting us! 🌟`;
                               <Badge className="text-xs animate-pulse bg-red-600 text-white border-2 border-red-800 shadow-lg">
                                 🚨 {language === 'ar' ? 'متأخر جداً!' : 'Very Overdue!'}
                               </Badge>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 px-2 text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-900 dark:text-yellow-100"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  console.log('🔕 [SNOOZE] Button clicked for order:', order.id, order.order_number);
-                                  const snoozeFunc = (window as any).snoozeOverdueOrder;
-                                  if (snoozeFunc) {
-                                    console.log('✅ [SNOOZE] Function found, calling...');
-                                    snoozeFunc(order.id);
-                                  } else {
-                                    console.error('❌ [SNOOZE] Function not found on window object');
-                                  }
-                                }}
-                                title={language === 'ar' ? 'تأجيل التنبيه لمدة 3 دقائق' : 'Snooze for 3 minutes'}
-                              >
-                                <VolumeX className="h-3 w-3 mr-1" />
-                                {language === 'ar' ? 'إيقاف مؤقت' : 'Snooze'}
-                              </Button>
+                              {!isOrderSnoozed && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 px-2 text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-900 dark:text-yellow-100"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    console.log('🔕 [SNOOZE] Button clicked for order:', order.id, order.order_number);
+                                    const snoozeFunc = (window as any).snoozeOverdueOrder;
+                                    if (snoozeFunc) {
+                                      console.log('✅ [SNOOZE] Function found, calling...');
+                                      snoozeFunc(order.id);
+                                    } else {
+                                      console.error('❌ [SNOOZE] Function not found on window object');
+                                    }
+                                  }}
+                                  title={language === 'ar' ? 'تأجيل التنبيه لمدة 3 دقائق' : 'Snooze for 3 minutes'}
+                                >
+                                  <VolumeX className="h-3 w-3 mr-1" />
+                                  {language === 'ar' ? 'إيقاف مؤقت' : 'Snooze'}
+                                </Button>
+                              )}
                             </>
                           )}
                           {!isOverdueConfirmed && isOverdue && (

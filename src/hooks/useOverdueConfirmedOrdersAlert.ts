@@ -242,5 +242,11 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
     };
   }, [orders, toast, snoozedOrders]);
 
-  return { snoozeOrder };
+  return { 
+    snoozeOrder,
+    isSnoozed: (orderId: string) => {
+      const snoozeUntil = snoozedOrders.get(orderId);
+      return snoozeUntil ? Date.now() < snoozeUntil : false;
+    }
+  };
 }

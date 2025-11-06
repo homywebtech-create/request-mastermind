@@ -121,7 +121,7 @@ export default function CompanyPortal() {
   });
   
   // Enable alerts for overdue confirmed orders
-  const { snoozeOrder } = useOverdueConfirmedOrdersAlert(orders);
+  const { snoozeOrder, isSnoozed } = useOverdueConfirmedOrdersAlert(orders);
 
   useEffect(() => {
     checkAuth();
@@ -778,6 +778,7 @@ export default function CompanyPortal() {
               onFilterChange={setFilter}
               isCompanyView={true}
               companyId={company.id}
+              isSnoozed={isSnoozed}
             />
           </div>
 

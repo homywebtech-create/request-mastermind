@@ -125,7 +125,7 @@ export default function Dashboard() {
   useOrderReadinessNotifications();
   
   // Enable alerts for overdue confirmed orders
-  const { snoozeOrder } = useOverdueConfirmedOrdersAlert(orders);
+  const { snoozeOrder, isSnoozed } = useOverdueConfirmedOrdersAlert(orders);
 
   // Fetch user profile
   useEffect(() => {
@@ -1021,6 +1021,7 @@ export default function Dashboard() {
               onLinkCopied={handleLinkCopied}
               filter={filter}
               onFilterChange={setFilter}
+              isSnoozed={isSnoozed}
             />
           </div>
 
