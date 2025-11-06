@@ -42,6 +42,7 @@ export function ReadinessStatusIndicator({
     const dateTime = new Date(bookingDate);
     
     if (bookingTime) {
+      // Handle period-based times
       if (bookingTime === 'morning') {
         dateTime.setHours(8, 0, 0, 0);
       } else if (bookingTime === 'afternoon') {
@@ -49,8 +50,32 @@ export function ReadinessStatusIndicator({
       } else if (bookingTime === 'evening') {
         dateTime.setHours(18, 0, 0, 0);
       } else {
-        const [hours, minutes] = bookingTime.split(':').map(Number);
-        dateTime.setHours(hours, minutes, 0, 0);
+        // Parse time range like "8:00 AM-8:30 AM" or simple time like "08:00"
+        // Extract the start time from the range
+        const startTimeStr = bookingTime.split('-')[0].trim();
+        
+        // Try to parse time with AM/PM
+        const timeMatch = startTimeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        if (timeMatch) {
+          let hours = parseInt(timeMatch[1]);
+          const minutes = parseInt(timeMatch[2]);
+          const period = timeMatch[3]?.toUpperCase();
+          
+          // Convert to 24-hour format if AM/PM is present
+          if (period === 'PM' && hours < 12) {
+            hours += 12;
+          } else if (period === 'AM' && hours === 12) {
+            hours = 0;
+          }
+          
+          if (!isNaN(hours) && !isNaN(minutes)) {
+            dateTime.setHours(hours, minutes, 0, 0);
+          } else {
+            dateTime.setHours(8, 0, 0, 0); // Default fallback
+          }
+        } else {
+          dateTime.setHours(8, 0, 0, 0); // Default fallback
+        }
       }
     } else {
       dateTime.setHours(8, 0, 0, 0);

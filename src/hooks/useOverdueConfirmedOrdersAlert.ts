@@ -113,13 +113,15 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
           const now = new Date();
           let exactBookingTime: Date;
           
-          // For specific time bookings, use exact datetime from booking_date
+          // For specific time bookings, use exact datetime
           if (order.booking_date_type === 'specific') {
-            exactBookingTime = bookingDate;
+            exactBookingTime = new Date(order.booking_date);
           } else {
-            // For date-only bookings, use booking_time if available
+            // For date-only bookings, parse booking_time
             exactBookingTime = new Date(bookingDate);
+            
             if (order.booking_time) {
+              // Handle period-based times
               if (order.booking_time === 'morning') {
                 exactBookingTime.setHours(8, 0, 0, 0);
               } else if (order.booking_time === 'afternoon') {
@@ -127,16 +129,32 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
               } else if (order.booking_time === 'evening') {
                 exactBookingTime.setHours(18, 0, 0, 0);
               } else {
-                // Parse HH:MM format
-                const [hours, minutes] = order.booking_time.split(':').map(Number);
-                if (!isNaN(hours) && !isNaN(minutes)) {
-                  exactBookingTime.setHours(hours, minutes, 0, 0);
+                // Parse time range like "8:00 AM-8:30 AM"
+                const startTimeStr = order.booking_time.split('-')[0].trim();
+                const timeMatch = startTimeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                
+                if (timeMatch) {
+                  let hours = parseInt(timeMatch[1]);
+                  const minutes = parseInt(timeMatch[2]);
+                  const period = timeMatch[3]?.toUpperCase();
+                  
+                  // Convert to 24-hour format if AM/PM is present
+                  if (period === 'PM' && hours < 12) {
+                    hours += 12;
+                  } else if (period === 'AM' && hours === 12) {
+                    hours = 0;
+                  }
+                  
+                  if (!isNaN(hours) && !isNaN(minutes)) {
+                    exactBookingTime.setHours(hours, minutes, 0, 0);
+                  } else {
+                    exactBookingTime.setHours(8, 0, 0, 0);
+                  }
                 } else {
                   exactBookingTime.setHours(8, 0, 0, 0);
                 }
               }
             } else {
-              // Default to 8 AM for date-only bookings
               exactBookingTime.setHours(8, 0, 0, 0);
             }
           }

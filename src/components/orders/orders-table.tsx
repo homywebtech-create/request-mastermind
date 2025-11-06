@@ -201,6 +201,7 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     
     // For date-only bookings, parse booking time or set default
     if (order.booking_time) {
+      // Handle period-based times
       if (order.booking_time === 'morning') {
         bookingDateTime.setHours(8, 0, 0, 0);
       } else if (order.booking_time === 'afternoon') {
@@ -208,8 +209,30 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
       } else if (order.booking_time === 'evening') {
         bookingDateTime.setHours(18, 0, 0, 0);
       } else {
-        const [hours, minutes] = order.booking_time.split(':').map(Number);
-        bookingDateTime.setHours(hours, minutes, 0, 0);
+        // Parse time range like "8:00 AM-8:30 AM" or simple time like "08:00"
+        const startTimeStr = order.booking_time.split('-')[0].trim();
+        const timeMatch = startTimeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        
+        if (timeMatch) {
+          let hours = parseInt(timeMatch[1]);
+          const minutes = parseInt(timeMatch[2]);
+          const period = timeMatch[3]?.toUpperCase();
+          
+          // Convert to 24-hour format if AM/PM is present
+          if (period === 'PM' && hours < 12) {
+            hours += 12;
+          } else if (period === 'AM' && hours === 12) {
+            hours = 0;
+          }
+          
+          if (!isNaN(hours) && !isNaN(minutes)) {
+            bookingDateTime.setHours(hours, minutes, 0, 0);
+          } else {
+            bookingDateTime.setHours(8, 0, 0, 0);
+          }
+        } else {
+          bookingDateTime.setHours(8, 0, 0, 0);
+        }
       }
     } else {
       // Default to 8 AM for date-only bookings without time
