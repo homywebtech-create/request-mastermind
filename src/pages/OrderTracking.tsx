@@ -166,6 +166,60 @@ export default function OrderTracking() {
     checkAndSetStage();
   }, [orderId, language]); // Re-fetch when language changes
 
+  // Monitor order status and redirect if cancelled
+  useEffect(() => {
+    if (!orderId) return;
+
+    // Subscribe to order changes
+    const channel = supabase
+      .channel(`order-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          const updatedOrder = payload.new as { status?: string; tracking_stage?: string };
+          
+          // If order is cancelled, redirect specialist
+          if (updatedOrder.status === 'cancelled' || updatedOrder.tracking_stage === 'cancelled') {
+            stopTimeExpiredAlert();
+            toast({
+              title: language === 'ar' ? "تم إلغاء الطلب" : "Order Cancelled",
+              description: language === 'ar' ? "تم إلغاء هذا الطلب" : "This order has been cancelled",
+              variant: "destructive",
+            });
+            setTimeout(() => {
+              navigate('/specialist/home');
+            }, 1500);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [orderId, language, navigate, toast]);
+
+  // Check if order is already cancelled on mount
+  useEffect(() => {
+    if (order && (order.payment_status === 'cancelled' || stage === 'cancelled')) {
+      stopTimeExpiredAlert();
+      toast({
+        title: language === 'ar' ? "طلب ملغي" : "Cancelled Order",
+        description: language === 'ar' ? "هذا الطلب ملغي بالفعل" : "This order is already cancelled",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        navigate('/specialist/home');
+      }, 1500);
+    }
+  }, [order, stage, language, navigate, toast]);
+
   // Timer for moving stage (60 seconds countdown)
   useEffect(() => {
     if (stage === 'moving' && movingTimer > 0) {
