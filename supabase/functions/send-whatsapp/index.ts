@@ -112,20 +112,45 @@ serve(async (req) => {
     if (specialists && specialists.length > 0) {
       console.log(`📱 [Twilio WhatsApp] Sending interactive list with ${specialists.length} specialists`);
       
+      // First, send the specialist image if available
+      if (specialists.length === 1 && specialists[0].imageUrl) {
+        console.log(`📸 [Twilio WhatsApp] Sending specialist image first`);
+        const imageFormData = new URLSearchParams();
+        imageFormData.append('To', toNumber);
+        imageFormData.append('From', fromNumber);
+        imageFormData.append('MediaUrl', specialists[0].imageUrl);
+        imageFormData.append('Body', `${specialists[0].name} - ${specialists[0].nationality}`);
+        
+        try {
+          await fetch(twilioUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: imageFormData,
+          });
+        } catch (err) {
+          console.error('❌ [Twilio WhatsApp] Failed to send image:', err);
+        }
+      }
+      
       // Build list message with specialists
-      let listMessage = `*🎉 تم استلام عروض من المحترفين!*\n\n`;
-      listMessage += `*رقم الطلب:* ${orderDetails?.orderNumber || 'N/A'}\n`;
-      listMessage += `*الخدمة:* ${orderDetails?.serviceType || 'N/A'}\n\n`;
-      listMessage += `*📋 العروض المتاحة (${specialists.length}):*\n\n`;
+      let listMessage = `🎉 *تم استلام عروض من المحترفين!*\n\n`;
+      listMessage += `📋 *رقم الطلب:* ${orderDetails?.orderNumber || 'N/A'}\n`;
+      listMessage += `🔧 *الخدمة:* ${orderDetails?.serviceType || 'N/A'}\n\n`;
+      listMessage += `*💼 العروض المتاحة (${specialists.length}):*\n\n`;
       
       specialists.forEach((specialist, index) => {
+        listMessage += `━━━━━━━━━━━━━━━\n`;
         listMessage += `*${index + 1}. ${specialist.name}*\n`;
-        listMessage += `   الجنسية: ${specialist.nationality}\n`;
-        listMessage += `   السعر: ${specialist.price} ريال/ساعة\n`;
-        listMessage += `   🔗 للحجز: ${specialist.companyPageUrl}\n\n`;
+        listMessage += `🌍 الجنسية: ${specialist.nationality}\n`;
+        listMessage += `💰 السعر: ${specialist.price} ريال/ساعة\n\n`;
+        listMessage += `🔗 *للحجز اضغط هنا:*\n${specialist.companyPageUrl}\n\n`;
       });
       
-      listMessage += `_اضغط على الرابط للحجز مباشرة_`;
+      listMessage += `━━━━━━━━━━━━━━━\n`;
+      listMessage += `✨ _اختر المحترف المناسب واضغط على الرابط للحجز مباشرة_`;
       
       formData.append('Body', listMessage);
     } else {
