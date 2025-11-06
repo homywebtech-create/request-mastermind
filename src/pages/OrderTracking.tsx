@@ -1137,16 +1137,6 @@ export default function OrderTracking() {
               </div>
             </Button>
 
-            {/* Share My Location Button */}
-            <Button
-              onClick={shareLocation}
-              variant="outline"
-              className="w-full h-14 border-2 hover:bg-accent transition-all hover:scale-105 hover:shadow-lg animate-fade-in"
-            >
-              <Share2 className="h-5 w-5 ml-2 animate-pulse" />
-              <span className="font-semibold">{language === 'ar' ? 'مشاركة موقعي مع العميل' : 'Share My Location with Customer'}</span>
-            </Button>
-
             {/* Share Customer Location via WhatsApp */}
             <Button
               onClick={shareCustomerLocationViaWhatsApp}
