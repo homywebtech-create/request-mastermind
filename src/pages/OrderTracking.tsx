@@ -624,35 +624,35 @@ export default function OrderTracking() {
       : `Customer Location: ${locationUrl}`;
 
     try {
-      // Use WhatsApp share
-      await openWhatsApp('', shareText);
-      toast({
-        title: language === 'ar' ? "جاري فتح واتساب" : "Opening WhatsApp",
-        description: language === 'ar' ? "يمكنك الآن مشاركة الموقع مع السائق" : "You can now share the location with the driver",
-      });
+      // Use native share API first (allows user to choose app)
+      if (navigator.share) {
+        await navigator.share({
+          title: language === 'ar' ? 'موقع العميل' : 'Customer Location',
+          text: shareText,
+        });
+        toast({
+          title: language === 'ar' ? "تمت المشاركة" : "Shared Successfully",
+          description: language === 'ar' ? "تم فتح قائمة المشاركة" : "Share menu opened",
+        });
+      } else if (navigator.clipboard) {
+        // Fallback to clipboard if Web Share API not available
+        await navigator.clipboard.writeText(locationUrl);
+        toast({
+          title: language === 'ar' ? "تم النسخ" : "Copied",
+          description: language === 'ar' ? "تم نسخ رابط موقع العميل، يمكنك مشاركته الآن" : "Customer location link copied",
+        });
+      } else {
+        // Final fallback: show the URL
+        toast({
+          title: language === 'ar' ? "رابط موقع العميل" : "Customer Location Link",
+          description: locationUrl,
+          duration: 10000,
+        });
+      }
     } catch (error) {
-      console.error('Error opening WhatsApp:', error);
-      // Fallback: Try Web Share API or clipboard
-      try {
-        if (navigator.share) {
-          await navigator.share({
-            title: language === 'ar' ? 'موقع العميل' : 'Customer Location',
-            text: shareText,
-          });
-        } else if (navigator.clipboard) {
-          await navigator.clipboard.writeText(locationUrl);
-          toast({
-            title: language === 'ar' ? "تم النسخ" : "Copied",
-            description: language === 'ar' ? "تم نسخ رابط موقع العميل، يمكنك مشاركته الآن" : "Customer location link copied",
-          });
-        } else {
-          toast({
-            title: language === 'ar' ? "رابط موقع العميل" : "Customer Location Link",
-            description: locationUrl,
-            duration: 10000,
-          });
-        }
-      } catch (fallbackError) {
+      console.error('Error sharing location:', error);
+      // User cancelled share or error occurred
+      if ((error as any).name !== 'AbortError') {
         toast({
           title: language === 'ar' ? "رابط موقع العميل" : "Customer Location",
           description: locationUrl,
