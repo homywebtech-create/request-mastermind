@@ -1,12 +1,32 @@
 import { supabase } from "@/integrations/supabase/client";
 
+interface SpecialistQuote {
+  name: string;
+  nationality: string;
+  imageUrl?: string;
+  price: number;
+  companyPageUrl: string;
+  specialistId: string;
+}
+
 interface SendWhatsAppParams {
   to: string;
   message: string;
   customerName?: string;
+  specialists?: SpecialistQuote[];
+  orderDetails?: {
+    serviceType: string;
+    orderNumber: string;
+  };
 }
 
-export const sendWhatsAppMessage = async ({ to, message, customerName }: SendWhatsAppParams) => {
+export const sendWhatsAppMessage = async ({ 
+  to, 
+  message, 
+  customerName, 
+  specialists, 
+  orderDetails 
+}: SendWhatsAppParams) => {
   try {
     console.log('Sending WhatsApp message to:', to);
     
@@ -14,7 +34,9 @@ export const sendWhatsAppMessage = async ({ to, message, customerName }: SendWha
       body: {
         to,
         message,
-        customerName
+        customerName,
+        specialists,
+        orderDetails
       }
     });
 

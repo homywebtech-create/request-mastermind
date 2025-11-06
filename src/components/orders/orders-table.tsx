@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock, Volume2, VolumeX } from "lucide-react";
+import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock, Volume2, VolumeX, MessageCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,7 @@ import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 import { SpecialistProfileDialog } from "@/components/specialists/SpecialistProfileDialog";
 import { ReadinessStatusIndicator } from "./ReadinessStatusIndicator";
 import { TrackingTimeInfo } from "./TrackingTimeInfo";
+import { sendWhatsAppCarouselToCustomer, fetchQuotesForOrder } from "@/lib/whatsappCarousel";
 
 interface Order {
   id: string;
@@ -1710,7 +1711,7 @@ Thank you for contacting us! 🌟`;
                                         )}
                                       </div>
                                     </div>
-                                    <div className="mt-2 flex gap-2">
+                                     <div className="mt-2 flex gap-2">
                                       {/* Only show these buttons to users with appropriate permissions */}
                                       {(canManageOrders || !isCompanyView) && (
                                         <>
@@ -1743,6 +1744,56 @@ Thank you for contacting us! 🌟`;
                                         </>
                                       )}
                                     </div>
+                                    {/* WhatsApp Carousel Button - Shows on first company card */}
+                                    {companyQuotes.indexOf(company) === 0 && companyQuotes.length > 0 && (canManageOrders || !isCompanyView) && (
+                                      <div className="mt-2 pt-2 border-t border-border">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="w-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/40 border-green-200 dark:border-green-800"
+                                          onClick={async () => {
+                                            try {
+                                              console.log('📱 Sending WhatsApp carousel for order:', order.id);
+                                              const quotes = await fetchQuotesForOrder(order.id);
+                                              
+                                              if (quotes.length === 0) {
+                                                toast({
+                                                  title: language === 'ar' ? 'لا توجد عروض' : 'No quotes available',
+                                                  description: language === 'ar' ? 'لم يتم العثور على عروض لإرسالها' : 'No quotes found to send',
+                                                  variant: "destructive",
+                                                });
+                                                return;
+                                              }
+                                              
+                                              await sendWhatsAppCarouselToCustomer({
+                                                customerPhone: order.customers?.whatsapp_number || '',
+                                                customerName: order.customers?.name || '',
+                                                orderNumber: order.order_number || order.id,
+                                                serviceType: order.service_type,
+                                                quotes
+                                              });
+                                              
+                                              toast({
+                                                title: language === 'ar' ? 'تم الإرسال بنجاح' : 'Sent successfully',
+                                                description: language === 'ar' 
+                                                  ? `تم إرسال ${quotes.length} عرض للعميل عبر واتساب`
+                                                  : `${quotes.length} quotes sent to customer via WhatsApp`,
+                                              });
+                                            } catch (error: any) {
+                                              console.error('Error sending carousel:', error);
+                                              toast({
+                                                title: language === 'ar' ? 'فشل الإرسال' : 'Failed to send',
+                                                description: error?.message || (language === 'ar' ? 'حدث خطأ أثناء إرسال العروض' : 'Error sending quotes'),
+                                                variant: "destructive",
+                                              });
+                                            }
+                                          }}
+                                        >
+                                          <MessageCircle className="h-3 w-3 mr-2" />
+                                          {language === 'ar' ? `إرسال ${companyQuotes.length} عرض للعميل` : `Send ${companyQuotes.length} quotes to customer`}
+                                        </Button>
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>

@@ -9,10 +9,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface SpecialistQuote {
+  name: string;
+  nationality: string;
+  imageUrl?: string;
+  price: number;
+  companyPageUrl: string;
+  specialistId: string;
+}
+
 interface WhatsAppMessageRequest {
   to: string; // Phone number in format: +966xxxxxxxxx
   message: string;
   customerName?: string;
+  specialists?: SpecialistQuote[]; // For carousel messages
+  orderDetails?: {
+    serviceType: string;
+    orderNumber: string;
+  };
 }
 
 serve(async (req) => {
@@ -28,7 +42,7 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('🚀 [Twilio WhatsApp] Request body:', JSON.stringify(requestBody));
     
-    const { to, message, customerName }: WhatsAppMessageRequest = requestBody;
+    const { to, message, customerName, specialists, orderDetails }: WhatsAppMessageRequest = requestBody;
     
     if (!to || !message) {
       console.error('Missing required fields: to or message');
@@ -74,7 +88,6 @@ serve(async (req) => {
     console.log(`📱 [Twilio WhatsApp] Sending WhatsApp message...`);
     console.log(`📱 [Twilio WhatsApp] From: ${fromNumber}`);
     console.log(`📱 [Twilio WhatsApp] To: ${toNumber}`);
-    console.log(`📱 [Twilio WhatsApp] Message length: ${message.length} chars`);
 
     // Prepare Twilio API request
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
@@ -82,7 +95,32 @@ serve(async (req) => {
     const formData = new URLSearchParams();
     formData.append('To', toNumber);
     formData.append('From', fromNumber);
-    formData.append('Body', message);
+
+    // If specialists array is provided, send interactive list message
+    if (specialists && specialists.length > 0) {
+      console.log(`📱 [Twilio WhatsApp] Sending interactive list with ${specialists.length} specialists`);
+      
+      // Build list message with specialists
+      let listMessage = `*🎉 تم استلام عروض من المحترفين!*\n\n`;
+      listMessage += `*رقم الطلب:* ${orderDetails?.orderNumber || 'N/A'}\n`;
+      listMessage += `*الخدمة:* ${orderDetails?.serviceType || 'N/A'}\n\n`;
+      listMessage += `*📋 العروض المتاحة (${specialists.length}):*\n\n`;
+      
+      specialists.forEach((specialist, index) => {
+        listMessage += `*${index + 1}. ${specialist.name}*\n`;
+        listMessage += `   الجنسية: ${specialist.nationality}\n`;
+        listMessage += `   السعر: ${specialist.price} ريال/ساعة\n`;
+        listMessage += `   🔗 للحجز: ${specialist.companyPageUrl}\n\n`;
+      });
+      
+      listMessage += `_اضغط على الرابط للحجز مباشرة_`;
+      
+      formData.append('Body', listMessage);
+    } else {
+      // Regular text message
+      console.log(`📱 [Twilio WhatsApp] Sending regular text message (${message.length} chars)`);
+      formData.append('Body', message);
+    }
 
     // Send request to Twilio
     const response = await fetch(twilioUrl, {
