@@ -23,6 +23,7 @@ import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMess
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getSoundNotification } from "@/lib/soundNotification";
+import LanguageSelector from "@/components/specialist/LanguageSelector";
 
 interface Order {
   id: string;
@@ -69,7 +70,7 @@ export default function SpecialistHome() {
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { language, initializeLanguage } = useLanguage();
+  const { language, initializeLanguage, setLanguage } = useLanguage();
   const isAr = language === 'ar';
   
   useEffect(() => {
@@ -239,7 +240,16 @@ export default function SpecialistHome() {
 
           console.log('✅ [SPECIALIST] Setting specialist ID:', specialist.id);
           setSpecialistId(specialist.id);
-          setPreferredLanguage(specialist.preferred_language || 'ar');
+          
+          // Set language from database
+          const dbLanguage = specialist.preferred_language || 'ar';
+          setPreferredLanguage(dbLanguage);
+          setLanguage(dbLanguage as 'ar' | 'en');
+          
+          // Set company ID
+          if (specialist.company_id) {
+            setCompanyId(specialist.company_id);
+          }
           
           // 🔥 Initialize Firebase Push Notifications
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -596,6 +606,15 @@ export default function SpecialistHome() {
               <p className="text-sm opacity-95 font-medium">{isAr ? '✅ طلباتك المؤكدة' : '✅ Your Confirmed Bookings'}</p>
             </div>
             <div className="flex items-center gap-2">
+              {/* Language Selector */}
+              {specialistId && (
+                <LanguageSelector 
+                  specialistId={specialistId}
+                  currentLanguage={preferredLanguage}
+                  onLanguageChange={(lang) => setPreferredLanguage(lang)}
+                />
+              )}
+              
               {/* Wallet Button */}
               <Button
                 onClick={() => {
