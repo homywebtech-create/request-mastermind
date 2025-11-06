@@ -323,37 +323,35 @@ export default function CompanyPortal() {
     
     // Upcoming (القادمة): تم قبول عرض محترفة من الشركة وحالته upcoming
     const upcomingOrders = ordersList.filter(o => {
-      const hasAcceptedSpecialist = o.order_specialists?.some(os => 
-        os.is_accepted === true && os.specialists?.company_id === company?.id
-      );
-      const isUpcomingStatus = o.status === 'upcoming';
-      
-      // Debug logging
-      if (hasAcceptedSpecialist && isUpcomingStatus) {
-        console.log(`✅ Order ${o.order_number} is confirmed for company ${company?.name}`);
+      // تحقق من أن الطلب له specialist_id وأن المحترف من شركتنا
+      if (o.specialist_id && o.status === 'upcoming') {
+        const specialist = o.order_specialists?.find(os => os.specialist_id === o.specialist_id);
+        if (specialist && specialist.specialists?.company_id === company?.id) {
+          console.log(`✅ Order ${o.order_number} is confirmed for company ${company?.name}`);
+          return true;
+        }
       }
-      
-      return hasAcceptedSpecialist && isUpcomingStatus;
+      return false;
     });
     
     console.log(`✅ Company ${company?.name} Confirmed orders:`, upcomingOrders.length, upcomingOrders.map(o => o.order_number));
     
     // In Progress (تحت الإجراء): تم قبول عرض محترفة من الشركة وحالته in-progress
     const inProgressOrders = ordersList.filter(o => {
-      const hasAcceptedSpecialist = o.order_specialists?.some(os => 
-        os.is_accepted === true && os.specialists?.company_id === company?.id
-      );
-      const isInProgress = o.status === 'in-progress';
-      return hasAcceptedSpecialist && isInProgress;
+      if (o.specialist_id && o.status === 'in-progress') {
+        const specialist = o.order_specialists?.find(os => os.specialist_id === o.specialist_id);
+        return specialist && specialist.specialists?.company_id === company?.id;
+      }
+      return false;
     });
     
     // Completed (منتهية): تم إكمال الطلب لمحترفة من الشركة
     const completedOrders = ordersList.filter(o => {
-      const hasAcceptedSpecialist = o.order_specialists?.some(os => 
-        os.is_accepted === true && os.specialists?.company_id === company?.id
-      );
-      const isCompleted = o.status === 'completed';
-      return hasAcceptedSpecialist && isCompleted;
+      if (o.specialist_id && o.status === 'completed') {
+        const specialist = o.order_specialists?.find(os => os.specialist_id === o.specialist_id);
+        return specialist && specialist.specialists?.company_id === company?.id;
+      }
+      return false;
     });
     
     // Cancelled (ملغاة): الطلبات الملغاة للشركة
