@@ -46,6 +46,7 @@ interface Order {
   booking_type?: string | null;
   booking_date?: string | null;
   booking_date_type?: string | null;
+  booking_time?: string | null;
   hours_count?: number | null;
   building_info?: string | null;
   gps_latitude?: number | null;
@@ -287,6 +288,7 @@ export default function Dashboard() {
         booking_type,
         booking_date,
         booking_date_type,
+        booking_time,
         hours_count,
         building_info,
         gps_latitude,

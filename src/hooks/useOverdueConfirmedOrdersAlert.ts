@@ -8,6 +8,7 @@ interface Order {
   status: string;
   booking_date?: string | null;
   booking_date_type?: string | null;
+  booking_time?: string | null;
   order_specialists?: Array<{
     is_accepted: boolean | null;
   }>;
@@ -24,9 +25,15 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
   
   // Snooze handler function that can be called from outside
   const snoozeOrder = useCallback((orderId: string) => {
+    console.log('⏰ [SNOOZE] Called for order:', orderId);
     const snoozeUntil = Date.now() + (3 * 60 * 1000); // 3 minutes
-    setSnoozedOrders(prev => new Map(prev).set(orderId, snoozeUntil));
-    console.log(`⏰ Order ${orderId} snoozed until`, new Date(snoozeUntil).toLocaleTimeString());
+    setSnoozedOrders(prev => {
+      const newMap = new Map(prev);
+      newMap.set(orderId, snoozeUntil);
+      console.log('⏰ [SNOOZE] Updated snoozed orders map:', Array.from(newMap.entries()));
+      return newMap;
+    });
+    console.log(`⏰ [SNOOZE] Order ${orderId} snoozed until`, new Date(snoozeUntil).toLocaleTimeString());
     
     toast({
       title: '⏰ تم تأجيل التنبيه',
@@ -39,16 +46,20 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
       setSnoozedOrders(prev => {
         const newMap = new Map(prev);
         newMap.delete(orderId);
+        console.log('⏰ [SNOOZE] Cleared snooze for order:', orderId);
         return newMap;
       });
-      console.log(`⏰ Snooze ended for order ${orderId}`);
+      console.log(`⏰ [SNOOZE] Snooze ended for order ${orderId}`);
     }, 3 * 60 * 1000);
   }, [toast]);
   
   // Expose snooze function globally
   useEffect(() => {
+    console.log('🔧 [SNOOZE] Registering snoozeOverdueOrder on window object');
     (window as any).snoozeOverdueOrder = snoozeOrder;
+    console.log('✅ [SNOOZE] Function registered:', typeof (window as any).snoozeOverdueOrder);
     return () => {
+      console.log('🧹 [SNOOZE] Cleaning up snoozeOverdueOrder from window');
       delete (window as any).snoozeOverdueOrder;
     };
   }, [snoozeOrder]);
@@ -99,18 +110,38 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
         // Check if booking date exists and is in the past
         if (order.booking_date) {
           const bookingDate = new Date(order.booking_date);
+          const now = new Date();
           let exactBookingTime: Date;
           
-          // For specific time bookings, use exact datetime
+          // For specific time bookings, use exact datetime from booking_date
           if (order.booking_date_type === 'specific') {
-            exactBookingTime = new Date(order.booking_date);
+            exactBookingTime = bookingDate;
           } else {
-            // For date-only bookings, consider overdue after 8 AM on booking day
+            // For date-only bookings, use booking_time if available
             exactBookingTime = new Date(bookingDate);
-            exactBookingTime.setHours(8, 0, 0, 0);
+            if (order.booking_time) {
+              if (order.booking_time === 'morning') {
+                exactBookingTime.setHours(8, 0, 0, 0);
+              } else if (order.booking_time === 'afternoon') {
+                exactBookingTime.setHours(14, 0, 0, 0);
+              } else if (order.booking_time === 'evening') {
+                exactBookingTime.setHours(18, 0, 0, 0);
+              } else {
+                // Parse HH:MM format
+                const [hours, minutes] = order.booking_time.split(':').map(Number);
+                if (!isNaN(hours) && !isNaN(minutes)) {
+                  exactBookingTime.setHours(hours, minutes, 0, 0);
+                } else {
+                  exactBookingTime.setHours(8, 0, 0, 0);
+                }
+              }
+            } else {
+              // Default to 8 AM for date-only bookings
+              exactBookingTime.setHours(8, 0, 0, 0);
+            }
           }
           
-          console.log(`⏰ [${order.order_number}] now=${now.toLocaleString()}, booking=${exactBookingTime.toLocaleString()}, isOverdue=${now > exactBookingTime}`);
+          console.log(`⏰ [${order.order_number}] now=${now.toLocaleString()}, booking=${exactBookingTime.toLocaleString()}, diff=${(now.getTime() - exactBookingTime.getTime()) / 1000 / 60} mins, isOverdue=${now > exactBookingTime}`);
           
           if (now > exactBookingTime) {
             // Check if order is snoozed
@@ -119,8 +150,10 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
               console.log(`⏰ [${order.order_number}] is snoozed until`, new Date(snoozeUntil).toLocaleTimeString());
             } else {
               overdueOrderIds.push(order.id);
-              console.log(`🚨 [${order.order_number}] OVERDUE! booking=${order.booking_date}`);
+              console.log(`🚨 [${order.order_number}] OVERDUE! booking_date=${order.booking_date}, booking_time=${order.booking_time}`);
             }
+          } else {
+            console.log(`✅ [${order.order_number}] NOT overdue yet - ${Math.floor((exactBookingTime.getTime() - now.getTime()) / 1000 / 60)} minutes remaining`);
           }
         } else {
           console.log(`⚠️ [${order.order_number}] No booking date found`);

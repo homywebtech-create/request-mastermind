@@ -1344,8 +1344,13 @@ Thank you for contacting us! 🌟`;
                                 className="h-6 px-2 text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-900 dark:text-yellow-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if ((window as any).snoozeOverdueOrder) {
-                                    (window as any).snoozeOverdueOrder(order.id);
+                                  console.log('🔕 [SNOOZE] Button clicked for order:', order.id, order.order_number);
+                                  const snoozeFunc = (window as any).snoozeOverdueOrder;
+                                  if (snoozeFunc) {
+                                    console.log('✅ [SNOOZE] Function found, calling...');
+                                    snoozeFunc(order.id);
+                                  } else {
+                                    console.error('❌ [SNOOZE] Function not found on window object');
                                   }
                                 }}
                                 title={language === 'ar' ? 'تأجيل التنبيه لمدة 3 دقائق' : 'Snooze for 3 minutes'}
