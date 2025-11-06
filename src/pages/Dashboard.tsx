@@ -126,7 +126,7 @@ export default function Dashboard() {
   useOrderReadinessNotifications();
   
   // Enable alerts for overdue confirmed orders
-  const { snoozeOrder, isSnoozed } = useOverdueConfirmedOrdersAlert(orders);
+  const { snoozeOrder, isSnoozed, toggleMute, isMuted } = useOverdueConfirmedOrdersAlert(orders);
   
   // Listen for overdue confirmed orders event to update visual alert
   useEffect(() => {
@@ -777,6 +777,15 @@ export default function Dashboard() {
                 title={tDash.soundNotifications}
               >
                 <Volume2 className={`h-4 w-4 ${soundEnabled ? '' : 'opacity-50'}`} />
+              </Button>
+
+              <Button
+                variant={isMuted ? "outline" : "default"}
+                size="icon"
+                onClick={toggleMute}
+                title={isMuted ? "تفعيل تنبيهات الطلبات المتأخرة" : "كتم تنبيهات الطلبات المتأخرة"}
+              >
+                <AlertCircle className={`h-4 w-4 ${isMuted ? 'opacity-50' : ''}`} />
               </Button>
 
               {/* Priority Actions - Always Visible with Alerts */}

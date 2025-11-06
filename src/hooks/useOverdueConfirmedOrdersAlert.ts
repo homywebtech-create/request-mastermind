@@ -23,6 +23,17 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
   const hasShownToastRef = useRef(false);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const [snoozedOrders, setSnoozedOrders] = useState<Map<string, number>>(new Map());
+  const [isMuted, setIsMuted] = useState(false);
+  
+  // Mute handler function
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => !prev);
+    toast({
+      title: !isMuted ? '🔇 تم كتم التنبيهات' : '🔊 تم تفعيل التنبيهات',
+      description: !isMuted ? 'لن يتم تشغيل صوت التنبيه' : 'سيتم تشغيل صوت التنبيه للطلبات المتأخرة',
+      duration: 3000,
+    });
+  }, [isMuted, toast]);
   
   // Snooze handler function that can be called from outside
   const snoozeOrder = useCallback((orderId: string) => {
@@ -54,16 +65,18 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
     }, 3 * 60 * 1000);
   }, [toast]);
   
-  // Expose snooze function globally
+  // Expose snooze and mute functions globally
   useEffect(() => {
     console.log('🔧 [SNOOZE] Registering snoozeOverdueOrder on window object');
     (window as any).snoozeOverdueOrder = snoozeOrder;
+    (window as any).toggleOverdueAlertMute = toggleMute;
     console.log('✅ [SNOOZE] Function registered:', typeof (window as any).snoozeOverdueOrder);
     return () => {
       console.log('🧹 [SNOOZE] Cleaning up snoozeOverdueOrder from window');
       delete (window as any).snoozeOverdueOrder;
+      delete (window as any).toggleOverdueAlertMute;
     };
-  }, [snoozeOrder]);
+  }, [snoozeOrder, toggleMute]);
 
   // Initialize audio on mount (requires user interaction)
   useEffect(() => {
@@ -210,28 +223,42 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
         hasShownToastRef.current = true;
       }
       
-      // Play sound immediately if not played recently (within 15 seconds)
-      const timeSinceLastAlert = Date.now() - lastAlertTimeRef.current;
-      console.log(`🔊 [AUDIO] Time since last alert: ${timeSinceLastAlert}ms`);
-      
-      if (timeSinceLastAlert > 15000) {
-        console.log('🔊 [AUDIO] Playing overdue alert sound NOW...');
-        soundNotification.current.playNewOrderSound();
-        lastAlertTimeRef.current = Date.now();
-      } else {
-        console.log(`⏳ [AUDIO] Skipping sound - played ${timeSinceLastAlert}ms ago`);
-      }
-      
-      // Set up continuous alert if not already running
-      if (!alertIntervalRef.current) {
-        console.log('🔄 [ALERT] Setting up continuous alert interval (15s)...');
-        alertIntervalRef.current = setInterval(() => {
-          console.log('🔊 [AUDIO] Playing periodic overdue alert sound...');
+      // Play sound immediately if not played recently (within 15 seconds) and not muted
+      if (!isMuted) {
+        const timeSinceLastAlert = Date.now() - lastAlertTimeRef.current;
+        console.log(`🔊 [AUDIO] Time since last alert: ${timeSinceLastAlert}ms`);
+        
+        if (timeSinceLastAlert > 15000) {
+          console.log('🔊 [AUDIO] Playing overdue alert sound NOW...');
           soundNotification.current.playNewOrderSound();
           lastAlertTimeRef.current = Date.now();
-        }, 15000); // Play sound every 15 seconds
+        } else {
+          console.log(`⏳ [AUDIO] Skipping sound - played ${timeSinceLastAlert}ms ago`);
+        }
+        
+        // Set up continuous alert if not already running
+        if (!alertIntervalRef.current) {
+          console.log('🔄 [ALERT] Setting up continuous alert interval (15s)...');
+          alertIntervalRef.current = setInterval(() => {
+            if (!isMuted) {
+              console.log('🔊 [AUDIO] Playing periodic overdue alert sound...');
+              soundNotification.current.playNewOrderSound();
+              lastAlertTimeRef.current = Date.now();
+            } else {
+              console.log('🔇 [AUDIO] Alert is muted, skipping sound');
+            }
+          }, 15000); // Play sound every 15 seconds
+        } else {
+          console.log('✓ [ALERT] Continuous alert already running');
+        }
       } else {
-        console.log('✓ [ALERT] Continuous alert already running');
+        console.log('🔇 [AUDIO] Alert is muted');
+        // Clear interval if muted
+        if (alertIntervalRef.current) {
+          console.log('🛑 [ALERT] Clearing alert interval - muted');
+          clearInterval(alertIntervalRef.current);
+          alertIntervalRef.current = null;
+        }
       }
     } else {
       console.log('✅ [CHECK] No overdue orders found');
@@ -251,10 +278,12 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
         alertIntervalRef.current = null;
       }
     };
-  }, [orders, toast, snoozedOrders]);
+  }, [orders, toast, snoozedOrders, isMuted]);
 
   return { 
     snoozeOrder,
+    toggleMute,
+    isMuted,
     isSnoozed: (orderId: string) => {
       const snoozeUntil = snoozedOrders.get(orderId);
       return snoozeUntil ? Date.now() < snoozeUntil : false;

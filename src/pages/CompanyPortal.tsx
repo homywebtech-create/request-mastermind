@@ -7,7 +7,7 @@ import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
 import { useOrderReadinessNotifications } from "@/hooks/useOrderReadinessNotifications";
 import { useOverdueConfirmedOrdersAlert } from "@/hooks/useOverdueConfirmedOrdersAlert";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck, BarChart, XCircle } from "lucide-react";
+import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck, BarChart, XCircle, AlertCircle } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { OrderForm } from "@/components/orders/order-form";
@@ -122,7 +122,7 @@ export default function CompanyPortal() {
   });
   
   // Enable alerts for overdue confirmed orders
-  const { snoozeOrder, isSnoozed } = useOverdueConfirmedOrdersAlert(orders);
+  const { snoozeOrder, isSnoozed, toggleMute, isMuted } = useOverdueConfirmedOrdersAlert(orders);
   
   // Listen for overdue confirmed orders event to update visual alert
   useEffect(() => {
@@ -643,6 +643,15 @@ export default function CompanyPortal() {
             
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
+              
+              <Button
+                variant={isMuted ? "outline" : "default"}
+                size="icon"
+                onClick={toggleMute}
+                title={isMuted ? (language === 'ar' ? "تفعيل تنبيهات الطلبات المتأخرة" : "Enable Overdue Alerts") : (language === 'ar' ? "كتم تنبيهات الطلبات المتأخرة" : "Mute Overdue Alerts")}
+              >
+                <AlertCircle className={`h-4 w-4 ${isMuted ? 'opacity-50' : ''}`} />
+              </Button>
               
               {/* Support Chat Button */}
               <CompanyChatButton 
