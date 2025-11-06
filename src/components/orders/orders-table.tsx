@@ -906,6 +906,70 @@ Thank you for contacting us! 🌟`;
     }
   };
 
+  // Reset order to pending and resend to new companies/specialists
+  const handleResetAndResendOrder = async (orderId: string) => {
+    setOrderProcessing(orderId, true);
+    try {
+      console.log(`🔄 [RESET] إعادة تعيين الطلب ${orderId} إلى pending...`);
+      
+      // Delete all existing order_specialists assignments
+      const { error: deleteError } = await supabase
+        .from('order_specialists')
+        .delete()
+        .eq('order_id', orderId);
+      
+      if (deleteError) {
+        console.error('❌ [RESET] خطأ في حذف التعيينات:', deleteError);
+        throw deleteError;
+      }
+
+      // Reset order to pending status
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          status: 'pending',
+          specialist_id: null,
+          company_id: null,
+          send_to_all_companies: false,
+          specialist_readiness_status: null,
+          specialist_readiness_response_at: null,
+          specialist_not_ready_reason: null,
+          readiness_check_sent_at: null,
+          last_sent_at: null,
+        })
+        .eq('id', orderId);
+
+      if (updateError) {
+        console.error('❌ [RESET] خطأ في إعادة تعيين حالة الطلب:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ [RESET] تم إعادة تعيين الطلب بنجاح');
+
+      toast({
+        title: language === 'ar' ? '✅ تم إعادة تعيين الطلب' : '✅ Order Reset',
+        description: language === 'ar' 
+          ? 'تم إعادة الطلب إلى قائمة الطلبات الجديدة. يمكنك الآن إرساله لشركات ومحترفين آخرين.' 
+          : 'The order has been reset to new orders. You can now send it to other companies and specialists.',
+      });
+
+      setResendDialogOpen(false);
+      setSelectedOrder(null);
+      
+      // Refresh page to show updated orders
+      window.location.reload();
+    } catch (error: any) {
+      console.error('❌ [RESET] خطأ في إعادة تعيين الطلب:', error);
+      toast({
+        title: t.error,
+        description: error.message || (language === 'ar' ? 'حدث خطأ أثناء إعادة تعيين الطلب' : 'An error occurred while resetting the order'),
+        variant: 'destructive',
+      });
+    } finally {
+      setOrderProcessing(orderId, false);
+    }
+  };
+
   const handleResendToSameSpecialists = async (order: Order) => {
     setOrderProcessing(order.id, true);
     try {
@@ -1744,6 +1808,29 @@ Thank you for contacting us! 🌟`;
                               )}
                             </>
                           )}
+                          
+                          {/* Show reset button for overdue confirmed orders */}
+                          {canManageOrders && filter === 'confirmed' && isOverdue && !isCompanyView && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => openResendDialog(order)}
+                              disabled={isOrderProcessing}
+                              className="flex items-center gap-1 animate-pulse"
+                            >
+                              {isOrderProcessing ? (
+                                <>
+                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  {language === 'ar' ? 'جاري...' : 'Processing...'}
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="h-3 w-3" />
+                                  {language === 'ar' ? 'إعادة إرسال' : 'Resend'}
+                                </>
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1821,6 +1908,29 @@ Thank you for contacting us! 🌟`;
                       </div>
                     </Button>
                   </>
+                )}
+                
+                {/* Reset Order Option - For overdue confirmed orders */}
+                {(filter === 'confirmed' && isOrderOverdue(selectedOrder)) && (
+                  <div className="pt-3 border-t">
+                    <Button
+                      onClick={() => handleResetAndResendOrder(selectedOrder.id)}
+                      variant="destructive"
+                      className="w-full justify-start h-auto py-4"
+                    >
+                      <div className="flex flex-col items-start gap-1 text-left">
+                        <div className="flex items-center gap-2 font-medium">
+                          <Clock className="h-4 w-4" />
+                          {language === 'ar' ? 'إعادة تعيين الطلب وإرساله من جديد' : 'Reset & Resend Order'}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {language === 'ar' 
+                            ? 'إلغاء الحجز الحالي وإعادة الطلب إلى قائمة الطلبات الجديدة لإرساله لشركات أخرى' 
+                            : 'Cancel current booking and reset order to new orders to send to other companies'}
+                        </span>
+                      </div>
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
