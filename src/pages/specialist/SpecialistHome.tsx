@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { Clock, MapPin, Navigation, Calendar, Globe } from "lucide-react";
+import { Clock, MapPin, Navigation, Calendar, Globe, Wallet, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -596,12 +596,30 @@ export default function SpecialistHome() {
               <p className="text-sm opacity-95 font-medium">{isAr ? '✅ طلباتك المؤكدة' : '✅ Your Confirmed Bookings'}</p>
             </div>
             <div className="flex items-center gap-2">
+              {/* Wallet Button */}
+              <Button
+                onClick={() => {
+                  toast({
+                    title: isAr ? "قريباً" : "Coming Soon",
+                    description: isAr ? "ميزة المحفظة قيد التطوير" : "Wallet feature is under development",
+                  });
+                }}
+                variant="secondary"
+                size="sm"
+                className="gap-2 shadow-lg hover:scale-105 transition-transform"
+              >
+                <Wallet className="h-4 w-4" />
+                {isAr ? 'المحفظة' : 'Wallet'}
+              </Button>
+              
+              {/* Messages Button - Always show */}
               {specialistId && companyId && (
                 <SpecialistMessagesButton 
                   specialistId={specialistId}
                   companyId={companyId}
                 />
               )}
+              
               <Button
                 onClick={() => {
                   console.log('🔄 [MANUAL] Manual refresh triggered');

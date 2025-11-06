@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star, ChevronDown, ArrowLeft } from "lucide-react";
+import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star, ChevronDown, ArrowLeft, MessageSquare } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { translateOrderDetails } from "@/lib/translateHelper";
 import { TranslateButton } from "@/components/specialist/TranslateButton";
+import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 
 type Stage = 'initial' | 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
@@ -95,6 +96,7 @@ export default function OrderTracking() {
   const [otherPaymentReason, setOtherPaymentReason] = useState('');
   const [translatedNotes, setTranslatedNotes] = useState<string | null>(null);
   const [translatedBuildingInfo, setTranslatedBuildingInfo] = useState<string | null>(null);
+  const [specialistId, setSpecialistId] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -132,16 +134,17 @@ export default function OrderTracking() {
   useEffect(() => {
     if (!orderId) return;
 
-    // Fetch order data
     fetchOrder();
 
     // Check if order already has a tracking stage
     const checkAndSetStage = async () => {
-      const { data: currentOrder } = await supabase
+      const currentOrderResult: any = await supabase
         .from('orders')
         .select('tracking_stage')
         .eq('id', orderId)
         .single();
+
+      const currentOrder = currentOrderResult.data;
 
       if (currentOrder?.tracking_stage) {
         // Resume from existing stage
@@ -165,6 +168,31 @@ export default function OrderTracking() {
 
     checkAndSetStage();
   }, [orderId, language]); // Re-fetch when language changes
+
+  // Fetch specialist ID
+  useEffect(() => {
+    const fetchSpecialistIdFromAuth = async () => {
+      try {
+        const userResponse = await supabase.auth.getUser();
+        const user = userResponse.data?.user;
+        if (user) {
+          const supabaseAny: any = supabase;
+          const specialistResponse = await supabaseAny
+            .from('specialists')
+            .select('id')
+            .eq('user_id', user.id);
+          
+          if (specialistResponse.data && specialistResponse.data.length > 0) {
+            setSpecialistId(specialistResponse.data[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching specialist ID:', error);
+      }
+    };
+
+    fetchSpecialistIdFromAuth();
+  }, []);
 
   // Monitor order status and redirect if cancelled
   useEffect(() => {
@@ -1041,6 +1069,27 @@ export default function OrderTracking() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-32">
       <div className="max-w-2xl mx-auto space-y-6 p-4">
+        {/* Back Button */}
+        <Button
+          onClick={() => navigate('/specialist/home')}
+          variant="ghost"
+          size="sm"
+          className="mb-2"
+        >
+          <ArrowLeft className="h-4 w-4 ml-2" />
+          {language === 'ar' ? 'العودة' : 'Back'}
+        </Button>
+
+        {/* Chat with Company Button - Always Available */}
+        {specialistId && order?.company_id && (
+          <div className="mb-4">
+            <SpecialistMessagesButton
+              specialistId={specialistId}
+              companyId={order.company_id}
+            />
+          </div>
+        )}
+
         {/* Order Info Card - Collapsible */}
         <Collapsible open={isOrderInfoOpen} onOpenChange={setIsOrderInfoOpen}>
           <Card className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-md">
