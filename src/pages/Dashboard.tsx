@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrderReadinessNotifications } from "@/hooks/useOrderReadinessNotifications";
 import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -117,6 +118,9 @@ export default function Dashboard() {
   const soundNotification = useRef(getSoundNotification());
   const previousOrdersCount = useRef<number>(0);
   const previousQuotesCount = useRef<number>(0);
+  
+  // Enable real-time notifications for order readiness
+  useOrderReadinessNotifications();
 
   // Fetch user profile
   useEffect(() => {

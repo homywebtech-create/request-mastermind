@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyUserPermissions } from "@/hooks/useCompanyUserPermissions";
+import { useOrderReadinessNotifications } from "@/hooks/useOrderReadinessNotifications";
 import { Button } from "@/components/ui/button";
 import { Building2, LogOut, Package, Clock, CheckCircle, Users, UserCog, Calendar, Plus, FileCheck, BarChart, XCircle } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
@@ -97,6 +98,9 @@ export default function CompanyPortal() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { user } = useAuth();
+  
+  // Enable real-time notifications for order readiness
+  useOrderReadinessNotifications();
   const { hasPermission, hasAnyPermission, isOwner } = useCompanyUserPermissions(user?.id);
   const [company, setCompany] = useState<Company | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
