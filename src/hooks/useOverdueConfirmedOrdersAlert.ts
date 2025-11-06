@@ -19,6 +19,35 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastAlertTimeRef = useRef<number>(0);
   const hasShownToastRef = useRef(false);
+  const [isAudioInitialized, setIsAudioInitialized] = useState(false);
+
+  // Initialize audio on mount (requires user interaction)
+  useEffect(() => {
+    const initAudio = async () => {
+      try {
+        await soundNotification.current.initialize();
+        setIsAudioInitialized(true);
+        console.log('✅ Audio system initialized on component mount');
+      } catch (error) {
+        console.error('❌ Failed to initialize audio:', error);
+      }
+    };
+
+    // Initialize on first user interaction
+    const handleUserInteraction = () => {
+      initAudio();
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+    };
+
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('keydown', handleUserInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, []);
 
   useEffect(() => {
     // Check for overdue confirmed orders
