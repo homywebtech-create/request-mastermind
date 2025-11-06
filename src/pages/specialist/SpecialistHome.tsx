@@ -597,73 +597,83 @@ export default function SpecialistHome() {
   return (
     <BusyGuard specialistId={specialistId} allowWhenBusy={false}>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 text-white p-6 shadow-2xl">
-        <div className="max-w-screen-lg mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold mb-1 drop-shadow-lg">{isAr ? 'مرحباً' : 'Welcome'}, {specialistName}</h1>
-              <p className="text-sm opacity-95 font-medium">{isAr ? '✅ طلباتك المؤكدة' : '✅ Your Confirmed Bookings'}</p>
+      {/* Header - Optimized for Mobile */}
+      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 text-white shadow-lg">
+        <div className="w-full px-3 py-3 sm:px-6 sm:py-4">
+          {/* Top Row: Name and Quick Actions */}
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold mb-0.5 drop-shadow-lg truncate">
+                {isAr ? 'مرحباً' : 'Welcome'}, {specialistName}
+              </h1>
+              <p className="text-xs sm:text-sm opacity-90 font-medium">
+                {isAr ? '✅ طلباتك المؤكدة' : '✅ Your Confirmed Bookings'}
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Language Selector */}
-              {specialistId && (
+            
+            {/* Language Selector - Always visible */}
+            {specialistId && (
+              <div className="shrink-0">
                 <LanguageSelector 
                   specialistId={specialistId}
                   currentLanguage={preferredLanguage}
                   onLanguageChange={(lang) => setPreferredLanguage(lang)}
                 />
-              )}
-              
-              {/* Wallet Button */}
-              <Button
-                onClick={() => {
-                  toast({
-                    title: isAr ? "قريباً" : "Coming Soon",
-                    description: isAr ? "ميزة المحفظة قيد التطوير" : "Wallet feature is under development",
-                  });
-                }}
-                variant="secondary"
-                size="sm"
-                className="gap-2 shadow-lg hover:scale-105 transition-transform"
-              >
-                <Wallet className="h-4 w-4" />
-                {isAr ? 'المحفظة' : 'Wallet'}
-              </Button>
-              
-              {/* Messages Button - Always show */}
-              {specialistId && companyId && (
-                <SpecialistMessagesButton 
-                  specialistId={specialistId}
-                  companyId={companyId}
-                />
-              )}
-              
-              <Button
-                onClick={() => {
-                  console.log('🔄 [MANUAL] Manual refresh triggered');
-                  if (specialistId) {
-                    fetchOrders(specialistId);
-                    fetchNewOrdersCount(specialistId);
-                  }
-                }}
-                variant="secondary"
-                size="sm"
-                className="gap-2 shadow-lg hover:scale-105 transition-transform"
-              >
-                <Clock className="h-4 w-4" />
-                {isAr ? 'تحديث' : 'Refresh'}
-              </Button>
-            </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Row: Action Buttons */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {/* Wallet Button */}
+            <Button
+              onClick={() => {
+                toast({
+                  title: isAr ? "قريباً" : "Coming Soon",
+                  description: isAr ? "ميزة المحفظة قيد التطوير" : "Wallet feature is under development",
+                });
+              }}
+              variant="secondary"
+              size="sm"
+              className="text-xs sm:text-sm px-2 sm:px-3 py-1 h-8 shadow-md"
+            >
+              <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">{isAr ? 'المحفظة' : 'Wallet'}</span>
+            </Button>
+            
+            {/* Messages Button */}
+            {specialistId && companyId && (
+              <SpecialistMessagesButton 
+                specialistId={specialistId}
+                companyId={companyId}
+              />
+            )}
+            
+            {/* Refresh Button */}
+            <Button
+              onClick={() => {
+                console.log('🔄 [MANUAL] Manual refresh triggered');
+                if (specialistId) {
+                  fetchOrders(specialistId);
+                  fetchNewOrdersCount(specialistId);
+                }
+              }}
+              variant="secondary"
+              size="sm"
+              className="text-xs sm:text-sm px-2 sm:px-3 py-1 h-8 shadow-md"
+            >
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline sm:inline">{isAr ? 'تحديث' : 'Refresh'}</span>
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Tools + Orders List */}
-      <div className="max-w-screen-lg mx-auto p-4 space-y-4">
+      {/* Tools + Orders List - Mobile Optimized */}
+      <div className="w-full px-3 py-3 sm:px-4 sm:py-4 space-y-3 sm:space-y-4 max-w-screen-lg mx-auto">
         {displayOrders.length === 0 ? (
-          <Card className="p-8 text-center shadow-lg">
-            <p className="text-muted-foreground text-lg">{isAr ? 'لا توجد طلبات مؤكدة حالياً' : 'No confirmed bookings yet'}</p>
+          <Card className="p-6 sm:p-8 text-center shadow-lg">
+            <p className="text-muted-foreground text-base sm:text-lg">{isAr ? 'لا توجد طلبات مؤكدة حالياً' : 'No confirmed bookings yet'}</p>
           </Card>
         ) : (
           displayOrders.map((order) => {
@@ -709,74 +719,74 @@ export default function SpecialistHome() {
                   isOverdue && "bg-destructive animate-pulse"
                 )} />
 
-                <div className="p-5 space-y-4">
-                  {/* Status Badge */}
-                  <div className="flex items-center justify-between">
+                <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+                  {/* Status Badge - Mobile Optimized */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div className={cn(
-                      "px-3 py-1 rounded-full text-sm font-bold",
+                      "px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap",
                       isTodayOrder && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
                       isFutureOrder && !isOverdue && "bg-destructive/10 text-destructive",
                       isOverdue && "bg-destructive text-destructive-foreground animate-pulse"
                     )}>
                       {isOverdue
-                        ? (isAr ? "⚠️ متأخر - يجب الإلغاء أو البدء" : "⚠️ Overdue - Cancel or Start")
+                        ? (isAr ? "⚠️ متأخر" : "⚠️ Overdue")
                         : isTodayOrder 
-                          ? (isAr ? "⭐ طلب اليوم" : "⭐ Today's Order")
-                          : (isAr ? "📅 طلب قادم" : "📅 Upcoming Order")
+                          ? (isAr ? "⭐ طلب اليوم" : "⭐ Today")
+                          : (isAr ? "📅 قادم" : "📅 Upcoming")
                       }
                     </div>
                     {order.booking_date && (
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {(() => {
-                          try {
-                            // Combine date and time if time is available
-                            const dateTimeString = order.booking_time 
-                              ? `${order.booking_date}T${order.booking_time}`
-                              : order.booking_date;
-                            return format(parseISO(dateTimeString), "d MMMM yyyy - h:mm a", { locale: isAr ? ar : enUS });
-                          } catch (error) {
-                            return format(parseISO(order.booking_date), "d MMMM yyyy", { locale: isAr ? ar : enUS });
-                          }
-                        })()}
+                      <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="h-3 w-3 shrink-0" />
+                        <span className="truncate">
+                          {(() => {
+                            try {
+                              const dateTimeString = order.booking_time 
+                                ? `${order.booking_date}T${order.booking_time}`
+                                : order.booking_date;
+                              return format(parseISO(dateTimeString), "d MMM yyyy - h:mm a", { locale: isAr ? ar : enUS });
+                            } catch (error) {
+                              return format(parseISO(order.booking_date), "d MMM yyyy", { locale: isAr ? ar : enUS });
+                            }
+                          })()}
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Order Number - Prominent Display */}
-                  <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 p-3 rounded-lg border-2 border-primary/20">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-xs text-muted-foreground font-medium">{isAr ? 'رقم الطلب' : 'Order Number'}</span>
-                      <span className="text-lg font-bold text-primary">{order.order_number || `#${order.id.split('-')[0]}`}</span>
+                  {/* Order Number - Mobile Optimized */}
+                  <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 p-2 sm:p-3 rounded-lg border border-primary/20">
+                    <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">{isAr ? 'رقم الطلب' : 'Order #'}</span>
+                      <span className="text-base sm:text-lg font-bold text-primary">{order.order_number || `#${order.id.split('-')[0]}`}</span>
                     </div>
                   </div>
 
-                  {/* Customer Info */}
+                  {/* Customer Info - Mobile Optimized */}
                   <div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">
+                    <h3 className="text-base sm:text-lg font-bold text-foreground mb-1.5 sm:mb-2">
                       {order.customer?.name}
                     </h3>
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <MapPin className="h-4 w-4" />
-                      <span>{order.translated?.area || order.customer?.area || (isAr ? 'غير محدد' : 'Not specified')}</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground text-xs sm:text-sm">
+                      <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                      <span className="truncate">{order.translated?.area || order.customer?.area || (isAr ? 'غير محدد' : 'Not specified')}</span>
                       {order.translated && preferredLanguage !== 'ar' && (
-                        <Globe className="h-3 w-3 text-blue-500" />
+                        <Globe className="h-3 w-3 text-blue-500 shrink-0" />
                       )}
                     </div>
                   </div>
 
-                  {/* Location Map - Static Image */}
+                  {/* Location Map - Mobile Optimized */}
                   {order.gps_latitude && order.gps_longitude && (
                     <Dialog>
                       <DialogTrigger asChild>
-                        <div className="relative rounded-lg overflow-hidden border-2 border-border cursor-pointer hover:opacity-90 transition-opacity group">
+                        <div className="relative rounded-lg overflow-hidden border border-border cursor-pointer hover:opacity-90 transition-opacity group">
                           {googleMapsApiKey ? (
                             <img
                               src={`https://maps.googleapis.com/maps/api/staticmap?center=${order.gps_latitude},${order.gps_longitude}&zoom=15&size=600x300&markers=color:red%7C${order.gps_latitude},${order.gps_longitude}&key=${googleMapsApiKey}&scale=2`}
                               alt={isAr ? 'موقع العميل' : 'Customer Location'}
-                              className="w-full h-[200px] object-cover"
+                              className="w-full h-[150px] sm:h-[180px] object-cover"
                               onError={(e) => {
-                                // Fallback to placeholder on error
                                 e.currentTarget.style.display = 'none';
                                 if (e.currentTarget.nextElementSibling) {
                                   (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
@@ -784,11 +794,11 @@ export default function SpecialistHome() {
                               }}
                             />
                           ) : null}
-                          <div className="w-full h-[200px] bg-muted flex items-center justify-center" style={{ display: googleMapsApiKey ? 'none' : 'flex' }}>
-                            <div className="text-center space-y-2">
-                              <MapPin className="h-12 w-12 text-primary mx-auto" />
-                              <p className="text-sm font-medium">{isAr ? 'اضغط لعرض الموقع' : 'Tap to view location'}</p>
-                              <p className="text-xs text-muted-foreground">
+                          <div className="w-full h-[150px] sm:h-[180px] bg-muted flex items-center justify-center" style={{ display: googleMapsApiKey ? 'none' : 'flex' }}>
+                            <div className="text-center space-y-1.5 sm:space-y-2 px-3">
+                              <MapPin className="h-8 w-8 sm:h-10 sm:w-10 text-primary mx-auto" />
+                              <p className="text-xs sm:text-sm font-medium">{isAr ? 'اضغط لعرض الموقع' : 'Tap to view location'}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground">
                                 {`${order.gps_latitude.toFixed(4)}°, ${order.gps_longitude.toFixed(4)}°`}
                               </p>
                             </div>
@@ -826,12 +836,12 @@ export default function SpecialistHome() {
                     </Dialog>
                   )}
 
-                  {/* Booking Details */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Booking Details - Mobile Optimized */}
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {/* Booking Type */}
-                    <div className="bg-purple-50 dark:bg-purple-950/30 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <p className="text-xs text-purple-600 dark:text-purple-400 mb-1 font-medium">{isAr ? 'نوع الحجز' : 'Booking Type'}</p>
-                      <p className="font-bold text-sm text-purple-700 dark:text-purple-300">
+                    <div className="bg-purple-50 dark:bg-purple-950/30 p-2 sm:p-2.5 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <p className="text-[10px] sm:text-xs text-purple-600 dark:text-purple-400 mb-0.5 sm:mb-1 font-medium">{isAr ? 'نوع الحجز' : 'Type'}</p>
+                      <p className="font-bold text-xs sm:text-sm text-purple-700 dark:text-purple-300 leading-tight">
                         {order.booking_type === 'one_time' && (isAr ? '🏠 مرة واحدة' : '🏠 One Time')}
                         {order.booking_type === 'weekly' && (isAr ? '📅 أسبوعي' : '📅 Weekly')}
                         {order.booking_type === 'bi_weekly' && (isAr ? '📅 نصف شهري' : '📅 Bi-Weekly')}
@@ -841,30 +851,30 @@ export default function SpecialistHome() {
                     </div>
 
                     {/* Hours Count */}
-                    <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-1 font-medium">{isAr ? 'عدد الساعات' : 'Hours Count'}</p>
-                      <p className="font-bold text-sm text-blue-700 dark:text-blue-300">
-                        {order.hours_count ? `⏰ ${order.hours_count} ${isAr ? 'ساعة' : 'hours'}` : (isAr ? 'غير محدد' : 'Not specified')}
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-2 sm:p-2.5 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 mb-0.5 sm:mb-1 font-medium">{isAr ? 'عدد الساعات' : 'Hours'}</p>
+                      <p className="font-bold text-xs sm:text-sm text-blue-700 dark:text-blue-300 leading-tight">
+                        {order.hours_count ? `⏰ ${order.hours_count} ${isAr ? 'ساعة' : 'h'}` : (isAr ? 'غير محدد' : 'N/A')}
                       </p>
                     </div>
                   </div>
 
-                  {/* Time and Service */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-primary/10 p-3 rounded-lg">
-                      <div className="flex items-center gap-2 justify-between mb-1">
-                        <p className="text-xs text-muted-foreground">{isAr ? 'الخدمة' : 'Service'}</p>
+                  {/* Time and Service - Mobile Optimized */}
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="bg-primary/10 p-2 sm:p-2.5 rounded-lg">
+                      <div className="flex items-center gap-1 justify-between mb-0.5 sm:mb-1">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{isAr ? 'الخدمة' : 'Service'}</p>
                         {order.translated && preferredLanguage !== 'ar' && (
-                          <Globe className="h-3 w-3 text-blue-500" />
+                          <Globe className="h-3 w-3 text-blue-500 shrink-0" />
                         )}
                       </div>
-                      <p className="font-bold text-sm">{order.translated?.service_type || order.service_type}</p>
+                      <p className="font-bold text-xs sm:text-sm leading-tight line-clamp-2">{order.translated?.service_type || order.service_type}</p>
                     </div>
                     
-                    {/* Start Time - 12 hour format with AM/PM */}
-                    <div className="bg-orange-50 dark:bg-orange-950/30 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
-                      <p className="text-xs text-orange-600 dark:text-orange-400 mb-1 font-medium">{isAr ? 'وقت البدء' : 'Start Time'}</p>
-                      <p className="font-bold text-sm text-orange-700 dark:text-orange-300">
+                    {/* Start Time - Mobile Optimized */}
+                    <div className="bg-orange-50 dark:bg-orange-950/30 p-2 sm:p-2.5 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <p className="text-[10px] sm:text-xs text-orange-600 dark:text-orange-400 mb-0.5 sm:mb-1 font-medium">{isAr ? 'وقت البدء' : 'Start'}</p>
+                      <p className="font-bold text-xs sm:text-sm text-orange-700 dark:text-orange-300 leading-tight">
                         {order.booking_time ? (
                           (() => {
                             try {
@@ -875,63 +885,63 @@ export default function SpecialistHome() {
                               return order.booking_time;
                             }
                           })()
-                        ) : (isAr ? 'غير محدد' : 'Not specified')}
+                        ) : (isAr ? 'غير محدد' : 'N/A')}
                       </p>
                     </div>
                   </div>
 
-                  {/* Agreed Price */}
-                  <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border-2 border-green-200 dark:border-green-800">
-                    <p className="text-xs text-green-600 dark:text-green-400 mb-1 font-medium">{isAr ? 'السعر المتفق عليه' : 'Agreed Price'}</p>
-                    <p className="font-bold text-lg text-green-700 dark:text-green-300">
+                  {/* Agreed Price - Mobile Optimized */}
+                  <div className="bg-green-50 dark:bg-green-950/30 p-3 sm:p-3.5 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 mb-1 font-medium">{isAr ? 'السعر المتفق عليه' : 'Agreed Price'}</p>
+                    <p className="font-bold text-base sm:text-lg text-green-700 dark:text-green-300">
                       💰 {order.order_specialist?.quoted_price}
                     </p>
                   </div>
 
-                  {/* Customer Notes */}
+                  {/* Customer Notes - Mobile Optimized */}
                   {order.notes && order.notes.trim() !== '' && !order.notes.includes('Terms and Conditions') && (
-                    <div className="bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2 font-medium">
+                    <div className="bg-yellow-50 dark:bg-yellow-950/30 p-3 sm:p-3.5 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-[10px] sm:text-xs text-yellow-600 dark:text-yellow-400 mb-1.5 sm:mb-2 font-medium">
                         💬 {isAr ? 'توصيات العميل' : 'Customer Notes'}
                       </p>
-                      <p className="text-sm text-yellow-900 dark:text-yellow-100 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-yellow-900 dark:text-yellow-100 leading-relaxed">
                         {order.translated?.notes || order.notes}
                       </p>
                     </div>
                   )}
 
 
-                  {/* Countdown Timer - Show for both today and future orders */}
+                  {/* Countdown Timer - Mobile Optimized */}
                   {!canMove && timeUntil && (timeUntil.days > 0 || timeUntil.hours > 0 || timeUntil.minutes > 0 || timeUntil.seconds > 0) && (
                     <div className={cn(
-                      "p-5 rounded-xl space-y-3 text-center",
-                      isTodayOrder ? "bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800" : "bg-orange-50 dark:bg-orange-950/30 border-2 border-orange-200 dark:border-orange-800"
+                      "p-3 sm:p-4 rounded-xl space-y-2 sm:space-y-3 text-center",
+                      isTodayOrder ? "bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800" : "bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800"
                     )}>
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                         <Clock className={cn(
-                          "h-5 w-5 animate-pulse",
+                          "h-4 w-4 sm:h-5 sm:w-5 animate-pulse",
                           isTodayOrder ? "text-blue-600 dark:text-blue-400" : "text-orange-600 dark:text-orange-400"
                         )} />
                         <p className={cn(
-                          "font-bold text-sm",
+                          "font-bold text-xs sm:text-sm",
                           isTodayOrder ? "text-blue-700 dark:text-blue-300" : "text-orange-700 dark:text-orange-300"
                         )}>
                           {isAr ? 'سيفتح الطلب بعد' : 'Order opens in'}
                         </p>
                       </div>
                       
-                      {/* Large Countdown Display */}
+                      {/* Large Countdown Display - Mobile Optimized */}
                       <div className={cn(
-                        "font-mono font-bold text-4xl tracking-wider",
+                        "font-mono font-bold text-2xl sm:text-3xl md:text-4xl tracking-wider",
                         isTodayOrder ? "text-blue-700 dark:text-blue-300" : "text-orange-700 dark:text-orange-300"
                       )}>
                         {timeUntil.days > 0 && (
-                          <div className="flex items-center justify-center gap-2 mb-2">
-                            <span className="text-5xl">{timeUntil.days}</span>
-                            <span className="text-xl">{isAr ? 'يوم' : 'day'}{timeUntil.days > 1 ? 's' : ''}</span>
+                          <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                            <span className="text-3xl sm:text-4xl md:text-5xl">{timeUntil.days}</span>
+                            <span className="text-base sm:text-lg md:text-xl">{isAr ? 'يوم' : 'day'}{timeUntil.days > 1 ? 's' : ''}</span>
                           </div>
                         )}
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-0.5 sm:gap-1">
                           <span>{String(timeUntil.hours).padStart(2, '0')}</span>
                           <span className="animate-pulse">:</span>
                           <span>{String(timeUntil.minutes).padStart(2, '0')}</span>
@@ -940,20 +950,20 @@ export default function SpecialistHome() {
                         </div>
                       </div>
 
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground px-2">
                         {isAr ? 'سيتم فتح الطلب قبل الموعد بساعة واحدة' : 'Order opens one hour before appointment'}
                       </p>
                     </div>
                   )}
 
-                  {/* Action Button */}
+                  {/* Action Button - Mobile Optimized */}
                   {isTodayOrder && canMove && (
                     <Button
                       onClick={() => navigate(`/order-tracking/${order.id}`)}
-                      className="w-full h-14 text-base font-bold shadow-lg transition-all bg-green-600 hover:bg-green-700 animate-pulse"
+                      className="w-full h-12 sm:h-14 text-sm sm:text-base font-bold shadow-lg transition-all bg-green-600 hover:bg-green-700 animate-pulse"
                     >
                       <div className="flex items-center justify-center gap-2">
-                        <Navigation className="h-5 w-5" />
+                        <Navigation className="h-4 w-4 sm:h-5 sm:w-5" />
                         <span>{isAr ? "🚀 ابدأ التحرك الآن" : "🚀 Start Moving Now"}</span>
                       </div>
                     </Button>
@@ -965,8 +975,8 @@ export default function SpecialistHome() {
         )}
 
         {orders.length > 3 && (
-          <div className="text-center pt-4">
-            <p className="text-sm text-muted-foreground">
+          <div className="text-center pt-3 sm:pt-4 pb-2">
+            <p className="text-xs sm:text-sm text-muted-foreground px-3">
               {isAr ? 'عرض 3 من' : 'Showing 3 of'} {orders.length} {isAr ? 'طلب • للمزيد انتقل للإحصائيات' : 'orders • See Stats for more'}
             </p>
           </div>
