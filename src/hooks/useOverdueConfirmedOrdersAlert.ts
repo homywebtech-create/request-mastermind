@@ -17,87 +17,89 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
   const { toast } = useToast();
   const soundNotification = useRef(getSoundNotification());
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [overdueOrders, setOverdueOrders] = useState<string[]>([]);
+  const lastAlertTimeRef = useRef<number>(0);
+  const hasShownToastRef = useRef(false);
 
   useEffect(() => {
     // Check for overdue confirmed orders
-    const checkOverdueOrders = () => {
-      const now = new Date();
-      const overdueOrderIds: string[] = [];
+    const now = new Date();
+    const overdueOrderIds: string[] = [];
 
-      orders.forEach(order => {
-        const hasAcceptedQuote = order.order_specialists?.some(os => os.is_accepted === true);
-        const isUpcoming = order.status === 'upcoming';
-        
-        // Check if order is confirmed
-        if (hasAcceptedQuote || isUpcoming) {
-          // Check if booking date exists and is in the past
-          if (order.booking_date) {
-            const bookingDate = new Date(order.booking_date);
-            
-            // Add 1 day buffer before considering it overdue
-            const overdueThreshold = new Date(bookingDate);
-            overdueThreshold.setHours(23, 59, 59, 999); // End of booking day
-            
-            if (now > overdueThreshold) {
-              overdueOrderIds.push(order.id);
-            }
+    orders.forEach(order => {
+      const hasAcceptedQuote = order.order_specialists?.some(os => os.is_accepted === true);
+      const isUpcoming = order.status === 'upcoming';
+      
+      // Check if order is confirmed
+      if (hasAcceptedQuote || isUpcoming) {
+        // Check if booking date exists and is in the past
+        if (order.booking_date) {
+          const bookingDate = new Date(order.booking_date);
+          
+          // Add 1 day buffer before considering it overdue
+          const overdueThreshold = new Date(bookingDate);
+          overdueThreshold.setHours(23, 59, 59, 999); // End of booking day
+          
+          if (now > overdueThreshold) {
+            overdueOrderIds.push(order.id);
+            console.log('🚨 Found overdue order:', order.order_number, 'booking date:', order.booking_date);
           }
         }
-      });
-
-      setOverdueOrders(overdueOrderIds);
-      
-      // If there are overdue orders, show alert and play sound
-      if (overdueOrderIds.length > 0) {
-        console.log('🚨 Overdue confirmed orders detected:', overdueOrderIds);
-        
-        // Dispatch event for UI to highlight these orders
-        window.dispatchEvent(new CustomEvent('overdue-confirmed-orders', { 
-          detail: { orderIds: overdueOrderIds } 
-        }));
       }
-    };
+    });
 
-    // Initial check
-    checkOverdueOrders();
-
-    // Check every 30 seconds
-    const checkInterval = setInterval(checkOverdueOrders, 30000);
-
-    // Play continuous alert sound every 15 seconds if there are overdue orders
-    if (overdueOrders.length > 0 && !alertIntervalRef.current) {
-      // Show toast notification
-      toast({
-        title: '🚨 تنبيه: طلبات موكدة متأخرة!',
-        description: `يوجد ${overdueOrders.length} طلب موكد متأخر يحتاج إلى إجراء فوري!`,
-        variant: 'destructive',
-        duration: 10000,
-      });
-
-      // Play initial sound
-      soundNotification.current.playNewOrderSound();
-
-      // Set up continuous alert
-      alertIntervalRef.current = setInterval(() => {
+    // Dispatch event for UI to highlight these orders
+    if (overdueOrderIds.length > 0) {
+      console.log('🚨 Total overdue confirmed orders:', overdueOrderIds.length);
+      window.dispatchEvent(new CustomEvent('overdue-confirmed-orders', { 
+        detail: { orderIds: overdueOrderIds } 
+      }));
+      
+      // Show toast notification once
+      if (!hasShownToastRef.current) {
+        toast({
+          title: '🚨 تنبيه: طلبات موكدة متأخرة!',
+          description: `يوجد ${overdueOrderIds.length} طلب موكد متأخر يحتاج إلى إجراء فوري!`,
+          variant: 'destructive',
+          duration: 10000,
+        });
+        hasShownToastRef.current = true;
+      }
+      
+      // Play sound immediately if not played recently (within 15 seconds)
+      const timeSinceLastAlert = Date.now() - lastAlertTimeRef.current;
+      if (timeSinceLastAlert > 15000) {
+        console.log('🔊 Playing overdue alert sound...');
         soundNotification.current.playNewOrderSound();
-      }, 15000); // Play sound every 15 seconds
+        lastAlertTimeRef.current = Date.now();
+      }
+      
+      // Set up continuous alert if not already running
+      if (!alertIntervalRef.current) {
+        console.log('🔄 Setting up continuous alert interval...');
+        alertIntervalRef.current = setInterval(() => {
+          console.log('🔊 Playing periodic overdue alert sound...');
+          soundNotification.current.playNewOrderSound();
+          lastAlertTimeRef.current = Date.now();
+        }, 15000); // Play sound every 15 seconds
+      }
+    } else {
+      // Clean up if no overdue orders
+      hasShownToastRef.current = false;
+      if (alertIntervalRef.current) {
+        console.log('✅ Clearing alert interval - no overdue orders');
+        clearInterval(alertIntervalRef.current);
+        alertIntervalRef.current = null;
+      }
     }
 
-    // Clean up interval if no overdue orders
-    if (overdueOrders.length === 0 && alertIntervalRef.current) {
-      clearInterval(alertIntervalRef.current);
-      alertIntervalRef.current = null;
-    }
-
+    // Cleanup on unmount
     return () => {
-      clearInterval(checkInterval);
       if (alertIntervalRef.current) {
         clearInterval(alertIntervalRef.current);
         alertIntervalRef.current = null;
       }
     };
-  }, [orders, overdueOrders.length, toast]);
+  }, [orders, toast]);
 
-  return { overdueOrders };
+  return {};
 }
