@@ -68,30 +68,17 @@ export const fetchQuotesForOrder = async (orderId: string): Promise<SpecialistQu
   try {
     console.log('🔍 Fetching quotes for order:', orderId);
 
-    const { data: orderSpecialists, error } = await supabase
+    // First, get order_specialists with quoted prices
+    const { data: orderSpecialists, error: osError } = await supabase
       .from('order_specialists')
-      .select(`
-        specialist_id,
-        quoted_price,
-        specialists!inner (
-          id,
-          name,
-          nationality,
-          image_url,
-          company_id,
-          companies!inner (
-            id,
-            name
-          )
-        )
-      `)
+      .select('specialist_id, quoted_price')
       .eq('order_id', orderId)
       .not('quoted_price', 'is', null)
       .eq('is_accepted', false);
 
-    if (error) {
-      console.error('Error fetching quotes:', error);
-      throw error;
+    if (osError) {
+      console.error('Error fetching order_specialists:', osError);
+      throw osError;
     }
 
     if (!orderSpecialists || orderSpecialists.length === 0) {
@@ -99,15 +86,70 @@ export const fetchQuotesForOrder = async (orderId: string): Promise<SpecialistQu
       return [];
     }
 
-    const quotes: SpecialistQuote[] = orderSpecialists.map((os: any) => ({
-      specialistId: os.specialists.id,
-      specialistName: os.specialists.name,
-      specialistNationality: os.specialists.nationality,
-      specialistImageUrl: os.specialists.image_url,
-      quotedPrice: os.quoted_price,
-      companyId: os.specialists.company_id,
-      companyName: os.specialists.companies.name
-    }));
+    console.log('Found order_specialists:', orderSpecialists.length);
+
+    // Get specialist IDs
+    const specialistIds = orderSpecialists.map(os => os.specialist_id).filter(Boolean);
+    
+    if (specialistIds.length === 0) {
+      console.log('No specialist IDs found');
+      return [];
+    }
+
+    // Fetch specialists data
+    const { data: specialists, error: specError } = await supabase
+      .from('specialists')
+      .select('id, name, nationality, image_url, company_id')
+      .in('id', specialistIds);
+
+    if (specError) {
+      console.error('Error fetching specialists:', specError);
+      throw specError;
+    }
+
+    if (!specialists || specialists.length === 0) {
+      console.log('No specialists found');
+      return [];
+    }
+
+    console.log('Found specialists:', specialists.length);
+
+    // Get company IDs
+    const companyIds = specialists.map(s => s.company_id).filter(Boolean);
+    
+    // Fetch companies data
+    const { data: companies, error: compError } = await supabase
+      .from('companies')
+      .select('id, name')
+      .in('id', companyIds);
+
+    if (compError) {
+      console.error('Error fetching companies:', compError);
+    }
+
+    const companiesMap = new Map(companies?.map(c => [c.id, c.name]) || []);
+    const specialistsMap = new Map(specialists.map(s => [s.id, s]));
+
+    // Build quotes array
+    const quotes: SpecialistQuote[] = orderSpecialists
+      .map(os => {
+        const specialist = specialistsMap.get(os.specialist_id);
+        if (!specialist) return null;
+
+        const companyName = companiesMap.get(specialist.company_id) || 'Unknown Company';
+
+        const quote: SpecialistQuote = {
+          specialistId: specialist.id,
+          specialistName: specialist.name,
+          specialistNationality: specialist.nationality || 'N/A',
+          specialistImageUrl: specialist.image_url || undefined,
+          quotedPrice: parseFloat(os.quoted_price) || 0,
+          companyId: specialist.company_id,
+          companyName
+        };
+        return quote;
+      })
+      .filter((q): q is SpecialistQuote => q !== null);
 
     console.log('✅ Found quotes:', quotes.length);
     return quotes;
