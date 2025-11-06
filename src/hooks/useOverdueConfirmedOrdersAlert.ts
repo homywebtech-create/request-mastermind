@@ -99,14 +99,14 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
         // Check if booking date exists and is in the past
         if (order.booking_date) {
           const bookingDate = new Date(order.booking_date);
+          let exactBookingTime: Date;
           
-          // Parse booking time to get exact time
-          let exactBookingTime = new Date(bookingDate);
+          // For specific time bookings, use exact datetime
           if (order.booking_date_type === 'specific') {
-            // For specific time bookings, use exact time
             exactBookingTime = new Date(order.booking_date);
           } else {
-            // For date-only bookings, consider overdue after booking day starts (8 AM)
+            // For date-only bookings, consider overdue after 8 AM on booking day
+            exactBookingTime = new Date(bookingDate);
             exactBookingTime.setHours(8, 0, 0, 0);
           }
           

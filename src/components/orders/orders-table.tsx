@@ -192,8 +192,14 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     if (!order.booking_date || order.status === 'completed' || order.status === 'cancelled') return false;
     
     const bookingDateTime = new Date(order.booking_date);
+    const now = new Date();
     
-    // Parse booking time
+    // For specific time bookings, use the exact datetime
+    if (order.booking_date_type === 'specific') {
+      return now > bookingDateTime;
+    }
+    
+    // For date-only bookings, parse booking time or set default
     if (order.booking_time) {
       if (order.booking_time === 'morning') {
         bookingDateTime.setHours(8, 0, 0, 0);
@@ -206,10 +212,11 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
         bookingDateTime.setHours(hours, minutes, 0, 0);
       }
     } else {
+      // Default to 8 AM for date-only bookings without time
       bookingDateTime.setHours(8, 0, 0, 0);
     }
     
-    return new Date() > bookingDateTime;
+    return now > bookingDateTime;
   };
   
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
