@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical } from "lucide-react";
+import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
@@ -1274,20 +1274,36 @@ Thank you for contacting us! 🌟`;
                       <TableCell>
                         <div className="space-y-2 min-w-[220px]">
                           {/* Company Info */}
-                          {order.companies ? (
-                            <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
-                              <div className="flex items-center justify-center w-8 h-8 rounded bg-primary/10">
-                                <Building2 className="h-4 w-4 text-primary" />
-                              </div>
-                              <span className="text-sm font-medium">{order.companies.name}</span>
-                            </div>
-                          ) : order.send_to_all_companies ? (
-                            <Badge variant="outline" className="text-xs">
-                              {language === 'ar' ? 'جميع الشركات' : 'All Companies'}
-                            </Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not assigned'}</span>
-                          )}
+                          {(() => {
+                            // Try to get company from accepted specialist first
+                            const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
+                            const companyName = acceptedSpecialist?.specialists?.companies?.name || order.companies?.name;
+                            
+                            if (companyName) {
+                              return (
+                                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
+                                  <div className="flex items-center justify-center w-8 h-8 rounded bg-primary/10">
+                                    <Building2 className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <span className="text-sm font-medium">{companyName}</span>
+                                </div>
+                              );
+                            }
+                            
+                            if (order.send_to_all_companies) {
+                              return (
+                                <Badge variant="outline" className="text-xs">
+                                  {language === 'ar' ? 'جميع الشركات' : 'All Companies'}
+                                </Badge>
+                              );
+                            }
+                            
+                            return (
+                              <span className="text-xs text-muted-foreground">
+                                {language === 'ar' ? 'لم يتم التعيين' : 'Not assigned'}
+                              </span>
+                            );
+                          })()}
                           
                           {/* Specialist Info */}
                           {(() => {
@@ -1352,16 +1368,27 @@ Thank you for contacting us! 🌟`;
                           {order.booking_date && (
                             <div className="flex items-center gap-2 text-sm">
                               <Calendar className="h-3 w-3 text-muted-foreground" />
-                              <span className="font-medium">
-                                {new Date(order.booking_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
+                              <span className="font-medium" dir="ltr">
+                                {/* Always show Gregorian date */}
+                                {new Date(order.booking_date).toLocaleDateString('en-GB', {
                                   year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
+                                  month: '2-digit',
+                                  day: '2-digit'
                                 })}
                               </span>
                             </div>
                           )}
-                          {order.booking_type && (
+                          {/* Show booking_time if available (actual time like "8:00 AM-8:30 AM") */}
+                          {order.booking_time && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
+                              <span className="font-medium" dir="ltr">
+                                {order.booking_time}
+                              </span>
+                            </div>
+                          )}
+                          {/* Fallback to booking_type if booking_time is not available */}
+                          {!order.booking_time && order.booking_type && (
                             <Badge variant="outline" className="text-xs">
                               {order.booking_type === 'morning' && (language === 'ar' ? 'صباحي' : 'Morning')}
                               {order.booking_type === 'afternoon' && (language === 'ar' ? 'ظهري' : 'Afternoon')}
@@ -1380,7 +1407,7 @@ Thank you for contacting us! 🌟`;
                               {order.booking_date_type === 'flexible' && (language === 'ar' ? 'مرن' : 'Flexible')}
                             </Badge>
                           )}
-                          {!order.booking_date && !order.booking_type && (
+                          {!order.booking_date && !order.booking_type && !order.booking_time && (
                             <span className="text-xs text-muted-foreground">{language === 'ar' ? 'غير محدد' : 'Not specified'}</span>
                           )}
                         </div>

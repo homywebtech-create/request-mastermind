@@ -917,9 +917,11 @@ export default function CompanyBooking() {
           status: 'upcoming', // Set to upcoming after booking is confirmed
           specialist_id: assignedSpecialistId,
           tracking_stage: null,
-          notes: isMonthlyService 
-            ? `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}` 
-            : `تم الموافقة على الشروط والأحكام: ${termsAccepted ? 'نعم' : 'لا'}`,
+          // For monthly services, save contract type note
+          // For regular services, don't overwrite existing customer notes
+          ...(isMonthlyService && { 
+            notes: `نوع العقد: ${contractType === 'electronic' ? 'عقد إلكتروني' : 'عقد أصلي (مندوب)'}`
+          }),
         })
         .eq('id', orderId);
 
