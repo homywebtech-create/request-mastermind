@@ -9,6 +9,7 @@ interface StatsCardProps {
   variant?: 'default' | 'success' | 'warning' | 'pending' | 'awaiting' | 'destructive';
   className?: string;
   isActive?: boolean;
+  hasOverdueAlert?: boolean;
 }
 
 const variantStyles = {
@@ -38,24 +39,27 @@ const activeIconColors = {
   destructive: "text-destructive",
 };
 
-export function StatsCard({ title, value, icon, variant = 'default', className, isActive = false }: StatsCardProps) {
+export function StatsCard({ title, value, icon, variant = 'default', className, isActive = false, hasOverdueAlert = false }: StatsCardProps) {
   return (
     <Card className={cn(
       variantStyles[variant],
       isActive && activeVariantStyles[variant],
       "transition-all duration-200",
       isActive && "scale-105",
+      hasOverdueAlert && "animate-pulse border-destructive border-4 shadow-lg shadow-destructive/30",
       className
     )}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className={cn(
           "text-sm font-medium",
-          isActive ? "text-foreground font-bold" : "text-muted-foreground"
+          isActive ? "text-foreground font-bold" : "text-muted-foreground",
+          hasOverdueAlert && "text-destructive font-bold"
         )}>
           {title}
         </CardTitle>
         <div className={cn(
           isActive ? activeIconColors[variant] : "text-muted-foreground",
+          hasOverdueAlert && "text-destructive",
           "relative"
         )}>
           {icon}
@@ -67,13 +71,19 @@ export function StatsCard({ title, value, icon, variant = 'default', className, 
       <CardContent>
         <div className={cn(
           "text-2xl font-bold font-cairo",
-          isActive && activeIconColors[variant]
+          isActive && activeIconColors[variant],
+          hasOverdueAlert && "text-destructive"
         )}>
           {value}
         </div>
         {isActive && (
           <div className={cn("text-xs font-medium mt-1", activeIconColors[variant])}>
             ● القسم النشط
+          </div>
+        )}
+        {hasOverdueAlert && (
+          <div className="text-xs font-medium mt-1 text-destructive flex items-center gap-1">
+            🚨 طلبات متأخرة!
           </div>
         )}
       </CardContent>

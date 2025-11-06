@@ -110,6 +110,7 @@ export default function CompanyPortal() {
   const [filter, setFilter] = useState<string>('new');
   const [isLoading, setIsLoading] = useState(true);
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const [hasOverdueConfirmedOrders, setHasOverdueConfirmedOrders] = useState(false);
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
@@ -122,6 +123,20 @@ export default function CompanyPortal() {
   
   // Enable alerts for overdue confirmed orders
   const { snoozeOrder, isSnoozed } = useOverdueConfirmedOrdersAlert(orders);
+  
+  // Listen for overdue confirmed orders event to update visual alert
+  useEffect(() => {
+    const handleOverdueOrders = (event: CustomEvent) => {
+      const overdueOrderIds = event.detail?.orderIds || [];
+      setHasOverdueConfirmedOrders(overdueOrderIds.length > 0);
+    };
+    
+    window.addEventListener('overdue-confirmed-orders', handleOverdueOrders as EventListener);
+    
+    return () => {
+      window.removeEventListener('overdue-confirmed-orders', handleOverdueOrders as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -726,6 +741,7 @@ export default function CompanyPortal() {
                   icon={<Calendar className="h-4 w-4" />}
                   variant="success"
                   isActive={filter === 'confirmed'}
+                  hasOverdueAlert={hasOverdueConfirmedOrders}
                 />
               </div>
               <div onClick={() => setFilter('in-progress')} className="cursor-pointer">

@@ -98,6 +98,7 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [filter, setFilter] = useState<string>('pending');
+  const [hasOverdueConfirmedOrders, setHasOverdueConfirmedOrders] = useState(false);
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
     pending: 0,
@@ -126,6 +127,20 @@ export default function Dashboard() {
   
   // Enable alerts for overdue confirmed orders
   const { snoozeOrder, isSnoozed } = useOverdueConfirmedOrdersAlert(orders);
+  
+  // Listen for overdue confirmed orders event to update visual alert
+  useEffect(() => {
+    const handleOverdueOrders = (event: CustomEvent) => {
+      const overdueOrderIds = event.detail?.orderIds || [];
+      setHasOverdueConfirmedOrders(overdueOrderIds.length > 0);
+    };
+    
+    window.addEventListener('overdue-confirmed-orders', handleOverdueOrders as EventListener);
+    
+    return () => {
+      window.removeEventListener('overdue-confirmed-orders', handleOverdueOrders as EventListener);
+    };
+  }, []);
 
   // Fetch user profile
   useEffect(() => {
@@ -960,6 +975,7 @@ export default function Dashboard() {
                     icon={<CheckCircle className="h-4 w-4" />}
                     variant="success"
                     isActive={filter === 'confirmed'}
+                    hasOverdueAlert={hasOverdueConfirmedOrders}
                   />
                 </div>
               )}
