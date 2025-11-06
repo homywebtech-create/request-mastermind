@@ -44,10 +44,22 @@ serve(async (req) => {
     
     const { to, message, customerName, specialists, orderDetails }: WhatsAppMessageRequest = requestBody;
     
-    if (!to || !message) {
-      console.error('Missing required fields: to or message');
+    // Check required fields - either message OR specialists list must be provided
+    if (!to) {
+      console.error('Missing required field: to');
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: to and message' }),
+        JSON.stringify({ error: 'Missing required field: to (phone number)' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!message && (!specialists || specialists.length === 0)) {
+      console.error('Missing required fields: message or specialists');
+      return new Response(
+        JSON.stringify({ error: 'Either message or specialists list is required' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
