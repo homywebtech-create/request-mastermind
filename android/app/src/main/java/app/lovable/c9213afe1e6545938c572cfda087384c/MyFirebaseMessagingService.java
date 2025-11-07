@@ -96,6 +96,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             Intent intent = new Intent(Intent.ACTION_VIEW, deepLink);
             intent.setPackage(getPackageName());
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            // Ensure MainActivity knows this was from a notification and pass the route explicitly
+            intent.putExtra("fromNotification", true);
+            intent.putExtra("route", route);
             
             PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, intent, 

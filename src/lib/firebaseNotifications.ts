@@ -186,10 +186,8 @@ export class FirebaseNotificationManager {
           console.log('✅ [SAVED] Route saved to preferences');
           
             // CRITICAL: Emit event for immediate navigation when app is running
-            // Use the correct route path based on where we want to navigate
-            const targetRoute = route === '/specialist-orders/new' 
-              ? '/specialist/new-orders' 
-              : route;
+            // Use the route as provided without legacy remapping
+            const targetRoute = route;
             
             // Dispatch multiple events for different listeners
             window.dispatchEvent(new CustomEvent('notificationNavigate', { 
