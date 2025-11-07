@@ -62,7 +62,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             sendHighPriorityNotification(
                 title != null ? title : "طلب جديد",
                 body != null ? body : "لديك طلب جديد",
-                route != null ? route : "/specialist-orders/new",
+                route != null ? route : "/specialist/offers",
                 useCallChannel
             );
         }
@@ -72,7 +72,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String title = remoteMessage.getNotification().getTitle();
             String body = remoteMessage.getNotification().getBody();
             
-            sendHighPriorityNotification(title, body, "/specialist-orders/new", true);
+            sendHighPriorityNotification(title, body, "/specialist/offers", true);
         }
         else {
             Log.w(TAG, "⚠️ Message received but no data or notification payload");

@@ -58,13 +58,33 @@ public class MainActivity extends BridgeActivity {
         boolean fromNotification = intent.getBooleanExtra("fromNotification", false);
         String route = intent.getStringExtra("route");
         
+        // Fallback: extract from deep link URI if extras missing
+        if ((route == null || route.isEmpty()) && intent.getData() != null) {
+            try {
+                android.net.Uri data = intent.getData();
+                String qp = data.getQueryParameter("route");
+                if (qp != null && !qp.isEmpty()) {
+                    route = java.net.URLDecoder.decode(qp, "UTF-8");
+                } else if (data.getPath() != null && !data.getPath().isEmpty()) {
+                    // Use the path + query as route (e.g., /order-tracking/123)
+                    String query = data.getQuery();
+                    route = data.getPath() + (query != null && !query.isEmpty() ? ("?" + query) : "");
+                }
+            } catch (Exception ignored) {}
+        }
+        
         android.util.Log.d("MainActivity", "📍 handleNotificationRoute - fromNotification: " + fromNotification + ", route: " + route);
         
-        if (fromNotification && route != null && !route.isEmpty()) {
-            // Map old routes to new routes
+        // Accept route whether or not fromNotification flag is set (system taps may omit it)
+        if (route != null && !route.isEmpty()) {
+            // Normalize legacy routes to current "offers" route
             String targetRoute = route;
-            if (route.equals("/specialist-orders/new")) {
-                targetRoute = "/specialist/new-orders";
+            if ("/specialist-orders/new".equals(route) || 
+                "/specialist/new-orders".equals(route) ||
+                "/offers".equals(route)) {
+                targetRoute = "/specialist/offers";
+            } else if ("/specialist/offers".equals(route)) {
+                targetRoute = route;
             }
             
             final String finalRoute = targetRoute;
