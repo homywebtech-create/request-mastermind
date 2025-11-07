@@ -286,6 +286,17 @@ function AppRouter() {
               <SpecialistNewOrders />
             </ProtectedRoute>
           } />
+          {/* Aliases for renamed "offers" routes */}
+          <Route path="/offers" element={
+            <ProtectedRoute>
+              <SpecialistNewOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/specialist/offers" element={
+            <ProtectedRoute>
+              <SpecialistNewOrders />
+            </ProtectedRoute>
+          } />
           <Route path="/specialist-orders/stats" element={
             <ProtectedRoute>
               <SpecialistStats />
