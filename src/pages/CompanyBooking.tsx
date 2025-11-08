@@ -328,17 +328,10 @@ export default function CompanyBooking() {
       const durationMs = hoursCount * 60 * 60 * 1000;
       slotEndDateTime.setTime(slotEndDateTime.getTime() + durationMs);
 
-      // CRITICAL: Fixed 2-hour travel buffer before and after all bookings
-      // This ensures specialists have enough time to travel between appointments
-      const TRAVEL_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours = 120 minutes
-      const newBookingStartWithBuffer = new Date(slotStartDateTime.getTime() - TRAVEL_BUFFER_MS);
-      const newBookingEndWithBuffer = new Date(slotEndDateTime.getTime() + TRAVEL_BUFFER_MS);
-
       console.log(`🔍 Checking time slot: ${timeSlot} on ${selectedDate.toLocaleDateString()}`);
-      console.log(`  📅 New booking window (${hoursCount}h):`, {
-        bookingStart: slotStartDateTime.toLocaleString(),
-        bookingEnd: slotEndDateTime.toLocaleString(),
-        withBuffer: `${newBookingStartWithBuffer.toLocaleString()} - ${newBookingEndWithBuffer.toLocaleString()}`
+      console.log(`  📅 New booking (${hoursCount}h):`, {
+        start: slotStartDateTime.toLocaleString(),
+        end: slotEndDateTime.toLocaleString()
       });
 
       // Check if this slot conflicts with any existing booking (including travel buffer)
@@ -352,27 +345,19 @@ export default function CompanyBooking() {
         const existingBookingStartWithBuffer = new Date(scheduleStart.getTime() - travelBufferMs);
         const existingBookingEndWithBuffer = new Date(scheduleEnd.getTime() + travelBufferMs);
         
-        // Check overlap: bookings conflict if their buffer zones overlap
-        // New booking (with buffer) overlaps with existing booking (with buffer) if:
-        // - New booking buffer zone starts before existing buffer zone ends AND
-        // - New booking buffer zone ends after existing buffer zone starts
+        // CRITICAL: Check if NEW booking (WITHOUT buffer) overlaps with EXISTING booking (WITH buffer)
+        // The new booking only needs to avoid the existing booking's protected time zone
         const overlaps = (
-          newBookingStartWithBuffer < existingBookingEndWithBuffer && 
-          newBookingEndWithBuffer > existingBookingStartWithBuffer
+          slotStartDateTime < existingBookingEndWithBuffer && 
+          slotEndDateTime > existingBookingStartWithBuffer
         );
         
         if (overlaps) {
-          console.log('  ❌ CONFLICT with existing booking:');
-          console.log('    Existing booking:', {
-            start: scheduleStart.toLocaleString(),
-            end: scheduleEnd.toLocaleString(),
-            withBuffer: `${existingBookingStartWithBuffer.toLocaleString()} - ${existingBookingEndWithBuffer.toLocaleString()}`
-          });
+          console.log('  ❌ CONFLICT: New booking overlaps with existing booking buffer zone');
+          console.log('    New booking:', slotStartDateTime.toLocaleString(), '-', slotEndDateTime.toLocaleString());
+          console.log('    Existing protected zone:', existingBookingStartWithBuffer.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
         } else {
-          console.log('  ✅ No conflict with existing booking:', {
-            start: scheduleStart.toLocaleString(),
-            end: scheduleEnd.toLocaleString()
-          });
+          console.log('  ✅ Available: No conflict with existing booking');
         }
         
         return overlaps;
