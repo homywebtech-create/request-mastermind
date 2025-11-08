@@ -917,8 +917,8 @@ export default function OrderTracking() {
   const handleCustomerRatingSubmit = async () => {
     if (customerRating === 0) {
       toast({
-        title: "Error",
-        description: "Please select a rating",
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "يرجى اختيار تقييم" : "Please select a rating",
         variant: "destructive",
       });
       return;
@@ -939,22 +939,62 @@ export default function OrderTracking() {
       await updateOrderStage('payment_received');
       
       toast({
-        title: "Thank You!",
-        description: "Order completed successfully",
+        title: language === 'ar' ? "شكراً لك!" : "Thank You!",
+        description: language === 'ar' ? "تم إكمال الطلب بنجاح" : "Order completed successfully",
       });
       
       // Navigate back after 1 second to show success message
       setTimeout(() => {
-        navigate('/specialist-home');
+        navigate('/specialist-orders');
       }, 1500);
     } catch (error) {
       console.error('Error submitting rating:', error);
       toast({
-        title: "Error",
-        description: "Failed to submit rating",
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "فشل في إرسال التقييم" : "Failed to submit rating",
         variant: "destructive",
       });
     }
+  };
+
+  const handleStarClick = async (star: number) => {
+    setCustomerRating(star);
+    
+    // If 5 stars, submit immediately and navigate
+    if (star === 5) {
+      try {
+        // Update order with 5-star rating
+        const { error } = await supabase
+          .from('orders')
+          .update({
+            customer_rating: 5,
+            customer_review_notes: null,
+          } as any)
+          .eq('id', orderId);
+
+        if (error) throw error;
+
+        await updateOrderStage('payment_received');
+        
+        toast({
+          title: language === 'ar' ? "شكراً لك!" : "Thank You!",
+          description: language === 'ar' ? "تم إكمال الطلب بنجاح" : "Order completed successfully",
+        });
+        
+        // Navigate immediately for 5-star rating
+        setTimeout(() => {
+          navigate('/specialist-orders');
+        }, 1000);
+      } catch (error) {
+        console.error('Error submitting rating:', error);
+        toast({
+          title: language === 'ar' ? "خطأ" : "Error",
+          description: language === 'ar' ? "فشل في إرسال التقييم" : "Failed to submit rating",
+          variant: "destructive",
+        });
+      }
+    }
+    // For ratings 1-4, just set the rating and show the notes field
   };
 
   const formatTime = (seconds: number) => {
@@ -1846,14 +1886,16 @@ export default function OrderTracking() {
             
             <div className="space-y-6">
               <div className="text-center space-y-4">
-                <p className="text-muted-foreground">How was your experience with this customer?</p>
+                <p className="text-muted-foreground">
+                  {language === 'ar' ? 'كيف كانت تجربتك مع هذا العميل؟' : 'How was your experience with this customer?'}
+                </p>
                 
                 {/* Star Rating */}
                 <div className="flex justify-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
-                      onClick={() => setCustomerRating(star)}
+                      onClick={() => handleStarClick(star)}
                       className="transition-all hover:scale-110"
                     >
                       <Star
@@ -1867,43 +1909,52 @@ export default function OrderTracking() {
                   ))}
                 </div>
                 
-                {customerRating > 0 && (
+                {customerRating > 0 && customerRating < 5 && (
                   <p className="text-sm font-semibold">
-                    {customerRating === 5 && '⭐ Excellent Customer!'}
-                    {customerRating === 4 && '👍 Good Customer'}
-                    {customerRating === 3 && '😊 Average Customer'}
-                    {customerRating === 2 && '🤔 Below Average'}
-                    {customerRating === 1 && '😟 Poor Experience'}
+                    {customerRating === 4 && (language === 'ar' ? '👍 عميل جيد' : '👍 Good Customer')}
+                    {customerRating === 3 && (language === 'ar' ? '😊 عميل متوسط' : '😊 Average Customer')}
+                    {customerRating === 2 && (language === 'ar' ? '🤔 أقل من المتوسط' : '🤔 Below Average')}
+                    {customerRating === 1 && (language === 'ar' ? '😟 تجربة سيئة' : '😟 Poor Experience')}
                   </p>
                 )}
               </div>
               
-              {/* Review Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="customer_notes">Additional Notes (Optional)</Label>
-                <Textarea
-                  id="customer_notes"
-                  value={customerReviewNotes}
-                  onChange={(e) => setCustomerReviewNotes(e.target.value)}
-                  placeholder="Share your experience with this customer..."
-                  rows={4}
-                  className="resize-none"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This will help us improve service quality
-                </p>
-              </div>
+              {/* Review Notes - Only show for ratings 1-4 */}
+              {customerRating > 0 && customerRating < 5 && (
+                <div className="space-y-2">
+                  <Label htmlFor="customer_notes">
+                    {language === 'ar' ? 'ملاحظات إضافية (اختياري)' : 'Additional Notes (Optional)'}
+                  </Label>
+                  <Textarea
+                    id="customer_notes"
+                    value={customerReviewNotes}
+                    onChange={(e) => setCustomerReviewNotes(e.target.value)}
+                    placeholder={language === 'ar' 
+                      ? 'شارك تجربتك مع هذا العميل...' 
+                      : 'Share your experience with this customer...'}
+                    rows={4}
+                    className="resize-none"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'ar' 
+                      ? 'سيساعدنا هذا على تحسين جودة الخدمة' 
+                      : 'This will help us improve service quality'}
+                  </p>
+                </div>
+              )}
             </div>
 
-            <Button
-              onClick={handleCustomerRatingSubmit}
-              className="w-full"
-              size="lg"
-              disabled={customerRating === 0}
-            >
-              <CheckCircle className="ml-2 h-5 w-5" />
-              Submit Rating
-            </Button>
+            {/* Submit Button - Only show for ratings 1-4 */}
+            {customerRating > 0 && customerRating < 5 && (
+              <Button
+                onClick={handleCustomerRatingSubmit}
+                className="w-full"
+                size="lg"
+              >
+                <CheckCircle className="ml-2 h-5 w-5" />
+                {language === 'ar' ? 'إرسال التقييم' : 'Submit Rating'}
+              </Button>
+            )}
           </Card>
         )}
 
