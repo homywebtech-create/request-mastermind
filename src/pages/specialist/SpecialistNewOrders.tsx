@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock, MapPin, Package, FileText, Tag, Sparkles, Globe } from "lucide-react";
+import { Clock, MapPin, Package, FileText, Tag, Sparkles, Globe, Wallet, Settings } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import BusyGuard from "@/components/specialist/BusyGuard";
 import { translateOrderDetails } from "@/lib/translateHelper";
@@ -861,7 +861,7 @@ export default function SpecialistNewOrders() {
   return (
     <BusyGuard specialistId={specialistId} allowWhenBusy={true}>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
-      {/* Fixed Header with Online Status */}
+      {/* Fixed Header with Wallet and Settings */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-2xl">
         <div className="max-w-screen-lg mx-auto p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
@@ -871,16 +871,41 @@ export default function SpecialistNewOrders() {
                 {orders.length} {orders.length === 1 ? t.specialist.availableOffers : t.specialist.availableOffersPlural}
               </p>
             </div>
-            {/* Online/Offline Status Toggle - Compact in Header */}
-            <div className="flex-shrink-0">
-              <OnlineStatusToggle specialistId={specialistId} />
+            
+            {/* Wallet Display and Settings Button */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Wallet Display */}
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/30">
+                <div className="flex items-center gap-1.5">
+                  <Wallet className="h-4 w-4" />
+                  <div className="text-right">
+                    <p className="text-[10px] opacity-80 leading-none">{language === 'ar' ? 'المحفظة' : 'Wallet'}</p>
+                    <p className="text-sm font-bold leading-tight">{language === 'ar' ? '0 ر.س' : 'SAR 0'}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Settings Button */}
+              <Button
+                onClick={() => navigate('/specialist/profile')}
+                variant="secondary"
+                size="sm"
+                className="h-10 w-10 p-0"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
             </div>
+          </div>
+          
+          {/* Online/Offline Status Toggle - Below header info */}
+          <div className="flex items-center justify-center">
+            <OnlineStatusToggle specialistId={specialistId} />
           </div>
         </div>
       </div>
 
-      {/* Spacer for fixed header */}
-      <div className="h-[100px]"></div>
+      {/* Spacer for fixed header - increased height */}
+      <div className="h-[110px]"></div>
 
       {/* Notification Status Warning */}
       <div className="max-w-screen-lg mx-auto px-4 pb-4">

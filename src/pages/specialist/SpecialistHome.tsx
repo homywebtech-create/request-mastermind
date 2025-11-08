@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { Clock, MapPin, Navigation, Calendar, Globe, Wallet, MessageSquare } from "lucide-react";
+import { Clock, MapPin, Navigation, Calendar, Globe, Wallet, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,11 +19,9 @@ import { translateOrderDetails } from "@/lib/translateHelper";
 import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
-import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getSoundNotification } from "@/lib/soundNotification";
-import LanguageSelector from "@/components/specialist/LanguageSelector";
 
 interface Order {
   id: string;
@@ -600,7 +598,7 @@ export default function SpecialistHome() {
       {/* Header - Optimized for Mobile */}
       <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 text-white shadow-lg">
         <div className="w-full px-3 py-3 sm:px-6 sm:py-4">
-          {/* Top Row: Name and Quick Actions */}
+          {/* Top Row: Name, Wallet and Settings */}
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex-1 min-w-0">
               <h1 className="text-lg sm:text-xl font-bold mb-0.5 drop-shadow-lg truncate">
@@ -611,44 +609,33 @@ export default function SpecialistHome() {
               </p>
             </div>
             
-            {/* Language Selector - Always visible */}
-            {specialistId && (
-              <div className="shrink-0">
-                <LanguageSelector 
-                  specialistId={specialistId}
-                  currentLanguage={preferredLanguage}
-                  onLanguageChange={(lang) => setPreferredLanguage(lang)}
-                />
+            {/* Wallet Display and Settings Button */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Wallet Display */}
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/30">
+                <div className="flex items-center gap-1.5">
+                  <Wallet className="h-4 w-4" />
+                  <div className="text-right">
+                    <p className="text-[10px] opacity-80 leading-none">{isAr ? 'المحفظة' : 'Wallet'}</p>
+                    <p className="text-sm font-bold leading-tight">{isAr ? '0 ر.س' : 'SAR 0'}</p>
+                  </div>
+                </div>
               </div>
-            )}
+              
+              {/* Settings Button */}
+              <Button
+                onClick={() => navigate('/specialist/profile')}
+                variant="secondary"
+                size="sm"
+                className="h-10 w-10 p-0"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
-          {/* Bottom Row: Action Buttons */}
+          {/* Bottom Row: Refresh Button Only */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {/* Wallet Button */}
-            <Button
-              onClick={() => {
-                toast({
-                  title: isAr ? "قريباً" : "Coming Soon",
-                  description: isAr ? "ميزة المحفظة قيد التطوير" : "Wallet feature is under development",
-                });
-              }}
-              variant="secondary"
-              size="sm"
-              className="text-xs sm:text-sm px-2 sm:px-3 py-1 h-8 shadow-md"
-            >
-              <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">{isAr ? 'المحفظة' : 'Wallet'}</span>
-            </Button>
-            
-            {/* Messages Button */}
-            {specialistId && companyId && (
-              <SpecialistMessagesButton 
-                specialistId={specialistId}
-                companyId={companyId}
-              />
-            )}
-            
             {/* Refresh Button */}
             <Button
               onClick={() => {

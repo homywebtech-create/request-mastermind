@@ -1,4 +1,4 @@
-import { Home, Package, Settings, Lock } from "lucide-react";
+import { Home, Package, MessageSquare, Lock } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -35,10 +35,10 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
       gradient: "from-blue-500 to-indigo-600"
     },
     {
-      icon: Settings,
-      label: isAr ? "الإعدادات" : "Settings",
-      path: "/specialist-orders/profile",
-      isActive: location.pathname === "/specialist-orders/profile",
+      icon: MessageSquare,
+      label: isAr ? "المحادثات" : "Messages",
+      path: "/specialist/messages",
+      isActive: location.pathname === "/specialist/messages",
       disabled: isBusy && !location.pathname.includes('/tracking/'),
       gradient: "from-purple-500 to-pink-600"
     }

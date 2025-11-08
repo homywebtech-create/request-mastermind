@@ -19,6 +19,7 @@ import SpecialistAuth from "./pages/SpecialistAuth";
 import SpecialistHome from "./pages/specialist/SpecialistHome";
 import SpecialistNewOrders from "./pages/specialist/SpecialistNewOrders";
 import SpecialistStats from "./pages/specialist/SpecialistStats";
+import SpecialistMessages from "./pages/specialist/SpecialistMessages";
 import SpecialistProfile from "./pages/specialist/SpecialistProfile";
 import SpecialistRegistration from "./pages/SpecialistRegistration";
 import OrderTracking from "./pages/OrderTracking";
@@ -302,7 +303,12 @@ function AppRouter() {
               <SpecialistStats />
             </ProtectedRoute>
           } />
-          <Route path="/specialist-orders/profile" element={
+          <Route path="/specialist/messages" element={
+            <ProtectedRoute>
+              <SpecialistMessages />
+            </ProtectedRoute>
+          } />
+          <Route path="/specialist/profile" element={
             <ProtectedRoute>
               <SpecialistProfile />
             </ProtectedRoute>
