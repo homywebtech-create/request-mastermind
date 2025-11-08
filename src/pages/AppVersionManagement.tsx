@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useTranslation } from '@/i18n';
-import { Download, Trash2, Upload } from 'lucide-react';
+import { Download, Trash2, Upload, ArrowLeft } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -37,6 +38,7 @@ const AppVersionManagement = () => {
   const { language } = useLanguage();
   const t = useTranslation(language);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   
@@ -256,11 +258,22 @@ const AppVersionManagement = () => {
 
   return (
     <div className="container mx-auto py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t.appVersions.title}</h1>
-        <p className="text-muted-foreground mt-2">
-          {t.appVersions.subtitle}
-        </p>
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
+          className="rounded-full"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">{t.appVersions.title}</h1>
+          <p className="text-muted-foreground mt-2">
+            {t.appVersions.subtitle}
+          </p>
+        </div>
       </div>
 
       {/* Create Version Form */}
