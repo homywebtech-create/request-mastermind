@@ -27,6 +27,7 @@ interface SpecialistChatDialogProps {
   specialistImage?: string;
   companyId: string;
   companyName?: string;
+  companyNameEn?: string | null;
   isSpecialistView?: boolean; // true if specialist is viewing, false if company is viewing
 }
 
@@ -47,9 +48,11 @@ export function SpecialistChatDialog({
   specialistImage,
   companyId,
   companyName,
+  companyNameEn,
   isSpecialistView = false,
 }: SpecialistChatDialogProps) {
   const { language } = useLanguage();
+  const displayCompanyName = language === 'ar' ? companyName : (companyNameEn || companyName);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [chatId, setChatId] = useState<string | null>(null);
@@ -321,7 +324,7 @@ export function SpecialistChatDialog({
             <div className="flex flex-col items-start">
               <span>
                 {isSpecialistView 
-                  ? (companyName || (language === "ar" ? "الشركة" : "Company"))
+                  ? (displayCompanyName || (language === "ar" ? "الشركة" : "Company"))
                   : specialistName}
               </span>
               {specialistPhone && !isSpecialistView && (
@@ -350,8 +353,8 @@ export function SpecialistChatDialog({
                   : msg.sender_type === "company";
 
                 const senderName = isCurrentUser
-                  ? (isSpecialistView ? specialistName : (companyName || (language === "ar" ? "الشركة" : "Company")))
-                  : (isSpecialistView ? (companyName || (language === "ar" ? "الشركة" : "Company")) : specialistName);
+                  ? (isSpecialistView ? specialistName : (displayCompanyName || (language === "ar" ? "الشركة" : "Company")))
+                  : (isSpecialistView ? (displayCompanyName || (language === "ar" ? "الشركة" : "Company")) : specialistName);
 
                 return (
                   <div

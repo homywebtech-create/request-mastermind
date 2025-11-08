@@ -28,6 +28,7 @@ interface ChatInfo {
   companies: {
     id: string;
     name: string;
+    name_en: string | null;
     logo_url: string | null;
   };
 }
@@ -40,7 +41,7 @@ export default function SpecialistMessages() {
   const [specialistName, setSpecialistName] = useState('');
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedChat, setSelectedChat] = useState<{ companyId: string; companyName: string; companyLogo: string | null } | null>(null);
+  const [selectedChat, setSelectedChat] = useState<{ companyId: string; companyName: string; companyNameEn: string | null; companyLogo: string | null } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -147,6 +148,7 @@ export default function SpecialistMessages() {
           companies (
             id,
             name,
+            name_en,
             logo_url
           )
         `)
@@ -214,10 +216,11 @@ export default function SpecialistMessages() {
     }
   };
 
-  const filteredChats = chats.filter(chat => 
-    chat.companies.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (chat.last_message && chat.last_message.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredChats = chats.filter(chat => {
+    const companyName = isAr ? chat.companies.name : (chat.companies.name_en || chat.companies.name);
+    return companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (chat.last_message && chat.last_message.toLowerCase().includes(searchQuery.toLowerCase()));
+  });
 
   if (isLoading) {
     return (
@@ -304,33 +307,36 @@ export default function SpecialistMessages() {
               </Card>
             ) : (
               <div className="space-y-2">
-                {filteredChats.map((chat) => (
-                  <Card
-                    key={chat.id}
-                    className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                      chat.unread_count > 0 ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : ''
-                    }`}
-                    onClick={() => setSelectedChat({
-                      companyId: chat.company_id,
-                      companyName: chat.companies.name,
-                      companyLogo: chat.companies.logo_url
-                    })}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={chat.companies.logo_url || undefined} alt={chat.companies.name} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {chat.companies.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-sm truncate">{chat.companies.name}</h3>
-                          <span className="text-xs text-muted-foreground">
-                            {formatMessageTime(chat.last_message_at)}
-                          </span>
-                        </div>
+                {filteredChats.map((chat) => {
+                  const companyName = isAr ? chat.companies.name : (chat.companies.name_en || chat.companies.name);
+                  return (
+                    <Card
+                      key={chat.id}
+                      className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
+                        chat.unread_count > 0 ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : ''
+                      }`}
+                      onClick={() => setSelectedChat({
+                        companyId: chat.company_id,
+                        companyName: chat.companies.name,
+                        companyNameEn: chat.companies.name_en,
+                        companyLogo: chat.companies.logo_url
+                      })}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={chat.companies.logo_url || undefined} alt={companyName} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {companyName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="font-semibold text-sm truncate">{companyName}</h3>
+                            <span className="text-xs text-muted-foreground">
+                              {formatMessageTime(chat.last_message_at)}
+                            </span>
+                          </div>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-muted-foreground truncate">
                             {chat.last_message || (isAr ? 'لا توجد رسائل' : 'No messages')}
@@ -344,7 +350,8 @@ export default function SpecialistMessages() {
                       </div>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
@@ -359,6 +366,7 @@ export default function SpecialistMessages() {
             specialistName={specialistName}
             companyId={selectedChat.companyId}
             companyName={selectedChat.companyName}
+            companyNameEn={selectedChat.companyNameEn}
             isSpecialistView={true}
           />
         )}
