@@ -627,5 +627,8 @@ export const ar = {
     otherReason: "أخرى (حدد السبب)",
     finishWorkNow: "إنهاء العمل الآن",
     extendWorkTime: "تمديد وقت العمل",
+    writeReason: "اكتب السبب",
+    writePaymentReasonPlaceholder: "اكتب سبب عدم الدفع...",
+    confirm: "تأكيد",
   },
 };

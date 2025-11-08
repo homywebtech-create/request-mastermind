@@ -1864,32 +1864,32 @@ export default function OrderTracking() {
                     className="w-full h-12 text-base border-red-500 text-red-600 hover:bg-red-50"
                   >
                     <XCircle className="ml-2 h-5 w-5" />
-                    لم يتم الدفع
+                    {t.paymentNotReceived}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>سبب عدم الدفع</DialogTitle>
+                    <DialogTitle>{t.paymentNotReceivedReason}</DialogTitle>
                     <DialogDescription>
-                      يرجى اختيار سبب عدم استلام الدفع
+                      {t.selectPaymentNotReceivedReason}
                     </DialogDescription>
                   </DialogHeader>
                   <RadioGroup value={paymentNotReceivedReason} onValueChange={setPaymentNotReceivedReason}>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="customer_refused" id="customer_refused" />
-                      <Label htmlFor="customer_refused">العميل رفض الدفع</Label>
+                      <Label htmlFor="customer_refused">{t.customerRefusedPayment}</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="no_cash" id="no_cash" />
-                      <Label htmlFor="no_cash">العميل ليس معه نقود</Label>
+                      <Label htmlFor="no_cash">{t.customerHasNoCash}</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="dispute" id="dispute" />
-                      <Label htmlFor="dispute">خلاف على المبلغ أو الخدمة</Label>
+                      <Label htmlFor="dispute">{t.disputeOverAmount}</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="will_pay_later" id="will_pay_later" />
-                      <Label htmlFor="will_pay_later">وعد بالدفع لاحقاً</Label>
+                      <Label htmlFor="will_pay_later">{t.promisedToPayLater}</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="other" id="other" />
@@ -1899,19 +1899,19 @@ export default function OrderTracking() {
                   
                   {paymentNotReceivedReason === 'other' && (
                     <div className="space-y-2">
-                      <Label htmlFor="other_payment_reason">اكتب السبب</Label>
+                      <Label htmlFor="other_payment_reason">{t.writeReason}</Label>
                       <Textarea
                         id="other_payment_reason"
                         value={otherPaymentReason}
                         onChange={(e) => setOtherPaymentReason(e.target.value)}
-                        placeholder="اكتب سبب عدم الدفع..."
+                        placeholder={t.writePaymentReasonPlaceholder}
                         rows={4}
                       />
                     </div>
                   )}
                   
                   <Button onClick={handlePaymentNotReceived} className="w-full">
-                    تأكيد
+                    {t.confirm}
                   </Button>
                 </DialogContent>
               </Dialog>

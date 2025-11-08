@@ -627,5 +627,8 @@ export const en = {
     otherReason: "Other (specify reason)",
     finishWorkNow: "Finish Work Now",
     extendWorkTime: "Extend Work Time",
+    writeReason: "Write the reason",
+    writePaymentReasonPlaceholder: "Write the reason for non-payment...",
+    confirm: "Confirm",
   },
 };
