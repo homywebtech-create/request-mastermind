@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create schedule entry
+    // Create schedule entry with 2-hour travel buffer before and after
     const { data: schedule, error: scheduleError } = await supabaseClient
       .from('specialist_schedules')
       .insert({
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
         order_id,
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
-        travel_buffer_minutes: 120, // 2 hours buffer
+        travel_buffer_minutes: 120, // 2 hours buffer (before and after the booking)
       })
       .select()
       .single();

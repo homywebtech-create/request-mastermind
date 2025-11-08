@@ -326,32 +326,35 @@ export default function CompanyBooking() {
       const slotEndDateTime = new Date(slotStartDateTime);
       slotEndDateTime.setHours(slotEndDateTime.getHours() + hoursCount);
 
+      // CRITICAL: Add 2 hours buffer before and after the new booking
+      const TRAVEL_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+      const newBookingStartWithBuffer = new Date(slotStartDateTime.getTime() - TRAVEL_BUFFER_MS);
+      const newBookingEndWithBuffer = new Date(slotEndDateTime.getTime() + TRAVEL_BUFFER_MS);
+
       // Check if this slot conflicts with any existing booking (including travel buffer)
       const hasConflict = schedules.some(schedule => {
         const scheduleStart = new Date(schedule.start_time);
         const scheduleEnd = new Date(schedule.end_time);
-        const travelBuffer = schedule.travel_buffer_minutes || 120; // Default 2 hours
+        const travelBufferMinutes = schedule.travel_buffer_minutes || 120; // Default 2 hours
+        const travelBufferMs = travelBufferMinutes * 60 * 1000;
         
-        // Add travel buffer before the scheduled start
-        const scheduleStartWithBuffer = new Date(scheduleStart);
-        scheduleStartWithBuffer.setMinutes(scheduleStartWithBuffer.getMinutes() - travelBuffer);
+        // Add travel buffer before and after the existing scheduled booking
+        const existingBookingStartWithBuffer = new Date(scheduleStart.getTime() - travelBufferMs);
+        const existingBookingEndWithBuffer = new Date(scheduleEnd.getTime() + travelBufferMs);
         
-        // Add travel buffer after the scheduled end
-        const scheduleEndWithBuffer = new Date(scheduleEnd);
-        scheduleEndWithBuffer.setMinutes(scheduleEndWithBuffer.getMinutes() + travelBuffer);
-        
-        // Check overlap: new booking overlaps with existing booking if:
-        // - New booking starts before existing ends (with buffer) AND
-        // - New booking ends after existing starts (with buffer)
+        // Check overlap: bookings conflict if their buffer zones overlap
+        // New booking (with buffer) overlaps with existing booking (with buffer) if:
+        // - New booking buffer zone starts before existing buffer zone ends AND
+        // - New booking buffer zone ends after existing buffer zone starts
         const overlaps = (
-          slotStartDateTime < scheduleEndWithBuffer && 
-          slotEndDateTime > scheduleStartWithBuffer
+          newBookingStartWithBuffer < existingBookingEndWithBuffer && 
+          newBookingEndWithBuffer > existingBookingStartWithBuffer
         );
         
         if (overlaps) {
-          console.log('⚠️ Time conflict detected:');
-          console.log('  New booking:', slotStartDateTime, '-', slotEndDateTime);
-          console.log('  Existing booking:', scheduleStartWithBuffer, '-', scheduleEndWithBuffer);
+          console.log('⚠️ Schedule conflict detected with 2-hour travel buffer:');
+          console.log('  New booking (with buffer):', newBookingStartWithBuffer.toLocaleString(), '-', newBookingEndWithBuffer.toLocaleString());
+          console.log('  Existing booking (with buffer):', existingBookingStartWithBuffer.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
         }
         
         return overlaps;
