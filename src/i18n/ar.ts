@@ -563,6 +563,7 @@ export const ar = {
     translatedContent: "محتوى مترجم",
     currency: "ريال قطري",
     currencyShort: "QAR",
+    notificationMessage: "سوف تستقبل إشعارات العروض الجديدة",
     
     // Order Tracking
     warning: "تحذير",

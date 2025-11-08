@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getCountryByDialCode, type Country } from '@/data/countries';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface UseCompanyCountryResult {
   country: Country | null;
@@ -15,6 +16,7 @@ interface UseCompanyCountryResult {
  * Returns country details including currency information
  */
 export function useCompanyCountry(companyId: string | null): UseCompanyCountryResult {
+  const { language } = useLanguage();
   const [result, setResult] = useState<UseCompanyCountryResult>({
     country: null,
     countryCode: '+966',
@@ -46,7 +48,9 @@ export function useCompanyCountry(companyId: string | null): UseCompanyCountryRe
           country: country || null,
           countryCode: dialCode,
           currency: country?.currency || 'SAR',
-          currencySymbol: country?.currencySymbol || 'ر.س',
+          currencySymbol: language === 'ar' 
+            ? (country?.currencySymbol || 'ر.س')
+            : (country?.currencySymbolEn || 'SAR'),
           isLoading: false,
         });
       } catch (error) {
@@ -56,7 +60,7 @@ export function useCompanyCountry(companyId: string | null): UseCompanyCountryRe
     }
 
     fetchCompanyCountry();
-  }, [companyId]);
+  }, [companyId, language]);
 
   return result;
 }
@@ -66,6 +70,7 @@ export function useCompanyCountry(companyId: string | null): UseCompanyCountryRe
  * Fetches specialist data first, then gets company country info
  */
 export function useSpecialistCompanyCountry(specialistId: string | null): UseCompanyCountryResult {
+  const { language } = useLanguage();
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [isLoadingCompany, setIsLoadingCompany] = useState(true);
   const companyCountry = useCompanyCountry(companyId);

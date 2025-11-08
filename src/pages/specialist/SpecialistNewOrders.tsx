@@ -913,6 +913,15 @@ export default function SpecialistNewOrders() {
       {/* Spacer for fixed header - increased height */}
       <div className="h-[110px]"></div>
 
+      {/* Notification Message */}
+      <div className="max-w-screen-lg mx-auto px-4 pb-2">
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20 rounded-lg p-3 text-center">
+          <p className="text-sm font-medium text-foreground">
+            {t.specialist.notificationMessage}
+          </p>
+        </div>
+      </div>
+
       {/* Notification Status Warning */}
       <div className="max-w-screen-lg mx-auto px-4 pb-4">
         <NotificationStatusChecker specialistId={specialistId} />

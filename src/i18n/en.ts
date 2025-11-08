@@ -563,6 +563,7 @@ export const en = {
     translatedContent: "Translated Content",
     currency: "Qatari Riyal",
     currencyShort: "QAR",
+    notificationMessage: "You will receive notifications for new offers",
     
     // Order Tracking
     warning: "Warning",

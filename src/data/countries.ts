@@ -6,6 +6,7 @@ export interface Country {
   flag: string;
   currency: string;
   currencySymbol: string;
+  currencySymbolEn: string;
 }
 
 export const countries: Country[] = [
@@ -16,7 +17,8 @@ export const countries: Country[] = [
     dialCode: '+974',
     flag: '🇶🇦',
     currency: 'QAR',
-    currencySymbol: 'ر.ق'
+    currencySymbol: 'ر.ق',
+    currencySymbolEn: 'QAR'
   },
   {
     code: 'SA',
@@ -25,7 +27,8 @@ export const countries: Country[] = [
     dialCode: '+966',
     flag: '🇸🇦',
     currency: 'SAR',
-    currencySymbol: 'ر.س'
+    currencySymbol: 'ر.س',
+    currencySymbolEn: 'SAR'
   },
   {
     code: 'AE',
@@ -34,7 +37,8 @@ export const countries: Country[] = [
     dialCode: '+971',
     flag: '🇦🇪',
     currency: 'AED',
-    currencySymbol: 'د.إ'
+    currencySymbol: 'د.إ',
+    currencySymbolEn: 'AED'
   },
   {
     code: 'KW',
@@ -43,7 +47,8 @@ export const countries: Country[] = [
     dialCode: '+965',
     flag: '🇰🇼',
     currency: 'KWD',
-    currencySymbol: 'د.ك'
+    currencySymbol: 'د.ك',
+    currencySymbolEn: 'KWD'
   },
   {
     code: 'BH',
@@ -52,7 +57,8 @@ export const countries: Country[] = [
     dialCode: '+973',
     flag: '🇧🇭',
     currency: 'BHD',
-    currencySymbol: 'د.ب'
+    currencySymbol: 'د.ب',
+    currencySymbolEn: 'BHD'
   },
   {
     code: 'OM',
@@ -61,7 +67,8 @@ export const countries: Country[] = [
     dialCode: '+968',
     flag: '🇴🇲',
     currency: 'OMR',
-    currencySymbol: 'ر.ع'
+    currencySymbol: 'ر.ع',
+    currencySymbolEn: 'OMR'
   },
   {
     code: 'JO',
@@ -70,7 +77,8 @@ export const countries: Country[] = [
     dialCode: '+962',
     flag: '🇯🇴',
     currency: 'JOD',
-    currencySymbol: 'د.أ'
+    currencySymbol: 'د.أ',
+    currencySymbolEn: 'JOD'
   },
   {
     code: 'EG',
@@ -79,7 +87,8 @@ export const countries: Country[] = [
     dialCode: '+20',
     flag: '🇪🇬',
     currency: 'EGP',
-    currencySymbol: 'ج.م'
+    currencySymbol: 'ج.م',
+    currencySymbolEn: 'EGP'
   },
   {
     code: 'LB',
@@ -88,7 +97,8 @@ export const countries: Country[] = [
     dialCode: '+961',
     flag: '🇱🇧',
     currency: 'LBP',
-    currencySymbol: 'ل.ل'
+    currencySymbol: 'ل.ل',
+    currencySymbolEn: 'LBP'
   },
   {
     code: 'SY',
@@ -97,7 +107,8 @@ export const countries: Country[] = [
     dialCode: '+963',
     flag: '🇸🇾',
     currency: 'SYP',
-    currencySymbol: 'ل.س'
+    currencySymbol: 'ل.س',
+    currencySymbolEn: 'SYP'
   },
   {
     code: 'IQ',
@@ -106,7 +117,8 @@ export const countries: Country[] = [
     dialCode: '+964',
     flag: '🇮🇶',
     currency: 'IQD',
-    currencySymbol: 'د.ع'
+    currencySymbol: 'د.ع',
+    currencySymbolEn: 'IQD'
   },
   {
     code: 'YE',
@@ -115,7 +127,8 @@ export const countries: Country[] = [
     dialCode: '+967',
     flag: '🇾🇪',
     currency: 'YER',
-    currencySymbol: 'ر.ي'
+    currencySymbol: 'ر.ي',
+    currencySymbolEn: 'YER'
   },
   {
     code: 'PS',
@@ -124,7 +137,8 @@ export const countries: Country[] = [
     dialCode: '+970',
     flag: '🇵🇸',
     currency: 'ILS',
-    currencySymbol: '₪'
+    currencySymbol: '₪',
+    currencySymbolEn: 'ILS'
   },
   {
     code: 'MA',
@@ -133,7 +147,8 @@ export const countries: Country[] = [
     dialCode: '+212',
     flag: '🇲🇦',
     currency: 'MAD',
-    currencySymbol: 'د.م'
+    currencySymbol: 'د.م',
+    currencySymbolEn: 'MAD'
   },
   {
     code: 'DZ',
@@ -142,7 +157,8 @@ export const countries: Country[] = [
     dialCode: '+213',
     flag: '🇩🇿',
     currency: 'DZD',
-    currencySymbol: 'د.ج'
+    currencySymbol: 'د.ج',
+    currencySymbolEn: 'DZD'
   },
   {
     code: 'TN',
@@ -151,7 +167,8 @@ export const countries: Country[] = [
     dialCode: '+216',
     flag: '🇹🇳',
     currency: 'TND',
-    currencySymbol: 'د.ت'
+    currencySymbol: 'د.ت',
+    currencySymbolEn: 'TND'
   },
   {
     code: 'LY',
@@ -160,7 +177,8 @@ export const countries: Country[] = [
     dialCode: '+218',
     flag: '🇱🇾',
     currency: 'LYD',
-    currencySymbol: 'د.ل'
+    currencySymbol: 'د.ل',
+    currencySymbolEn: 'LYD'
   },
   {
     code: 'SD',
@@ -169,7 +187,8 @@ export const countries: Country[] = [
     dialCode: '+249',
     flag: '🇸🇩',
     currency: 'SDG',
-    currencySymbol: 'ج.س'
+    currencySymbol: 'ج.س',
+    currencySymbolEn: 'SDG'
   },
   {
     code: 'PK',
@@ -178,7 +197,8 @@ export const countries: Country[] = [
     dialCode: '+92',
     flag: '🇵🇰',
     currency: 'PKR',
-    currencySymbol: 'Rs'
+    currencySymbol: 'Rs',
+    currencySymbolEn: 'PKR'
   },
 ];
 
