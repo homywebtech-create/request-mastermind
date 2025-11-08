@@ -638,6 +638,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           customer_id: string
+          customer_latitude: number | null
+          customer_location_address: string | null
+          customer_location_name: string | null
+          customer_longitude: number | null
           customer_rating: number | null
           customer_review_notes: string | null
           expires_at: string | null
@@ -682,6 +686,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id: string
+          customer_latitude?: number | null
+          customer_location_address?: string | null
+          customer_location_name?: string | null
+          customer_longitude?: number | null
           customer_rating?: number | null
           customer_review_notes?: string | null
           expires_at?: string | null
@@ -726,6 +734,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          customer_latitude?: number | null
+          customer_location_address?: string | null
+          customer_location_name?: string | null
+          customer_longitude?: number | null
           customer_rating?: number | null
           customer_review_notes?: string | null
           expires_at?: string | null
