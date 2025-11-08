@@ -263,7 +263,7 @@ const AppVersionManagement = () => {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/admin')}
           className="rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
