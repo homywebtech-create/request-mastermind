@@ -341,23 +341,23 @@ export default function CompanyBooking() {
         const travelBufferMinutes = schedule.travel_buffer_minutes || 120; // Default 2 hours
         const travelBufferMs = travelBufferMinutes * 60 * 1000;
         
-        // Add travel buffer before and after the existing scheduled booking
-        const existingBookingStartWithBuffer = new Date(scheduleStart.getTime() - travelBufferMs);
+        // CRITICAL FIX: Travel buffer only AFTER booking, not before
+        // The protected zone = booking time + 2 hours after for travel
         const existingBookingEndWithBuffer = new Date(scheduleEnd.getTime() + travelBufferMs);
         
-        // CRITICAL: Check if NEW booking (WITHOUT buffer) overlaps with EXISTING booking (WITH buffer)
-        // The new booking only needs to avoid the existing booking's protected time zone
+        // Check if new booking overlaps with: [existing booking start] to [existing booking end + 2h buffer]
         const overlaps = (
           slotStartDateTime < existingBookingEndWithBuffer && 
-          slotEndDateTime > existingBookingStartWithBuffer
+          slotEndDateTime > scheduleStart
         );
         
         if (overlaps) {
-          console.log('  ❌ CONFLICT: New booking overlaps with existing booking buffer zone');
+          console.log('  ❌ CONFLICT: New booking overlaps with existing booking or its travel time');
           console.log('    New booking:', slotStartDateTime.toLocaleString(), '-', slotEndDateTime.toLocaleString());
-          console.log('    Existing protected zone:', existingBookingStartWithBuffer.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
+          console.log('    Protected zone:', scheduleStart.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
+          console.log('    (Booking:', scheduleStart.toLocaleString(), '-', scheduleEnd.toLocaleString(), '+ 2h travel buffer)');
         } else {
-          console.log('  ✅ Available: No conflict with existing booking');
+          console.log('  ✅ Available');
         }
         
         return overlaps;
