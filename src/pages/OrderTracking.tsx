@@ -1316,94 +1316,99 @@ export default function OrderTracking() {
 
         {/* Arrived Stage - Simplified */}
         {stage === 'arrived' && (
-          <Card className="overflow-hidden border-2 border-green-300 dark:border-green-700 shadow-2xl">
-            {/* Stage Header - Compact */}
-            <div className="bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 py-3 px-4">
-              <div className="flex items-center justify-center gap-3">
-                <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
-                  <CheckCircle className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-white">{language === 'ar' ? 'وصلت إلى الموقع' : 'Arrived at Location'}</h3>
-              </div>
-            </div>
-
-            <div className="p-4 space-y-3">
-              {/* Customer Contact - Icon Only */}
-              <div className="flex items-center justify-center gap-4">
-                <div className="flex flex-col items-center gap-1">
-                  <Button 
-                    onClick={() => window.location.href = `tel:${order.customer?.whatsapp_number || ''}`}
-                    size="icon"
-                    className="h-14 w-14 bg-green-600 hover:bg-green-700 rounded-full shadow-lg"
-                  >
-                    <Phone className="h-6 w-6" />
-                  </Button>
-                  <span className="text-xs font-medium text-green-700">اتصال بالعميل</span>
+          <div className="pb-24">
+            <Card className="overflow-hidden border-2 border-green-300 dark:border-green-700 shadow-2xl">
+              {/* Stage Header - Compact */}
+              <div className="bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 py-3 px-4">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">{language === 'ar' ? 'وصلت إلى الموقع' : 'Arrived at Location'}</h3>
                 </div>
               </div>
 
-              {/* Building Info - Compact */}
-              {order.building_info && (
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-blue-600" />
-                        <p className="text-xs text-muted-foreground">معلومات المبنى</p>
-                      </div>
-                      <TranslateButton
-                        text={order.building_info}
-                        onTranslated={setTranslatedBuildingInfo}
-                        sourceLanguage="ar"
-                      />
-                    </div>
-                    <p className="text-sm font-medium">
-                      {translatedBuildingInfo || order.building_info}
-                    </p>
+              <div className="p-4 space-y-3">
+                {/* Customer Contact - Icon Only */}
+                <div className="flex items-center justify-center gap-4">
+                  <div className="flex flex-col items-center gap-1">
+                    <Button 
+                      onClick={() => window.location.href = `tel:${order.customer?.whatsapp_number || ''}`}
+                      size="icon"
+                      className="h-14 w-14 bg-green-600 hover:bg-green-700 rounded-full shadow-lg"
+                    >
+                      <Phone className="h-6 w-6" />
+                    </Button>
+                    <span className="text-xs font-medium text-green-700">اتصال بالعميل</span>
                   </div>
                 </div>
-              )}
 
-              {/* Timer Protection - Compact */}
-              {arrivedTimer > 0 && (
-                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
-                  <div className="flex items-center gap-3 justify-center">
-                    <Clock className="h-5 w-5 text-amber-600 animate-pulse" />
-                    <div className="text-center">
-                      <p className="text-xs text-amber-700">سيتم تفعيل زر بدء العمل بعد</p>
-                      <p className="text-lg font-bold text-amber-600 tabular-nums">
-                        00:00:{arrivedTimer.toString().padStart(2, '0')}
+                {/* Building Info - Compact */}
+                {order.building_info && (
+                  <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-blue-600" />
+                          <p className="text-xs text-muted-foreground">معلومات المبنى</p>
+                        </div>
+                        <TranslateButton
+                          text={order.building_info}
+                          onTranslated={setTranslatedBuildingInfo}
+                          sourceLanguage="ar"
+                        />
+                      </div>
+                      <p className="text-sm font-medium">
+                        {translatedBuildingInfo || order.building_info}
                       </p>
                     </div>
                   </div>
-                </div>
-              )}
-              
-              {/* Auto-Start Warning */}
-              <div className="bg-blue-50 border-2 border-blue-300 p-3 rounded-lg">
-                <div className="flex items-center gap-2 justify-center text-center">
-                  <div className="p-1.5 rounded-full bg-blue-100">
-                    <Clock className="h-4 w-4 text-blue-600" />
+                )}
+
+                {/* Timer Protection - Compact */}
+                {arrivedTimer > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                    <div className="flex items-center gap-3 justify-center">
+                      <Clock className="h-5 w-5 text-amber-600 animate-pulse" />
+                      <div className="text-center">
+                        <p className="text-xs text-amber-700">سيتم تفعيل زر بدء العمل بعد</p>
+                        <p className="text-lg font-bold text-amber-600 tabular-nums">
+                          00:00:{arrivedTimer.toString().padStart(2, '0')}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs font-medium text-blue-800">
-                    {language === 'ar' 
-                      ? 'في حالة عدم الضغط على الزر، سيبدأ العمل تلقائياً بعد 5 دقائق من الوصول' 
-                      : 'If you don\'t press the button, work will start automatically after 5 minutes'}
-                  </p>
+                )}
+                
+                {/* Auto-Start Warning */}
+                <div className="bg-blue-50 border-2 border-blue-300 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 justify-center text-center">
+                    <div className="p-1.5 rounded-full bg-blue-100">
+                      <Clock className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <p className="text-xs font-medium text-blue-800">
+                      {language === 'ar' 
+                        ? 'في حالة عدم الضغط على الزر، سيبدأ العمل تلقائياً بعد 5 دقائق من الوصول' 
+                        : 'If you don\'t press the button, work will start automatically after 5 minutes'}
+                    </p>
+                  </div>
                 </div>
               </div>
+            </Card>
 
-              {/* Start Work Button - Simplified */}
+            {/* Fixed Start Work Button */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50">
               <Button
                 onClick={handleStartWork}
                 disabled={arrivedTimer > 0}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                size="lg"
               >
-                <Play className="h-4 w-4 ml-2" />
+                <Play className="h-5 w-5 ml-2" />
                 <span>بدء ساعة العمل</span>
               </Button>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Working Stage */}
