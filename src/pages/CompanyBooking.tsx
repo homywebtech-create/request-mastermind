@@ -341,23 +341,25 @@ export default function CompanyBooking() {
         const travelBufferMinutes = schedule.travel_buffer_minutes || 120; // Default 2 hours
         const travelBufferMs = travelBufferMinutes * 60 * 1000;
         
-        // CRITICAL FIX: Travel buffer only AFTER booking, not before
-        // The protected zone = booking time + 2 hours after for travel
+        // CRITICAL: 2-hour buffer BEFORE and AFTER the booking
+        // Protected zone = [2h before] + [booking time] + [2h after]
+        const existingBookingStartWithBuffer = new Date(scheduleStart.getTime() - travelBufferMs);
         const existingBookingEndWithBuffer = new Date(scheduleEnd.getTime() + travelBufferMs);
         
-        // Check if new booking overlaps with: [existing booking start] to [existing booking end + 2h buffer]
+        // Check if new booking overlaps with the entire protected zone
         const overlaps = (
           slotStartDateTime < existingBookingEndWithBuffer && 
-          slotEndDateTime > scheduleStart
+          slotEndDateTime > existingBookingStartWithBuffer
         );
         
         if (overlaps) {
-          console.log('  ❌ CONFLICT: New booking overlaps with existing booking or its travel time');
-          console.log('    New booking:', slotStartDateTime.toLocaleString(), '-', slotEndDateTime.toLocaleString());
-          console.log('    Protected zone:', scheduleStart.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
-          console.log('    (Booking:', scheduleStart.toLocaleString(), '-', scheduleEnd.toLocaleString(), '+ 2h travel buffer)');
+          console.log('  ❌ محجوز: يتعارض مع منطقة محمية لحجز موجود');
+          console.log('    الحجز الجديد:', slotStartDateTime.toLocaleString(), '-', slotEndDateTime.toLocaleString());
+          console.log('    الحجز الموجود:', scheduleStart.toLocaleString(), '-', scheduleEnd.toLocaleString());
+          console.log('    المنطقة المحجوزة الكاملة (2 ساعة قبل + الحجز + 2 ساعة بعد):', 
+            existingBookingStartWithBuffer.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
         } else {
-          console.log('  ✅ Available');
+          console.log('  ✅ متاح');
         }
         
         return overlaps;
