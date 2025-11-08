@@ -66,6 +66,7 @@ serve(async (req) => {
     // Validate WhatsApp credentials
     console.log('🔑 [WhatsApp Interactive] Checking credentials...');
     console.log('🔑 Access Token exists:', !!WHATSAPP_ACCESS_TOKEN);
+    console.log('🔑 Phone Number ID:', WHATSAPP_PHONE_NUMBER_ID); // Log actual value for debugging
     console.log('🔑 Phone Number ID exists:', !!WHATSAPP_PHONE_NUMBER_ID);
     
     if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
