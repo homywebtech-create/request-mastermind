@@ -21,7 +21,9 @@ import {
   BellOff,
   AlertCircle,
   Ban,
-  MessageSquare
+  MessageSquare,
+  Download,
+  CheckCheck
 } from 'lucide-react';
 import { useSpecialistsLiveStatus, SpecialistLiveStatus } from '@/hooks/useSpecialistsLiveStatus';
 import { formatDistanceToNow } from 'date-fns';
@@ -258,10 +260,30 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
               {specialist.phone}
             </p>
 
-            {/* Warning Indicators - Suspension & ID Card */}
-            <div className="flex items-center gap-1 mb-1.5">
+            {/* Warning Indicators - Suspension, ID Card & App Version */}
+            <div className="flex items-center gap-1 mb-1.5 flex-wrap">
               {getSuspensionIndicator()}
               {getIdCardIndicator()}
+              
+              {/* App Version Indicator */}
+              {specialist.has_device_token && specialist.app_version ? (
+                specialist.has_latest_version ? (
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 bg-green-100 text-green-800">
+                    <CheckCheck className="h-2 w-2" />
+                    {specialist.app_version}
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 animate-pulse bg-orange-100 text-orange-800 border-orange-300">
+                    <Download className="h-2 w-2" />
+                    {language === 'ar' ? `${specialist.app_version} ⚠️` : `v${specialist.app_version} ⚠️`}
+                  </Badge>
+                )
+              ) : specialist.has_device_token ? (
+                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 bg-gray-100 text-gray-600">
+                  <AlertCircle className="h-2 w-2" />
+                  {language === 'ar' ? 'غير معروف' : 'Unknown'}
+                </Badge>
+              ) : null}
             </div>
 
             {/* Daily Stats */}

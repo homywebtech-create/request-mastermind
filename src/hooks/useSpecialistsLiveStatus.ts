@@ -20,6 +20,9 @@ export interface SpecialistLiveStatus {
     action: 'received' | 'ignored' | 'no_response' | null;
   };
   upcoming_order_time: string | null;
+  app_version: string | null;
+  has_latest_version: boolean;
+  latest_version_name: string | null;
 }
 
 export function useSpecialistsLiveStatus(companyId: string | null | undefined, isAdmin: boolean = false) {
@@ -49,10 +52,21 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
 
       if (specError) throw specError;
 
-      // Get device tokens
+      // Get latest app version
+      const { data: latestVersionData } = await supabase
+        .from('app_versions')
+        .select('version_code, version_name')
+        .order('version_code', { ascending: false })
+        .limit(1)
+        .single();
+
+      const latestVersionCode = latestVersionData?.version_code || 0;
+      const latestVersionName = latestVersionData?.version_name || null;
+
+      // Get device tokens with app version
       const { data: tokensData } = await supabase
         .from('device_tokens')
-        .select('specialist_id, last_used_at')
+        .select('specialist_id, last_used_at, app_version')
         .in('specialist_id', specialistsData?.map(s => s.id) || []);
 
       // Get today's order statistics
@@ -242,6 +256,10 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           }
         }
 
+        // Check app version
+        const appVersion = token?.app_version || null;
+        const hasLatestVersion = appVersion ? appVersion === latestVersionName : false;
+
         return {
           id: spec.id,
           name: spec.name,
@@ -257,7 +275,10 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           accepted_today,
           rejected_today,
           last_notification_status: lastNotificationStatus,
-          upcoming_order_time: upcomingOrderTime
+          upcoming_order_time: upcomingOrderTime,
+          app_version: appVersion,
+          has_latest_version: hasLatestVersion,
+          latest_version_name: latestVersionName
         };
       });
 

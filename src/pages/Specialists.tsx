@@ -44,6 +44,8 @@ interface Specialist {
   languages_spoken?: string[];
   has_pet_allergy?: boolean;
   has_cleaning_allergy?: boolean;
+  app_version?: string | null;
+  has_latest_version?: boolean;
   specialist_specialties?: Array<{
     sub_service_id: string;
     sub_services: {
@@ -145,6 +147,16 @@ export default function Specialists() {
 
   const fetchSpecialists = async (companyId: string) => {
     try {
+      // Get latest app version
+      const { data: latestVersionData } = await supabase
+        .from('app_versions')
+        .select('version_code, version_name')
+        .order('version_code', { ascending: false })
+        .limit(1)
+        .single();
+
+      const latestVersionName = latestVersionData?.version_name || null;
+
       const { data, error } = await supabase
         .from("specialists")
         .select(`
@@ -168,7 +180,28 @@ export default function Specialists() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setSpecialists(data || []);
+
+      // Get device tokens for app version info
+      const specialistIds = data?.map(s => s.id) || [];
+      const { data: tokensData } = await supabase
+        .from('device_tokens')
+        .select('specialist_id, app_version')
+        .in('specialist_id', specialistIds);
+
+      // Merge app version data into specialists
+      const specialistsWithVersion = (data || []).map(specialist => {
+        const token = tokensData?.find(t => t.specialist_id === specialist.id);
+        const appVersion = token?.app_version || null;
+        const hasLatestVersion = appVersion ? appVersion === latestVersionName : false;
+
+        return {
+          ...specialist,
+          app_version: appVersion,
+          has_latest_version: hasLatestVersion
+        };
+      });
+
+      setSpecialists(specialistsWithVersion);
     } catch (error: any) {
       console.error("Error fetching specialists:", error);
       toast({

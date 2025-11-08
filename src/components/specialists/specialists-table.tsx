@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock, FileUser, MoreVertical, AlertCircle } from "lucide-react";
+import { Phone, Trash2, Users, User, Pencil, Link2, CheckCircle, XCircle, Ban, Clock, FileUser, MoreVertical, AlertCircle, Download, CheckCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -63,6 +63,8 @@ interface Specialist {
   languages_spoken?: string[];
   has_pet_allergy?: boolean;
   has_cleaning_allergy?: boolean;
+  app_version?: string | null;
+  has_latest_version?: boolean;
   specialist_specialties?: Array<{
     sub_service_id: string;
     sub_services: {
@@ -432,6 +434,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                 <TableHead className="text-left">Specialties</TableHead>
                 <TableHead className="text-left">Experience</TableHead>
                 <TableHead className="text-left">Phone Number</TableHead>
+                <TableHead className="text-left">App Version</TableHead>
                 <TableHead className="text-left">Approval Status</TableHead>
                 <TableHead className="text-left">ID Card Status</TableHead>
                 <TableHead className="text-left">Suspension</TableHead>
@@ -442,7 +445,7 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
             <TableBody>
               {specialists.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     No specialists registered
                   </TableCell>
                 </TableRow>
@@ -500,6 +503,26 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                       <div className="flex items-center gap-2">
                         <span className="text-sm" dir="ltr">{specialist.phone}</span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {specialist.app_version ? (
+                        specialist.has_latest_version ? (
+                          <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 border-green-300">
+                            <CheckCheck className="h-3 w-3" />
+                            {specialist.app_version}
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive" className="flex items-center gap-1 animate-pulse bg-orange-100 text-orange-800 border-orange-300">
+                            <Download className="h-3 w-3" />
+                            {specialist.app_version} ⚠️
+                          </Badge>
+                        )
+                      ) : (
+                        <Badge variant="secondary" className="flex items-center gap-1 bg-gray-100 text-gray-600">
+                          <AlertCircle className="h-3 w-3" />
+                          {language === 'ar' ? 'لم يسجل دخول' : 'Not Logged In'}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       {getApprovalStatusBadge(specialist.approval_status, specialist.registration_completed_at)}
