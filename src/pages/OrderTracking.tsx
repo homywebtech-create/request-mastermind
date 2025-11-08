@@ -1194,26 +1194,22 @@ export default function OrderTracking() {
         {/* Initial Stage - New: Just order info with start button */}
         {stage === 'initial' && (
           <div className="space-y-4">
-            {/* Map Location Button - View Only */}
-            <Button 
-              onClick={viewCustomerLocation} 
-              className="w-full h-14 text-lg font-bold shadow-lg hover:shadow-xl transition-all"
-              size="lg"
-            >
-              <MapPin className="h-6 w-6 ml-2" />
-              <span>{language === 'ar' ? 'اضغط لموقع العميل' : 'Click Customer Location'}</span>
-            </Button>
-
-            {/* Share Customer Location via WhatsApp */}
-            <Button 
-              onClick={shareCustomerLocationViaWhatsApp} 
-              variant="outline"
-              className="w-full h-14 text-lg font-bold shadow-lg hover:shadow-xl transition-all border-2"
-              size="lg"
-            >
-              <Share2 className="h-6 w-6 ml-2" />
-              <span>{language === 'ar' ? 'مشاركة موقع العميل' : 'Share Customer Location'}</span>
-            </Button>
+            {/* Map Location - Static Display */}
+            {order?.gps_latitude && order?.gps_longitude && (
+              <div className="w-full rounded-lg overflow-hidden shadow-lg border-2 border-border">
+                <img 
+                  src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${order.gps_longitude},${order.gps_latitude})/${order.gps_longitude},${order.gps_latitude},14,0/600x300@2x?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTI2OHNweWYwNjdiMmtvZTNxdXg0czJkIn0.BctOp1N86HePHgvQFIHong`}
+                  alt={language === 'ar' ? 'موقع العميل' : 'Customer Location'}
+                  className="w-full h-64 object-cover"
+                />
+                <div className="bg-muted p-3 text-center">
+                  <p className="text-sm font-semibold flex items-center justify-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span>{language === 'ar' ? 'موقع العميل' : 'Customer Location'}</span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
         
@@ -1243,38 +1239,22 @@ export default function OrderTracking() {
               </p>
             </div>
 
-            {/* Primary Location Button - Simplified and Professional */}
-            <Button
-              onClick={openMaps}
-              className="w-full h-24 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-none shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] rounded-xl hover:animate-none relative overflow-hidden group"
-            >
-              {/* Animated Glow Effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[slide-in-right_2s_ease-in-out_infinite]" />
-              
-              <div className="flex items-center justify-center gap-4 relative z-10">
-                <div className="flex items-center justify-center w-12 h-12 bg-white/20 rounded-full backdrop-blur-sm">
-                  <MapPin className="h-6 w-6" />
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-bold text-white">
-                    {language === 'ar' ? 'فتح خريطة الموقع' : 'Open Location Map'}
-                  </p>
-                  <p className="text-xs font-medium text-blue-50 mt-1">
-                    {language === 'ar' ? 'اضغط للتوجه إلى العميل' : 'Click to navigate to customer'}
+            {/* Map Location - Static Display */}
+            {order?.gps_latitude && order?.gps_longitude && (
+              <div className="w-full rounded-lg overflow-hidden shadow-lg border-2 border-border">
+                <img 
+                  src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${order.gps_longitude},${order.gps_latitude})/${order.gps_longitude},${order.gps_latitude},14,0/600x300@2x?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTI2OHNweWYwNjdiMmtvZTNxdXg0czJkIn0.BctOp1N86HePHgvQFIHong`}
+                  alt={language === 'ar' ? 'موقع العميل' : 'Customer Location'}
+                  className="w-full h-64 object-cover"
+                />
+                <div className="bg-muted p-3 text-center">
+                  <p className="text-sm font-semibold flex items-center justify-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span>{language === 'ar' ? 'موقع العميل' : 'Customer Location'}</span>
                   </p>
                 </div>
               </div>
-            </Button>
-
-            {/* Share Customer Location via WhatsApp */}
-            <Button
-              onClick={shareCustomerLocationViaWhatsApp}
-              variant="outline"
-              className="w-full h-14 border-2 hover:bg-accent transition-all hover:scale-105 hover:shadow-lg animate-fade-in"
-            >
-              <Navigation className="h-5 w-5 ml-2" />
-              <span className="font-semibold">{language === 'ar' ? 'مشاركة موقع العميل' : 'Share Customer Location'}</span>
-            </Button>
+            )}
 
             {/* Fixed Arrival Button */}
             <div className="fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t z-50 space-y-2">
