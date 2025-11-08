@@ -39,32 +39,35 @@ public class ApkInstallerPlugin extends Plugin {
                 return;
             }
 
-            Intent intent = new Intent(Intent.ACTION_VIEW);
+            String authority = getContext().getPackageName() + ".fileprovider";
+            android.util.Log.d("ApkInstaller", "🔧 FileProvider authority: " + authority);
             
+            Uri apkUri = FileProvider.getUriForFile(
+                getContext(),
+                authority,
+                file
+            );
+            
+            android.util.Log.d("ApkInstaller", "🔧 FileProvider URI: " + apkUri.toString());
+            
+            Intent intent;
+            
+            // Use ACTION_INSTALL_PACKAGE for direct installation (API 24+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // For Android 7.0 and above, use FileProvider
-                android.util.Log.d("ApkInstaller", "🔧 Using FileProvider for Android N+");
-                
-                String authority = getContext().getPackageName() + ".fileprovider";
-                android.util.Log.d("ApkInstaller", "🔧 FileProvider authority: " + authority);
-                
-                Uri apkUri = FileProvider.getUriForFile(
-                    getContext(),
-                    authority,
-                    file
-                );
-                
-                android.util.Log.d("ApkInstaller", "🔧 FileProvider URI: " + apkUri.toString());
-                
-                intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                android.util.Log.d("ApkInstaller", "🚀 Using ACTION_INSTALL_PACKAGE for direct install");
+                intent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+                intent.setData(apkUri);
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
+                intent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
             } else {
-                // For older Android versions
-                android.util.Log.d("ApkInstaller", "🔧 Using direct file URI for older Android");
+                // Fallback for older Android (API 23-)
+                android.util.Log.d("ApkInstaller", "🔧 Using ACTION_VIEW fallback for older Android");
+                intent = new Intent(Intent.ACTION_VIEW);
                 intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
             }
             
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             
             android.util.Log.d("ApkInstaller", "🚀 Starting install activity...");
             getContext().startActivity(intent);
