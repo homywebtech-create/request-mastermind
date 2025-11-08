@@ -562,5 +562,37 @@ export const ar = {
     translatedContent: "محتوى مترجم",
     currency: "ريال قطري",
     currencyShort: "QAR",
+    
+    // Order Tracking
+    warning: "تحذير",
+    customerLocation: "موقع العميل",
+    shareCustomerLocation: "مشاركة موقع العميل",
+    orderNotFound: "الطلب غير موجود",
+    back: "العودة",
+    orderNumber: "رقم الطلب:",
+    duration: "المدة",
+    hours: "ساعات",
+    startMovingToWork: "ابدأ التحرك للعمل",
+    customerWaiting: "العميل بانتظارك، قم بالتحرك إليه لتكون هناك في الوقت",
+    openLocationMap: "فتح خريطة الموقع",
+    clickToNavigate: "اضغط للتوجه إلى العميل",
+    arrivedAtLocation: "وصلت إلى الموقع",
+    callCustomer: "اتصال بالعميل",
+    buildingInfo: "معلومات المبنى",
+    workInProgress: "العمل جارٍ",
+    invoiceDetails: "تفاصيل الفاتورة",
+    rateCustomer: "تقييم العميل",
+    experienceQuestion: "كيف كانت تجربتك مع هذا العميل؟",
+    goodCustomer: "👍 عميل جيد",
+    averageCustomer: "😊 عميل متوسط",
+    belowAverage: "🤔 أقل من المتوسط",
+    poorExperience: "😟 تجربة سيئة",
+    additionalNotesOptional: "ملاحظات إضافية (اختياري)",
+    submitRating: "إرسال التقييم",
+    copied: "تم النسخ",
+    customerLocationLinkCopied: "تم نسخ رابط موقع العميل",
+    customerLocationLink: "رابط موقع العميل",
+    trackingError: "خطأ",
+    customerLocationNotAvailable: "موقع العميل غير متوفر",
   },
 };

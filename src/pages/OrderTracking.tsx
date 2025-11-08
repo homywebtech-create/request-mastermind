@@ -118,7 +118,7 @@ export default function OrderTracking() {
         window.history.pushState(null, '', window.location.href);
         
         toast({
-          title: language === 'ar' ? 'تحذير' : 'Warning',
+          title: t.warning,
           description: language === 'ar' 
             ? 'لا يمكن الرجوع أثناء تتبع الطلب. يرجى إنهاء أو إلغاء الطلب أولاً.'
             : 'Cannot go back during active order tracking. Please finish or cancel the order first.',
@@ -707,8 +707,8 @@ export default function OrderTracking() {
   const shareCustomerLocationViaWhatsApp = async () => {
     if (!order?.gps_latitude || !order?.gps_longitude) {
       toast({
-        title: language === 'ar' ? "خطأ" : "Error",
-        description: language === 'ar' ? "موقع العميل غير متوفر" : "Customer location not available",
+        title: t.trackingError,
+        description: t.customerLocationNotAvailable,
         variant: "destructive",
       });
       return;
@@ -723,16 +723,16 @@ export default function OrderTracking() {
       if (Capacitor.isNativePlatform()) {
         const { Share } = await import('@capacitor/share');
         await Share.share({
-          title: language === 'ar' ? 'موقع العميل' : 'Customer Location',
+          title: t.customerLocation,
           text: shareText,
-          dialogTitle: language === 'ar' ? 'مشاركة موقع العميل' : 'Share Customer Location',
+          dialogTitle: t.shareCustomerLocation,
         });
         return;
       }
 
       if (navigator.share) {
         await navigator.share({
-          title: language === 'ar' ? 'موقع العميل' : 'Customer Location',
+          title: t.customerLocation,
           text: shareText,
           url: locationUrl,
         });
@@ -747,19 +747,19 @@ export default function OrderTracking() {
         if (navigator.clipboard) {
           await navigator.clipboard.writeText(locationUrl);
           toast({
-            title: language === 'ar' ? "تم النسخ" : "Copied",
-            description: language === 'ar' ? "تم نسخ رابط موقع العميل" : "Customer location link copied",
+            title: t.copied,
+            description: t.customerLocationLinkCopied,
           });
         } else {
           toast({
-            title: language === 'ar' ? "رابط موقع العميل" : "Customer Location Link",
+            title: t.customerLocationLink,
             description: locationUrl,
             duration: 10000,
           });
         }
       } catch {
         toast({
-          title: language === 'ar' ? "رابط موقع العميل" : "Customer Location Link",
+          title: t.customerLocationLink,
           description: locationUrl,
           duration: 10000,
         });
@@ -1136,7 +1136,7 @@ export default function OrderTracking() {
   if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">{language === 'ar' ? 'الطلب غير موجود' : 'Order not found'}</p>
+        <p className="text-muted-foreground">{t.orderNotFound}</p>
       </div>
     );
   }
@@ -1152,7 +1152,7 @@ export default function OrderTracking() {
           className="mb-2"
         >
           <ArrowLeft className="h-4 w-4 ml-2" />
-          {language === 'ar' ? 'العودة' : 'Back'}
+          {t.back}
         </Button>
 
         {/* Chat with Company Button - Always Available */}
@@ -1175,7 +1175,7 @@ export default function OrderTracking() {
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
                     <FileText className="h-4 w-4 text-primary" />
                     <span className="text-sm font-bold text-primary">
-                      {language === 'ar' ? 'رقم الطلب:' : 'Order #:'} {order.order_number}
+                      {t.orderNumber} {order.order_number}
                     </span>
                   </div>
                 )}
@@ -1216,8 +1216,8 @@ export default function OrderTracking() {
                   <p className="font-semibold text-sm leading-tight">{order.service_type}</p>
                 </div>
                 <div className="bg-background/50 p-2.5 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-0.5">{language === 'ar' ? 'المدة' : 'Duration'}</p>
-                  <p className="font-semibold text-sm leading-tight">{order.hours_count} {language === 'ar' ? 'ساعات' : 'hours'}</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">{t.duration}</p>
+                  <p className="font-semibold text-sm leading-tight">{order.hours_count} {t.hours}</p>
                 </div>
               </div>
               
@@ -1248,13 +1248,13 @@ export default function OrderTracking() {
               <div className="w-full rounded-lg overflow-hidden shadow-lg border-2 border-border">
                 <img 
                   src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${order.gps_longitude},${order.gps_latitude})/${order.gps_longitude},${order.gps_latitude},14,0/600x300@2x?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTI2OHNweWYwNjdiMmtvZTNxdXg0czJkIn0.BctOp1N86HePHgvQFIHong`}
-                  alt={language === 'ar' ? 'موقع العميل' : 'Customer Location'}
+                  alt={t.customerLocation}
                   className="w-full h-64 object-cover"
                 />
                 <div className="bg-muted p-3 text-center">
                   <p className="text-sm font-semibold flex items-center justify-center gap-2">
                     <MapPin className="h-4 w-4 text-primary" />
-                    <span>{language === 'ar' ? 'موقع العميل' : 'Customer Location'}</span>
+                    <span>{t.customerLocation}</span>
                   </p>
                 </div>
               </div>
@@ -1272,7 +1272,7 @@ export default function OrderTracking() {
                 size="lg"
               >
                 <ArrowRight className="h-7 w-7 ml-2" />
-                <span>{language === 'ar' ? 'ابدأ التحرك للعمل' : 'Start Moving to Work'}</span>
+                <span>{t.startMovingToWork}</span>
               </Button>
             </div>
           </div>
@@ -1284,7 +1284,7 @@ export default function OrderTracking() {
             {/* Guidance Text Above Button */}
             <div className="text-center px-4 py-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
               <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                {language === 'ar' ? 'العميل بانتظارك، قم بالتحرك إليه لتكون هناك في الوقت' : 'Customer is waiting, move to them to be there on time'}
+                {t.customerWaiting}
               </p>
             </div>
 
@@ -1302,10 +1302,10 @@ export default function OrderTracking() {
                 </div>
                 <div className="text-right">
                   <p className="text-xl font-black text-white">
-                    {language === 'ar' ? 'فتح خريطة الموقع' : 'Open Location Map'}
+                    {t.openLocationMap}
                   </p>
                   <p className="text-xs font-medium text-blue-50 mt-1">
-                    {language === 'ar' ? 'اضغط للتوجه إلى العميل' : 'Click to navigate to customer'}
+                    {t.clickToNavigate}
                   </p>
                 </div>
               </div>
@@ -1316,13 +1316,13 @@ export default function OrderTracking() {
               <div className="w-full rounded-lg overflow-hidden shadow-lg border-2 border-border">
                 <img 
                   src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${order.gps_longitude},${order.gps_latitude})/${order.gps_longitude},${order.gps_latitude},14,0/600x300@2x?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTI2OHNweWYwNjdiMmtvZTNxdXg0czJkIn0.BctOp1N86HePHgvQFIHong`}
-                  alt={language === 'ar' ? 'موقع العميل' : 'Customer Location'}
+                  alt={t.customerLocation}
                   className="w-full h-48 object-cover"
                 />
                 <div className="bg-muted p-2 text-center">
                   <p className="text-xs font-medium flex items-center justify-center gap-2">
                     <MapPin className="h-3 w-3 text-primary" />
-                    <span>{language === 'ar' ? 'موقع العميل' : 'Customer Location'}</span>
+                    <span>{t.customerLocation}</span>
                   </p>
                 </div>
               </div>
@@ -1381,10 +1381,10 @@ export default function OrderTracking() {
               <div className="bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 py-3 px-4">
                 <div className="flex items-center justify-center gap-3">
                   <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
-                    <CheckCircle className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white">{language === 'ar' ? 'وصلت إلى الموقع' : 'Arrived at Location'}</h3>
-                </div>
+                <CheckCircle className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white">{t.arrivedAtLocation}</h3>
+            </div>
               </div>
 
               <div className="p-4 space-y-3">
@@ -1398,7 +1398,7 @@ export default function OrderTracking() {
                     >
                       <Phone className="h-6 w-6" />
                     </Button>
-                    <span className="text-xs font-medium text-green-700">اتصال بالعميل</span>
+                    <span className="text-xs font-medium text-green-700">{t.callCustomer}</span>
                   </div>
                 </div>
 
@@ -1409,7 +1409,7 @@ export default function OrderTracking() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-blue-600" />
-                          <p className="text-xs text-muted-foreground">معلومات المبنى</p>
+                          <p className="text-xs text-muted-foreground">{t.buildingInfo}</p>
                         </div>
                         <TranslateButton
                           text={order.building_info}
@@ -1474,7 +1474,7 @@ export default function OrderTracking() {
         {stage === 'working' && (
           <>
             <Card className="p-6 space-y-6 pb-32">
-              <h3 className="text-xl font-bold text-center">{language === 'ar' ? 'العمل جارٍ' : 'Work in Progress'}</h3>
+              <h3 className="text-xl font-bold text-center">{t.workInProgress}</h3>
               
               {/* Work Timer - Countdown */}
               <div className="text-center space-y-2">
@@ -1748,7 +1748,7 @@ export default function OrderTracking() {
               ) : (
                 <div className="text-4xl mb-2">💰</div>
               )}
-              <h3 className="text-lg font-bold text-white">{language === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details'}</h3>
+              <h3 className="text-lg font-bold text-white">{t.invoiceDetails}</h3>
               {order?.company && (
                 <p className="text-sm text-white/90 mt-1">{order.company.name}</p>
               )}
@@ -1901,12 +1901,12 @@ export default function OrderTracking() {
         {/* Customer Rating Stage */}
         {stage === 'customer_rating' && (
           <Card className="p-6 space-y-6">
-            <h3 className="text-xl font-bold text-center">{language === 'ar' ? 'تقييم العميل' : 'Rate the Customer'}</h3>
+            <h3 className="text-xl font-bold text-center">{t.rateCustomer}</h3>
             
             <div className="space-y-6">
               <div className="text-center space-y-4">
                 <p className="text-muted-foreground">
-                  {language === 'ar' ? 'كيف كانت تجربتك مع هذا العميل؟' : 'How was your experience with this customer?'}
+                  {t.experienceQuestion}
                 </p>
                 
                 {/* Star Rating */}
@@ -1930,10 +1930,10 @@ export default function OrderTracking() {
                 
                 {customerRating > 0 && customerRating < 5 && (
                   <p className="text-sm font-semibold">
-                    {customerRating === 4 && (language === 'ar' ? '👍 عميل جيد' : '👍 Good Customer')}
-                    {customerRating === 3 && (language === 'ar' ? '😊 عميل متوسط' : '😊 Average Customer')}
-                    {customerRating === 2 && (language === 'ar' ? '🤔 أقل من المتوسط' : '🤔 Below Average')}
-                    {customerRating === 1 && (language === 'ar' ? '😟 تجربة سيئة' : '😟 Poor Experience')}
+                    {customerRating === 4 && t.goodCustomer}
+                    {customerRating === 3 && t.averageCustomer}
+                    {customerRating === 2 && t.belowAverage}
+                    {customerRating === 1 && t.poorExperience}
                   </p>
                 )}
               </div>
@@ -1942,7 +1942,7 @@ export default function OrderTracking() {
               {customerRating > 0 && customerRating < 5 && (
                 <div className="space-y-2">
                   <Label htmlFor="customer_notes">
-                    {language === 'ar' ? 'ملاحظات إضافية (اختياري)' : 'Additional Notes (Optional)'}
+                    {t.additionalNotesOptional}
                   </Label>
                   <Textarea
                     id="customer_notes"
@@ -1971,7 +1971,7 @@ export default function OrderTracking() {
                 size="lg"
               >
                 <CheckCircle className="ml-2 h-5 w-5" />
-                {language === 'ar' ? 'إرسال التقييم' : 'Submit Rating'}
+                {t.submitRating}
               </Button>
             )}
           </Card>
