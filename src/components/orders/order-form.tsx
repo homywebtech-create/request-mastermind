@@ -906,10 +906,10 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                       <SelectValue placeholder={label.placeholder} />
                     </SelectTrigger>
                     <SelectContent className="bg-background z-50">
-                      <SelectItem value="0.0167">
+                      <SelectItem value="0.5">
                         <div className="flex flex-col items-start">
-                          <span className="font-medium">دقيقة واحدة (اختبار)</span>
-                          <span className="text-xs text-muted-foreground">1 Minute (Test)</span>
+                          <span className="font-medium">30 دقيقة (الحد الأدنى)</span>
+                          <span className="text-xs text-muted-foreground">30 Minutes (Minimum)</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="1">

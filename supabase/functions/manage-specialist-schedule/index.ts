@@ -41,6 +41,17 @@ Deno.serve(async (req) => {
       );
     }
 
+    // CRITICAL: Enforce minimum booking duration of 30 minutes (0.5 hours)
+    if (hours_count < 0.5) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'الحد الأدنى لمدة الحجز هو 30 دقيقة (0.5 ساعة)',
+          error_en: 'Minimum booking duration is 30 minutes (0.5 hours)'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Parse booking date and time
     // Handle time ranges (e.g., "14:00-14:30") by taking the start time
     const timeString = booking_time.includes('-') 

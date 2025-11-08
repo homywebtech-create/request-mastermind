@@ -1416,11 +1416,20 @@ export default function CompanyBooking() {
                     <Input
                       id="edit-hours"
                       type="number"
-                      min="1"
+                      min="0.5"
+                      step="0.5"
                       max="24"
                       value={editedHoursCount}
-                      onChange={(e) => setEditedHoursCount(parseInt(e.target.value) || 1)}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (value >= 0.5) {
+                          setEditedHoursCount(value);
+                        }
+                      }}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar' ? 'الحد الأدنى: 30 دقيقة (0.5 ساعة)' : 'Minimum: 30 minutes (0.5 hours)'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-2 justify-end pt-2">
