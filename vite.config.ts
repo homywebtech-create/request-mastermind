@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: ['path', 'fs', 'child_process'],
+      external: ['path', 'fs', 'child_process', '@capacitor/share'],
     },
   },
   base: '/',
