@@ -324,13 +324,22 @@ export default function CompanyBooking() {
       
       // Calculate the actual end time of this booking based on hours_count
       const slotEndDateTime = new Date(slotStartDateTime);
-      slotEndDateTime.setHours(slotEndDateTime.getHours() + hoursCount);
+      // IMPORTANT: Convert hours to milliseconds for accurate calculation (supports decimal hours)
+      const durationMs = hoursCount * 60 * 60 * 1000;
+      slotEndDateTime.setTime(slotEndDateTime.getTime() + durationMs);
 
       // CRITICAL: Fixed 2-hour travel buffer before and after all bookings
       // This ensures specialists have enough time to travel between appointments
       const TRAVEL_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours = 120 minutes
       const newBookingStartWithBuffer = new Date(slotStartDateTime.getTime() - TRAVEL_BUFFER_MS);
       const newBookingEndWithBuffer = new Date(slotEndDateTime.getTime() + TRAVEL_BUFFER_MS);
+
+      console.log(`🔍 Checking time slot: ${timeSlot} on ${selectedDate.toLocaleDateString()}`);
+      console.log(`  📅 New booking window (${hoursCount}h):`, {
+        bookingStart: slotStartDateTime.toLocaleString(),
+        bookingEnd: slotEndDateTime.toLocaleString(),
+        withBuffer: `${newBookingStartWithBuffer.toLocaleString()} - ${newBookingEndWithBuffer.toLocaleString()}`
+      });
 
       // Check if this slot conflicts with any existing booking (including travel buffer)
       const hasConflict = schedules.some(schedule => {
@@ -353,9 +362,17 @@ export default function CompanyBooking() {
         );
         
         if (overlaps) {
-          console.log('⚠️ Schedule conflict detected with 2-hour travel buffer:');
-          console.log(`  New booking (${hoursCount}h):`, newBookingStartWithBuffer.toLocaleString(), '-', newBookingEndWithBuffer.toLocaleString());
-          console.log(`  Existing booking:`, existingBookingStartWithBuffer.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
+          console.log('  ❌ CONFLICT with existing booking:');
+          console.log('    Existing booking:', {
+            start: scheduleStart.toLocaleString(),
+            end: scheduleEnd.toLocaleString(),
+            withBuffer: `${existingBookingStartWithBuffer.toLocaleString()} - ${existingBookingEndWithBuffer.toLocaleString()}`
+          });
+        } else {
+          console.log('  ✅ No conflict with existing booking:', {
+            start: scheduleStart.toLocaleString(),
+            end: scheduleEnd.toLocaleString()
+          });
         }
         
         return overlaps;
