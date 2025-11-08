@@ -81,7 +81,7 @@ export function MapLocationPicker({
     lat: initialLat,
     lng: initialLng
   });
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const [autocomplete, setAutocomplete] = useState<any>(null);
   const [searchValue, setSearchValue] = useState('');
 
   // Fetch Google Maps API key
@@ -112,7 +112,7 @@ export function MapLocationPicker({
     fetchApiKey();
   }, []);
 
-  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+  const handleMapClick = useCallback((e: any) => {
     if (e.latLng) {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
@@ -126,7 +126,7 @@ export function MapLocationPicker({
     }
   }, [onLocationSelect, t]);
 
-  const handleMarkerDragEnd = useCallback((e: google.maps.MapMouseEvent) => {
+  const handleMarkerDragEnd = useCallback((e: any) => {
     if (e.latLng) {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
@@ -202,7 +202,7 @@ export function MapLocationPicker({
     }
   };
 
-  const onAutocompleteLoad = (autocompleteInstance: google.maps.places.Autocomplete) => {
+  const onAutocompleteLoad = (autocompleteInstance: any) => {
     setAutocomplete(autocompleteInstance);
   };
 
@@ -297,7 +297,6 @@ export function MapLocationPicker({
               position={selectedLocation}
               draggable={true}
               onDragEnd={handleMarkerDragEnd}
-              animation={google.maps.Animation.DROP}
             />
           </GoogleMap>
         </div>
