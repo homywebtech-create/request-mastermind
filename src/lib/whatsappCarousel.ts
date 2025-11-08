@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sendWhatsAppMessage } from "./whatsappHelper";
+import { sendInteractiveWhatsAppMessage, formatSpecialistsAsButtons } from "./whatsappInteractiveHelper";
 
 interface SpecialistQuote {
   specialistId: string;
@@ -34,22 +35,37 @@ export const sendWhatsAppCarouselToCustomer = async ({
       throw new Error('No quotes available to send');
     }
 
-    // Prepare specialists data with company page URLs
-    const specialists = quotes.map(quote => ({
-      name: quote.specialistName,
-      nationality: quote.specialistNationality,
-      imageUrl: quote.specialistImageUrl,
-      price: quote.quotedPrice,
-      companyPageUrl: `${window.location.origin}/company-booking?company=${quote.companyId}&specialist=${quote.specialistId}&order=${orderNumber}`,
-      specialistId: quote.specialistId
-    }));
+    // Prepare specialists as buttons (max 3)
+    const specialistButtons = formatSpecialistsAsButtons(
+      quotes.map(quote => ({
+        id: quote.specialistId,
+        name: quote.specialistName,
+        quoted_price: `${quote.quotedPrice} ر.س/ساعة`
+      }))
+    );
 
-    // Send WhatsApp message with specialists list
-    await sendWhatsAppMessage({
+    // Build message body
+    let messageBody = `مرحباً ${customerName}! 👋\n\n`;
+    messageBody += `🎉 *تم استلام ${quotes.length} ${quotes.length === 1 ? 'عرض' : 'عروض'} لطلبك*\n\n`;
+    messageBody += `📋 رقم الطلب: *${orderNumber}*\n`;
+    messageBody += `🔧 الخدمة: ${serviceType}\n\n`;
+    messageBody += `━━━━━━━━━━━━━━━\n\n`;
+    
+    // Add specialist details
+    quotes.forEach((quote, index) => {
+      messageBody += `${index + 1}. 👤 *${quote.specialistName}*\n`;
+      messageBody += `   🌍 ${quote.specialistNationality}\n`;
+      messageBody += `   💰 ${quote.quotedPrice} ر.س/ساعة\n\n`;
+    });
+    
+    messageBody += `━━━━━━━━━━━━━━━\n\n`;
+    messageBody += `اختر المحترف المناسب بالضغط على أحد الأزرار أدناه 👇`;
+
+    // Send WhatsApp interactive message with buttons
+    await sendInteractiveWhatsAppMessage({
       to: customerPhone,
-      message: '', // Message will be built in edge function
-      customerName,
-      specialists,
+      message: messageBody,
+      buttons: specialistButtons,
       orderDetails: {
         serviceType,
         orderNumber

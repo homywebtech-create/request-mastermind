@@ -35,6 +35,7 @@ import AdminSpecialists from "./pages/AdminSpecialists";
 import PushNotificationTest from "./pages/PushNotificationTest";
 import NotificationDiagnostics from "./pages/NotificationDiagnostics";
 import WhatsAppTest from "./pages/WhatsAppTest";
+import WhatsAppInteractiveTest from "./pages/WhatsAppInteractiveTest";
 import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
@@ -465,6 +466,13 @@ function AppRouter() {
         <Route path="/whatsapp-test" element={
           <RoleProtectedRoute requiredPermission="view_dashboard">
             <WhatsAppTest />
+          </RoleProtectedRoute>
+        } />
+        
+        {/* WhatsApp Interactive Test (admin only) */}
+        <Route path="/whatsapp-interactive-test" element={
+          <RoleProtectedRoute requiredPermission="view_dashboard">
+            <WhatsAppInteractiveTest />
           </RoleProtectedRoute>
         } />
         
