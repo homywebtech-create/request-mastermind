@@ -26,6 +26,7 @@ import { getSoundNotification } from "@/lib/soundNotification";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { NotificationStatusChecker } from "@/components/specialist/NotificationStatusChecker";
 import { OnlineStatusToggle } from "@/components/specialist/OnlineStatusToggle";
+import { TranslateButton } from "@/components/specialist/TranslateButton";
 
 interface Order {
   id: string;
@@ -65,6 +66,7 @@ export default function SpecialistNewOrders() {
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set()); // Track new orders for animation
   const [currentTime, setCurrentTime] = useState(Date.now()); // For timer updates
   const [newOrdersCount, setNewOrdersCount] = useState(0); // Dynamic count for badge
+  const [translatedNotes, setTranslatedNotes] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
   const soundNotification = useRef(getSoundNotification());
@@ -1106,14 +1108,24 @@ export default function SpecialistNewOrders() {
                           <FileText className="h-4 w-4 text-amber-700 dark:text-amber-300" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <p className="text-[10px] font-bold text-amber-800 dark:text-amber-200 uppercase">ملاحظات العميل</p>
-                            {order.translated && preferredLanguage !== 'ar' && (
-                              <Globe className="h-3 w-3 text-blue-500" />
-                            )}
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-[10px] font-bold text-amber-800 dark:text-amber-200 uppercase">
+                                {language === 'ar' ? 'ملاحظات العميل' : 'Customer Notes'}
+                              </p>
+                              {order.translated && preferredLanguage !== 'ar' && (
+                                <Globe className="h-3 w-3 text-blue-500" />
+                              )}
+                            </div>
+                            <TranslateButton
+                              text={order.notes}
+                              onTranslated={(translated) => setTranslatedNotes(prev => ({ ...prev, [order.id]: translated }))}
+                              sourceLanguage="ar"
+                              size="sm"
+                            />
                           </div>
                           <p className="text-xs leading-relaxed font-medium text-amber-900 dark:text-amber-100">
-                            {order.translated?.notes || order.notes}
+                            {translatedNotes[order.id] || order.translated?.notes || order.notes}
                           </p>
                         </div>
                       </div>

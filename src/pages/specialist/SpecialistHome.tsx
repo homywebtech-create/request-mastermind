@@ -24,6 +24,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 import { getSoundNotification } from "@/lib/soundNotification";
 import { useSpecialistCompanyCountry } from "@/hooks/useCompanyCountry";
+import { TranslateButton } from "@/components/specialist/TranslateButton";
 
 interface Order {
   id: string;
@@ -68,6 +69,7 @@ export default function SpecialistHome() {
   const [preferredLanguage, setPreferredLanguage] = useState('ar');
   const [readinessCheckOrder, setReadinessCheckOrder] = useState<string | null>(null);
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
+  const [translatedNotes, setTranslatedNotes] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language, initializeLanguage, setLanguage } = useLanguage();
@@ -894,11 +896,19 @@ export default function SpecialistHome() {
                   {/* Customer Notes - Mobile Optimized */}
                   {order.notes && order.notes.trim() !== '' && !order.notes.includes('Terms and Conditions') && (
                     <div className="bg-yellow-50 dark:bg-yellow-950/30 p-3 sm:p-3.5 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                      <p className="text-[10px] sm:text-xs text-yellow-600 dark:text-yellow-400 mb-1.5 sm:mb-2 font-medium">
-                        💬 {isAr ? 'توصيات العميل' : 'Customer Notes'}
-                      </p>
+                      <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                        <p className="text-[10px] sm:text-xs text-yellow-600 dark:text-yellow-400 font-medium">
+                          💬 {isAr ? 'ملاحظات العميل' : 'Customer Notes'}
+                        </p>
+                        <TranslateButton
+                          text={order.notes}
+                          onTranslated={(translated) => setTranslatedNotes(prev => ({ ...prev, [order.id]: translated }))}
+                          sourceLanguage="ar"
+                          size="sm"
+                        />
+                      </div>
                       <p className="text-xs sm:text-sm text-yellow-900 dark:text-yellow-100 leading-relaxed">
-                        {order.translated?.notes || order.notes}
+                        {translatedNotes[order.id] || order.translated?.notes || order.notes}
                       </p>
                     </div>
                   )}
