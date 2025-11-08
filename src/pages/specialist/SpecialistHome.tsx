@@ -22,6 +22,7 @@ import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getSoundNotification } from "@/lib/soundNotification";
+import { useSpecialistCompanyCountry } from "@/hooks/useCompanyCountry";
 
 interface Order {
   id: string;
@@ -70,6 +71,7 @@ export default function SpecialistHome() {
   const navigate = useNavigate();
   const { language, initializeLanguage, setLanguage } = useLanguage();
   const isAr = language === 'ar';
+  const { currencySymbol, currency, isLoading: currencyLoading } = useSpecialistCompanyCountry(specialistId);
   
   useEffect(() => {
     initializeLanguage();
@@ -617,7 +619,9 @@ export default function SpecialistHome() {
                   <Wallet className="h-4 w-4" />
                   <div className="text-right">
                     <p className="text-[10px] opacity-80 leading-none">{isAr ? 'المحفظة' : 'Wallet'}</p>
-                    <p className="text-sm font-bold leading-tight">{isAr ? '0 ر.س' : 'SAR 0'}</p>
+                    <p className="text-sm font-bold leading-tight">
+                      {currencyLoading ? '...' : `0 ${currencySymbol}`}
+                    </p>
                   </div>
                 </div>
               </div>
