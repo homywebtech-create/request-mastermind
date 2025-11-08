@@ -1365,7 +1365,7 @@ export default function OrderTracking() {
                     <div className="flex items-center justify-center gap-2">
                       <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-pulse" />
                       <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">
-                        الزر سيتم تفعيله بعد
+                        {t.buttonWillActivateIn}
                       </p>
                     </div>
                     <div className="text-center">
@@ -1395,7 +1395,7 @@ export default function OrderTracking() {
                 size="lg"
               >
                 <CheckCircle className="h-5 w-5 ml-2" />
-                <span>لقد وصلت إلى الموقع</span>
+                <span>{t.iHaveArrivedAtLocation}</span>
               </Button>
             </div>
           </div>
@@ -1474,9 +1474,7 @@ export default function OrderTracking() {
                       <Clock className="h-4 w-4 text-blue-600" />
                     </div>
                     <p className="text-xs font-medium text-blue-800">
-                      {language === 'ar' 
-                        ? 'في حالة عدم الضغط على الزر، سيبدأ العمل تلقائياً بعد 5 دقائق من الوصول' 
-                        : 'If you don\'t press the button, work will start automatically after 5 minutes'}
+                      {t.autoStartWorkWarning}
                     </p>
                   </div>
                 </div>

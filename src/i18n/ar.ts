@@ -594,5 +594,8 @@ export const ar = {
     customerLocationLink: "رابط موقع العميل",
     trackingError: "خطأ",
     customerLocationNotAvailable: "موقع العميل غير متوفر",
+    buttonWillActivateIn: "الزر سيتم تفعيله بعد",
+    iHaveArrivedAtLocation: "لقد وصلت إلى الموقع",
+    autoStartWorkWarning: "في حالة عدم الضغط على الزر، سيبدأ العمل تلقائياً بعد 5 دقائق من الوصول",
   },
 };

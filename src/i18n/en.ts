@@ -594,5 +594,8 @@ export const en = {
     customerLocationLink: "Customer Location Link",
     trackingError: "Error",
     customerLocationNotAvailable: "Customer location not available",
+    buttonWillActivateIn: "Button will activate in",
+    iHaveArrivedAtLocation: "I have arrived at the location",
+    autoStartWorkWarning: "If you don't press the button, work will start automatically after 5 minutes",
   },
 };
