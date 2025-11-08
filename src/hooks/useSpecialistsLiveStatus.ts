@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SpecialistLiveStatus {
@@ -28,6 +28,16 @@ export interface SpecialistLiveStatus {
 export function useSpecialistsLiveStatus(companyId: string | null | undefined, isAdmin: boolean = false) {
   const [specialists, setSpecialists] = useState<SpecialistLiveStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedFetchSpecialists = () => {
+    if (updateTimerRef.current) {
+      clearTimeout(updateTimerRef.current);
+    }
+    updateTimerRef.current = setTimeout(() => {
+      fetchSpecialistsStatus();
+    }, 2000); // Wait 2 seconds before fetching
+  };
 
   const fetchSpecialistsStatus = async () => {
     // For non-admin users without company, don't show anything
@@ -286,14 +296,17 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
     } catch (error) {
       console.error('Error fetching specialists status:', error);
     } finally {
-      setIsLoading(false);
+      // Only set loading false on initial load
+      if (specialists.length === 0) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     fetchSpecialistsStatus();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates with debouncing
     const channel = supabase
       .channel('specialists-live-status')
       .on(
@@ -305,7 +318,7 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           filter: companyId ? `company_id=eq.${companyId}` : undefined
         },
         () => {
-          fetchSpecialistsStatus();
+          debouncedFetchSpecialists();
         }
       )
       .on(
@@ -316,7 +329,7 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           table: 'device_tokens'
         },
         () => {
-          fetchSpecialistsStatus();
+          debouncedFetchSpecialists();
         }
       )
       .on(
@@ -327,7 +340,7 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           table: 'order_specialists'
         },
         () => {
-          fetchSpecialistsStatus();
+          debouncedFetchSpecialists();
         }
       )
       .on(
@@ -338,12 +351,15 @@ export function useSpecialistsLiveStatus(companyId: string | null | undefined, i
           table: 'orders'
         },
         () => {
-          fetchSpecialistsStatus();
+          debouncedFetchSpecialists();
         }
       )
       .subscribe();
 
     return () => {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
   }, [companyId, isAdmin]);

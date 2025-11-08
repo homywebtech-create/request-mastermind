@@ -171,6 +171,18 @@ export default function Dashboard() {
     return () => document.removeEventListener('click', initAudio);
   }, []);
 
+  // Debounce timer for updates
+  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedFetchOrders = () => {
+    if (updateTimerRef.current) {
+      clearTimeout(updateTimerRef.current);
+    }
+    updateTimerRef.current = setTimeout(() => {
+      fetchOrders();
+    }, 1000); // Wait 1 second before fetching
+  };
+
   useEffect(() => {
     fetchOrders();
     fetchSuspendedSpecialistsCount();
@@ -188,12 +200,7 @@ export default function Dashboard() {
         },
         (payload) => {
           console.log('New order detected:', payload);
-          fetchOrders();
-          
-          // Play sound notification for new order (COMMENTED: Push notifications now handle this)
-          // if (soundEnabled) {
-          //   soundNotification.current.playNewOrderSound();
-          // }
+          debouncedFetchOrders();
           
           toast({
             title: "🔔 طلب جديد",
@@ -209,7 +216,7 @@ export default function Dashboard() {
           table: 'orders'
         },
         () => {
-          fetchOrders();
+          debouncedFetchOrders();
         }
       )
       .subscribe();
@@ -226,7 +233,7 @@ export default function Dashboard() {
         },
         (payload) => {
           console.log('New order_specialist entry:', payload);
-          fetchOrders();
+          debouncedFetchOrders();
         }
       )
       .on(
@@ -249,12 +256,15 @@ export default function Dashboard() {
             });
           }
           
-          fetchOrders();
+          debouncedFetchOrders();
         }
       )
       .subscribe();
 
     return () => {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+      }
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(quotesChannel);
     };
@@ -284,7 +294,10 @@ export default function Dashboard() {
   };
 
   const fetchOrders = async () => {
-    setLoading(true);
+    // Only show loading on initial fetch
+    if (orders.length === 0) {
+      setLoading(true);
+    }
     const { data, error } = await supabase
       .from('orders')
       .select(`

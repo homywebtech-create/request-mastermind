@@ -29,6 +29,17 @@ export function CompaniesLivePanel() {
   const [adminName, setAdminName] = useState<string>("");
   const previousUnreadCounts = useRef<Record<string, number>>({});
 
+  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedFetchCompanies = () => {
+    if (updateTimerRef.current) {
+      clearTimeout(updateTimerRef.current);
+    }
+    updateTimerRef.current = setTimeout(() => {
+      fetchCompaniesStatus();
+    }, 1500); // Wait 1.5 seconds before fetching
+  };
+
   useEffect(() => {
     fetchCompaniesStatus();
     fetchAdminName();
@@ -44,12 +55,15 @@ export function CompaniesLivePanel() {
           table: "company_chats",
         },
         () => {
-          fetchCompaniesStatus();
+          debouncedFetchCompanies();
         }
       )
       .subscribe();
 
     return () => {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
   }, []);
@@ -75,7 +89,10 @@ export function CompaniesLivePanel() {
 
   const fetchCompaniesStatus = async () => {
     try {
-      setLoading(true);
+      // Only show loading on initial fetch
+      if (companies.length === 0) {
+        setLoading(true);
+      }
 
       // Fetch companies
       const { data: companiesData, error: companiesError } = await supabase
