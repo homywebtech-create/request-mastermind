@@ -28,7 +28,7 @@ import { useTranslation } from "@/i18n";
 import { translateOrderDetails } from "@/lib/translateHelper";
 import { TranslateButton } from "@/components/specialist/TranslateButton";
 import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
-import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 
 type Stage = 'initial' | 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
@@ -714,22 +714,35 @@ export default function OrderTracking() {
       return;
     }
 
-    // Create Google Maps URL for sharing
     const locationUrl = `https://www.google.com/maps/search/?api=1&query=${order.gps_latitude},${order.gps_longitude}`;
-    const shareText = language === 'ar' 
+    const shareText = language === 'ar'
       ? `موقع العميل: ${order.customer?.name || ''}\n${locationUrl}`
       : `Customer Location: ${order.customer?.name || ''}\n${locationUrl}`;
 
     try {
-      // Use Capacitor Share API for native sharing
-      await Share.share({
-        title: language === 'ar' ? 'موقع العميل' : 'Customer Location',
-        text: shareText,
-        dialogTitle: language === 'ar' ? 'مشاركة موقع العميل' : 'Share Customer Location',
-      });
+      if (Capacitor.isNativePlatform()) {
+        const { Share } = await import('@capacitor/share');
+        await Share.share({
+          title: language === 'ar' ? 'موقع العميل' : 'Customer Location',
+          text: shareText,
+          dialogTitle: language === 'ar' ? 'مشاركة موقع العميل' : 'Share Customer Location',
+        });
+        return;
+      }
+
+      if (navigator.share) {
+        await navigator.share({
+          title: language === 'ar' ? 'موقع العميل' : 'Customer Location',
+          text: shareText,
+          url: locationUrl,
+        });
+        return;
+      }
+
+      // Web fallback: open WhatsApp with text
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
     } catch (error) {
       console.error('Error sharing location:', error);
-      // If sharing fails or user cancels, try clipboard as fallback
       try {
         if (navigator.clipboard) {
           await navigator.clipboard.writeText(locationUrl);
@@ -737,8 +750,14 @@ export default function OrderTracking() {
             title: language === 'ar' ? "تم النسخ" : "Copied",
             description: language === 'ar' ? "تم نسخ رابط موقع العميل" : "Customer location link copied",
           });
+        } else {
+          toast({
+            title: language === 'ar' ? "رابط موقع العميل" : "Customer Location Link",
+            description: locationUrl,
+            duration: 10000,
+          });
         }
-      } catch (clipError) {
+      } catch {
         toast({
           title: language === 'ar' ? "رابط موقع العميل" : "Customer Location Link",
           description: locationUrl,
