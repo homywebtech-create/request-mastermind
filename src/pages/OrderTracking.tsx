@@ -1512,11 +1512,6 @@ export default function OrderTracking() {
                 <div className="text-sm text-muted-foreground">
                   {t.remainingTime} {formatTime(totalWorkSeconds)}
                 </div>
-                {timeExpired && (
-                  <div className="text-base font-semibold text-red-600 animate-pulse">
-                    {t.timeExpiredAlert}
-                  </div>
-                )}
               </div>
 
               {/* Progress Bar */}
@@ -1666,7 +1661,7 @@ export default function OrderTracking() {
                         size="lg"
                       >
                         <Clock className="ml-2 h-5 w-5" />
-                        تمديد وقت العمل
+                        {t.extendWorkTime}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-md">
@@ -1753,7 +1748,7 @@ export default function OrderTracking() {
                   className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold shadow-lg"
                 >
                   <CheckCircle className="ml-2 h-6 w-6" />
-                  إنهاء العمل الآن
+                  {t.finishWorkNow}
                 </Button>
               </div>
             </div>
@@ -1787,49 +1782,49 @@ export default function OrderTracking() {
                   {/* Order Information */}
                   <div className="space-y-2 pb-3 border-b border-slate-300 dark:border-slate-600">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">رقم الطلب</span>
+                      <span className="text-sm text-muted-foreground">{t.orderNumber}</span>
                       <span className="font-semibold text-base">{order.order_number}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">تاريخ الحجز</span>
-                      <span className="font-semibold text-sm">{order.booking_date ? new Date(order.booking_date).toLocaleDateString('ar-SA') : '-'}</span>
+                      <span className="text-sm text-muted-foreground">{t.bookingDate}</span>
+                      <span className="font-semibold text-sm">{order.booking_date ? new Date(order.booking_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US') : '-'}</span>
                     </div>
                     {arrivedStartTime && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">وقت الوصول</span>
-                        <span className="font-semibold text-sm">{arrivedStartTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-sm text-muted-foreground">{t.arrivalTime}</span>
+                        <span className="font-semibold text-sm">{arrivedStartTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     )}
                     {workStartTime && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">بدء العمل</span>
-                        <span className="font-semibold text-sm">{workStartTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-sm text-muted-foreground">{t.workStartTime}</span>
+                        <span className="font-semibold text-sm">{workStartTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     )}
                     {workEndTime && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">انتهاء العمل</span>
-                        <span className="font-semibold text-sm">{workEndTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-sm text-muted-foreground">{t.workEndTime}</span>
+                        <span className="font-semibold text-sm">{workEndTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     )}
                   </div>
                   
                   {/* Service Type */}
                   <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
-                    <span className="text-sm text-muted-foreground">نوع الخدمة</span>
+                    <span className="text-sm text-muted-foreground">{t.serviceType}</span>
                     <span className="font-bold text-base">{order.service_type}</span>
                   </div>
                   
                   {/* Hours Summary */}
                   <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
-                    <span className="text-sm text-muted-foreground">عدد الساعات</span>
-                    <span className="font-bold text-lg text-primary">{order.hours_count} ساعة</span>
+                    <span className="text-sm text-muted-foreground">{t.numberOfHours}</span>
+                    <span className="font-bold text-lg text-primary">{order.hours_count} {t.hourLabel}</span>
                   </div>
                   
                   {/* Discount if any */}
                   {discount > 0 && (
                     <div className="flex justify-between items-center text-green-600 dark:text-green-400 text-base bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                      <span className="font-medium">الخصم</span>
+                      <span className="font-medium">{t.discount}</span>
                       <span className="font-bold text-lg">-{discount.toFixed(2)} ر.ق</span>
                     </div>
                   )}
@@ -1837,7 +1832,7 @@ export default function OrderTracking() {
                   {/* Total Amount - Prominent */}
                   <div className="border-t-2 border-slate-400 dark:border-slate-500 pt-4 mt-4">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-xl">المبلغ الإجمالي</span>
+                      <span className="font-bold text-xl">{t.totalAmount}</span>
                       <span className="font-black text-green-600 text-3xl">
                         {(invoiceAmount - discount).toFixed(2)} <span className="text-xl">ر.ق</span>
                       </span>
@@ -1846,7 +1841,7 @@ export default function OrderTracking() {
                 </div>
                 
                 <p className="text-sm text-center text-muted-foreground bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                  💵 الرجاء تحصيل هذا المبلغ من العميل
+                  {t.pleaseCollectAmount}
                 </p>
               </div>
             </div>
@@ -1898,7 +1893,7 @@ export default function OrderTracking() {
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="other" id="other" />
-                      <Label htmlFor="other">سبب آخر</Label>
+                      <Label htmlFor="other">{t.otherReason}</Label>
                     </div>
                   </RadioGroup>
                   

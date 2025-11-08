@@ -608,5 +608,24 @@ export const ar = {
     emergencyWarning: "⚠️ تحذير: هذه الأزرار للحالات الطارئة فقط",
     emergencyContact: "اتصال طوارئ بالشركة",
     remainingTime: "من",
+    arrivalTime: "وقت الوصول",
+    workStartTime: "بدء العمل",
+    workEndTime: "انتهاء العمل",
+    numberOfHours: "عدد الساعات",
+    hourLabel: "ساعة",
+    discount: "الخصم",
+    totalAmount: "المبلغ الإجمالي",
+    pleaseCollectAmount: "💵 الرجاء تحصيل هذا المبلغ من العميل",
+    confirmPaymentReceived: "تأكيد استلام الدفع",
+    paymentNotReceived: "لم يتم الدفع",
+    paymentNotReceivedReason: "سبب عدم الدفع",
+    selectPaymentNotReceivedReason: "يرجى اختيار سبب عدم استلام الدفع",
+    customerRefusedPayment: "العميل رفض الدفع",
+    customerHasNoCash: "العميل ليس معه نقود",
+    disputeOverAmount: "خلاف على المبلغ أو الخدمة",
+    promisedToPayLater: "وعد بالدفع لاحقاً",
+    otherReason: "أخرى (حدد السبب)",
+    finishWorkNow: "إنهاء العمل الآن",
+    extendWorkTime: "تمديد وقت العمل",
   },
 };
