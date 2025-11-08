@@ -114,7 +114,7 @@ function MobileLanding() {
     return <AppLoader message="جاري التحميل..." />;
   }
 
-  return null;
+  return <AppLoader message="جارٍ التوجيه..." />;
 }
 
 function AppRouter() {

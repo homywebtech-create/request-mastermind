@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { useUpdateNotificationHandler, UpdateNotificationData } from './useUpdateNotificationHandler';
 import { useUpdateBroadcastReceiver } from './useUpdateBroadcastReceiver';
 
@@ -16,11 +17,15 @@ export interface AppVersion {
 }
 
 export const useAppUpdate = () => {
+  const isNative = typeof (Capacitor as any)?.isNativePlatform === 'function'
+    ? Capacitor.isNativePlatform()
+    : Capacitor.getPlatform() !== 'web';
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [latestVersion, setLatestVersion] = useState<AppVersion | null>(null);
   const [checking, setChecking] = useState(false);
 
   const checkForUpdates = async () => {
+    if (!isNative) return null;
     setChecking(true);
     try {
       // Get actual installed version code from the app
@@ -52,9 +57,14 @@ export const useAppUpdate = () => {
   const handleUpdateNotification = useCallback(async (data: UpdateNotificationData) => {
     console.log('🔔 [Update] Notification received, setting version data:', data);
     
-    // Get current installed version to compare
-    const appInfo = await App.getInfo();
-    const currentVersionCode = parseInt(appInfo.build);
+    let currentVersionCode = 0;
+    try {
+      const appInfo = await App.getInfo();
+      currentVersionCode = parseInt(appInfo.build);
+    } catch (e) {
+      console.warn('App.getInfo not available on this platform, skipping comparison');
+      return;
+    }
     const notificationVersionCode = parseInt(data.version_code);
     
     console.log('🔍 [Update] Version comparison:', {
@@ -92,6 +102,8 @@ export const useAppUpdate = () => {
 
   // Periodic update checks (every 1 minute for responsive updates)
   useEffect(() => {
+    if (!isNative) return;
+    
     // Check immediately on mount
     checkForUpdates();
     
@@ -101,7 +113,7 @@ export const useAppUpdate = () => {
     }, 1 * 60 * 1000); // 1 minute
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isNative]);
 
   return {
     updateAvailable,
