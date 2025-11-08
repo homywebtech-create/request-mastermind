@@ -371,8 +371,8 @@ export default function OrderTracking() {
     }
 
     toast({
-      title: language === 'ar' ? "انتهى وقت العمل" : "Time Expired",
-      description: language === 'ar' ? "الوقت المحدد للعمل قد انتهى. يرجى إنهاء العمل" : "The allotted work time has expired. Please finish the work",
+      title: t.timeExpired,
+      description: t.timeExpiredDescription,
       duration: 10000,
     });
   };
@@ -1510,11 +1510,11 @@ export default function OrderTracking() {
                   {formatTime(getRemainingTime())}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  من {formatTime(totalWorkSeconds)}
+                  {t.remainingTime} {formatTime(totalWorkSeconds)}
                 </div>
                 {timeExpired && (
                   <div className="text-base font-semibold text-red-600 animate-pulse">
-                    ⏰ انتهى وقت العمل - يرجى إنهاء العمل
+                    {t.timeExpiredAlert}
                   </div>
                 )}
               </div>
@@ -1534,9 +1534,9 @@ export default function OrderTracking() {
                 <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 p-4 animate-pulse">
                   <div className="text-center space-y-3">
                     <div className="text-4xl">⏰</div>
-                    <h4 className="text-lg font-bold text-red-800">انتهى وقت العمل المحدد</h4>
+                    <h4 className="text-lg font-bold text-red-800">{t.workTimeExpiredTitle}</h4>
                     <p className="text-sm text-red-700">
-                      الوقت المخصص للعمل قد انتهى. يرجى إنهاء العمل والانتقال للفاتورة
+                      {t.workTimeExpiredMessage}
                     </p>
                   </div>
                 </Card>
@@ -1555,12 +1555,12 @@ export default function OrderTracking() {
                     {isPaused ? (
                       <>
                         <Play className="ml-2 h-5 w-5" />
-                        استئناف العمل
+                        {t.resumeWork}
                       </>
                     ) : (
                       <>
                         <Pause className="ml-2 h-5 w-5" />
-                        إيقاف مؤقت
+                        {t.pauseWork}
                       </>
                     )}
                   </Button>
@@ -1575,13 +1575,13 @@ export default function OrderTracking() {
                       className="w-full text-xs text-muted-foreground hover:text-foreground"
                     >
                       <AlertTriangle className="ml-2 h-3 w-3" />
-                      حالات الطوارئ فقط
+                      {t.emergencyOnly}
                       <ChevronDown className="mr-2 h-3 w-3" />
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="space-y-2 pt-3">
                     <p className="text-xs text-center text-muted-foreground mb-3 px-4">
-                      ⚠️ تحذير: هذه الأزرار للحالات الطارئة فقط
+                      {t.emergencyWarning}
                     </p>
                     
                     <Button
@@ -1591,7 +1591,7 @@ export default function OrderTracking() {
                       className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 text-xs"
                     >
                       <AlertTriangle className="ml-2 h-3.5 w-3.5" />
-                      اتصال طوارئ بالشركة
+                      {t.emergencyContact}
                     </Button>
 
                     <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
