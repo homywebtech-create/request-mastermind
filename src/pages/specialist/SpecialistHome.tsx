@@ -365,13 +365,45 @@ export default function SpecialistHome() {
         };
       });
 
+      // Sort orders by date first, then by booking time
+      const sortedOrders = ordersWithQuotes.sort((a, b) => {
+        // First, compare booking dates
+        const dateA = a.booking_date ? new Date(a.booking_date).getTime() : 0;
+        const dateB = b.booking_date ? new Date(b.booking_date).getTime() : 0;
+        if (dateA !== dateB) return dateA - dateB;
+
+        // If same date, compare booking times
+        const getStartTime = (timeStr: string | null) => {
+          if (!timeStr) return 0;
+          // Extract start time from range (e.g., "8:00 AM-8:30 AM" -> "8:00 AM")
+          let startTime = timeStr.includes('-') ? timeStr.split('-')[0].trim() : timeStr.trim();
+          
+          // Convert to 24-hour format for comparison
+          const isPM = startTime.includes('PM');
+          const isAM = startTime.includes('AM');
+          const timeOnly = startTime.replace(/\s?(AM|PM)/gi, '').trim();
+          const [hours, minutes] = timeOnly.split(':').map(Number);
+          
+          let hours24 = hours;
+          if (isPM && hours !== 12) {
+            hours24 = hours + 12;
+          } else if (isAM && hours === 12) {
+            hours24 = 0;
+          }
+          
+          return hours24 * 60 + (minutes || 0); // Convert to minutes for easy comparison
+        };
+
+        return getStartTime(a.booking_time) - getStartTime(b.booking_time);
+      });
+
       // Show orders immediately without translation
-      setOrders(ordersWithQuotes);
+      setOrders(sortedOrders);
       setIsLoading(false);
 
       // Translate in background if needed (non-blocking)
-      if (preferredLanguage && preferredLanguage !== 'ar' && ordersWithQuotes.length > 0) {
-        Promise.all(ordersWithQuotes.map(async (order) => {
+      if (preferredLanguage && preferredLanguage !== 'ar' && sortedOrders.length > 0) {
+        Promise.all(sortedOrders.map(async (order) => {
           const translated = await translateOrderDetails({
             serviceType: order.service_type,
             area: order.customer?.area || undefined,
