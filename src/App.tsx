@@ -94,170 +94,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Single source of truth for deep-link navigation
+// Simple fallback component for mobile root route
 function MobileLanding() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [deepLink, setDeepLink] = useState<string | null>(null);
-  const [hasNavigated, setHasNavigated] = useState(false);
-  const [pendingRouteChecked, setPendingRouteChecked] = useState(false);
-  const [forceReady, setForceReady] = useState(false);
 
-  // Extract route from deep link URL (supports custom schemes + path-based)
-  const extractRoute = (url: string): string | null => {
-    try {
-      // 1) Prefer explicit query param ?route=...
-      const qIndex = url.indexOf('?');
-      if (qIndex !== -1) {
-        const qs = url.substring(qIndex + 1);
-        const params = new URLSearchParams(qs);
-        const r = params.get('route');
-        if (r) return decodeURIComponent(r);
-      }
-
-      // 2) Fallback: custom scheme with path (e.g., request-mastermind://open/path or ...//order-tracking/123)
-      const pathMatch = url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^/]*(\/.+)?$/);
-      if (pathMatch && pathMatch[1]) {
-        return pathMatch[1];
-      }
-
-      // 3) Last attempt: use URL with a dummy base
-      const parsed = new URL(url, 'https://deep.link');
-      const fromRoute = parsed.searchParams.get('route');
-      if (fromRoute) return decodeURIComponent(fromRoute);
-      if (parsed.pathname && parsed.pathname !== '/') return parsed.pathname + parsed.search;
-
-      return null;
-    } catch {
-      // Final fallback: regex for route query
-      try {
-        const m = decodeURIComponent(url).match(/(?:\?|&)route=([^&]+)/);
-        if (m) return decodeURIComponent(m[1]);
-      } catch {}
-      return null;
-    }
-  };
-
-  // Set up deep link listeners once on mount
   useEffect(() => {
-    if (Capacitor.getPlatform() === 'web') return;
-
-    console.log('🔗 [APP] Setting up deep link listeners');
-
-    let listener: any;
-
-    // Check launch URL (cold start from notification)
-    CapApp.getLaunchUrl().then((launchUrl) => {
-      if (launchUrl?.url) {
-        const route = extractRoute(launchUrl.url);
-        if (route) {
-          console.log('🔗 [APP] Launch URL contained route:', route);
-          setDeepLink(route);
-        }
-      }
-    });
-
-    // Listen for app opened via URL (warm start from notification)
-    const setupListener = async () => {
-      listener = await CapApp.addListener('appUrlOpen', (data) => {
-        if (data.url) {
-          const route = extractRoute(data.url);
-          if (route) {
-            console.log('🔗 [APP] App URL open contained route:', route);
-            setDeepLink(route);
-          }
-        }
-      });
-    };
-
-    setupListener();
-
-    return () => {
-      if (listener) {
-        listener.remove();
-      }
-    };
-  }, []);
-
-  // Force navigation after timeout to prevent infinite loading
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      console.log('⚠️ [TIMEOUT] Loading took too long, forcing navigation...');
-      setForceReady(true);
-      setPendingRouteChecked(true);
-    }, 5000); // 5 seconds timeout
-
-    return () => clearTimeout(timeout);
-  }, []);
-
-  // Check for pending routes FIRST (from notification tap while logged out)
-  useEffect(() => {
-    if (Capacitor.getPlatform() === 'web') {
-      setPendingRouteChecked(true);
-      return;
-    }
-
-    const checkPendingRoute = async () => {
-      console.log('🔍 [PENDING] Checking for pending route from notification...');
-      
-      try {
-        const { Preferences } = await import('@capacitor/preferences');
-        const { value } = await Preferences.get({ key: 'pendingRoute' });
-        
-        if (value) {
-          console.log('✅ [PENDING] Found pending route:', value);
-          setDeepLink(value);
-          await Preferences.remove({ key: 'pendingRoute' });
-        } else {
-          console.log('ℹ️ [PENDING] No pending route found');
-        }
-      } catch (error) {
-        console.error('❌ [PENDING] Error checking pending route:', error);
-      } finally {
-        setPendingRouteChecked(true);
-      }
-    };
-
-    checkPendingRoute();
-  }, []);
-
-  // Handle navigation once auth is ready AND pending route is checked
-  useEffect(() => {
-    // Allow navigation if timeout forced or normal conditions met
-    const isReady = (forceReady || !loading) && pendingRouteChecked;
+    if (loading) return;
     
-    if (!isReady || hasNavigated) {
-      console.log('⏸️ [NAV] Waiting...', { loading, hasNavigated, pendingRouteChecked, forceReady });
-      return;
-    }
-
-    console.log('🧭 [NAV] Ready to navigate - user:', !!user, 'deepLink:', deepLink, 'forceReady:', forceReady);
-
-    if (deepLink) {
-      if (user) {
-        console.log('✅ [NAV] User + deep link → navigating to:', deepLink);
-        navigate(deepLink, { replace: true });
-      } else {
-        console.log('🔐 [NAV] Deep link but not authenticated → going to auth');
-        navigate('/specialist-auth', { replace: true });
-      }
+    // Simple redirect to appropriate page
+    if (user) {
+      navigate('/specialist-orders', { replace: true });
     } else {
-      // Normal navigation
-      if (user) {
-        console.log('🏠 [NAV] User logged in → default to /specialist-orders');
-        navigate('/specialist-orders', { replace: true });
-      } else {
-        console.log('🔐 [NAV] Not logged in → going to /specialist-auth');
-        navigate('/specialist-auth', { replace: true });
-      }
+      navigate('/specialist-auth', { replace: true });
     }
+  }, [user, loading, navigate]);
 
-    setHasNavigated(true);
-  }, [user, loading, deepLink, navigate, hasNavigated, pendingRouteChecked, forceReady]);
-
-  // Show loader only if not forced ready and actually loading
-  if ((loading && !forceReady) || !hasNavigated) {
-    return <AppLoader message="جاري الاتصال..." />;
+  if (loading) {
+    return <AppLoader message="جاري التحميل..." />;
   }
 
   return null;
