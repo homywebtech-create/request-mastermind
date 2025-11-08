@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
@@ -310,8 +311,8 @@ export function SpecialistChatDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[600px] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-[90dvh] sm:h-[600px] flex flex-col p-0 pb-safe">
+        <DialogHeader className="p-4 pb-3 border-b flex-shrink-0">
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={specialistImage} alt={specialistName} />
@@ -332,77 +333,79 @@ export function SpecialistChatDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/30 rounded-lg">
+        <ScrollArea className="flex-1 px-4 py-4 bg-muted/30">
           {loading ? (
-            <div className="text-center text-muted-foreground">
+            <div className="text-center text-muted-foreground py-8">
               {language === "ar" ? "جاري التحميل..." : "Loading..."}
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center text-muted-foreground">
+            <div className="text-center text-muted-foreground py-8">
               {language === "ar" ? "لا توجد رسائل بعد" : "No messages yet"}
             </div>
           ) : (
-            messages.map((msg) => {
-              const isCurrentUser = isSpecialistView
-                ? msg.sender_type === "specialist"
-                : msg.sender_type === "company";
+            <>
+              {messages.map((msg) => {
+                const isCurrentUser = isSpecialistView
+                  ? msg.sender_type === "specialist"
+                  : msg.sender_type === "company";
 
-              const senderName = isCurrentUser
-                ? (isSpecialistView ? specialistName : (companyName || (language === "ar" ? "الشركة" : "Company")))
-                : (isSpecialistView ? (companyName || (language === "ar" ? "الشركة" : "Company")) : specialistName);
+                const senderName = isCurrentUser
+                  ? (isSpecialistView ? specialistName : (companyName || (language === "ar" ? "الشركة" : "Company")))
+                  : (isSpecialistView ? (companyName || (language === "ar" ? "الشركة" : "Company")) : specialistName);
 
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex gap-2 ${isCurrentUser ? "justify-end" : "justify-start"}`}
-                >
-                  {!isCurrentUser && (
-                    <Avatar className="h-8 w-8 mt-1">
-                      <AvatarImage src={specialistImage} alt={senderName} />
-                      <AvatarFallback>{senderName[0]}</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div className="flex flex-col gap-1">
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex gap-2 mb-4 ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                  >
                     {!isCurrentUser && (
-                      <span className="text-xs text-muted-foreground px-1">
-                        {senderName}
-                      </span>
+                      <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                        <AvatarImage src={specialistImage} alt={senderName} />
+                        <AvatarFallback>{senderName[0]}</AvatarFallback>
+                      </Avatar>
                     )}
-                    <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
-                        isCurrentUser
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card border"
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                      <p
-                        className={`text-xs mt-1 ${
+                    <div className="flex flex-col gap-1 max-w-[70%]">
+                      {!isCurrentUser && (
+                        <span className="text-xs text-muted-foreground px-1">
+                          {senderName}
+                        </span>
+                      )}
+                      <div
+                        className={`rounded-lg p-3 ${
                           isCurrentUser
-                            ? "text-primary-foreground/70"
-                            : "text-muted-foreground"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card border"
                         }`}
                       >
-                        {format(new Date(msg.created_at), "PPp", {
-                          locale: language === "ar" ? ar : undefined,
-                        })}
-                      </p>
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                        <p
+                          className={`text-xs mt-1 ${
+                            isCurrentUser
+                              ? "text-primary-foreground/70"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {format(new Date(msg.created_at), "PPp", {
+                            locale: language === "ar" ? ar : undefined,
+                          })}
+                        </p>
+                      </div>
                     </div>
+                    {isCurrentUser && (
+                      <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                        <AvatarImage src={specialistImage} alt={senderName} />
+                        <AvatarFallback>{senderName[0]}</AvatarFallback>
+                      </Avatar>
+                    )}
                   </div>
-                  {isCurrentUser && (
-                    <Avatar className="h-8 w-8 mt-1">
-                      <AvatarImage src={specialistImage} alt={senderName} />
-                      <AvatarFallback>{senderName[0]}</AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              );
-            })
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
           )}
-          <div ref={messagesEndRef} />
-        </div>
+        </ScrollArea>
 
-        <div className="flex gap-2 pt-4 border-t">
+        <div className="flex gap-2 p-4 pt-3 border-t bg-background flex-shrink-0">
           <div className="flex-1 flex gap-2">
             <Textarea
               value={newMessage}
@@ -410,7 +413,7 @@ export function SpecialistChatDialog({
               placeholder={
                 language === "ar" ? "اكتب رسالتك هنا..." : "Type your message here..."
               }
-              className="min-h-[80px]"
+              className="min-h-[60px] max-h-[120px] resize-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -418,7 +421,7 @@ export function SpecialistChatDialog({
                 }
               }}
             />
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 flex-shrink-0">
               <VoiceRecorder 
                 onRecordingComplete={handleVoiceRecording} 
                 disabled={sending}
@@ -436,4 +439,4 @@ export function SpecialistChatDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

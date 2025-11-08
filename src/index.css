@@ -127,7 +127,19 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  /* Mobile keyboard handling */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  
+  /* Ensure dialogs don't get cut off by keyboard on mobile */
+  @supports (height: 100dvh) {
+    .mobile-chat-dialog {
+      height: 100dvh;
+      max-height: 100dvh;
+    }
+  }
+}
 }
 
 @layer base {
