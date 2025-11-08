@@ -1778,13 +1778,6 @@ export default function OrderTracking() {
                         </div>
                       </>
                     )}
-                    
-                    {/* Total Calculation */}
-                    <div className="pt-2 border-t border-blue-300 dark:border-blue-700">
-                      <div className="text-center text-sm text-blue-600 dark:text-blue-400 font-medium">
-                        {order.hours_count} × {hourlyRate.toFixed(2)} = {invoiceAmount.toFixed(2)} ر.ق
-                      </div>
-                    </div>
                   </div>
                   
                   {/* Discount if any */}
