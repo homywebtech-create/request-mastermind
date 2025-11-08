@@ -122,16 +122,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Calculate travel buffer based on booking duration
-    // Shorter bookings need less buffer time
-    let travelBufferMinutes = 120; // Default 2 hours for long bookings
-    if (hours_count < 1) {
-      travelBufferMinutes = 30; // 30 minutes buffer for bookings less than 1 hour
-    } else if (hours_count <= 3) {
-      travelBufferMinutes = 60; // 1 hour buffer for bookings 1-3 hours
-    }
-
-    // Create schedule entry with calculated travel buffer
+    // Create schedule entry with fixed 2-hour travel buffer
+    // This ensures specialists always have sufficient time to travel between appointments
     const { data: schedule, error: scheduleError } = await supabaseClient
       .from('specialist_schedules')
       .insert({
@@ -139,7 +131,7 @@ Deno.serve(async (req) => {
         order_id,
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
-        travel_buffer_minutes: travelBufferMinutes,
+        travel_buffer_minutes: 120, // Fixed 2 hours (before and after)
       })
       .select()
       .single();

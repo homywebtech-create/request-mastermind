@@ -326,16 +326,9 @@ export default function CompanyBooking() {
       const slotEndDateTime = new Date(slotStartDateTime);
       slotEndDateTime.setHours(slotEndDateTime.getHours() + hoursCount);
 
-      // CRITICAL: Calculate travel buffer based on booking duration
-      // Shorter bookings need less buffer time
-      let travelBufferMinutes = 120; // Default 2 hours for long bookings
-      if (hoursCount < 1) {
-        travelBufferMinutes = 30; // 30 minutes buffer for bookings less than 1 hour
-      } else if (hoursCount <= 3) {
-        travelBufferMinutes = 60; // 1 hour buffer for bookings 1-3 hours
-      }
-      
-      const TRAVEL_BUFFER_MS = travelBufferMinutes * 60 * 1000;
+      // CRITICAL: Fixed 2-hour travel buffer before and after all bookings
+      // This ensures specialists have enough time to travel between appointments
+      const TRAVEL_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours = 120 minutes
       const newBookingStartWithBuffer = new Date(slotStartDateTime.getTime() - TRAVEL_BUFFER_MS);
       const newBookingEndWithBuffer = new Date(slotEndDateTime.getTime() + TRAVEL_BUFFER_MS);
 
@@ -360,9 +353,9 @@ export default function CompanyBooking() {
         );
         
         if (overlaps) {
-          console.log('⚠️ Schedule conflict detected:');
-          console.log(`  New booking (${hoursCount}h, ${travelBufferMinutes}min buffer):`, newBookingStartWithBuffer.toLocaleString(), '-', newBookingEndWithBuffer.toLocaleString());
-          console.log(`  Existing booking (${travelBufferMinutes}min buffer):`, existingBookingStartWithBuffer.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
+          console.log('⚠️ Schedule conflict detected with 2-hour travel buffer:');
+          console.log(`  New booking (${hoursCount}h):`, newBookingStartWithBuffer.toLocaleString(), '-', newBookingEndWithBuffer.toLocaleString());
+          console.log(`  Existing booking:`, existingBookingStartWithBuffer.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
         }
         
         return overlaps;
