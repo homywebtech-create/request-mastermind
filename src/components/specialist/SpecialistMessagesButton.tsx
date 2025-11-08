@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSoundNotification } from "@/lib/soundNotification";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -13,6 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { SpecialistChatDialog } from "./SpecialistChatDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { format, formatDistanceToNow, isToday, isYesterday } from "date-fns";
+import { ar } from "date-fns/locale";
 
 interface SpecialistMessagesButtonProps {
   specialistId: string;
@@ -27,6 +31,7 @@ interface ChatInfo {
   last_message_at: string;
   companies: {
     name: string;
+    logo_url: string | null;
   };
 }
 
@@ -38,10 +43,12 @@ export function SpecialistMessagesButton({
   const [totalUnread, setTotalUnread] = useState(0);
   const [chats, setChats] = useState<ChatInfo[]>([]);
   const [showList, setShowList] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedChat, setSelectedChat] = useState<{
     specialistId: string;
     companyId: string;
     companyName: string;
+    companyLogo: string | null;
   } | null>(null);
   const previousUnreadCount = useRef(0);
 
@@ -95,7 +102,8 @@ export function SpecialistMessagesButton({
           last_message,
           last_message_at,
           companies (
-            name
+            name,
+            logo_url
           )
         `)
         .eq("specialist_id", specialistId)
@@ -125,6 +133,23 @@ export function SpecialistMessagesButton({
     }
   };
 
+  const formatMessageTime = (dateString: string) => {
+    const date = new Date(dateString);
+    
+    if (isToday(date)) {
+      return format(date, "h:mm a", { locale: language === "ar" ? ar : undefined });
+    } else if (isYesterday(date)) {
+      return language === "ar" ? "أمس" : "Yesterday";
+    } else {
+      return format(date, "MM/dd/yy", { locale: language === "ar" ? ar : undefined });
+    }
+  };
+
+  const filteredChats = chats.filter(chat =>
+    chat.companies.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    chat.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <>
       <Button
@@ -150,20 +175,38 @@ export function SpecialistMessagesButton({
       </Button>
 
       <Dialog open={showList} onOpenChange={setShowList}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-w-md max-h-[80vh] p-0">
+          <DialogHeader className="p-4 pb-3 border-b">
+            <DialogTitle className="text-xl font-bold">
               {language === "ar" ? "الرسائل" : "Messages"}
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[400px]">
-            {chats.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {language === "ar" ? "لا توجد رسائل" : "No messages"}
+          
+          {/* Search Bar */}
+          <div className="px-4 py-2 border-b bg-muted/30">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={language === "ar" ? "بحث..." : "Search..."}
+                className="pl-9 bg-background"
+              />
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1 max-h-[500px]">
+            {filteredChats.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                {searchQuery ? (
+                  language === "ar" ? "لا توجد نتائج" : "No results found"
+                ) : (
+                  language === "ar" ? "لا توجد رسائل" : "No messages"
+                )}
               </div>
             ) : (
-              <div className="space-y-2">
-                {chats.map((chat) => (
+              <div className="divide-y">
+                {filteredChats.map((chat) => (
                   <div
                     key={chat.id}
                     onClick={() => {
@@ -171,26 +214,52 @@ export function SpecialistMessagesButton({
                         specialistId,
                         companyId: chat.company_id,
                         companyName: chat.companies.name,
+                        companyLogo: chat.companies.logo_url,
                       });
                       setShowList(false);
+                      setSearchQuery("");
                     }}
-                    className={`p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
-                      chat.unread_count > 0 ? "bg-green-50 dark:bg-green-900/10 border-green-600" : ""
+                    className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors flex items-start gap-3 ${
+                      chat.unread_count > 0 ? "bg-green-50 dark:bg-green-900/10" : ""
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium">{chat.companies.name}</h3>
-                      {chat.unread_count > 0 && (
-                        <Badge variant="default" className="bg-green-600">
-                          {chat.unread_count}
-                        </Badge>
-                      )}
+                    {/* Avatar */}
+                    <Avatar className="h-12 w-12 flex-shrink-0">
+                      <AvatarImage src={chat.companies.logo_url || undefined} alt={chat.companies.name} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {chat.companies.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Chat Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className="font-semibold text-sm truncate">
+                          {chat.companies.name}
+                        </h3>
+                        <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                          {formatMessageTime(chat.last_message_at)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`text-sm truncate ${
+                          chat.unread_count > 0 
+                            ? "text-foreground font-medium" 
+                            : "text-muted-foreground"
+                        }`}>
+                          {chat.last_message || (language === "ar" ? "لا توجد رسائل" : "No messages")}
+                        </p>
+                        {chat.unread_count > 0 && (
+                          <Badge 
+                            variant="default" 
+                            className="bg-green-600 text-white flex-shrink-0 h-5 min-w-[20px] px-1.5 text-xs"
+                          >
+                            {chat.unread_count}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    {chat.last_message && (
-                      <p className="text-sm text-muted-foreground truncate">
-                        {chat.last_message}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
@@ -207,6 +276,7 @@ export function SpecialistMessagesButton({
           specialistName={language === "ar" ? "أنت" : "You"}
           companyId={selectedChat.companyId}
           companyName={selectedChat.companyName}
+          specialistImage={selectedChat.companyLogo || undefined}
           isSpecialistView={true}
         />
       )}
