@@ -95,7 +95,9 @@ Deno.serve(async (req) => {
       throw new Error('Version not found');
     }
 
-    console.log('✅ [notify-app-update] Version:', version.version_name, '(', version.version_code, ')');
+    console.log('✅ [notify-app-update] Version:', version.version_name, '(code:', version.version_code, ')');
+    console.log('📝 [notify-app-update] Mandatory:', version.is_mandatory);
+    console.log('📝 [notify-app-update] APK URL:', version.apk_url);
 
     // Get all device tokens
     const { data: tokens, error: tokensError } = await supabase
@@ -128,6 +130,9 @@ Deno.serve(async (req) => {
     const notificationTitle = version.is_mandatory ? '⚠️ تحديث إجباري متاح' : '🔔 تحديث جديد متاح';
     const notificationBody = `الإصدار ${version.version_name} - ${version.changelog || 'تحسينات وإصلاحات'}`;
     
+    console.log('📝 [notify-app-update] Notification title:', notificationTitle);
+    console.log('📝 [notify-app-update] Notification body:', notificationBody);
+    
     const baseData: Record<string, string> = {
       type: 'app_update',
       title: notificationTitle,
@@ -142,6 +147,8 @@ Deno.serve(async (req) => {
       click_action: 'FLUTTER_NOTIFICATION_CLICK',
       timestamp: new Date().toISOString(),
     };
+
+    console.log('📦 [notify-app-update] Base data prepared:', JSON.stringify(baseData, null, 2));
 
     // Send FCM notifications using Firebase Admin SDK v1 API (exactly like send-push-notification)
     const results = await Promise.allSettled(

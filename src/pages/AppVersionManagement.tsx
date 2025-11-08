@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useTranslation } from '@/i18n';
-import { Download, Trash2, Upload, ArrowLeft } from 'lucide-react';
+import { Download, Trash2, Upload, ArrowLeft, Bell } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -208,6 +208,33 @@ const AppVersionManagement = () => {
       toast({
         title: t.appVersions.versionDeleted,
         description: t.appVersions.versionDeletedSuccess,
+      });
+    },
+  });
+
+  // Resend notification mutation
+  const resendNotification = useMutation({
+    mutationFn: async (versionId: string) => {
+      const { data, error } = await supabase.functions.invoke('notify-app-update', {
+        body: { versionId }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: language === "ar" ? "تم إرسال الإشعارات" : "Notifications Sent",
+        description: language === "ar" 
+          ? `تم إرسال ${data.sent || 0} إشعار من ${data.total || 0}` 
+          : `Sent ${data.sent || 0} notifications out of ${data.total || 0}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t.common.error,
+        description: error.message || (language === "ar" ? "فشل إرسال الإشعارات" : "Failed to send notifications"),
+        variant: "destructive",
       });
     },
   });
@@ -438,8 +465,25 @@ const AppVersionManagement = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => window.open(version.apk_url, '_blank')}
+                          title={language === "ar" ? "تحميل APK" : "Download APK"}
                         >
                           <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            if (confirm(language === "ar" 
+                              ? `هل تريد إعادة إرسال إشعار التحديث للإصدار ${version.version_name}؟`
+                              : `Resend update notification for version ${version.version_name}?`
+                            )) {
+                              resendNotification.mutate(version.id);
+                            }
+                          }}
+                          disabled={resendNotification.isPending}
+                          title={language === "ar" ? "إعادة إرسال الإشعارات" : "Resend Notifications"}
+                        >
+                          <Bell className="w-4 h-4" />
                         </Button>
                         <Button
                           size="sm"
@@ -449,6 +493,7 @@ const AppVersionManagement = () => {
                               deleteVersion.mutate(version.id);
                             }
                           }}
+                          title={language === "ar" ? "حذف النسخة" : "Delete Version"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
