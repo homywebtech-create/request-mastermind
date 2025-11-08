@@ -309,6 +309,11 @@ export default function CompanyBooking() {
     const slotStartDateTime = new Date(selectedDate);
     slotStartDateTime.setHours(hours, minutes, 0, 0);
     
+    console.log(`\n🔍 فحص الوقت ${timeSlot} للتاريخ ${selectedDate.toLocaleDateString()}`);
+    console.log(`المحترف ID: ${specialistId || 'غير محدد'}`);
+    console.log(`الجداول المحملة:`, specialistSchedules);
+    console.log(`هل توجد جداول لهذا المحترف؟`, specialistId ? (specialistSchedules[specialistId] ? 'نعم' : 'لا') : 'غير محدد');
+    
     // Add 2 hours buffer to current time
     const bufferTime = new Date(now);
     bufferTime.setHours(bufferTime.getHours() + 2);
@@ -321,6 +326,7 @@ export default function CompanyBooking() {
     // If checking for a specific specialist, check their schedule
     if (specialistId && specialistSchedules[specialistId]) {
       const schedules = specialistSchedules[specialistId];
+      console.log(`\n✅ وجدنا ${schedules.length} حجز للمحترف:`, schedules);
       
       // Calculate the actual end time of this booking based on hours_count
       const slotEndDateTime = new Date(slotStartDateTime);
@@ -328,16 +334,19 @@ export default function CompanyBooking() {
       const durationMs = hoursCount * 60 * 60 * 1000;
       slotEndDateTime.setTime(slotEndDateTime.getTime() + durationMs);
 
-      console.log(`🔍 Checking time slot: ${timeSlot} on ${selectedDate.toLocaleDateString()}`);
-      console.log(`  📅 New booking (${hoursCount}h):`, {
-        start: slotStartDateTime.toLocaleString(),
-        end: slotEndDateTime.toLocaleString()
-      });
+      console.log(`📅 الحجز الجديد المطلوب (${hoursCount} ساعة):`);
+      console.log(`  البداية: ${slotStartDateTime.toLocaleString()} (${slotStartDateTime.toISOString()})`);
+      console.log(`  النهاية: ${slotEndDateTime.toLocaleString()} (${slotEndDateTime.toISOString()})`);
 
       // Check if this slot conflicts with any existing booking (including travel buffer)
-      const hasConflict = schedules.some(schedule => {
+      const hasConflict = schedules.some((schedule, index) => {
+        console.log(`\n📋 فحص الحجز الموجود #${index + 1}:`);
         const scheduleStart = new Date(schedule.start_time);
         const scheduleEnd = new Date(schedule.end_time);
+        console.log(`  الوقت من DB: ${schedule.start_time} إلى ${schedule.end_time}`);
+        console.log(`  بعد التحويل: ${scheduleStart.toLocaleString()} إلى ${scheduleEnd.toLocaleString()}`);
+        console.log(`  ISO: ${scheduleStart.toISOString()} إلى ${scheduleEnd.toISOString()}`);
+        
         const travelBufferMinutes = schedule.travel_buffer_minutes || 120; // Default 2 hours
         const travelBufferMs = travelBufferMinutes * 60 * 1000;
         
@@ -346,21 +355,20 @@ export default function CompanyBooking() {
         const existingBookingStartWithBuffer = new Date(scheduleStart.getTime() - travelBufferMs);
         const existingBookingEndWithBuffer = new Date(scheduleEnd.getTime() + travelBufferMs);
         
+        console.log(`  المنطقة المحمية (2 ساعة قبل + الحجز + 2 ساعة بعد):`);
+        console.log(`    من: ${existingBookingStartWithBuffer.toLocaleString()} (${existingBookingStartWithBuffer.toISOString()})`);
+        console.log(`    إلى: ${existingBookingEndWithBuffer.toLocaleString()} (${existingBookingEndWithBuffer.toISOString()})`);
+        
         // Check if new booking overlaps with the entire protected zone
         const overlaps = (
           slotStartDateTime < existingBookingEndWithBuffer && 
           slotEndDateTime > existingBookingStartWithBuffer
         );
         
-        if (overlaps) {
-          console.log('  ❌ محجوز: يتعارض مع منطقة محمية لحجز موجود');
-          console.log('    الحجز الجديد:', slotStartDateTime.toLocaleString(), '-', slotEndDateTime.toLocaleString());
-          console.log('    الحجز الموجود:', scheduleStart.toLocaleString(), '-', scheduleEnd.toLocaleString());
-          console.log('    المنطقة المحجوزة الكاملة (2 ساعة قبل + الحجز + 2 ساعة بعد):', 
-            existingBookingStartWithBuffer.toLocaleString(), '-', existingBookingEndWithBuffer.toLocaleString());
-        } else {
-          console.log('  ✅ متاح');
-        }
+        console.log(`\n🔄 نتيجة المقارنة:`);
+        console.log(`  هل ${slotStartDateTime.toLocaleString()} < ${existingBookingEndWithBuffer.toLocaleString()}? ${slotStartDateTime < existingBookingEndWithBuffer}`);
+        console.log(`  هل ${slotEndDateTime.toLocaleString()} > ${existingBookingStartWithBuffer.toLocaleString()}? ${slotEndDateTime > existingBookingStartWithBuffer}`);
+        console.log(`  النتيجة: ${overlaps ? '❌ يوجد تعارض' : '✅ لا يوجد تعارض'}`);
         
         return overlaps;
       });
