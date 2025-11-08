@@ -102,6 +102,7 @@ export default function OrderTracking() {
   const [translatedNotes, setTranslatedNotes] = useState<string | null>(null);
   const [translatedBuildingInfo, setTranslatedBuildingInfo] = useState<string | null>(null);
   const [specialistId, setSpecialistId] = useState<string>('');
+  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -174,7 +175,7 @@ export default function OrderTracking() {
     checkAndSetStage();
   }, [orderId, language]); // Re-fetch when language changes
 
-  // Fetch specialist ID
+  // Fetch specialist ID and Google Maps API key
   useEffect(() => {
     const fetchSpecialistIdFromAuth = async () => {
       try {
@@ -197,6 +198,25 @@ export default function OrderTracking() {
     };
 
     fetchSpecialistIdFromAuth();
+  }, []);
+
+  // Fetch Google Maps API key
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        
+        if (error) throw error;
+        
+        if (data?.apiKey) {
+          setGoogleMapsApiKey(data.apiKey);
+        }
+      } catch (error) {
+        console.error('Error fetching Google Maps API key:', error);
+      }
+    };
+
+    fetchApiKey();
   }, []);
 
   // Monitor order status and redirect if cancelled
@@ -1244,12 +1264,16 @@ export default function OrderTracking() {
         {stage === 'initial' && (
           <div className="space-y-4">
             {/* Map Location - Static Display */}
-            {order?.gps_latitude && order?.gps_longitude && (
+            {order?.gps_latitude && order?.gps_longitude && googleMapsApiKey && (
               <div className="w-full rounded-lg overflow-hidden shadow-lg border-2 border-border">
                 <img 
-                  src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${order.gps_longitude},${order.gps_latitude})/${order.gps_longitude},${order.gps_latitude},14,0/600x300@2x?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTI2OHNweWYwNjdiMmtvZTNxdXg0czJkIn0.BctOp1N86HePHgvQFIHong`}
+                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${order.gps_latitude},${order.gps_longitude}&zoom=15&size=600x300&scale=2&markers=color:red%7C${order.gps_latitude},${order.gps_longitude}&key=${googleMapsApiKey}`}
                   alt={t.customerLocation}
                   className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    console.error('Error loading map image');
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
                 <div className="bg-muted p-3 text-center">
                   <p className="text-sm font-semibold flex items-center justify-center gap-2">
@@ -1312,12 +1336,16 @@ export default function OrderTracking() {
             </Button>
 
             {/* Map Location - Static Display */}
-            {order?.gps_latitude && order?.gps_longitude && (
+            {order?.gps_latitude && order?.gps_longitude && googleMapsApiKey && (
               <div className="w-full rounded-lg overflow-hidden shadow-lg border-2 border-border">
                 <img 
-                  src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${order.gps_longitude},${order.gps_latitude})/${order.gps_longitude},${order.gps_latitude},14,0/600x300@2x?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTI2OHNweWYwNjdiMmtvZTNxdXg0czJkIn0.BctOp1N86HePHgvQFIHong`}
+                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${order.gps_latitude},${order.gps_longitude}&zoom=15&size=600x300&scale=2&markers=color:red%7C${order.gps_latitude},${order.gps_longitude}&key=${googleMapsApiKey}`}
                   alt={t.customerLocation}
                   className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    console.error('Error loading map image');
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
                 <div className="bg-muted p-2 text-center">
                   <p className="text-xs font-medium flex items-center justify-center gap-2">
