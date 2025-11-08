@@ -727,7 +727,7 @@ export default function SpecialistHome() {
                         ? (isAr ? "⚠️ متأخر" : "⚠️ Overdue")
                         : isTodayOrder 
                           ? (isAr ? "⭐ طلب اليوم" : "⭐ Today")
-                          : (isAr ? "📅 قادم" : "📅 Upcoming")
+                          : (isAr ? "✅ مؤكد" : "✅ Confirmed")
                       }
                     </div>
                     {order.booking_date && (
