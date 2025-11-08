@@ -13,7 +13,9 @@ import BottomNavigation from "@/components/specialist/BottomNavigation";
 import BusyGuard from "@/components/specialist/BusyGuard";
 import { SpecialistChatDialog } from "@/components/specialist/SpecialistChatDialog";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 import { getSoundNotification } from "@/lib/soundNotification";
+import { useSpecialistCompanyCountry } from "@/hooks/useCompanyCountry";
 import { format, formatDistanceToNow, isToday, isYesterday } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -42,7 +44,9 @@ export default function SpecialistMessages() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const t = useTranslation(language);
   const isAr = language === 'ar';
+  const { currencySymbol, isLoading: currencyLoading } = useSpecialistCompanyCountry(specialistId);
 
   useEffect(() => {
     checkAuth();
@@ -249,8 +253,10 @@ export default function SpecialistMessages() {
                   <div className="flex items-center gap-1.5">
                     <Wallet className="h-4 w-4" />
                     <div className="text-right">
-                      <p className="text-[10px] opacity-80 leading-none">{isAr ? 'المحفظة' : 'Wallet'}</p>
-                      <p className="text-sm font-bold leading-tight">{isAr ? '0 ر.س' : 'SAR 0'}</p>
+                      <p className="text-[10px] opacity-80 leading-none">{t.specialist.wallet}</p>
+                      <p className="text-sm font-bold leading-tight">
+                        {currencyLoading ? '...' : `0 ${currencySymbol}`}
+                      </p>
                     </div>
                   </div>
                 </div>

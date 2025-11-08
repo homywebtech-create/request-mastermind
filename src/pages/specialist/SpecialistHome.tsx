@@ -21,6 +21,7 @@ import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/i18n";
 import { getSoundNotification } from "@/lib/soundNotification";
 import { useSpecialistCompanyCountry } from "@/hooks/useCompanyCountry";
 
@@ -70,6 +71,7 @@ export default function SpecialistHome() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language, initializeLanguage, setLanguage } = useLanguage();
+  const t = useTranslation(language);
   const isAr = language === 'ar';
   const { currencySymbol, currency, isLoading: currencyLoading } = useSpecialistCompanyCountry(specialistId);
   
@@ -618,7 +620,7 @@ export default function SpecialistHome() {
                 <div className="flex items-center gap-1.5">
                   <Wallet className="h-4 w-4" />
                   <div className="text-right">
-                    <p className="text-[10px] opacity-80 leading-none">{isAr ? 'المحفظة' : 'Wallet'}</p>
+                    <p className="text-[10px] opacity-80 leading-none">{t.specialist.wallet}</p>
                     <p className="text-sm font-bold leading-tight">
                       {currencyLoading ? '...' : `0 ${currencySymbol}`}
                     </p>

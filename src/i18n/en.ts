@@ -412,6 +412,7 @@ export const en = {
     myOrders: "My Orders",
     profile: "Profile",
     statistics: "Statistics",
+    wallet: "Wallet",
     
     // Profile sections
     accountSettings: "Account & Settings",

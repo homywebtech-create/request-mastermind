@@ -11,6 +11,7 @@ import BusyGuard from "@/components/specialist/BusyGuard";
 import { translateOrderDetails } from "@/lib/translateHelper";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n/index";
+import { useSpecialistCompanyCountry } from "@/hooks/useCompanyCountry";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +72,7 @@ export default function SpecialistNewOrders() {
   // Language management
   const { language, setLanguage, initializeLanguage } = useLanguage();
   const t = useTranslation(language);
+  const { currencySymbol, isLoading: currencyLoading } = useSpecialistCompanyCountry(specialistId);
 
   useEffect(() => {
     let audioInitialized = false;
@@ -876,13 +878,15 @@ export default function SpecialistNewOrders() {
             <div className="flex items-center gap-2 shrink-0">
               {/* Wallet Display */}
               <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/30">
-                <div className="flex items-center gap-1.5">
-                  <Wallet className="h-4 w-4" />
-                  <div className="text-right">
-                    <p className="text-[10px] opacity-80 leading-none">{language === 'ar' ? 'المحفظة' : 'Wallet'}</p>
-                    <p className="text-sm font-bold leading-tight">{language === 'ar' ? '0 ر.س' : 'SAR 0'}</p>
+                  <div className="flex items-center gap-1.5">
+                    <Wallet className="h-4 w-4" />
+                    <div className="text-right">
+                      <p className="text-[10px] opacity-80 leading-none">{t.specialist.wallet}</p>
+                      <p className="text-sm font-bold leading-tight">
+                        {currencyLoading ? '...' : `0 ${currencySymbol}`}
+                      </p>
+                    </div>
                   </div>
-                </div>
               </div>
               
               {/* Settings Button */}

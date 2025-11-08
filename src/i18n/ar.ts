@@ -412,6 +412,7 @@ export const ar = {
     myOrders: "طلباتي",
     profile: "الحساب",
     statistics: "الإحصائيات",
+    wallet: "المحفظة",
     
     // Profile sections
     accountSettings: "الحساب والإعدادات",
