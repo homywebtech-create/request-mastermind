@@ -36,3 +36,26 @@ export function formatPriceWithCurrency(price: number | string, dialCode: string
   const currencySymbol = getCurrencySymbolFromDialCode(dialCode);
   return `${price} ${currencySymbol}`;
 }
+
+/**
+ * Format duration in hours to display as hours or minutes
+ * @param hours - Duration in hours
+ * @param language - Language for display ('ar' or 'en')
+ * @returns Formatted duration string
+ */
+export function formatDuration(hours: number | null | undefined, language: 'ar' | 'en' = 'en'): string {
+  if (!hours || hours === 0) {
+    return language === 'ar' ? 'غير محدد' : 'N/A';
+  }
+
+  // If less than 1 hour, show in minutes
+  if (hours < 1) {
+    const minutes = Math.round(hours * 60);
+    return `⏰ ${minutes} ${language === 'ar' ? 'دقيقة' : 'min'}`;
+  }
+
+  // If 1 hour or more, show in hours
+  // Format to remove unnecessary decimals (e.g., 2.0 -> 2, 2.5 -> 2.5)
+  const formattedHours = hours % 1 === 0 ? Math.round(hours) : hours;
+  return `⏰ ${formattedHours} ${language === 'ar' ? 'ساعة' : 'h'}`;
+}

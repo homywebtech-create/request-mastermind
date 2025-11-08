@@ -16,6 +16,7 @@ import {
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import BusyGuard from "@/components/specialist/BusyGuard";
 import { translateOrderDetails } from "@/lib/translateHelper";
+import { formatDuration } from "@/lib/utils";
 import { parseISO, format, isToday, isFuture } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { firebaseNotifications } from "@/lib/firebaseNotifications";
@@ -847,9 +848,9 @@ export default function SpecialistHome() {
 
                     {/* Hours Count */}
                     <div className="bg-blue-50 dark:bg-blue-950/30 p-2 sm:p-2.5 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 mb-0.5 sm:mb-1 font-medium">{isAr ? 'عدد الساعات' : 'Hours'}</p>
+                      <p className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 mb-0.5 sm:mb-1 font-medium">{isAr ? 'المدة' : 'Duration'}</p>
                       <p className="font-bold text-xs sm:text-sm text-blue-700 dark:text-blue-300 leading-tight">
-                        {order.hours_count ? `⏰ ${order.hours_count} ${isAr ? 'ساعة' : 'h'}` : (isAr ? 'غير محدد' : 'N/A')}
+                        {formatDuration(order.hours_count, isAr ? 'ar' : 'en')}
                       </p>
                     </div>
                   </div>
