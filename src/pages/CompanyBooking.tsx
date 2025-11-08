@@ -239,6 +239,7 @@ export default function CompanyBooking() {
     start_time: string;
     end_time: string;
     order_id: string;
+    travel_buffer_minutes?: number;
   }>>>({});
   
   // Services and sub-services
@@ -304,45 +305,56 @@ export default function CompanyBooking() {
     const [startTime] = timeSlot.split('-');
     const { hours, minutes } = parse12HourTime(startTime);
     
-    // Create a date object for the slot
-    const slotDateTime = new Date(selectedDate);
-    slotDateTime.setHours(hours, minutes, 0, 0);
+    // Create a date object for the slot start time
+    const slotStartDateTime = new Date(selectedDate);
+    slotStartDateTime.setHours(hours, minutes, 0, 0);
     
     // Add 2 hours buffer to current time
     const bufferTime = new Date(now);
     bufferTime.setHours(bufferTime.getHours() + 2);
     
     // Check if slot is in the past (+ 2 hours buffer)
-    if (slotDateTime < bufferTime) {
+    if (slotStartDateTime < bufferTime) {
       return false;
     }
 
     // If checking for a specific specialist, check their schedule
     if (specialistId && specialistSchedules[specialistId]) {
       const schedules = specialistSchedules[specialistId];
-      const slotEndDateTime = new Date(selectedDate);
-      const endTime = timeSlot.split('-')[1];
-      const { hours: endHours, minutes: endMinutes } = parse12HourTime(endTime);
-      slotEndDateTime.setHours(endHours, endMinutes, 0, 0);
       
-      // Calculate end time based on hours_count
-      const actualEndDateTime = new Date(slotDateTime);
-      actualEndDateTime.setHours(actualEndDateTime.getHours() + hoursCount);
+      // Calculate the actual end time of this booking based on hours_count
+      const slotEndDateTime = new Date(slotStartDateTime);
+      slotEndDateTime.setHours(slotEndDateTime.getHours() + hoursCount);
 
-      // Check if this slot conflicts with any existing booking (including buffer)
+      // Check if this slot conflicts with any existing booking (including travel buffer)
       const hasConflict = schedules.some(schedule => {
         const scheduleStart = new Date(schedule.start_time);
         const scheduleEnd = new Date(schedule.end_time);
+        const travelBuffer = schedule.travel_buffer_minutes || 120; // Default 2 hours
         
-        // Add 2 hour buffer before and after
-        const bufferBefore = new Date(scheduleStart);
-        bufferBefore.setHours(bufferBefore.getHours() - 2);
+        // Add travel buffer before the scheduled start
+        const scheduleStartWithBuffer = new Date(scheduleStart);
+        scheduleStartWithBuffer.setMinutes(scheduleStartWithBuffer.getMinutes() - travelBuffer);
         
-        const bufferAfter = new Date(scheduleEnd);
-        bufferAfter.setHours(bufferAfter.getHours() + 2);
+        // Add travel buffer after the scheduled end
+        const scheduleEndWithBuffer = new Date(scheduleEnd);
+        scheduleEndWithBuffer.setMinutes(scheduleEndWithBuffer.getMinutes() + travelBuffer);
         
-        // Check if slot overlaps with schedule (including buffer)
-        return (slotDateTime < bufferAfter && actualEndDateTime > bufferBefore);
+        // Check overlap: new booking overlaps with existing booking if:
+        // - New booking starts before existing ends (with buffer) AND
+        // - New booking ends after existing starts (with buffer)
+        const overlaps = (
+          slotStartDateTime < scheduleEndWithBuffer && 
+          slotEndDateTime > scheduleStartWithBuffer
+        );
+        
+        if (overlaps) {
+          console.log('⚠️ Time conflict detected:');
+          console.log('  New booking:', slotStartDateTime, '-', slotEndDateTime);
+          console.log('  Existing booking:', scheduleStartWithBuffer, '-', scheduleEndWithBuffer);
+        }
+        
+        return overlaps;
       });
 
       if (hasConflict) {
@@ -459,17 +471,24 @@ export default function CompanyBooking() {
     if (selectedSpecialistIds.length === 0 || !bookingDateType) return;
     
     const reloadSchedules = async () => {
-      const startDate = new Date(bookingDateType);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(bookingDateType);
-      endDate.setHours(23, 59, 59, 999);
+      const selectedDate = new Date(bookingDateType);
+      selectedDate.setHours(0, 0, 0, 0);
+      const dayStart = new Date(selectedDate);
+      const dayEnd = new Date(selectedDate);
+      dayEnd.setHours(23, 59, 59, 999);
       
+      // Fetch ALL schedules that might overlap with the selected day
+      // This includes bookings that:
+      // 1. Start on this day
+      // 2. Start before and end during this day
+      // 3. Start during and end after this day
+      // 4. Start before and end after this day (covering the entire day)
       const { data: schedulesData, error: schedulesError } = await supabase
         .from('specialist_schedules')
-        .select('specialist_id, start_time, end_time, order_id')
+        .select('specialist_id, start_time, end_time, order_id, travel_buffer_minutes')
         .in('specialist_id', selectedSpecialistIds)
-        .gte('start_time', startDate.toISOString())
-        .lte('start_time', endDate.toISOString());
+        .lte('start_time', dayEnd.toISOString()) // Starts before or during the day
+        .gte('end_time', dayStart.toISOString()); // Ends during or after the day
       
       if (schedulesError) {
         console.error('❌ Error reloading schedules:', schedulesError);
@@ -478,6 +497,7 @@ export default function CompanyBooking() {
           start_time: string;
           end_time: string;
           order_id: string;
+          travel_buffer_minutes: number;
         }>> = {};
         
         schedulesData?.forEach((schedule: any) => {
@@ -488,11 +508,13 @@ export default function CompanyBooking() {
             start_time: schedule.start_time,
             end_time: schedule.end_time,
             order_id: schedule.order_id,
+            travel_buffer_minutes: schedule.travel_buffer_minutes || 120,
           });
         });
         
         setSpecialistSchedules(schedulesBySpecialist);
-        console.log('🔄 Reloaded schedules for selected specialists:', schedulesBySpecialist);
+        console.log('🔄 Reloaded schedules for selected date:', bookingDateType);
+        console.log('📅 Schedules found:', schedulesBySpecialist);
       }
     };
     
