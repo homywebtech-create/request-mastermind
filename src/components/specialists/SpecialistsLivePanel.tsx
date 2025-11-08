@@ -234,12 +234,20 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
         }`}
       >
         <div className="flex items-start gap-2.5">
-          {/* Avatar */}
+          {/* Avatar with Update Badge */}
           <div className="relative">
             <Avatar className={`h-10 w-10 ${shouldPulse ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
               <AvatarImage src={specialist.image_url || undefined} />
               <AvatarFallback className="text-xs">{specialist.name.substring(0, 2)}</AvatarFallback>
             </Avatar>
+            
+            {/* Update Warning Badge on Avatar */}
+            {specialist.has_device_token && specialist.app_version && !specialist.has_latest_version && (
+              <div className="absolute -top-1 -left-1 bg-orange-500 text-white rounded-full p-0.5 animate-bounce shadow-lg">
+                <Download className="h-3 w-3" />
+              </div>
+            )}
+            
             <div className={`absolute -bottom-0.5 -right-0.5 p-0.5 rounded-full bg-background border-2 ${statusInfo.color} ${
               shouldPulse ? 'animate-pulse' : ''
             }`}>
@@ -260,30 +268,32 @@ export default function SpecialistsLivePanel({ companyId, isAdmin = false }: Spe
               {specialist.phone}
             </p>
 
-            {/* Warning Indicators - Suspension, ID Card & App Version */}
-            <div className="flex items-center gap-1 mb-1.5 flex-wrap">
-              {getSuspensionIndicator()}
-              {getIdCardIndicator()}
-              
-              {/* App Version Indicator */}
+            {/* App Version Indicator - PROMINENT */}
+            <div className="mb-2">
               {specialist.has_device_token && specialist.app_version ? (
                 specialist.has_latest_version ? (
-                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 bg-green-100 text-green-800">
-                    <CheckCheck className="h-2 w-2" />
-                    {specialist.app_version}
+                  <Badge variant="secondary" className="text-[11px] px-2 py-1 flex items-center gap-1 bg-green-100 text-green-800 border-green-300 font-semibold">
+                    <CheckCheck className="h-3 w-3" />
+                    {language === 'ar' ? `إصدار ${specialist.app_version}` : `Version ${specialist.app_version}`}
                   </Badge>
                 ) : (
-                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 animate-pulse bg-orange-100 text-orange-800 border-orange-300">
-                    <Download className="h-2 w-2" />
-                    {language === 'ar' ? `${specialist.app_version} ⚠️` : `v${specialist.app_version} ⚠️`}
+                  <Badge variant="destructive" className="text-[11px] px-2 py-1 flex items-center gap-1 animate-pulse bg-orange-500 text-white border-orange-600 font-bold shadow-lg">
+                    <Download className="h-3 w-3" />
+                    {language === 'ar' ? `⚠️ يحتاج تحديث (${specialist.app_version})` : `⚠️ Update Needed (${specialist.app_version})`}
                   </Badge>
                 )
               ) : specialist.has_device_token ? (
-                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 flex items-center gap-0.5 bg-gray-100 text-gray-600">
-                  <AlertCircle className="h-2 w-2" />
-                  {language === 'ar' ? 'غير معروف' : 'Unknown'}
+                <Badge variant="secondary" className="text-[11px] px-2 py-1 flex items-center gap-1 bg-gray-200 text-gray-700 font-semibold">
+                  <AlertCircle className="h-3 w-3" />
+                  {language === 'ar' ? 'غير معروف' : 'Unknown Version'}
                 </Badge>
               ) : null}
+            </div>
+
+            {/* Warning Indicators - Suspension & ID Card */}
+            <div className="flex items-center gap-1 mb-1.5 flex-wrap">
+              {getSuspensionIndicator()}
+              {getIdCardIndicator()}
             </div>
 
             {/* Daily Stats */}
