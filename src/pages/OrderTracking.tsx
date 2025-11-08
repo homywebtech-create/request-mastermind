@@ -94,7 +94,7 @@ export default function OrderTracking() {
   const [originalHours, setOriginalHours] = useState(0);
   const [workStartTime, setWorkStartTime] = useState<Date | null>(null);
   const [workEndTime, setWorkEndTime] = useState<Date | null>(null);
-  const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(true);
+  const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(false);
   const [showPaymentNotReceivedDialog, setShowPaymentNotReceivedDialog] = useState(false);
   const [paymentNotReceivedReason, setPaymentNotReceivedReason] = useState('');
   const [otherPaymentReason, setOtherPaymentReason] = useState('');
@@ -1231,7 +1231,7 @@ export default function OrderTracking() {
 
         {/* Moving Stage - Compact */}
         {stage === 'moving' && (
-          <div className="space-y-3 pb-24">
+          <div className="space-y-3 pb-40">
             {/* Guidance Text Above Button */}
             <div className="text-center px-4 py-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
               <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
@@ -1239,17 +1239,40 @@ export default function OrderTracking() {
               </p>
             </div>
 
+            {/* Open Map Button - Primary Action */}
+            <Button
+              onClick={openMaps}
+              className="w-full h-20 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-2xl hover:shadow-3xl transition-all active:scale-[0.98] rounded-xl relative overflow-hidden group"
+            >
+              {/* Animated Glow Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[slide-in-right_2s_ease-in-out_infinite]" />
+              
+              <div className="flex items-center justify-center gap-4 relative z-10">
+                <div className="flex items-center justify-center w-14 h-14 bg-white/20 rounded-full backdrop-blur-sm">
+                  <Navigation className="h-7 w-7" />
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-black text-white">
+                    {language === 'ar' ? 'فتح خريطة الموقع' : 'Open Location Map'}
+                  </p>
+                  <p className="text-xs font-medium text-blue-50 mt-1">
+                    {language === 'ar' ? 'اضغط للتوجه إلى العميل' : 'Click to navigate to customer'}
+                  </p>
+                </div>
+              </div>
+            </Button>
+
             {/* Map Location - Static Display */}
             {order?.gps_latitude && order?.gps_longitude && (
               <div className="w-full rounded-lg overflow-hidden shadow-lg border-2 border-border">
                 <img 
                   src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${order.gps_longitude},${order.gps_latitude})/${order.gps_longitude},${order.gps_latitude},14,0/600x300@2x?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTI2OHNweWYwNjdiMmtvZTNxdXg0czJkIn0.BctOp1N86HePHgvQFIHong`}
                   alt={language === 'ar' ? 'موقع العميل' : 'Customer Location'}
-                  className="w-full h-64 object-cover"
+                  className="w-full h-48 object-cover"
                 />
-                <div className="bg-muted p-3 text-center">
-                  <p className="text-sm font-semibold flex items-center justify-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" />
+                <div className="bg-muted p-2 text-center">
+                  <p className="text-xs font-medium flex items-center justify-center gap-2">
+                    <MapPin className="h-3 w-3 text-primary" />
                     <span>{language === 'ar' ? 'موقع العميل' : 'Customer Location'}</span>
                   </p>
                 </div>
