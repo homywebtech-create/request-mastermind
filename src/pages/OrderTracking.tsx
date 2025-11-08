@@ -1706,18 +1706,24 @@ export default function OrderTracking() {
                       <span className="font-semibold text-base">{order.order_number}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">التاريخ</span>
+                      <span className="text-sm text-muted-foreground">تاريخ الحجز</span>
                       <span className="font-semibold text-sm">{order.booking_date ? new Date(order.booking_date).toLocaleDateString('ar-SA') : '-'}</span>
                     </div>
-                    {workStartTime && (
+                    {arrivedStartTime && (
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">وقت الوصول</span>
-                        <span className="font-semibold text-sm">{arrivedStartTime ? arrivedStartTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                        <span className="font-semibold text-sm">{arrivedStartTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    )}
+                    {workStartTime && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">بدء العمل</span>
+                        <span className="font-semibold text-sm">{workStartTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     )}
                     {workEndTime && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">وقت الانتهاء</span>
+                        <span className="text-sm text-muted-foreground">انتهاء العمل</span>
                         <span className="font-semibold text-sm">{workEndTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     )}
@@ -1729,55 +1735,10 @@ export default function OrderTracking() {
                     <span className="font-bold text-base">{order.service_type}</span>
                   </div>
                   
-                  {/* Calculation Details */}
-                  <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2.5">
-                    {/* Original Hours */}
-                    {originalHours < (order.hours_count || 0) && (
-                      <>
-                        <div className="flex justify-between items-center text-base">
-                          <span className="text-blue-700 dark:text-blue-300 font-medium">الساعات الأصلية</span>
-                          <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{originalHours} ساعة</span>
-                        </div>
-                        <div className="flex justify-between items-center text-base">
-                          <span className="text-blue-700 dark:text-blue-300 font-medium">سعر الساعة</span>
-                          <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{hourlyRate.toFixed(2)} ر.ق</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm bg-blue-100 dark:bg-blue-900/40 p-2 rounded">
-                          <span className="text-blue-600 dark:text-blue-300">المجموع الأصلي</span>
-                          <span className="font-semibold text-blue-900 dark:text-blue-100">{(hourlyRate * originalHours).toFixed(2)} ر.ق</span>
-                        </div>
-                        
-                        {/* Extension */}
-                        <div className="pt-2 border-t border-blue-300 dark:border-blue-700">
-                          <div className="flex justify-between items-center text-base">
-                            <span className="text-orange-700 dark:text-orange-300 font-medium">تمديد</span>
-                            <span className="font-bold text-lg text-orange-900 dark:text-orange-100">{(order.hours_count || 0) - originalHours} ساعة</span>
-                          </div>
-                          <div className="flex justify-between items-center text-base mt-1">
-                            <span className="text-orange-700 dark:text-orange-300 font-medium">سعر التمديد</span>
-                            <span className="font-bold text-lg text-orange-900 dark:text-orange-100">{hourlyRate.toFixed(2)} ر.ق</span>
-                          </div>
-                          <div className="flex justify-between items-center text-sm bg-orange-100 dark:bg-orange-900/40 p-2 rounded mt-2">
-                            <span className="text-orange-600 dark:text-orange-300">مجموع التمديد</span>
-                            <span className="font-semibold text-orange-900 dark:text-orange-100">{(hourlyRate * ((order.hours_count || 0) - originalHours)).toFixed(2)} ر.ق</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Total Hours and Calculation */}
-                    {originalHours >= (order.hours_count || 0) && (
-                      <>
-                        <div className="flex justify-between items-center text-base">
-                          <span className="text-blue-700 dark:text-blue-300 font-medium">عدد الساعات</span>
-                          <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{order.hours_count} ساعة</span>
-                        </div>
-                        <div className="flex justify-between items-center text-base">
-                          <span className="text-blue-700 dark:text-blue-300 font-medium">سعر الساعة</span>
-                          <span className="font-bold text-lg text-blue-900 dark:text-blue-100">{hourlyRate.toFixed(2)} ر.ق</span>
-                        </div>
-                      </>
-                    )}
+                  {/* Hours Summary */}
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
+                    <span className="text-sm text-muted-foreground">عدد الساعات</span>
+                    <span className="font-bold text-lg text-primary">{order.hours_count} ساعة</span>
                   </div>
                   
                   {/* Discount if any */}
