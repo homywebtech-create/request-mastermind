@@ -14,6 +14,8 @@ import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { VoiceRecorder } from "@/components/chat/VoiceRecorder";
+import { getSoundNotification } from "@/lib/soundNotification";
 
 interface CompanyChatDialogProps {
   open: boolean;
@@ -80,7 +82,17 @@ export function CompanyChatDialog({
           filter: `chat_id=eq.${chatId}`,
         },
         (payload) => {
-          setMessages((current) => [...current, payload.new as Message]);
+          const newMessage = payload.new as Message;
+          setMessages((current) => [...current, newMessage]);
+          
+          // Play sound for received messages
+          const isReceivedMessage = isAdminView 
+            ? newMessage.sender_type === "company" 
+            : newMessage.sender_type === "admin";
+          
+          if (isReceivedMessage) {
+            getSoundNotification().playReceivedMessageSound();
+          }
         }
       )
       .subscribe();
@@ -211,9 +223,88 @@ export function CompanyChatDialog({
       }
 
       setNewMessage("");
+      
+      // Play sound for sent message
+      getSoundNotification().playSentMessageSound();
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error(language === "ar" ? "فشل إرسال الرسالة" : "Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleVoiceRecording = async (audioBlob: Blob) => {
+    try {
+      setSending(true);
+      
+      // Convert blob to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64Audio = reader.result as string;
+        const audioMessage = `[${language === "ar" ? "رسالة صوتية" : "Voice message"}]`;
+        
+        if (!chatId) return;
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const senderType = isAdminView ? "admin" : "company";
+
+        const { error: messageError } = await supabase
+          .from("company_chat_messages")
+          .insert({
+            chat_id: chatId,
+            sender_type: senderType,
+            sender_id: user.id,
+            message: audioMessage,
+          });
+
+        if (messageError) throw messageError;
+
+        // Update chat last message
+        if (isAdminView) {
+          await supabase
+            .from("company_chats")
+            .update({
+              last_message: audioMessage,
+              last_message_at: new Date().toISOString(),
+            })
+            .eq("id", chatId);
+        } else {
+          const { data: currentChat } = await supabase
+            .from("company_chats")
+            .select("unread_count")
+            .eq("id", chatId)
+            .single();
+
+          await supabase
+            .from("company_chats")
+            .update({
+              last_message: audioMessage,
+              last_message_at: new Date().toISOString(),
+              unread_count: (currentChat?.unread_count || 0) + 1,
+            })
+            .eq("id", chatId);
+        }
+
+        // Play sound for sent message
+        getSoundNotification().playSentMessageSound();
+        
+        toast.success(
+          language === "ar" 
+            ? "تم إرسال الرسالة الصوتية" 
+            : "Voice message sent"
+        );
+      };
+    } catch (error) {
+      console.error("Error sending voice message:", error);
+      toast.error(
+        language === "ar" 
+          ? "فشل إرسال الرسالة الصوتية" 
+          : "Failed to send voice message"
+      );
     } finally {
       setSending(false);
     }
@@ -308,23 +399,35 @@ export function CompanyChatDialog({
         </div>
 
         <div className="flex gap-2 pt-4 border-t">
-          <Textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={
-              language === "ar" ? "اكتب رسالتك هنا..." : "Type your message here..."
-            }
-            className="min-h-[80px]"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+          <div className="flex-1 flex gap-2">
+            <Textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={
+                language === "ar" ? "اكتب رسالتك هنا..." : "Type your message here..."
               }
-            }}
-          />
-          <Button onClick={sendMessage} disabled={!newMessage.trim() || sending} size="icon">
-            <Send className="h-4 w-4" />
-          </Button>
+              className="min-h-[80px]"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+            />
+            <div className="flex flex-col gap-2">
+              <VoiceRecorder 
+                onRecordingComplete={handleVoiceRecording} 
+                disabled={sending}
+              />
+              <Button 
+                onClick={sendMessage} 
+                disabled={!newMessage.trim() || sending} 
+                size="icon"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

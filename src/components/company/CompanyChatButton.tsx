@@ -98,8 +98,8 @@ export function CompanyChatButton({ companyId, companyName }: CompanyChatButtonP
         onClick={() => setIsOpen(true)}
         className={`relative ${
           unreadCount > 0
-            ? "bg-green-600 hover:bg-green-700 animate-pulse shadow-lg shadow-green-600/30 text-white"
-            : "bg-primary hover:bg-primary/90"
+            ? "bg-green-600 hover:bg-green-700 animate-pulse shadow-lg shadow-green-600/30 text-white border-green-600"
+            : "bg-primary hover:bg-primary/90 text-primary-foreground"
         }`}
       >
         <MessageSquare className="h-5 w-5 mr-2" />

@@ -128,13 +128,13 @@ export function SpecialistMessagesButton({
   return (
     <>
       <Button
-        variant="outline"
+        variant={totalUnread > 0 ? "default" : "outline"}
         size="sm"
         onClick={() => setShowList(true)}
         className={`relative ${
           totalUnread > 0
-            ? "bg-green-600 hover:bg-green-700 text-white animate-pulse border-green-600"
-            : ""
+            ? "bg-green-600 hover:bg-green-700 text-white animate-pulse border-green-600 shadow-lg shadow-green-600/30"
+            : "bg-background text-foreground hover:bg-accent"
         }`}
       >
         <MessageSquare className="h-4 w-4 mr-2" />

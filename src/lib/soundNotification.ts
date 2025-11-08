@@ -153,6 +153,73 @@ export class SoundNotification {
   }
 
   /**
+   * Play sound when sending a message
+   */
+  async playSentMessageSound() {
+    if (!this.audioContext) return;
+
+    try {
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+
+      const oscillator = this.audioContext.createOscillator();
+      const gainNode = this.audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+
+      gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+
+      oscillator.start(this.audioContext.currentTime);
+      oscillator.stop(this.audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.error('Error playing sent message sound:', error);
+    }
+  }
+
+  /**
+   * Play sound when receiving a message
+   */
+  async playReceivedMessageSound() {
+    if (!this.audioContext) return;
+
+    try {
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+
+      const duration = 0.15;
+      const frequencies = [600, 800]; // Double beep
+      
+      frequencies.forEach((freq, index) => {
+        setTimeout(() => {
+          const oscillator = this.audioContext!.createOscillator();
+          const gainNode = this.audioContext!.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(this.audioContext!.destination);
+
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(freq, this.audioContext!.currentTime);
+
+          gainNode.gain.setValueAtTime(0.2, this.audioContext!.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext!.currentTime + duration);
+
+          oscillator.start(this.audioContext!.currentTime);
+          oscillator.stop(this.audioContext!.currentTime + duration);
+        }, index * 100);
+      });
+    } catch (error) {
+      console.error('Error playing received message sound:', error);
+    }
+  }
+
+  /**
    * Initialize audio context on user interaction (required by browsers)
    */
   async initialize() {
