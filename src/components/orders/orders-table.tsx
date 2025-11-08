@@ -615,6 +615,78 @@ Thank you for contacting us! 🌟`;
 
   const handleAcceptQuote = async (orderSpecialistId: string, orderId: string) => {
     try {
+      // First, fetch the specialist and order details
+      const { data: os, error: osErr } = await supabase
+        .from('order_specialists')
+        .select('specialist_id')
+        .eq('id', orderSpecialistId)
+        .single();
+
+      if (osErr || !os) throw new Error('فشل استرجاع بيانات العرض');
+      
+      const specialistId = os.specialist_id;
+
+      // Fetch order booking details
+      const { data: orderData, error: orderErr } = await supabase
+        .from('orders')
+        .select('booking_date, booking_time, hours_count')
+        .eq('id', orderId)
+        .single();
+
+      if (orderErr || !orderData) throw new Error('فشل استرجاع بيانات الطلب');
+
+      // Check if specialist is available for this booking
+      if (orderData.booking_date && orderData.booking_time && specialistId) {
+        console.log('🔍 Checking specialist availability...');
+        
+        const availabilityCheck = await supabase.functions.invoke('manage-specialist-schedule', {
+          body: {
+            specialist_id: specialistId,
+            order_id: orderId,
+            booking_date: orderData.booking_date,
+            booking_time: orderData.booking_time,
+            hours_count: orderData.hours_count || 1,
+            check_only: true,
+          },
+        });
+
+        if (availabilityCheck.error) {
+          console.error('❌ Availability check error:', availabilityCheck.error);
+          throw new Error('فشل التحقق من توفر المحترف');
+        }
+
+        if (!availabilityCheck.data?.available) {
+          const nextAvailable = availabilityCheck.data?.next_available_time;
+          throw new Error(
+            nextAvailable
+              ? `المحترف غير متاح في هذا الوقت. الوقت التالي المتاح: ${nextAvailable}`
+              : 'المحترف غير متاح في هذا الوقت'
+          );
+        }
+
+        console.log('✅ Specialist is available');
+
+        // Create the specialist schedule
+        const scheduleCreate = await supabase.functions.invoke('manage-specialist-schedule', {
+          body: {
+            specialist_id: specialistId,
+            order_id: orderId,
+            booking_date: orderData.booking_date,
+            booking_time: orderData.booking_time,
+            hours_count: orderData.hours_count || 1,
+            check_only: false,
+          },
+        });
+
+        if (scheduleCreate.error) {
+          console.error('❌ Schedule creation error:', scheduleCreate.error);
+          throw new Error('فشل إنشاء الجدول الزمني للمحترف');
+        }
+
+        console.log('✅ Successfully created specialist schedule');
+      }
+
+      // Now accept the quote
       const { error } = await supabase
         .from('order_specialists')
         .update({ 
@@ -625,19 +697,6 @@ Thank you for contacting us! 🌟`;
         .eq('id', orderSpecialistId);
 
       if (error) throw error;
-
-      // Fetch the specialist to notify
-      let specialistId: string | null = null;
-      try {
-        const { data: os, error: osErr } = await supabase
-          .from('order_specialists')
-          .select('specialist_id')
-          .eq('id', orderSpecialistId)
-          .single();
-        if (!osErr) specialistId = os?.specialist_id || null;
-      } catch (e) {
-        console.warn('Could not resolve specialist_id for accepted quote:', e);
-      }
 
       // Update specialist_id in orders table
       if (specialistId) {
