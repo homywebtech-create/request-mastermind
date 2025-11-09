@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { QueryProvider } from "./providers/QueryProvider";
 
 // Initialize language direction on first load
 const storedLanguage = localStorage.getItem('language-storage');
@@ -24,4 +25,8 @@ if (window.location.hash) {
   window.history.replaceState(null, '', window.location.pathname + window.location.search);
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <QueryProvider>
+    <App />
+  </QueryProvider>
+);
