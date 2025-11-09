@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { AppVersion } from '@/hooks/useAppUpdate';
 import { App } from '@capacitor/app';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import ApkInstaller from '@/lib/apkInstaller';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useTranslation } from '@/i18n';
+import { Progress } from '@/components/ui/progress';
 
 interface UpdateDialogProps {
   open: boolean;
@@ -16,6 +19,7 @@ interface UpdateDialogProps {
 
 export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps) => {
   const [downloading, setDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const { toast } = useToast();
   const { language } = useLanguage();
   const t = useTranslation(language);
@@ -33,31 +37,73 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
 
     try {
       setDownloading(true);
+      setDownloadProgress(0);
 
-      console.log('[Update] Opening APK URL in system browser:', version.apk_url);
+      console.log('[Update] Starting APK download:', version.apk_url);
 
-      // Open APK URL in system browser - triggers Android download manager
-      window.location.href = version.apk_url;
+      // Download APK file
+      const fileName = `app-update-${version.version_code}.apk`;
+      
+      // Use Capacitor Filesystem to download
+      const response = await fetch(version.apk_url);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      
+      reader.onload = async () => {
+        const base64Data = (reader.result as string).split(',')[1];
+        
+        try {
+          // Write file to device storage
+          const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data,
+            directory: Directory.Cache,
+          });
 
-      toast({
-        title: t.updateDialog.downloadStarted || 'Download Started',
-        description: t.updateDialog.downloadStartedDesc || 'The APK is downloading. Install it when complete.',
-      });
+          console.log('[Update] APK downloaded to:', result.uri);
+          setDownloadProgress(100);
 
-      // Close dialog after triggering download
-      setTimeout(() => {
-        onOpenChange(false);
-      }, 1500);
+          toast({
+            title: t.updateDialog.downloadComplete || 'Download Complete',
+            description: t.updateDialog.installingNow || 'Installing update...',
+          });
+
+          // Trigger installation
+          await ApkInstaller.installApk({ filePath: result.uri });
+
+          console.log('[Update] Installation triggered successfully');
+
+        } catch (error: any) {
+          console.error('[Update] Error during download/install:', error);
+          toast({
+            title: t.updateDialog.downloadError,
+            description: error.message || 'Failed to install update',
+            variant: 'destructive',
+          });
+        }
+      };
+
+      reader.onerror = () => {
+        console.error('[Update] Error reading blob');
+        toast({
+          title: t.updateDialog.downloadError,
+          description: 'Failed to process download',
+          variant: 'destructive',
+        });
+      };
+
+      reader.readAsDataURL(blob);
 
     } catch (error: any) {
-      console.error('[Update] Error opening browser:', error);
+      console.error('[Update] Error downloading APK:', error);
       toast({
         title: t.updateDialog.downloadError,
-        description: t.updateDialog.downloadErrorDesc || 'Could not open download link',
+        description: error.message || 'Could not download update',
         variant: 'destructive',
       });
     } finally {
       setDownloading(false);
+      setDownloadProgress(0);
     }
   };
 
@@ -87,6 +133,15 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
           {version.is_mandatory && (
             <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-md text-sm">
               {t.updateDialog.mandatoryUpdate}
+            </div>
+          )}
+
+          {downloading && downloadProgress > 0 && (
+            <div className="space-y-2">
+              <Progress value={downloadProgress} className="w-full" />
+              <p className="text-sm text-muted-foreground text-center">
+                {downloadProgress < 100 ? t.updateDialog.downloading : t.updateDialog.installing}
+              </p>
             </div>
           )}
 
