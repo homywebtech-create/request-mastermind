@@ -79,6 +79,8 @@ export const ar = {
   updateDialog: {
     downloading: "جاري التحميل...",
     downloadingDesc: "يتم تنزيل التحديث، يرجى الانتظار.",
+    downloadStarted: "بدأ التنزيل",
+    downloadStartedDesc: "يتم تنزيل ملف APK. قم بتثبيته عند الانتهاء.",
     downloadError: "خطأ",
     downloadErrorDesc: "فشل تحميل التحديث. حاول مرة أخرى.",
     updateAvailable: "تحديث متوفر - {version}",

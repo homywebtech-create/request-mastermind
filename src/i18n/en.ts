@@ -79,6 +79,8 @@ export const en = {
   updateDialog: {
     downloading: "Downloading...",
     downloadingDesc: "Update is being downloaded, please wait.",
+    downloadStarted: "Download Started",
+    downloadStartedDesc: "The APK is downloading. Install it when complete.",
     downloadError: "Error",
     downloadErrorDesc: "Failed to download update. Try again.",
     updateAvailable: "Update Available - {version}",
