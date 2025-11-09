@@ -82,6 +82,7 @@ public class ApkInstallerPlugin extends Plugin {
             android.util.Log.e("ApkInstaller", "❌ Failed to install APK: " + e.getMessage());
             android.util.Log.e("ApkInstaller", "❌ Exception details: ", e);
             call.reject("Failed to install APK: " + e.getMessage());
+        }
     }
 
     @PluginMethod
@@ -117,7 +118,6 @@ public class ApkInstallerPlugin extends Plugin {
             call.reject("Failed to start uninstallThenOpen: " + e.getMessage());
         }
     }
-}
 
     @PluginMethod
     public void uninstallApp(PluginCall call) {
