@@ -37,7 +37,7 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
     }
 
     const openInBrowser = () => {
-      console.log('[Update] Plugin unavailable. Opening APK URL in system browser:', version.apk_url);
+      console.log('[Update] Opening APK URL in system browser:', version.apk_url);
       window.location.href = version.apk_url;
       toast({
         title: t.updateDialog.downloadStarted,
@@ -46,91 +46,43 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
     };
 
     try {
-      // If native plugin is not available, fallback immediately to browser
-      const hasApkInstaller = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('ApkInstaller');
-      if (!hasApkInstaller) {
-        openInBrowser();
-        return;
-      }
-
       setDownloading(true);
-      setDownloadProgress(0);
-
-      console.log('[Update] Starting APK download:', version.apk_url);
-
-      // Download APK file
-      const fileName = `app-update-${version.version_code}.apk`;
       
-      // Use Capacitor Filesystem to download
-      const response = await fetch(version.apk_url);
-      const blob = await response.blob();
-      const reader = new FileReader();
+      // Check if ApkInstaller plugin is available
+      const hasApkInstaller = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('ApkInstaller');
       
-      reader.onload = async () => {
-        const base64Data = (reader.result as string).split(',')[1];
+      if (hasApkInstaller) {
+        console.log('[Update] Starting uninstall-then-download flow');
         
-        try {
-          // Write file to device storage
-          const result = await Filesystem.writeFile({
-            path: fileName,
-            data: base64Data,
-            directory: Directory.Cache,
-          });
-
-          console.log('[Update] APK downloaded to:', result.uri);
-          setDownloadProgress(100);
-
-          toast({
-            title: t.updateDialog.downloadComplete || 'Download Complete',
-            description: t.updateDialog.installingNow || 'Installing update...',
-          });
-
-          // Normalize file path for Android (strip file://)
-          let filePath = result.uri;
-          if (filePath.startsWith('file://')) filePath = filePath.replace('file://', '');
-
-          // Trigger installation via native plugin
-          await ApkInstaller.installApk({ filePath });
-
-          console.log('[Update] Installation triggered successfully');
-
-        } catch (error: any) {
-          console.error('[Update] Error during download/install:', error);
-          const msg = String(error?.message || '');
-          // Fallback if plugin not implemented
-          if (msg.includes('not implemented') || msg.includes('CapacitorException') || msg.includes('ApkInstaller')) {
-            openInBrowser();
-            return;
-          }
-          toast({
-            title: t.updateDialog.downloadError,
-            description: error.message || 'Failed to install update',
-            variant: 'destructive',
-          });
-        }
-      };
-
-      reader.onerror = () => {
-        console.error('[Update] Error reading blob');
+        // First, open browser to download new APK
+        console.log('[Update] Opening browser for APK download:', version.apk_url);
+        window.location.href = version.apk_url;
+        
+        // Small delay to ensure browser starts download
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Then trigger uninstall via Android system dialog
+        console.log('[Update] Triggering app uninstall dialog...');
+        await ApkInstaller.uninstallApp();
+        
         toast({
-          title: t.updateDialog.downloadError,
-          description: 'Failed to process download',
-          variant: 'destructive',
+          title: t.updateDialog.downloadStarted,
+          description: t.updateDialog.downloadStartedDesc || 'Download started. After uninstall completes, install the new version.',
         });
-      };
-
-      reader.readAsDataURL(blob);
-
+      } else {
+        // Fallback: Just open in browser
+        console.log('[Update] ApkInstaller plugin not available, opening browser only');
+        openInBrowser();
+      }
     } catch (error: any) {
-      console.error('[Update] Error downloading APK:', error);
+      console.error('[Update] Update error:', error);
       toast({
         title: t.updateDialog.downloadError,
-        description: error.message || 'Could not download update',
+        description: error.message || 'Could not start update process',
         variant: 'destructive',
       });
     } finally {
       setDownloading(false);
-      setDownloadProgress(0);
     }
   };
   const handleSkip = async () => {

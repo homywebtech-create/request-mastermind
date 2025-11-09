@@ -84,4 +84,27 @@ public class ApkInstallerPlugin extends Plugin {
             call.reject("Failed to install APK: " + e.getMessage());
         }
     }
+
+    @PluginMethod
+    public void uninstallApp(PluginCall call) {
+        try {
+            String packageName = getContext().getPackageName();
+            android.util.Log.d("ApkInstaller", "🗑️ Starting uninstall for package: " + packageName);
+            
+            Uri packageUri = Uri.parse("package:" + packageName);
+            Intent intent = new Intent(Intent.ACTION_DELETE, packageUri);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            
+            android.util.Log.d("ApkInstaller", "🚀 Launching uninstall activity...");
+            getContext().startActivity(intent);
+            
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+            
+        } catch (Exception e) {
+            android.util.Log.e("ApkInstaller", "❌ Failed to uninstall app: " + e.getMessage());
+            call.reject("Failed to uninstall app: " + e.getMessage());
+        }
+    }
 }
