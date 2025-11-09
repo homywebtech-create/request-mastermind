@@ -1,7 +1,8 @@
 // OrdersTable Component - Version: 2025-01-05-08:46
 // All null checks implemented with optional chaining
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TrackingStageBadge } from "@/components/ui/tracking-stage-badge";
 import { Button } from "@/components/ui/button";
@@ -1252,6 +1253,18 @@ Thank you for contacting us! 🌟`;
     }
   };
 
+  // Setup virtualization for large order lists
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  
+  const rowVirtualizer = useVirtualizer({
+    count: filteredOrders.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 120,
+    overscan: 5,
+  });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
   return (
     <Card>
       <CardHeader>
@@ -1284,9 +1297,14 @@ Thank you for contacting us! 🌟`;
       </CardHeader>
       
       <CardContent>
-        <div className="overflow-x-auto" dir="ltr">
+        <div 
+          ref={tableContainerRef}
+          className="overflow-auto" 
+          dir="ltr"
+          style={{ height: "calc(100vh - 320px)", minHeight: "400px" }}
+        >
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 z-10 bg-background">
               <TableRow>
                 <TableHead className="text-left">{t.orderNumber}</TableHead>
                 <TableHead className="text-left">{t.customer}</TableHead>
@@ -1313,7 +1331,17 @@ Thank you for contacting us! 🌟`;
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order) => {
+                <>
+                  {/* Virtual scroll spacer top */}
+                  {virtualItems.length > 0 && virtualItems[0].start > 0 && (
+                    <tr>
+                      <td style={{ height: `${virtualItems[0].start}px` }} />
+                    </tr>
+                  )}
+                  
+                  {/* Render only visible items */}
+                  {virtualItems.map((virtualRow) => {
+                    const order = filteredOrders[virtualRow.index];
                   const customerName = order.customers?.name || t.customerNA;
                   const customerPhone = order.customers?.whatsapp_number || t.customerNA;
                   const customerArea = order.customers?.area || '-';
@@ -1336,8 +1364,10 @@ Thank you for contacting us! 🌟`;
                   const isOrderSnoozed = isSnoozed ? isSnoozed(order.id) : false;
                   
                   return (
-                    <TableRow 
+                    <TableRow
                       key={order.id}
+                      data-index={virtualRow.index}
+                      ref={rowVirtualizer.measureElement}
                       className={
                         isOverdueConfirmed
                           ? "bg-red-500/20 border-4 border-red-600 dark:border-red-500 animate-pulse shadow-2xl shadow-red-500/60 ring-4 ring-red-500/30 backdrop-blur-sm"
@@ -1995,7 +2025,22 @@ Thank you for contacting us! 🌟`;
                       </TableCell>
                     </TableRow>
                   );
-                })
+                })}
+                
+                {/* Virtual scroll spacer bottom */}
+                {virtualItems.length > 0 && (
+                  <tr>
+                    <td
+                      style={{
+                        height: `${
+                          rowVirtualizer.getTotalSize() -
+                          (virtualItems[virtualItems.length - 1]?.end || 0)
+                        }px`,
+                      }}
+                    />
+                  </tr>
+                )}
+              </>
               )}
             </TableBody>
           </Table>

@@ -15,7 +15,8 @@ import {
 import { SpecialistForm } from "./specialist-form";
 import { SpecialistProfileDialog } from "./SpecialistProfileDialog";
 import { TemporaryAccessDialog } from "./TemporaryAccessDialog";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -416,6 +417,18 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
     );
   };
 
+  // Setup virtualization for large specialist lists
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  
+  const rowVirtualizer = useVirtualizer({
+    count: specialists.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 100,
+    overscan: 5,
+  });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
   return (
     <Card>
       <CardHeader>
@@ -425,9 +438,13 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div 
+          ref={tableContainerRef}
+          className="overflow-auto"
+          style={{ height: "calc(100vh - 300px)", minHeight: "400px" }}
+        >
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 z-10 bg-background">
               <TableRow>
                 <TableHead className="text-left">Specialist</TableHead>
                 <TableHead className="text-left">Nationality</TableHead>
@@ -450,8 +467,24 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                   </TableCell>
                 </TableRow>
               ) : (
-                specialists.map((specialist) => (
-                  <TableRow key={specialist.id} className={getRowHighlight(specialist)}>
+                <>
+                  {/* Virtual scroll spacer top */}
+                  {virtualItems.length > 0 && virtualItems[0].start > 0 && (
+                    <tr>
+                      <td style={{ height: `${virtualItems[0].start}px` }} />
+                    </tr>
+                  )}
+                  
+                  {/* Render only visible items */}
+                  {virtualItems.map((virtualRow) => {
+                    const specialist = specialists[virtualRow.index];
+                    return (
+                      <TableRow 
+                        key={specialist.id} 
+                        data-index={virtualRow.index}
+                        ref={rowVirtualizer.measureElement}
+                        className={getRowHighlight(specialist)}
+                      >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -636,7 +669,23 @@ export function SpecialistsTable({ specialists, companyId, onDelete, onUpdate }:
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))
+                );
+              })}
+              
+              {/* Virtual scroll spacer bottom */}
+              {virtualItems.length > 0 && (
+                <tr>
+                  <td
+                    style={{
+                      height: `${
+                        rowVirtualizer.getTotalSize() -
+                        (virtualItems[virtualItems.length - 1]?.end || 0)
+                      }px`,
+                    }}
+                  />
+                </tr>
+              )}
+            </>
               )}
             </TableBody>
           </Table>
