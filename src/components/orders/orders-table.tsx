@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock, Volume2, VolumeX, MessageCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock, Volume2, VolumeX, MessageCircle, XCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
@@ -256,6 +257,10 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   const [selectedSpecialistIds, setSelectedSpecialistIds] = useState<string[]>([]);
   const [selectedSpecialistId, setSelectedSpecialistId] = useState<string | null>(null);
   const [specialistProfileOpen, setSpecialistProfileOpen] = useState(false);
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [actionDialogType, setActionDialogType] = useState<'tracking' | 'cancel'>('tracking');
+  const [actionReason, setActionReason] = useState('');
+  const [pendingAction, setPendingAction] = useState<{ orderId: string; action: string } | null>(null);
   
   // Track recently sent orders with timestamps
   const [recentlySentOrders, setRecentlySentOrders] = useState<Map<string, number>>(new Map());
@@ -1232,12 +1237,23 @@ Thank you for contacting us! 🌟`;
     );
   };
 
+  // Open action dialog
+  const openActionDialog = (orderId: string, action: string, type: 'tracking' | 'cancel') => {
+    setPendingAction({ orderId, action });
+    setActionDialogType(type);
+    setActionReason('');
+    setActionDialogOpen(true);
+  };
+
   // Handle tracking stage updates for in-progress orders
-  const handleUpdateTrackingStage = async (orderId: string, newStage: string) => {
+  const handleUpdateTrackingStage = async (orderId: string, newStage: string, reason?: string) => {
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ tracking_stage: newStage })
+        .update({ 
+          tracking_stage: newStage,
+          notes: reason ? `${reason}` : undefined
+        })
         .eq('id', orderId);
 
       if (error) throw error;
@@ -1248,6 +1264,10 @@ Thank you for contacting us! 🌟`;
           ? `تم تغيير مرحلة الطلب إلى ${getTrackingStageLabel(newStage).label}`
           : `Order stage updated to ${getTrackingStageLabel(newStage).label}`,
       });
+      
+      setActionDialogOpen(false);
+      setPendingAction(null);
+      setActionReason('');
     } catch (error: any) {
       console.error('Error updating tracking stage:', error);
       toast({
@@ -1255,6 +1275,61 @@ Thank you for contacting us! 🌟`;
         description: error.message || (language === 'ar' ? 'فشل تحديث مرحلة الطلب' : 'Failed to update order stage'),
         variant: "destructive",
       });
+    }
+  };
+
+  // Handle order cancellation
+  const handleCancelOrder = async (orderId: string, reason: string) => {
+    try {
+      const currentUser = user;
+      const currentRole = role;
+      
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'cancelled',
+          cancellation_reason: reason,
+          cancelled_by: currentUser?.email || 'Unknown',
+          cancelled_by_role: isCompanyView ? 'company' : 'admin',
+          cancelled_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled',
+        description: language === 'ar' ? 'تم إلغاء الطلب بنجاح' : 'Order has been cancelled successfully',
+      });
+      
+      setActionDialogOpen(false);
+      setPendingAction(null);
+      setActionReason('');
+    } catch (error: any) {
+      console.error('Error cancelling order:', error);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message || (language === 'ar' ? 'فشل إلغاء الطلب' : 'Failed to cancel order'),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Confirm action with reason
+  const confirmAction = () => {
+    if (!pendingAction || !actionReason.trim()) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'يرجى إدخال السبب' : 'Please enter a reason',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (actionDialogType === 'cancel') {
+      handleCancelOrder(pendingAction.orderId, actionReason);
+    } else {
+      handleUpdateTrackingStage(pendingAction.orderId, pendingAction.action, actionReason);
     }
   };
 
@@ -2064,7 +2139,7 @@ Thank you for contacting us! 🌟`;
                               <DropdownMenuContent align="end" className="w-56">
                                 {(!order.tracking_stage || order.tracking_stage === null) && (
                                   <DropdownMenuItem 
-                                    onClick={() => handleUpdateTrackingStage(order.id, 'moving')}
+                                    onClick={() => openActionDialog(order.id, 'moving', 'tracking')}
                                     className="flex items-center gap-2"
                                   >
                                     <div className="h-2 w-2 rounded-full bg-blue-500"></div>
@@ -2074,7 +2149,7 @@ Thank you for contacting us! 🌟`;
                                 
                                 {order.tracking_stage === 'moving' && (
                                   <DropdownMenuItem 
-                                    onClick={() => handleUpdateTrackingStage(order.id, 'arrived')}
+                                    onClick={() => openActionDialog(order.id, 'arrived', 'tracking')}
                                     className="flex items-center gap-2"
                                   >
                                     <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
@@ -2084,7 +2159,7 @@ Thank you for contacting us! 🌟`;
                                 
                                 {order.tracking_stage === 'arrived' && (
                                   <DropdownMenuItem 
-                                    onClick={() => handleUpdateTrackingStage(order.id, 'working')}
+                                    onClick={() => openActionDialog(order.id, 'working', 'tracking')}
                                     className="flex items-center gap-2"
                                   >
                                     <div className="h-2 w-2 rounded-full bg-orange-500"></div>
@@ -2094,7 +2169,7 @@ Thank you for contacting us! 🌟`;
                                 
                                 {order.tracking_stage === 'working' && (
                                   <DropdownMenuItem 
-                                    onClick={() => handleUpdateTrackingStage(order.id, 'invoice_requested')}
+                                    onClick={() => openActionDialog(order.id, 'invoice_requested', 'tracking')}
                                     className="flex items-center gap-2"
                                   >
                                     <div className="h-2 w-2 rounded-full bg-purple-500"></div>
@@ -2104,7 +2179,7 @@ Thank you for contacting us! 🌟`;
                                 
                                 {order.tracking_stage === 'invoice_requested' && (
                                   <DropdownMenuItem 
-                                    onClick={() => handleUpdateTrackingStage(order.id, 'payment_received')}
+                                    onClick={() => openActionDialog(order.id, 'payment_received', 'tracking')}
                                     className="flex items-center gap-2"
                                   >
                                     <div className="h-2 w-2 rounded-full bg-green-500"></div>
@@ -2119,31 +2194,43 @@ Thank you for contacting us! 🌟`;
                                       {language === 'ar' ? '──────────' : '──────────'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
-                                      onClick={() => handleUpdateTrackingStage(order.id, 'moving')}
+                                      onClick={() => openActionDialog(order.id, 'moving', 'tracking')}
                                       className="text-muted-foreground"
                                     >
                                       {language === 'ar' ? '↻ العودة لـ: التحرك' : '↻ Back to: Moving'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
-                                      onClick={() => handleUpdateTrackingStage(order.id, 'arrived')}
+                                      onClick={() => openActionDialog(order.id, 'arrived', 'tracking')}
                                       className="text-muted-foreground"
                                     >
                                       {language === 'ar' ? '↻ العودة لـ: الوصول' : '↻ Back to: Arrived'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
-                                      onClick={() => handleUpdateTrackingStage(order.id, 'working')}
+                                      onClick={() => openActionDialog(order.id, 'working', 'tracking')}
                                       className="text-muted-foreground"
                                     >
                                       {language === 'ar' ? '↻ العودة لـ: العمل' : '↻ Back to: Working'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
-                                      onClick={() => handleUpdateTrackingStage(order.id, 'invoice_requested')}
+                                      onClick={() => openActionDialog(order.id, 'invoice_requested', 'tracking')}
                                       className="text-muted-foreground"
                                     >
                                       {language === 'ar' ? '↻ العودة لـ: الفاتورة' : '↻ Back to: Invoice'}
                                     </DropdownMenuItem>
                                   </>
                                 )}
+                                
+                                {/* Cancel Order */}
+                                <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
+                                  {language === 'ar' ? '──────────' : '──────────'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => openActionDialog(order.id, 'cancel', 'cancel')}
+                                  className="text-destructive flex items-center gap-2"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  {language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
@@ -2370,6 +2457,57 @@ Thank you for contacting us! 🌟`;
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Action Confirmation Dialog */}
+      <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {actionDialogType === 'cancel' 
+                ? (language === 'ar' ? 'تأكيد إلغاء الطلب' : 'Confirm Order Cancellation')
+                : (language === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action')}
+            </DialogTitle>
+            <DialogDescription>
+              {actionDialogType === 'cancel'
+                ? (language === 'ar' ? 'يرجى تحديد سبب إلغاء الطلب' : 'Please specify the reason for cancelling this order')
+                : (language === 'ar' ? 'يرجى تحديد سبب هذا الإجراء' : 'Please specify the reason for this action')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reason">
+                {language === 'ar' ? 'السبب' : 'Reason'} *
+              </Label>
+              <Textarea
+                id="reason"
+                value={actionReason}
+                onChange={(e) => setActionReason(e.target.value)}
+                placeholder={language === 'ar' ? 'أدخل السبب...' : 'Enter reason...'}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setActionDialogOpen(false);
+                setPendingAction(null);
+                setActionReason('');
+              }}
+            >
+              {tCommon.cancel}
+            </Button>
+            <Button
+              onClick={confirmAction}
+              disabled={!actionReason.trim()}
+              variant={actionDialogType === 'cancel' ? 'destructive' : 'default'}
+            >
+              {language === 'ar' ? 'تأكيد' : 'Confirm'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
