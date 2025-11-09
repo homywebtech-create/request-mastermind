@@ -36,8 +36,23 @@ public class MainActivity extends BridgeActivity {
         
         createNotificationChannel();
         checkAndRequestPermissions();
-        ensureWakeAndShowIfFromNotification(getIntent());
-        handleNotificationRoute(getIntent());
+        
+        // Log intent details for debugging
+        Intent intent = getIntent();
+        android.util.Log.d("MainActivity", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        android.util.Log.d("MainActivity", "onCreate called");
+        android.util.Log.d("MainActivity", "Intent action: " + (intent != null ? intent.getAction() : "null"));
+        android.util.Log.d("MainActivity", "Intent data: " + (intent != null ? intent.getData() : "null"));
+        android.util.Log.d("MainActivity", "Intent extras: " + (intent != null ? intent.getExtras() : "null"));
+        if (intent != null && intent.getExtras() != null) {
+            for (String key : intent.getExtras().keySet()) {
+                android.util.Log.d("MainActivity", "  Extra: " + key + " = " + intent.getExtras().get(key));
+            }
+        }
+        android.util.Log.d("MainActivity", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        
+        ensureWakeAndShowIfFromNotification(intent);
+        handleNotificationRoute(intent);
     }
 
     public static WebView getWebView() {
@@ -48,6 +63,20 @@ public class MainActivity extends BridgeActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        
+        // Log intent details for debugging
+        android.util.Log.d("MainActivity", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        android.util.Log.d("MainActivity", "onNewIntent called");
+        android.util.Log.d("MainActivity", "Intent action: " + (intent != null ? intent.getAction() : "null"));
+        android.util.Log.d("MainActivity", "Intent data: " + (intent != null ? intent.getData() : "null"));
+        android.util.Log.d("MainActivity", "Intent extras: " + (intent != null ? intent.getExtras() : "null"));
+        if (intent != null && intent.getExtras() != null) {
+            for (String key : intent.getExtras().keySet()) {
+                android.util.Log.d("MainActivity", "  Extra: " + key + " = " + intent.getExtras().get(key));
+            }
+        }
+        android.util.Log.d("MainActivity", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        
         ensureWakeAndShowIfFromNotification(intent);
         handleNotificationRoute(intent);
     }
@@ -89,7 +118,17 @@ public class MainActivity extends BridgeActivity {
             
             final String finalRoute = targetRoute;
             
-            // Post delay to ensure JS is ready
+            // CRITICAL: Save route to SharedPreferences so DeepLinkController can pick it up
+            // This handles cold starts where JS isn't ready when notification is tapped
+            try {
+                SharedPreferences prefs = getSharedPreferences("CapacitorStorage", MODE_PRIVATE);
+                prefs.edit().putString("pendingRoute", finalRoute).apply();
+                android.util.Log.d("MainActivity", "💾 Saved route to CapacitorStorage: " + finalRoute);
+            } catch (Exception e) {
+                android.util.Log.e("MainActivity", "❌ Failed to save route to preferences", e);
+            }
+            
+            // Also trigger JS event for warm starts (when app is already running)
             new android.os.Handler().postDelayed(() -> {
                 getBridge().triggerJSEvent("notificationRoute", "window", 
                     "{\"route\":\"" + finalRoute + "\"}");
