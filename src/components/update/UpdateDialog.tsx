@@ -5,7 +5,7 @@ import { Download, X } from 'lucide-react';
 import { AppVersion } from '@/hooks/useAppUpdate';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Browser } from '@capacitor/browser';
 import ApkInstaller from '@/lib/apkInstaller';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -36,9 +36,9 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
       return;
     }
 
-    const openInBrowser = () => {
+    const openInBrowser = async () => {
       console.log('[Update] Opening APK URL in system browser:', version.apk_url);
-      window.location.href = version.apk_url;
+      await Browser.open({ url: version.apk_url });
       toast({
         title: t.updateDialog.downloadStarted,
         description: t.updateDialog.downloadStartedDesc,
@@ -54,20 +54,14 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
       if (hasApkInstaller) {
         console.log('[Update] Starting seamless update flow');
         
-        // Start browser download first (continues in background)
-        console.log('[Update] Starting APK download in browser:', version.apk_url);
-        window.location.href = version.apk_url;
+        // Open browser first (comes to foreground), then show uninstall dialog immediately
+        await ApkInstaller.uninstallThenOpen({ url: version.apk_url });
         
-        // Immediately trigger uninstall dialog (no delay)
-        console.log('[Update] Triggering uninstall dialog...');
-        await ApkInstaller.uninstallApp();
-        
-        // Note: After uninstall completes, app stops running
-        // But browser download continues in background
+        // Note: After uninstall completes, app stops running; browser is already opened
       } else {
         // Fallback: Just open in browser
         console.log('[Update] ApkInstaller plugin not available, opening browser only');
-        openInBrowser();
+        await openInBrowser();
       }
     } catch (error: any) {
       console.error('[Update] Update error:', error);

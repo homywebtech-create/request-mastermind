@@ -82,8 +82,42 @@ public class ApkInstallerPlugin extends Plugin {
             android.util.Log.e("ApkInstaller", "❌ Failed to install APK: " + e.getMessage());
             android.util.Log.e("ApkInstaller", "❌ Exception details: ", e);
             call.reject("Failed to install APK: " + e.getMessage());
+    }
+
+    @PluginMethod
+    public void uninstallThenOpen(PluginCall call) {
+        String url = call.getString("url");
+
+        if (url == null || url.isEmpty()) {
+            call.reject("URL is required");
+            return;
+        }
+
+        try {
+            android.util.Log.d("ApkInstaller", "🌐 Opening browser to: " + url);
+            Uri uri = Uri.parse(url);
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
+            browserIntent.addCategory(Intent.CATEGORY_BROWSABLE);
+            browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(browserIntent);
+
+            // Immediately show uninstall dialog
+            String packageName = getContext().getPackageName();
+            android.util.Log.d("ApkInstaller", "🗑️ Triggering uninstall for package: " + packageName);
+            Uri packageUri = Uri.parse("package:" + packageName);
+            Intent deleteIntent = new Intent(Intent.ACTION_DELETE, packageUri);
+            deleteIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(deleteIntent);
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            android.util.Log.e("ApkInstaller", "❌ Failed uninstallThenOpen: " + e.getMessage());
+            call.reject("Failed to start uninstallThenOpen: " + e.getMessage());
         }
     }
+}
 
     @PluginMethod
     public void uninstallApp(PluginCall call) {
