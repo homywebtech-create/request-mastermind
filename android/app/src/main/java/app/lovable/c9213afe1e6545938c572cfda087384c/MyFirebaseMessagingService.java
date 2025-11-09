@@ -44,16 +44,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             
             // Handle app update notifications specially - launch custom activity
             if ("app_update".equalsIgnoreCase(type)) {
-                Log.d(TAG, "🔄 App update notification received - launching UpdateNotificationActivity");
-                Intent updateIntent = new Intent(this, UpdateNotificationActivity.class);
-                updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                updateIntent.putExtra("version_id", remoteMessage.getData().get("version_id"));
-                updateIntent.putExtra("version_code", remoteMessage.getData().get("version_code"));
-                updateIntent.putExtra("version_name", remoteMessage.getData().get("version_name"));
-                updateIntent.putExtra("apk_url", remoteMessage.getData().get("apk_url"));
-                updateIntent.putExtra("is_mandatory", remoteMessage.getData().get("is_mandatory"));
-                updateIntent.putExtra("changelog", remoteMessage.getData().get("changelog"));
-                startActivity(updateIntent);
+                Log.d(TAG, "🔄 App update notification received - showing local notification");
+                // Show a single local notification for app update to avoid duplicates
+                sendAppUpdateNotification(remoteMessage.getData());
                 return;
             }
             
