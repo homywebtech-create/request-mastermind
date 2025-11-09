@@ -1,8 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
-const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
-const TWILIO_WHATSAPP_NUMBER = Deno.env.get('TWILIO_WHATSAPP_NUMBER');
+const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
+const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +21,7 @@ interface WhatsAppMessageRequest {
   to: string; // Phone number in format: +966xxxxxxxxx
   message: string;
   customerName?: string;
-  specialists?: SpecialistQuote[]; // For carousel messages
+  specialists?: SpecialistQuote[];
   orderDetails?: {
     serviceType: string;
     orderNumber: string;
@@ -36,87 +35,67 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 [Twilio WhatsApp] Edge function invoked');
-    console.log('🚀 [Twilio WhatsApp] Request method:', req.method);
+    console.log('🚀 [Meta WhatsApp] Edge function invoked');
     
     const requestBody = await req.json();
-    console.log('🚀 [Twilio WhatsApp] Request body:', JSON.stringify(requestBody));
+    console.log('🚀 [Meta WhatsApp] Request body:', JSON.stringify(requestBody));
     
-    const { to, message, customerName, specialists, orderDetails }: WhatsAppMessageRequest = requestBody;
+    const { to, message, specialists, orderDetails }: WhatsAppMessageRequest = requestBody;
     
-    // Check required fields - either message OR specialists list must be provided
+    // Check required fields
     if (!to) {
-      console.error('Missing required field: to');
+      console.error('❌ Missing required field: to');
       return new Response(
         JSON.stringify({ error: 'Missing required field: to (phone number)' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (!message && (!specialists || specialists.length === 0)) {
-      console.error('Missing required fields: message or specialists');
+      console.error('❌ Missing required fields: message or specialists');
       return new Response(
         JSON.stringify({ error: 'Either message or specialists list is required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate Twilio credentials
-    console.log('🔑 [Twilio WhatsApp] Checking credentials...');
-    console.log('🔑 [Twilio WhatsApp] Account SID exists:', !!TWILIO_ACCOUNT_SID);
-    console.log('🔑 [Twilio WhatsApp] Auth Token exists:', !!TWILIO_AUTH_TOKEN);
-    console.log('🔑 [Twilio WhatsApp] WhatsApp Number exists:', !!TWILIO_WHATSAPP_NUMBER);
+    // Validate Meta credentials
+    console.log('🔑 [Meta WhatsApp] Checking credentials...');
+    console.log('🔑 Access Token exists:', !!WHATSAPP_ACCESS_TOKEN);
+    console.log('🔑 Phone Number ID exists:', !!WHATSAPP_PHONE_NUMBER_ID);
     
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_NUMBER) {
-      console.error('❌ [Twilio WhatsApp] Twilio credentials not configured properly');
+    if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+      console.error('❌ [Meta WhatsApp] Credentials not configured');
       return new Response(
         JSON.stringify({ 
-          error: 'Twilio credentials not configured',
+          error: 'Meta WhatsApp credentials not configured',
           details: {
-            hasAccountSid: !!TWILIO_ACCOUNT_SID,
-            hasAuthToken: !!TWILIO_AUTH_TOKEN,
-            hasWhatsAppNumber: !!TWILIO_WHATSAPP_NUMBER
+            hasAccessToken: !!WHATSAPP_ACCESS_TOKEN,
+            hasPhoneNumberId: !!WHATSAPP_PHONE_NUMBER_ID
           }
         }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Format phone number to ensure it starts with whatsapp:
-    const toNumber = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
-    const fromNumber = TWILIO_WHATSAPP_NUMBER.startsWith('whatsapp:') 
-      ? TWILIO_WHATSAPP_NUMBER 
-      : `whatsapp:${TWILIO_WHATSAPP_NUMBER}`;
+    // Remove 'whatsapp:' prefix if present and ensure number has country code
+    let toNumber = to.replace('whatsapp:', '');
+    // Remove + if present (Meta API doesn't need it in the phone number)
+    toNumber = toNumber.replace('+', '');
 
-    console.log(`📱 [Twilio WhatsApp] Sending WhatsApp message...`);
-    console.log(`📱 [Twilio WhatsApp] From: ${fromNumber}`);
-    console.log(`📱 [Twilio WhatsApp] To: ${toNumber}`);
+    console.log(`📱 [Meta WhatsApp] Sending message to: ${toNumber}`);
 
-    // Prepare Twilio API request
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-    
-    const formData = new URLSearchParams();
-    formData.append('To', toNumber);
-    formData.append('From', fromNumber);
+    // Meta WhatsApp Business API endpoint
+    const metaUrl = `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
 
-    // If specialists array is provided, send each as a separate message with image
+    // If specialists array is provided, send each as a separate message
     if (specialists && specialists.length > 0) {
-      console.log(`📱 [Twilio WhatsApp] Sending specialist offers with ${specialists.length} specialists`);
+      console.log(`📱 [Meta WhatsApp] Sending ${specialists.length} specialist offers`);
       
-      // Send each specialist as a separate rich message with image and details
       for (const specialist of specialists) {
-        console.log(`📸 [Twilio WhatsApp] Sending specialist: ${specialist.name}`);
+        console.log(`📸 [Meta WhatsApp] Sending specialist: ${specialist.name}`);
         
-        // Build the message body with specialist details
+        // Build specialist message
         let specialistMessage = `🎉 *عرض جديد من محترف!*\n\n`;
         specialistMessage += `━━━━━━━━━━━━━━━\n`;
         specialistMessage += `📋 *رقم الطلب:* ${orderDetails?.orderNumber || 'N/A'}\n`;
@@ -126,120 +105,124 @@ serve(async (req) => {
         specialistMessage += `🌍 الجنسية: ${specialist.nationality}\n`;
         specialistMessage += `💰 السعر: *${specialist.price} ریال/ساعة*\n\n`;
         specialistMessage += `━━━━━━━━━━━━━━━\n`;
-        specialistMessage += `🔗 *للحجز اضغط على الرابط:* 👇\n\n`;
+        specialistMessage += `🔗 *للحجز اضغط على الرابط:*\n`;
         specialistMessage += `${specialist.companyPageUrl}\n\n`;
-        specialistMessage += `✅ _اضغط لإتمام الحجز مع هذا المحترف المختار_`;
-        
-        const specialistFormData = new URLSearchParams();
-        specialistFormData.append('To', toNumber);
-        specialistFormData.append('From', fromNumber);
-        specialistFormData.append('Body', specialistMessage);
-        
+        specialistMessage += `✅ _اضغط لإتمام الحجز_`;
+
+        const messagePayload: any = {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: toNumber,
+          type: "text",
+          text: {
+            preview_url: true,
+            body: specialistMessage
+          }
+        };
+
         // Add image if available
         if (specialist.imageUrl) {
-          specialistFormData.append('MediaUrl', specialist.imageUrl);
+          messagePayload.type = "image";
+          messagePayload.image = {
+            link: specialist.imageUrl,
+            caption: specialistMessage
+          };
+          delete messagePayload.text;
         }
-        
+
         try {
-          const specialistResponse = await fetch(twilioUrl, {
+          const response = await fetch(metaUrl, {
             method: 'POST',
             headers: {
-              'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-              'Content-Type': 'application/x-www-form-urlencoded',
+              'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+              'Content-Type': 'application/json',
             },
-            body: specialistFormData,
+            body: JSON.stringify(messagePayload),
           });
-          
-          if (!specialistResponse.ok) {
-            console.error(`❌ [Twilio WhatsApp] Failed to send specialist ${specialist.name}`);
+
+          const responseData = await response.json();
+
+          if (!response.ok) {
+            console.error(`❌ [Meta WhatsApp] Failed for ${specialist.name}:`, responseData);
           } else {
-            console.log(`✅ [Twilio WhatsApp] Sent specialist ${specialist.name} successfully`);
+            console.log(`✅ [Meta WhatsApp] Sent ${specialist.name} - Message ID:`, responseData.messages?.[0]?.id);
           }
-          
-          // Add small delay between messages to avoid rate limiting
+
+          // Delay between messages
           if (specialists.length > 1) {
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
         } catch (err) {
-          console.error(`❌ [Twilio WhatsApp] Error sending specialist ${specialist.name}:`, err);
+          console.error(`❌ [Meta WhatsApp] Error for ${specialist.name}:`, err);
         }
       }
-      
-      // Return early since we've already sent all messages
+
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Sent ${specialists.length} specialist offers successfully`
+          message: `Sent ${specialists.length} specialist offers`
         }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } else {
-      // Regular text message
-      console.log(`📱 [Twilio WhatsApp] Sending regular text message (${message.length} chars)`);
-      formData.append('Body', message);
     }
 
-    // Send request to Twilio
-    const response = await fetch(twilioUrl, {
+    // Regular text message
+    console.log(`📱 [Meta WhatsApp] Sending text message (${message.length} chars)`);
+
+    const messagePayload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: toNumber,
+      type: "text",
+      text: {
+        preview_url: false,
+        body: message
+      }
+    };
+
+    const response = await fetch(metaUrl, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify(messagePayload),
     });
 
     const responseData = await response.json();
     
     if (!response.ok) {
-      console.error('❌ [Twilio WhatsApp] API error:', JSON.stringify(responseData));
-      console.error('❌ [Twilio WhatsApp] Status:', response.status);
+      console.error('❌ [Meta WhatsApp] API error:', JSON.stringify(responseData));
       return new Response(
         JSON.stringify({ 
           error: 'Failed to send WhatsApp message', 
           details: responseData,
           status: response.status 
         }),
-        {
-          status: response.status,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('✅ [Twilio WhatsApp] Message sent successfully!');
-    console.log('✅ [Twilio WhatsApp] Message SID:', responseData.sid);
-    console.log('✅ [Twilio WhatsApp] Status:', responseData.status);
+    console.log('✅ [Meta WhatsApp] Message sent!');
+    console.log('✅ Message ID:', responseData.messages?.[0]?.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        messageSid: responseData.sid,
-        status: responseData.status 
+        messageId: responseData.messages?.[0]?.id,
+        details: responseData
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: any) {
-    console.error('❌ [Twilio WhatsApp] Unexpected error:', error);
-    console.error('❌ [Twilio WhatsApp] Error message:', error?.message);
-    console.error('❌ [Twilio WhatsApp] Error stack:', error?.stack);
+    console.error('❌ [Meta WhatsApp] Unexpected error:', error);
     return new Response(
       JSON.stringify({ 
         error: error?.message || 'Unknown error',
-        details: 'Internal server error',
-        errorType: error?.constructor?.name 
+        details: error?.stack
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
