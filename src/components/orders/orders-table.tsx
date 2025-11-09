@@ -1232,6 +1232,32 @@ Thank you for contacting us! 🌟`;
     );
   };
 
+  // Handle tracking stage updates for in-progress orders
+  const handleUpdateTrackingStage = async (orderId: string, newStage: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ tracking_stage: newStage })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم التحديث بنجاح' : 'Updated Successfully',
+        description: language === 'ar' 
+          ? `تم تغيير مرحلة الطلب إلى ${getTrackingStageLabel(newStage).label}`
+          : `Order stage updated to ${getTrackingStageLabel(newStage).label}`,
+      });
+    } catch (error: any) {
+      console.error('Error updating tracking stage:', error);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message || (language === 'ar' ? 'فشل تحديث مرحلة الطلب' : 'Failed to update order stage'),
+        variant: "destructive",
+      });
+    }
+  };
+
   const getTrackingStageLabel = (stage: string | null | undefined): { label: string; color: string } => {
     switch (stage) {
       case 'moving':
@@ -2020,6 +2046,106 @@ Thank you for contacting us! 🌟`;
                                 </>
                               )}
                             </Button>
+                          )}
+                          
+                          {/* Tracking stage actions for in-progress orders */}
+                          {canManageOrders && filter === 'in-progress' && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex items-center gap-1"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                  {language === 'ar' ? 'إجراءات' : 'Actions'}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                {(!order.tracking_stage || order.tracking_stage === null) && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleUpdateTrackingStage(order.id, 'moving')}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                                    {language === 'ar' ? 'بدء التحرك للعميل' : 'Start Moving'}
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                {order.tracking_stage === 'moving' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleUpdateTrackingStage(order.id, 'arrived')}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                                    {language === 'ar' ? 'الوصول للموقع' : 'Mark as Arrived'}
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                {order.tracking_stage === 'arrived' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleUpdateTrackingStage(order.id, 'working')}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                                    {language === 'ar' ? 'بدء العمل' : 'Start Working'}
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                {order.tracking_stage === 'working' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleUpdateTrackingStage(order.id, 'invoice_requested')}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <div className="h-2 w-2 rounded-full bg-purple-500"></div>
+                                    {language === 'ar' ? 'طلب الفاتورة' : 'Request Invoice'}
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                {order.tracking_stage === 'invoice_requested' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleUpdateTrackingStage(order.id, 'payment_received')}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                    {language === 'ar' ? 'استلام الدفع وإنهاء العمل' : 'Payment Received & Complete'}
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                {/* Allow going back to previous stages in case of mistakes */}
+                                {order.tracking_stage && order.tracking_stage !== null && (
+                                  <>
+                                    <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
+                                      {language === 'ar' ? '──────────' : '──────────'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleUpdateTrackingStage(order.id, 'moving')}
+                                      className="text-muted-foreground"
+                                    >
+                                      {language === 'ar' ? '↻ العودة لـ: التحرك' : '↻ Back to: Moving'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleUpdateTrackingStage(order.id, 'arrived')}
+                                      className="text-muted-foreground"
+                                    >
+                                      {language === 'ar' ? '↻ العودة لـ: الوصول' : '↻ Back to: Arrived'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleUpdateTrackingStage(order.id, 'working')}
+                                      className="text-muted-foreground"
+                                    >
+                                      {language === 'ar' ? '↻ العودة لـ: العمل' : '↻ Back to: Working'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleUpdateTrackingStage(order.id, 'invoice_requested')}
+                                      className="text-muted-foreground"
+                                    >
+                                      {language === 'ar' ? '↻ العودة لـ: الفاتورة' : '↻ Back to: Invoice'}
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </TableCell>
