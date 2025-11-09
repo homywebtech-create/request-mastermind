@@ -162,17 +162,10 @@ Deno.serve(async (req) => {
           ? {
               message: {
                 token: deviceToken.token,
-                notification: {
-                  title: notificationTitle,
-                  body: notificationBody,
-                },
                 data: baseData,
                 android: {
                   priority: 'high',
                   direct_boot_ok: true,
-                  notification: {
-                    channel_id: androidChannelId,
-                  },
                 },
               },
             }
