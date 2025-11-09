@@ -2123,6 +2123,43 @@ Thank you for contacting us! 🌟`;
                             </Button>
                           )}
                           
+                          {/* Actions for confirmed orders - Reassign and Cancel */}
+                          {canManageOrders && filter === 'confirmed' && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex items-center gap-1"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                  {language === 'ar' ? 'إجراءات' : 'Actions'}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuItem 
+                                  onClick={() => openResendDialog(order)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Users className="h-4 w-4" />
+                                  {language === 'ar' ? 'إعادة تعيين لمحترف آخر' : 'Reassign to Another Specialist'}
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
+                                  {language === 'ar' ? '──────────' : '──────────'}
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem 
+                                  onClick={() => openActionDialog(order.id, 'cancel', 'cancel')}
+                                  className="text-destructive flex items-center gap-2"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  {language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                          
                           {/* Tracking stage actions for in-progress orders */}
                           {canManageOrders && filter === 'in-progress' && (
                             <DropdownMenu>
