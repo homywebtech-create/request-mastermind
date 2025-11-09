@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { AppVersion } from '@/hooks/useAppUpdate';
 import { App } from '@capacitor/app';
-import { Browser } from '@capacitor/browser';
-import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useTranslation } from '@/i18n';
@@ -36,21 +34,17 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
     try {
       setDownloading(true);
 
-      console.log('[Update] Opening APK URL in browser:', version.apk_url);
+      console.log('[Update] Opening APK URL in system browser:', version.apk_url);
 
-      // Open APK URL immediately in browser - Android download manager will handle it
-      if (Capacitor.isNativePlatform()) {
-        await Browser.open({ url: version.apk_url });
-      } else {
-        window.open(version.apk_url, '_blank');
-      }
+      // Open APK URL in system browser - triggers Android download manager
+      window.location.href = version.apk_url;
 
       toast({
         title: t.updateDialog.downloadStarted || 'Download Started',
         description: t.updateDialog.downloadStartedDesc || 'The APK is downloading. Install it when complete.',
       });
 
-      // Close dialog after opening browser
+      // Close dialog after triggering download
       setTimeout(() => {
         onOpenChange(false);
       }, 1500);
