@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { AppVersion } from '@/hooks/useAppUpdate';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import ApkInstaller from '@/lib/apkInstaller';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +36,23 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
       return;
     }
 
+    const openInBrowser = () => {
+      console.log('[Update] Plugin unavailable. Opening APK URL in system browser:', version.apk_url);
+      window.location.href = version.apk_url;
+      toast({
+        title: t.updateDialog.downloadStarted,
+        description: t.updateDialog.downloadStartedDesc,
+      });
+    };
+
     try {
+      // If native plugin is not available, fallback immediately to browser
+      const hasApkInstaller = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('ApkInstaller');
+      if (!hasApkInstaller) {
+        openInBrowser();
+        return;
+      }
+
       setDownloading(true);
       setDownloadProgress(0);
 
@@ -68,13 +85,23 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
             description: t.updateDialog.installingNow || 'Installing update...',
           });
 
-          // Trigger installation
-          await ApkInstaller.installApk({ filePath: result.uri });
+          // Normalize file path for Android (strip file://)
+          let filePath = result.uri;
+          if (filePath.startsWith('file://')) filePath = filePath.replace('file://', '');
+
+          // Trigger installation via native plugin
+          await ApkInstaller.installApk({ filePath });
 
           console.log('[Update] Installation triggered successfully');
 
         } catch (error: any) {
           console.error('[Update] Error during download/install:', error);
+          const msg = String(error?.message || '');
+          // Fallback if plugin not implemented
+          if (msg.includes('not implemented') || msg.includes('CapacitorException') || msg.includes('ApkInstaller')) {
+            openInBrowser();
+            return;
+          }
           toast({
             title: t.updateDialog.downloadError,
             description: error.message || 'Failed to install update',
@@ -106,7 +133,6 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
       setDownloadProgress(0);
     }
   };
-
   const handleSkip = async () => {
     if (version.is_mandatory) {
       // Force close app for mandatory updates
