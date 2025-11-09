@@ -149,8 +149,11 @@ export class FirebaseNotificationManager {
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('👆 [NOTIFICATION TAP] User tapped notification');
           console.log('📦 Full notification data:', JSON.stringify(notification, null, 2));
+          console.log('📦 notification.notification:', notification.notification);
+          console.log('📦 notification.notification.data:', notification.notification.data);
           
           const nType = notification.notification.data?.type;
+          console.log('🔍 [TYPE] Notification type:', nType);
           
           // Handle readiness check tap
           if (nType === 'readiness_check') {
@@ -173,9 +176,29 @@ export class FirebaseNotificationManager {
             return;
           }
           
-          // Get the route from notification data
-          const route = notification.notification.data?.route || '/specialist-orders/new';
-          console.log('🔀 [NAVIGATION] Target route:', route);
+          // Get the route from notification data - check multiple possible locations
+          let route = notification.notification.data?.route;
+          console.log('🔍 [ROUTE CHECK] notification.notification.data.route:', route);
+          
+          // Fallback to different data structures if route not found
+          if (!route) {
+            route = (notification as any).data?.route;
+            console.log('🔍 [ROUTE CHECK] notification.data.route:', route);
+          }
+          
+          // Final fallback based on notification type
+          if (!route) {
+            if (nType === 'new_order' || nType === 'resend_order' || nType === 'test') {
+              route = '/specialist/offers';
+            } else if (nType === 'new_quote' || nType === 'quote_response' || nType === 'booking_confirmed') {
+              route = '/specialist-orders';
+            } else {
+              route = '/specialist-orders/new';
+            }
+            console.log('⚠️ [ROUTE] No route in data, using fallback based on type:', route);
+          }
+          
+          console.log('🔀 [NAVIGATION] Final target route:', route);
           
           const { Preferences } = await import('@capacitor/preferences');
           await Preferences.set({
@@ -183,22 +206,26 @@ export class FirebaseNotificationManager {
             value: route,
           });
           
-          console.log('✅ [SAVED] Route saved to preferences');
+          console.log('✅ [SAVED] Route saved to preferences:', route);
           
-            // CRITICAL: Emit event for immediate navigation when app is running
-            // Use the route as provided without legacy remapping
-            const targetRoute = route;
-            
-            // Dispatch multiple events for different listeners
-            window.dispatchEvent(new CustomEvent('notificationNavigate', { 
-              detail: { route: targetRoute } 
-            }));
-            window.dispatchEvent(new CustomEvent('specialist-navigate', { 
-              detail: { route: targetRoute } 
-            }));
-            window.dispatchEvent(new Event('specialist-orders-refresh'));
-            console.log('📤 [EVENT] Navigation events dispatched for route:', targetRoute);
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          // CRITICAL: Emit event for immediate navigation when app is running
+          console.log('📤 [DISPATCH] Dispatching navigation events...');
+          
+          window.dispatchEvent(new CustomEvent('notificationNavigate', { 
+            detail: { route: route } 
+          }));
+          console.log('✅ [DISPATCH] notificationNavigate event dispatched');
+          
+          window.dispatchEvent(new CustomEvent('specialist-navigate', { 
+            detail: { route: route } 
+          }));
+          console.log('✅ [DISPATCH] specialist-navigate event dispatched');
+          
+          window.dispatchEvent(new Event('specialist-orders-refresh'));
+          console.log('✅ [DISPATCH] specialist-orders-refresh event dispatched');
+          
+          console.log('📤 [COMPLETE] All navigation events dispatched for route:', route);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         });
 
         // Step 6: Listen for registration errors

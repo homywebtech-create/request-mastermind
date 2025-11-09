@@ -107,9 +107,16 @@ const DeepLinkController = () => {
       // 4) Listen for notification taps when app is already running
       notificationNavigateListener = ((event: CustomEvent) => {
         const route = event.detail?.route;
-        if (!route) return;
+        console.log('🔔 [DeepLinkController] notificationNavigate event received!');
+        console.log('🔔 [DeepLinkController] Event detail:', event.detail);
+        console.log('🔔 [DeepLinkController] Route:', route);
+        console.log('🔔 [DeepLinkController] User:', user ? 'logged in' : 'not logged in');
+        console.log('🔔 [DeepLinkController] Loading:', loading);
         
-        console.log('🔔 [DeepLinkController] Notification navigate event received:', route);
+        if (!route) {
+          console.log('❌ [DeepLinkController] No route in event detail!');
+          return;
+        }
         
         // Navigate immediately if user is logged in
         if (user && !loading) {
@@ -121,7 +128,9 @@ const DeepLinkController = () => {
         }
       }) as (event: CustomEvent) => void;
 
+      console.log('🎧 [DeepLinkController] Setting up notificationNavigate listener...');
       window.addEventListener('notificationNavigate', notificationNavigateListener as EventListener);
+      console.log('✅ [DeepLinkController] notificationNavigate listener ready!');
       
       // 5) Listen for notification route from native MainActivity
       const notificationRouteListener = ((event: CustomEvent) => {
