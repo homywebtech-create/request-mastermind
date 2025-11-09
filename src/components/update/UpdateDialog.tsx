@@ -52,23 +52,18 @@ export const UpdateDialog = ({ open, onOpenChange, version }: UpdateDialogProps)
       const hasApkInstaller = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('ApkInstaller');
       
       if (hasApkInstaller) {
-        console.log('[Update] Starting uninstall-then-download flow');
+        console.log('[Update] Starting seamless update flow');
         
-        // First, open browser to download new APK
-        console.log('[Update] Opening browser for APK download:', version.apk_url);
+        // Start browser download first (continues in background)
+        console.log('[Update] Starting APK download in browser:', version.apk_url);
         window.location.href = version.apk_url;
         
-        // Small delay to ensure browser starts download
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Then trigger uninstall via Android system dialog
-        console.log('[Update] Triggering app uninstall dialog...');
+        // Immediately trigger uninstall dialog (no delay)
+        console.log('[Update] Triggering uninstall dialog...');
         await ApkInstaller.uninstallApp();
         
-        toast({
-          title: t.updateDialog.downloadStarted,
-          description: t.updateDialog.downloadStartedDesc || 'Download started. After uninstall completes, install the new version.',
-        });
+        // Note: After uninstall completes, app stops running
+        // But browser download continues in background
       } else {
         // Fallback: Just open in browser
         console.log('[Update] ApkInstaller plugin not available, opening browser only');
