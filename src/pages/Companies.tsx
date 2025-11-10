@@ -23,6 +23,7 @@ import { openWhatsApp } from "@/lib/externalLinks";
 import SpecialistsLivePanel from "@/components/specialists/SpecialistsLivePanel";
 import { CompanyChatDialog } from "@/components/company/CompanyChatDialog";
 import moboLogo from "@/assets/mobo-logo.png";
+import { LogoUploader } from "@/components/admin/LogoUploader";
 
 interface Service {
   id: string;
@@ -82,6 +83,7 @@ export default function Companies() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const [chatCompany, setChatCompany] = useState<{ id: string; name: string } | null>(null);
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string>(moboLogo);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -104,6 +106,23 @@ export default function Companies() {
   useEffect(() => {
     fetchCompanies();
     fetchServices();
+  }, []);
+
+  // Fetch company logo
+  useEffect(() => {
+    const fetchCompanyLogo = async () => {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'company_logo_url')
+        .single();
+      
+      if (!error && data?.value) {
+        setCompanyLogoUrl(data.value);
+      }
+    };
+    
+    fetchCompanyLogo();
   }, []);
 
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
@@ -664,9 +683,13 @@ export default function Companies() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <img 
-                  src={moboLogo} 
+                  src={companyLogoUrl} 
                   alt="Mobo Technology" 
                   className="h-16 w-16 rounded-full object-cover border-2 border-primary/30 shadow-lg ring-2 ring-border hover:ring-primary/50 transition-all"
+                />
+                <LogoUploader 
+                  currentLogoUrl={companyLogoUrl}
+                  onLogoUpdate={setCompanyLogoUrl}
                 />
               </div>
               <div className="flex flex-col gap-1">

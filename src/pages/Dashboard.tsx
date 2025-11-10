@@ -28,6 +28,7 @@ import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { CompaniesLivePanel } from "@/components/company/CompaniesLivePanel";
 import moboLogo from "@/assets/mobo-logo.png";
+import { LogoUploader } from "@/components/admin/LogoUploader";
 
 interface Order {
   id: string;
@@ -113,6 +114,7 @@ export default function Dashboard() {
   const [suspendedSpecialistsCount, setSuspendedSpecialistsCount] = useState(0);
   const [pendingDeletionRequestsCount, setPendingDeletionRequestsCount] = useState(0);
   const [userProfile, setUserProfile] = useState<{ full_name: string; is_active: boolean } | null>(null);
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string>(moboLogo);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const { role } = useUserRole();
@@ -140,6 +142,23 @@ export default function Dashboard() {
     return () => {
       window.removeEventListener('overdue-confirmed-orders', handleOverdueOrders as EventListener);
     };
+  }, []);
+
+  // Fetch company logo
+  useEffect(() => {
+    const fetchCompanyLogo = async () => {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'company_logo_url')
+        .single();
+      
+      if (!error && data?.value) {
+        setCompanyLogoUrl(data.value);
+      }
+    };
+    
+    fetchCompanyLogo();
   }, []);
 
   // Fetch user profile
@@ -770,9 +789,13 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <img 
-                  src={moboLogo} 
+                  src={companyLogoUrl} 
                   alt="Mobo Technology" 
                   className="h-16 w-16 rounded-full object-cover border-2 border-primary/30 shadow-lg ring-2 ring-border hover:ring-primary/50 transition-all"
+                />
+                <LogoUploader 
+                  currentLogoUrl={companyLogoUrl}
+                  onLogoUpdate={setCompanyLogoUrl}
                 />
               </div>
               <div className="flex flex-col gap-1">
