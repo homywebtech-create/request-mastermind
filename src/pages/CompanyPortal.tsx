@@ -614,10 +614,12 @@ export default function CompanyPortal() {
                 <img 
                   src={company.logo_url} 
                   alt={company.name}
-                  className="h-16 w-16 rounded-lg object-cover border border-border"
+                  className="h-20 w-20 rounded-full object-cover border-2 border-primary/30 shadow-lg ring-2 ring-border hover:ring-primary/50 transition-all"
                 />
               ) : (
-                <Building2 className="h-16 w-16 text-primary" />
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border-2 border-primary/30 shadow-lg">
+                  <Building2 className="h-10 w-10 text-primary" />
+                </div>
               )}
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-cairo">

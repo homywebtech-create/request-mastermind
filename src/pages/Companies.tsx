@@ -914,11 +914,11 @@ export default function Companies() {
                                 <img 
                                   src={company.logo_url} 
                                   alt={company.name_en || company.name}
-                                  className="h-12 w-12 rounded-lg object-cover border border-border"
+                                  className="h-14 w-14 rounded-full object-cover border-2 border-primary/20 shadow-md ring-2 ring-border hover:ring-primary/40 transition-all"
                                 />
                               ) : (
-                                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                                  <Building2 className="h-6 w-6 text-primary" />
+                                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border-2 border-primary/20 shadow-md">
+                                  <Building2 className="h-7 w-7 text-primary" />
                                 </div>
                               )}
                             </td>

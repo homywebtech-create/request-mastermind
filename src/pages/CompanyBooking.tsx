@@ -1246,15 +1246,15 @@ export default function CompanyBooking() {
                   <img 
                     src={company.logo_url} 
                     alt={company.name}
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border-2 border-primary/40 shadow-md flex-shrink-0"
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-primary/40 shadow-md ring-2 ring-background hover:ring-primary/50 transition-all flex-shrink-0"
                     onError={(e) => {
                       console.error('❌ Error loading company logo:', company.logo_url);
                       e.currentTarget.style.display = 'none';
                     }}
                   />
                 ) : (
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 flex items-center justify-center border-2 border-primary/40 shadow-md flex-shrink-0">
-                    <Building2 className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border-2 border-primary/40 shadow-md flex-shrink-0">
+                    <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                   </div>
                 )}
                 
