@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
-const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
+const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')?.trim();
+const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')?.trim();
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,9 +79,9 @@ serve(async (req) => {
     }
 
     // Remove 'whatsapp:' prefix if present and ensure number has country code
-    let toNumber = to.replace('whatsapp:', '');
+    let toNumber = to.replace('whatsapp:', '').trim();
     // Remove + if present (Meta API doesn't need it in the phone number)
-    toNumber = toNumber.replace('+', '');
+    toNumber = toNumber.replace('+', '').trim();
 
     console.log(`📱 [Meta WhatsApp] Sending message to: ${toNumber}`);
 

@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
-const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
+const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')?.trim();
+const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')?.trim();
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -84,7 +84,7 @@ serve(async (req) => {
     }
 
     // Remove whatsapp: prefix and any + from phone number for Meta API
-    const cleanTo = to.replace('whatsapp:', '').replace('+', '');
+    const cleanTo = to.replace('whatsapp:', '').replace('+', '').trim();
     console.log(`📱 [WhatsApp Interactive] Sending to: ${cleanTo}`);
 
     // Prepare WhatsApp Business API URL
