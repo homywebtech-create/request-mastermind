@@ -619,10 +619,10 @@ export default function SpecialistHome() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="text-white font-medium">{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
     );
@@ -633,15 +633,15 @@ export default function SpecialistHome() {
 
   return (
     <BusyGuard specialistId={specialistId} allowWhenBusy={false}>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 pb-24">
       {/* Header - Optimized for Mobile */}
-      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white shadow-lg">
         <div className="w-full px-3 py-3 sm:px-6 sm:py-4">
           {/* Top Row: Name, Wallet and Settings */}
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex-1 min-w-0">
               <h1 className="text-lg sm:text-xl font-bold mb-0.5 drop-shadow-lg truncate">
-                {isAr ? 'مرحباً' : 'Welcome'}, {specialistName}
+                {isAr ? 'مرحباً' : 'Welcome'}, {specialistName.split(' ')[0]}
               </h1>
               <p className="text-xs sm:text-sm opacity-90 font-medium">
                 {isAr ? '✅ طلباتك المؤكدة' : '✅ Your Confirmed Bookings'}
@@ -700,8 +700,8 @@ export default function SpecialistHome() {
       {/* Tools + Orders List - Mobile Optimized */}
       <div className="w-full px-3 py-3 sm:px-4 sm:py-4 space-y-3 sm:space-y-4 max-w-screen-lg mx-auto">
         {displayOrders.length === 0 ? (
-          <Card className="p-6 sm:p-8 text-center shadow-lg">
-            <p className="text-muted-foreground text-base sm:text-lg">{isAr ? 'لا توجد طلبات مؤكدة حالياً' : 'No confirmed bookings yet'}</p>
+          <Card className="p-6 sm:p-8 text-center shadow-lg bg-white/90 backdrop-blur-sm border-white/30">
+            <p className="text-foreground text-base sm:text-lg">{isAr ? 'لا توجد طلبات مؤكدة حالياً' : 'No confirmed bookings yet'}</p>
           </Card>
         ) : (
           displayOrders.map((order) => {
@@ -731,10 +731,10 @@ export default function SpecialistHome() {
               <Card 
                 key={order.id}
                 className={cn(
-                  "overflow-hidden transition-all",
-                  isTodayOrder && canMove && "border-green-500 border-2 shadow-lg shadow-green-500/20",
-                  isTodayOrder && !canMove && "border-green-500 border-2 shadow-lg",
-                  isFutureOrder && !isOverdue && "border-destructive border-2 opacity-75",
+                  "overflow-hidden transition-all bg-white/90 backdrop-blur-sm border-white/30",
+                  isTodayOrder && canMove && "border-green-400 border-2 shadow-lg shadow-green-400/20",
+                  isTodayOrder && !canMove && "border-green-400 border-2 shadow-lg",
+                  isFutureOrder && !isOverdue && "border-destructive border-2 opacity-90",
                   isOverdue && "border-destructive border-2 animate-pulse"
                 )}
               >

@@ -224,10 +224,10 @@ export default function SpecialistMessages() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="text-white font-medium">{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
     );
@@ -235,14 +235,14 @@ export default function SpecialistMessages() {
 
   return (
     <BusyGuard specialistId={specialistId} allowWhenBusy={false}>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 pb-24">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white shadow-lg">
           <div className="w-full px-3 py-3 sm:px-6 sm:py-4">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg sm:text-xl font-bold mb-0.5 drop-shadow-lg truncate">
-                  {isAr ? 'مرحباً' : 'Welcome'}, {specialistName}
+                  {isAr ? 'مرحباً' : 'Welcome'}, {specialistName.split(' ')[0]}
                 </h1>
                 <p className="text-xs sm:text-sm opacity-90 font-medium">
                   {isAr ? '💬 محادثاتك' : '💬 Your Messages'}
@@ -287,7 +287,7 @@ export default function SpecialistMessages() {
               placeholder={isAr ? "ابحث في المحادثات..." : "Search chats..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4"
+              className="pl-10 pr-4 bg-white/90 backdrop-blur-sm border-white/30"
             />
           </div>
         </div>
@@ -296,9 +296,9 @@ export default function SpecialistMessages() {
         <div className="w-full px-3 pb-3 sm:px-4 sm:pb-4 max-w-screen-lg mx-auto">
           <ScrollArea className="h-[calc(100vh-280px)]">
             {filteredChats.length === 0 ? (
-              <Card className="p-8 text-center">
-                <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <p className="text-lg font-medium text-muted-foreground">
+              <Card className="p-8 text-center bg-white/90 backdrop-blur-sm border-white/30">
+                <MessageSquare className="h-16 w-16 mx-auto mb-4 text-purple-600 opacity-70" />
+                <p className="text-lg font-medium text-foreground">
                   {isAr ? 'لا توجد محادثات حالياً' : 'No chats yet'}
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
@@ -312,8 +312,8 @@ export default function SpecialistMessages() {
                   return (
                     <Card
                       key={chat.id}
-                      className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                        chat.unread_count > 0 ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : ''
+                      className={`p-3 cursor-pointer transition-all bg-white/90 backdrop-blur-sm border-white/30 hover:bg-white hover:shadow-lg ${
+                        chat.unread_count > 0 ? 'bg-green-50/90 border-green-300 shadow-md' : ''
                       }`}
                       onClick={() => setSelectedChat({
                         companyId: chat.company_id,

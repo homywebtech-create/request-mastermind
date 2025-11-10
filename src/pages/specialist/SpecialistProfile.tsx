@@ -328,10 +328,10 @@ export default function SpecialistProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">{t.loading}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="text-white font-medium">{t.loading}</p>
         </div>
       </div>
     );
@@ -339,9 +339,9 @@ export default function SpecialistProfile() {
 
   return (
     <BusyGuard specialistId={specialist?.id || ''} allowWhenBusy={false}>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 pb-24">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-6 shadow-lg">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
           <div className="flex items-center justify-between">
             <div>
@@ -363,7 +363,7 @@ export default function SpecialistProfile() {
       <div className="max-w-screen-lg mx-auto p-4">
         <Accordion type="single" collapsible className="space-y-4">
           {/* Statistics Section */}
-          <AccordionItem value="statistics" className="border rounded-lg bg-card">
+          <AccordionItem value="statistics" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
@@ -441,7 +441,7 @@ export default function SpecialistProfile() {
           </AccordionItem>
 
           {/* Personal Info Section */}
-          <AccordionItem value="personal-info" className="border rounded-lg bg-card">
+          <AccordionItem value="personal-info" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
@@ -579,7 +579,7 @@ export default function SpecialistProfile() {
           </AccordionItem>
 
           {/* Photos & Documents Section */}
-          <AccordionItem value="photos-docs" className="border rounded-lg bg-card">
+          <AccordionItem value="photos-docs" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
@@ -655,7 +655,7 @@ export default function SpecialistProfile() {
 
 
           {/* App Version Section */}
-          <AccordionItem value="version" className="border rounded-lg bg-card">
+          <AccordionItem value="version" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
@@ -691,7 +691,7 @@ export default function SpecialistProfile() {
 
 
           {/* Quick Actions Section */}
-          <AccordionItem value="actions" className="border rounded-lg bg-card">
+          <AccordionItem value="actions" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">

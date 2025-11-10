@@ -180,10 +180,10 @@ export default function SpecialistStats() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="text-white font-medium">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -233,9 +233,9 @@ export default function SpecialistStats() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 pb-24">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-6 shadow-lg">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
           <div className="flex items-center justify-between">
             <div>
@@ -260,7 +260,7 @@ export default function SpecialistStats() {
           return (
             <Card 
               key={index}
-              className="overflow-hidden hover:shadow-lg transition-all"
+              className="overflow-hidden hover:shadow-lg transition-all bg-white/90 backdrop-blur-sm border-white/30"
             >
               <div className={`h-2 w-full bg-gradient-to-r ${card.color}`} />
               <div className="p-5">
@@ -284,11 +284,11 @@ export default function SpecialistStats() {
         })}
 
         {/* Total Summary */}
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-lg">
           <div className="p-6">
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground font-medium">إجمالي الطلبات</p>
-              <p className="text-5xl font-bold text-primary">{stats.totalOrders}</p>
+              <p className="text-5xl font-bold text-primary">{ stats.totalOrders}</p>
               <p className="text-xs text-muted-foreground">منذ بداية العمل</p>
             </div>
           </div>

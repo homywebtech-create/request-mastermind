@@ -853,10 +853,10 @@ export default function SpecialistNewOrders() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">{t.specialist.loading}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="text-white font-medium">{t.specialist.loading}</p>
         </div>
       </div>
     );
@@ -864,9 +864,9 @@ export default function SpecialistNewOrders() {
 
   return (
     <BusyGuard specialistId={specialistId} allowWhenBusy={true}>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 pb-24">
       {/* Fixed Header with Wallet and Settings */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-2xl">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white shadow-2xl">
         <div className="max-w-screen-lg mx-auto p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex-1">
@@ -951,10 +951,10 @@ export default function SpecialistNewOrders() {
             return (
               <Card 
                 key={order.id}
-                className={`overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ${
+                className={`overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm ${
                   order.isNew 
-                    ? 'border-2 border-amber-400 ring-2 ring-amber-400/30 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20' 
-                    : 'border border-primary/30'
+                    ? 'border-2 border-amber-400 ring-2 ring-amber-400/30' 
+                    : 'border border-white/30'
                 }`}
               >
                 {/* New Order Indicator with Timer - Compact */}
