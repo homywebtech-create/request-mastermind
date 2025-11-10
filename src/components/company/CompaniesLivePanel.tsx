@@ -191,11 +191,13 @@ export function CompaniesLivePanel() {
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3 mb-3">
                         {company.logo_url && (
-                          <img
-                            src={company.logo_url}
-                            alt={company.name}
-                            className="w-10 h-10 rounded-lg object-cover"
-                          />
+                          <div className="relative">
+                            <img
+                              src={company.logo_url}
+                              alt={company.name}
+                              className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20 shadow-md hover:ring-primary/40 transition-all"
+                            />
+                          </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
