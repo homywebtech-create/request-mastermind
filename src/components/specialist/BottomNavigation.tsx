@@ -23,7 +23,7 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
       path: "/specialist-orders",
       isActive: location.pathname === "/specialist-orders",
       disabled: isBusy && !location.pathname.includes('/tracking/'),
-      gradient: "from-green-500 to-emerald-600"
+      gradient: "from-emerald-400 to-green-500"
     },
     {
       icon: Home,
@@ -32,7 +32,7 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
       isActive: location.pathname === "/specialist-orders/new",
       badge: isBusy ? 0 : newOrdersCount,
       disabled: isBusy,
-      gradient: "from-blue-500 to-indigo-600"
+      gradient: "from-blue-400 to-indigo-500"
     },
     {
       icon: MessageSquare,
@@ -40,12 +40,12 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
       path: "/specialist/messages",
       isActive: location.pathname === "/specialist/messages",
       disabled: isBusy && !location.pathname.includes('/tracking/'),
-      gradient: "from-purple-500 to-pink-600"
+      gradient: "from-purple-400 to-pink-500"
     }
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-background/95 border-t border-primary/20 shadow-2xl backdrop-blur-sm z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-purple-600 via-pink-500 to-purple-600/95 border-t border-white/20 shadow-2xl backdrop-blur-sm z-50">
       {/* رسالة تنبيه عند الانشغال - Mobile Optimized */}
       {isBusy && currentOrderId && (
         <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-2 text-center text-xs sm:text-sm font-bold shadow-lg animate-pulse">
@@ -75,7 +75,7 @@ export default function BottomNavigation({ newOrdersCount = 0, specialistId }: B
                 isDisabled && "opacity-40 cursor-not-allowed",
                 item.isActive 
                   ? `bg-gradient-to-br ${item.gradient} text-white shadow-lg scale-105` 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:scale-105"
+                  : "text-white/70 hover:text-white hover:bg-white/10 hover:scale-105"
               )}
             >
               <div className="relative">
