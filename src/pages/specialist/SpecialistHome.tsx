@@ -704,7 +704,7 @@ export default function SpecialistHome() {
             <p className="text-foreground text-base sm:text-lg">{isAr ? 'لا توجد طلبات مؤكدة حالياً' : 'No confirmed bookings yet'}</p>
           </Card>
         ) : (
-          displayOrders.map((order) => {
+          displayOrders.map((order, index) => {
             const isTodayOrder = isOrderToday(order.booking_date);
             const isFutureOrder = isOrderFuture(order.booking_date);
             const canMove = canMoveNow(order.booking_date, order.booking_time);
@@ -731,12 +731,13 @@ export default function SpecialistHome() {
               <Card 
                 key={order.id}
                 className={cn(
-                  "overflow-hidden transition-all bg-white/90 backdrop-blur-sm border-white/30",
+                  "overflow-hidden transition-all bg-white/90 backdrop-blur-sm border-white/30 animate-fade-in",
                   isTodayOrder && canMove && "border-green-400 border-2 shadow-lg shadow-green-400/20",
                   isTodayOrder && !canMove && "border-green-400 border-2 shadow-lg",
                   isFutureOrder && !isOverdue && "border-destructive border-2 opacity-90",
                   isOverdue && "border-destructive border-2 animate-pulse"
                 )}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 {/* Status Indicator */}
                 <div className={cn(

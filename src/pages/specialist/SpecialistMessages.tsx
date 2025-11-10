@@ -307,14 +307,15 @@ export default function SpecialistMessages() {
               </Card>
             ) : (
               <div className="space-y-2">
-                {filteredChats.map((chat) => {
+                {filteredChats.map((chat, index) => {
                   const companyName = isAr ? chat.companies.name : (chat.companies.name_en || chat.companies.name);
                   return (
                     <Card
                       key={chat.id}
-                      className={`p-3 cursor-pointer transition-all bg-white/90 backdrop-blur-sm border-white/30 hover:bg-white hover:shadow-lg ${
+                      className={`p-3 cursor-pointer transition-all bg-white/90 backdrop-blur-sm border-white/30 hover:bg-white hover:shadow-lg animate-fade-in ${
                         chat.unread_count > 0 ? 'bg-green-50/90 border-green-300 shadow-md' : ''
                       }`}
+                      style={{ animationDelay: `${index * 50}ms` }}
                       onClick={() => setSelectedChat({
                         companyId: chat.company_id,
                         companyName: chat.companies.name,

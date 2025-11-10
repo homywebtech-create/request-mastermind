@@ -260,7 +260,8 @@ export default function SpecialistStats() {
           return (
             <Card 
               key={index}
-              className="overflow-hidden hover:shadow-lg transition-all bg-white/90 backdrop-blur-sm border-white/30"
+              className="overflow-hidden hover:shadow-lg transition-all bg-white/90 backdrop-blur-sm border-white/30 animate-fade-in"
+              style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className={`h-2 w-full bg-gradient-to-r ${card.color}`} />
               <div className="p-5">
@@ -284,7 +285,7 @@ export default function SpecialistStats() {
         })}
 
         {/* Total Summary */}
-        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-lg">
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-lg animate-fade-in" style={{ animationDelay: `${statCards.length * 100}ms` }}>
           <div className="p-6">
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground font-medium">إجمالي الطلبات</p>

@@ -936,7 +936,7 @@ export default function SpecialistNewOrders() {
             <p className="text-sm text-muted-foreground mt-2">{t.specialist.checkBackLater}</p>
           </Card>
         ) : (
-          orders.map((order) => {
+          orders.map((order, index) => {
             const budgetStr = order.customer?.budget || '';
             const numericBudget = parseFloat(budgetStr.replace(/[^0-9.]/g, ''));
             const baseBudget = !isNaN(numericBudget) && numericBudget > 0 ? numericBudget : 0;
@@ -951,11 +951,12 @@ export default function SpecialistNewOrders() {
             return (
               <Card 
                 key={order.id}
-                className={`overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm ${
+                className={`overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm animate-fade-in ${
                   order.isNew 
                     ? 'border-2 border-amber-400 ring-2 ring-amber-400/30' 
                     : 'border border-white/30'
                 }`}
+                style={{ animationDelay: `${index * 80}ms` }}
               >
                 {/* New Order Indicator with Timer - Compact */}
                 <div className={`p-3 relative overflow-hidden ${

@@ -363,7 +363,7 @@ export default function SpecialistProfile() {
       <div className="max-w-screen-lg mx-auto p-4">
         <Accordion type="single" collapsible className="space-y-4">
           {/* Statistics Section */}
-          <AccordionItem value="statistics" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30">
+          <AccordionItem value="statistics" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30 animate-fade-in" style={{ animationDelay: '0ms' }}>
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
@@ -441,7 +441,7 @@ export default function SpecialistProfile() {
           </AccordionItem>
 
           {/* Personal Info Section */}
-          <AccordionItem value="personal-info" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30">
+          <AccordionItem value="personal-info" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30 animate-fade-in" style={{ animationDelay: '100ms' }}>
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
