@@ -662,11 +662,13 @@ export default function Companies() {
         <div className="w-full px-6 lg:px-8 xl:px-12 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div className="flex items-center gap-4">
-              <img 
-                src={moboLogo} 
-                alt="Mobo Technology" 
-                className="h-16 w-auto object-contain"
-              />
+              <div className="relative">
+                <img 
+                  src={moboLogo} 
+                  alt="Mobo Technology" 
+                  className="h-16 w-16 rounded-full object-cover border-2 border-primary/30 shadow-lg ring-2 ring-border hover:ring-primary/50 transition-all"
+                />
+              </div>
               <div className="flex flex-col gap-1">
                 <h1 className="text-3xl font-bold text-foreground tracking-wide">
                   Mobo Technology
