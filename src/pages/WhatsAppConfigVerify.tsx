@@ -14,12 +14,23 @@ export default function WhatsAppConfigVerify() {
       setLoading(true);
       setResult(null);
 
-      const { data, error } = await supabase.functions.invoke('verify-whatsapp-config');
+      const response = await supabase.functions.invoke('verify-whatsapp-config');
 
-      if (error) {
-        setResult({ success: false, error: error.message });
-      } else {
-        setResult(data);
+      // Edge function returns detailed info in data even on failure (400 status)
+      if (response.data) {
+        setResult(response.data);
+      } else if (response.error) {
+        // Try to parse error context if it contains JSON
+        try {
+          const errorContext = response.error.context;
+          if (errorContext && typeof errorContext === 'object') {
+            setResult(errorContext);
+          } else {
+            setResult({ success: false, error: response.error.message });
+          }
+        } catch {
+          setResult({ success: false, error: response.error.message });
+        }
       }
     } catch (error: any) {
       setResult({ success: false, error: error.message });
