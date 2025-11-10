@@ -10,7 +10,7 @@ import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrderReadinessNotifications } from "@/hooks/useOrderReadinessNotifications";
 import { useOverdueConfirmedOrdersAlert } from "@/hooks/useOverdueConfirmedOrdersAlert";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone, MessageSquare } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone, MessageSquare, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -948,6 +948,13 @@ export default function Dashboard() {
                         <DropdownMenuItem onClick={() => navigate('/whatsapp-test')}>
                           <MessageSquare className="h-4 w-4 mr-2" />
                           {language === 'ar' ? 'اختبار واتساب' : 'WhatsApp Test'}
+                        </DropdownMenuItem>
+                      )}
+
+                      {userHasPermission('view_dashboard') && (
+                        <DropdownMenuItem onClick={() => navigate('/whatsapp-config-verify')}>
+                          <Shield className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'التحقق من إعدادات واتساب' : 'Verify WhatsApp Config'}
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>

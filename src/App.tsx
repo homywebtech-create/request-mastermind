@@ -38,6 +38,7 @@ import NotificationDiagnostics from "./pages/NotificationDiagnostics";
 import WhatsAppTest from "./pages/WhatsAppTest";
 import WhatsAppInteractiveTest from "./pages/WhatsAppInteractiveTest";
 import WhatsAppLocationTest from "./pages/WhatsAppLocationTest";
+import WhatsAppConfigVerify from "./pages/WhatsAppConfigVerify";
 import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
@@ -341,6 +342,13 @@ function AppRouter() {
         <Route path="/whatsapp-location-test" element={
           <RoleProtectedRoute requiredPermission="view_dashboard">
             <WhatsAppLocationTest />
+          </RoleProtectedRoute>
+        } />
+        
+        {/* WhatsApp Config Verify (admin only) */}
+        <Route path="/whatsapp-config-verify" element={
+          <RoleProtectedRoute requiredPermission="view_dashboard">
+            <WhatsAppConfigVerify />
           </RoleProtectedRoute>
         } />
         
