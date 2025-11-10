@@ -216,7 +216,7 @@ serve(async (req) => {
         // Translate notification based on specialist's language
         const { title: translatedTitle, body: translatedBody } = translateNotification(title, body, specialistLanguage);
 
-        let targetRoute = '/specialist/offers'; // Default to offers page
+        let targetRoute = '/specialist-orders/new'; // Default to new orders page
         console.log(`📍 [ROUTE] Determining route for type: ${notificationType}, orderId: ${data.orderId || 'none'}`);
         console.log(`🌐 [LANG] Specialist language: ${specialistLanguage}, Title: ${translatedTitle}`);
         
@@ -226,8 +226,8 @@ serve(async (req) => {
           targetRoute = '/specialist-orders';
           console.log(`📍 [ROUTE] Quote notification → ${targetRoute}`);
         } else if (notificationType === 'new_order' || notificationType === 'resend_order') {
-          // New or resent order notifications → Offers page
-          targetRoute = '/specialist/offers';
+          // New or resent order notifications → New orders page
+          targetRoute = '/specialist-orders/new';
           console.log(`📍 [ROUTE] New/Resent order → ${targetRoute}`);
         } else if (notificationType === 'order_update' || notificationType === 'order_status_change') {
           // Order update notifications → Order tracking page (if orderId exists)
@@ -242,12 +242,12 @@ serve(async (req) => {
           targetRoute = data.orderId ? `/order-tracking/${data.orderId}` : '/specialist-orders';
           console.log(`📍 [ROUTE] Booking update → ${targetRoute}`);
         } else if (notificationType === 'order_expired') {
-          // Order expired → Stay on offers page to see other opportunities
-          targetRoute = '/specialist/offers';
+          // Order expired → Stay on new orders page to see other opportunities
+          targetRoute = '/specialist-orders/new';
           console.log(`📍 [ROUTE] Order expired → ${targetRoute}`);
         } else if (notificationType === 'test') {
-          // Test notifications → Offers page
-          targetRoute = '/specialist/offers';
+          // Test notifications → New orders page
+          targetRoute = '/specialist-orders/new';
           console.log(`📍 [ROUTE] Test notification → ${targetRoute}`);
         } else {
           // Unknown type → default to offers

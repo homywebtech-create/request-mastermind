@@ -188,8 +188,8 @@ export class FirebaseNotificationManager {
           
           // Final fallback based on notification type
           if (!route) {
-            if (nType === 'new_order' || nType === 'resend_order' || nType === 'test') {
-              route = '/specialist/offers';
+            if (nType === 'new_order' || nType === 'resend_order' || nType === 'test' || nType === 'order_expired') {
+              route = '/specialist-orders/new';
             } else if (nType === 'new_quote' || nType === 'quote_response' || nType === 'booking_confirmed') {
               route = '/specialist-orders';
             } else {
