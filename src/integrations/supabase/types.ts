@@ -1158,6 +1158,7 @@ export type Database = {
           suspension_reason: string | null
           suspension_type: string | null
           updated_at: string
+          wallet_balance: number
         }
         Insert: {
           approval_status?: string | null
@@ -1195,6 +1196,7 @@ export type Database = {
           suspension_reason?: string | null
           suspension_type?: string | null
           updated_at?: string
+          wallet_balance?: number
         }
         Update: {
           approval_status?: string | null
@@ -1232,6 +1234,7 @@ export type Database = {
           suspension_reason?: string | null
           suspension_type?: string | null
           updated_at?: string
+          wallet_balance?: number
         }
         Relationships: [
           {
@@ -1365,6 +1368,60 @@ export type Database = {
           verified?: boolean
         }
         Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string | null
+          id: string
+          invoice_details: Json | null
+          order_id: string | null
+          specialist_id: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_details?: Json | null
+          order_id?: string | null
+          specialist_id: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_details?: Json | null
+          order_id?: string | null
+          specialist_id?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
