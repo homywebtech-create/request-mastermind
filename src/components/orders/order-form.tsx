@@ -97,6 +97,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [areaOpen, setAreaOpen] = useState(false);
   const [isCheckingCustomer, setIsCheckingCustomer] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
   
   // Load saved form data from localStorage
   const loadSavedFormData = (): OrderFormData => {
@@ -253,10 +254,14 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
   };
 
   const validateStep = (step: number): boolean => {
+    // Clear previous errors
+    setValidationErrors({});
+    
     switch (step) {
       case 1:
         // Validate phone number
         if (!formData.phoneNumber || formData.phoneNumber.length < 7) {
+          setValidationErrors({ phoneNumber: true });
           toast({
             title: "بيانات ناقصة / Missing Data",
             description: "يرجى إدخال رقم واتساب صحيح / Please enter a valid WhatsApp number",
@@ -266,6 +271,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
         }
         // Validate customer name
         if (!formData.customerName || formData.customerName.trim() === '') {
+          setValidationErrors({ customerName: true });
           toast({
             title: "بيانات ناقصة / Missing Data",
             description: "يرجى إدخال اسم العميل / Please enter customer name",
@@ -275,6 +281,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
         }
         // Validate area
         if (!formData.area || formData.area.trim() === '') {
+          setValidationErrors({ area: true });
           toast({
             title: "بيانات ناقصة / Missing Data",
             description: "يرجى اختيار المنطقة / Please select area",
@@ -284,6 +291,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
         }
         // Validate preferred language
         if (!formData.preferredLanguage) {
+          setValidationErrors({ preferredLanguage: true });
           toast({
             title: "بيانات ناقصة / Missing Data",
             description: "يرجى اختيار لغة التواصل / Please select communication language",
@@ -296,6 +304,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       case 2:
         // Validate service
         if (!formData.serviceId) {
+          setValidationErrors({ serviceId: true });
           toast({
             title: "بيانات ناقصة / Missing Data",
             description: "يرجى اختيار نوع الخدمة / Please select service type",
@@ -305,6 +314,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
         }
         // Verify sub-service selection if available
         if (selectedService && selectedService.sub_services.length > 0 && !formData.subServiceId) {
+          setValidationErrors({ subServiceId: true });
           toast({
             title: "بيانات ناقصة / Missing Data",
             description: "يرجى اختيار الخدمة الفرعية / Please select a sub-service",
@@ -342,6 +352,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
           
           // Don't validate for 'agreement' pricing type
           if (pricingType !== 'agreement' && !formData.hoursCount) {
+            setValidationErrors({ hoursCount: true });
             toast({
               title: "بيانات ناقصة / Missing Data",
               description: "يرجى اختيار عدد الساعات / Please select hours count",
@@ -352,6 +363,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
           
           // Validate cleaning equipment for any cleaning service
           if ((selectedService.name.includes('نظافة') || selectedService.name.includes('تنظيف') || (selectedService.name_en && selectedService.name_en.toLowerCase().includes('clean'))) && formData.cleaningEquipmentRequired === null) {
+            setValidationErrors({ cleaningEquipmentRequired: true });
             toast({
               title: "بيانات ناقصة / Missing Data",
               description: "يرجى تحديد ما إذا كانت الخدمة تتطلب معدات تنظيف / Please specify if cleaning equipment is required",
@@ -808,7 +820,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               <div className="space-y-2">
                 <Label htmlFor="serviceId">الخدمة الرئيسية / Main Service *</Label>
                 <Select value={formData.serviceId} onValueChange={(value) => handleInputChange('serviceId', value)}>
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className={cn("bg-background", validationErrors.serviceId && "border-destructive border-2 animate-pulse")}>
                     <SelectValue placeholder="اختر الخدمة الرئيسية / Choose main service" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
@@ -835,9 +847,11 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
 
               {selectedService && selectedService.sub_services.length > 0 && (
                 <div className="space-y-2">
-                  <Label htmlFor="subServiceId">الخدمة الفرعية / Sub-Service *</Label>
+                  <Label htmlFor="subServiceId" className={cn(validationErrors.subServiceId && "text-destructive")}>
+                    الخدمة الفرعية / Sub-Service *
+                  </Label>
                   <Select value={formData.subServiceId} onValueChange={(value) => handleInputChange('subServiceId', value)}>
-                    <SelectTrigger className="bg-background">
+                    <SelectTrigger className={cn("bg-background", validationErrors.subServiceId && "border-destructive border-2 animate-pulse")}>
                       <SelectValue placeholder="اختر الخدمة الفرعية / Choose sub-service" />
                     </SelectTrigger>
                     <SelectContent className="bg-background z-50">
@@ -858,8 +872,13 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                           </div>
                         </SelectItem>
                       ))}
-                    </SelectContent>
+                   </SelectContent>
                   </Select>
+                  {validationErrors.subServiceId && (
+                    <p className="text-xs text-destructive font-medium animate-pulse">
+                      ⚠️ يرجى اختيار الخدمة الفرعية / Please select a sub-service
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1043,12 +1062,14 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               (selectedService.name_en && (selectedService.name_en.toLowerCase().includes('clean')))
             ) && (
               <div className="space-y-2 pt-4 border-t">
-                <Label htmlFor="cleaningEquipment">معدات التنظيف / Cleaning Equipment *</Label>
+                <Label htmlFor="cleaningEquipment" className={cn(validationErrors.cleaningEquipmentRequired && "text-destructive")}>
+                  معدات التنظيف / Cleaning Equipment *
+                </Label>
                 <Select 
                   value={formData.cleaningEquipmentRequired === null ? '' : formData.cleaningEquipmentRequired ? 'yes' : 'no'} 
                   onValueChange={(value) => handleInputChange('cleaningEquipmentRequired', value === 'yes' ? true : value === 'no' ? false : null)}
                 >
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className={cn("bg-background", validationErrors.cleaningEquipmentRequired && "border-destructive border-2 animate-pulse")}>
                     <SelectValue placeholder="هل الخدمة تتطلب معدات؟ / Does service require equipment?" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
@@ -1066,9 +1087,15 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  ⚠️ سيتم تنبيه المحترفين إذا كانت الخدمة تتطلب معدات تنظيف / Specialists will be notified if equipment is required
-                </p>
+                {validationErrors.cleaningEquipmentRequired ? (
+                  <p className="text-xs text-destructive font-medium animate-pulse">
+                    ⚠️ يرجى تحديد ما إذا كانت الخدمة تتطلب معدات / Please specify if equipment is required
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    ⚠️ سيتم تنبيه المحترفين إذا كانت الخدمة تتطلب معدات تنظيف / Specialists will be notified if equipment is required
+                  </p>
+                )}
               </div>
             )}
 
