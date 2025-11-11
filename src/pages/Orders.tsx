@@ -396,12 +396,13 @@ export default function Orders() {
       let specialistsToLink: string[] = [];
       
       if (formData.sendToAll) {
-        // Fetch ALL active specialists when sending to all
+        // Fetch ALL active specialists when sending to all (excluding busy ones)
         console.log('📤 Fetching all active specialists...');
         const { data: allSpecialists, error: specialistsError } = await supabase
           .from('specialists')
           .select('id')
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .is('current_order_id', null); // Only available specialists
 
         if (specialistsError) {
           console.error('Error fetching all specialists:', specialistsError);
@@ -411,12 +412,13 @@ export default function Orders() {
         specialistsToLink = allSpecialists?.map(s => s.id) || [];
         console.log('Found specialists for send to all:', specialistsToLink.length);
       } else if (formData.companyId) {
-        // Get all specialists from the specific company
+        // Get all specialists from the specific company (excluding busy ones)
         const { data: companySpecialists, error: specialistsError } = await supabase
           .from('specialists')
           .select('id')
           .eq('company_id', formData.companyId)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .is('current_order_id', null); // Only available specialists
 
         if (specialistsError) {
           console.error('Error fetching company specialists:', specialistsError);

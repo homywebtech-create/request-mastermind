@@ -752,6 +752,7 @@ Thank you for contacting us! 🌟`;
         .select("id, name, specialty, phone, image_url")
         .eq("company_id", companyId)
         .eq("is_active", true)
+        .is('current_order_id', null) // Only available specialists
         .order("name");
 
       if (error) throw error;
@@ -783,11 +784,12 @@ Thank you for contacting us! 🌟`;
       if (existingError) throw existingError;
       const existingSet = new Set((existing || []).map((e) => e.specialist_id));
 
-      // 2) Get all active specialists from all companies
+      // 2) Get all active specialists from all companies (excluding busy ones)
       const { data: allSpecialists, error: specialistsError } = await supabase
         .from('specialists')
         .select('id')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .is('current_order_id', null); // Only available specialists
 
       if (specialistsError) throw specialistsError;
 
@@ -886,12 +888,13 @@ Thank you for contacting us! 🌟`;
       if (existingError) throw existingError;
       const existingSet = new Set((existing || []).map((e) => e.specialist_id));
 
-      // Get all active specialists from the same company
+      // Get all active specialists from the same company (excluding busy ones)
       const { data: companySpecialists, error: specialistsError } = await supabase
         .from('specialists')
         .select('id')
         .eq('company_id', order.company_id)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .is('current_order_id', null); // Only available specialists
       if (specialistsError) throw specialistsError;
 
       // Insert only missing
@@ -1148,12 +1151,13 @@ Thank you for contacting us! 🌟`;
         
         finalSpecialistIds = selectedSpecialistIds;
       } else {
-        // If no specific specialists selected, add all active specialists from company
+        // If no specific specialists selected, add all active specialists from company (excluding busy ones)
         const { data: companySpecialists, error: specialistsError } = await supabase
           .from('specialists')
           .select('id')
           .eq('company_id', selectedCompanyId)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .is('current_order_id', null); // Only available specialists
 
         if (specialistsError) throw specialistsError;
 
