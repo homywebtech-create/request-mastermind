@@ -2118,14 +2118,13 @@ Thank you for contacting us! 🌟`;
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  disabled={Boolean(isOrderProcessing) || !order.customers?.preferred_language}
-                                  title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
+                                  disabled={Boolean(isOrderProcessing)}
                                   className="h-8 w-8 p-0"
                                 >
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
+                              <DropdownMenuContent align="end" className="w-56 bg-background z-[100]">
                                 {canManageOrders && isPending && (
                                   <>
                                     <DropdownMenuItem onClick={() => openSendDialog(order)}>
