@@ -282,20 +282,24 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
 
       if (updateError) throw updateError;
 
-      console.log('✅ Order updated successfully:', {
-        orderId,
-        customerLanguage: orderData.customerLanguage,
-        cleaningEquipment: orderData.cleaningEquipmentRequired,
-        serviceType
+      // Force complete refresh of ALL order queries (including paginated ones)
+      await queryClient.invalidateQueries({ 
+        queryKey: ['orders'],
+        exact: false, // This will invalidate all queries starting with ['orders']
+        refetchType: 'active' // Only refetch active queries
       });
-
-      // Force complete refresh of order data
-      await queryClient.invalidateQueries({ queryKey: ['orders'] });
-      await queryClient.refetchQueries({ queryKey: ['orders'] });
+      
       await queryClient.invalidateQueries({ queryKey: ['order-stats'] });
       
+      // Force immediate refetch of all active order queries
+      await queryClient.refetchQueries({ 
+        queryKey: ['orders'],
+        exact: false,
+        type: 'active'
+      });
+      
       // Small delay to ensure queries complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       toast({
         title: language === 'ar' ? 'تم التحديث' : 'Updated',

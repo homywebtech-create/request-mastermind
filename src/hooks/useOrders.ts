@@ -140,7 +140,7 @@ export const useOrders = ({ page = 1, pageSize = 50, enabled = true }: UseOrders
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
+          queryClient.invalidateQueries({ queryKey: ['orders'], exact: false });
           queryClient.invalidateQueries({ queryKey: ['order-stats'] });
         }
       )
@@ -148,14 +148,14 @@ export const useOrders = ({ page = 1, pageSize = 50, enabled = true }: UseOrders
         'postgres_changes',
         { event: '*', schema: 'public', table: 'order_specialists' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
+          queryClient.invalidateQueries({ queryKey: ['orders'], exact: false });
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'customers' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
+          queryClient.invalidateQueries({ queryKey: ['orders'], exact: false });
         }
       )
       .subscribe();
