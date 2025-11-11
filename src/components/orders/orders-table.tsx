@@ -2088,8 +2088,7 @@ Thank you for contacting us! 🌟`;
                                 size="sm"
                                 variant={isRecentlySent ? "destructive" : "default"}
                                 onClick={() => openResendDialog(order)}
-                                disabled={isRecentlySent || isOrderProcessing || !order.customers?.preferred_language}
-                                title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
+                                disabled={isRecentlySent || isOrderProcessing}
                                 className="flex items-center gap-1"
                               >
                                  {isOrderProcessing ? (
@@ -2178,8 +2177,7 @@ Thank you for contacting us! 🌟`;
                               size="sm"
                               variant="destructive"
                               onClick={() => openResendDialog(order)}
-                              disabled={isOrderProcessing || !order.customers?.preferred_language}
-                              title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
+                              disabled={isOrderProcessing}
                               className="flex items-center gap-1 animate-pulse"
                             >
                               {isOrderProcessing ? (
