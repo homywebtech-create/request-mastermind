@@ -1902,8 +1902,6 @@ Thank you for contacting us! 🌟`;
                                             size="sm"
                                             variant="default"
                                             className="flex-1"
-                                            disabled={!order.customers?.preferred_language}
-                                            title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                             onClick={() => {
                               const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
                               window.location.href = url;
@@ -1915,8 +1913,6 @@ Thank you for contacting us! 🌟`;
                                           <Button
                                             size="sm"
                                             variant="outline"
-                                            disabled={!order.customers?.preferred_language}
-                                            title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                                             onClick={() => {
                                               const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
                                               navigator.clipboard.writeText(url);
@@ -1938,8 +1934,6 @@ Thank you for contacting us! 🌟`;
                                           size="sm"
                                           variant="outline"
                                           className="w-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/40 border-green-200 dark:border-green-800"
-                                          disabled={!order.customers?.preferred_language}
-                                          title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                                           onClick={async () => {
                                             try {
                                               console.log('📱 Sending WhatsApp carousel for order:', order.id);
