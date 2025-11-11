@@ -462,17 +462,17 @@ export default function Dashboard() {
     });
     
     // In Progress: Orders where specialist has started tracking OR overdue confirmed orders
+    // BUT excluding completed orders (payment_received or status=completed)
     const inProgressOrders = ordersList.filter(o => {
       const trackingStage = o.tracking_stage;
       const trackingStarted = trackingStage && 
              trackingStage !== null &&
              ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
-      const statusInProgress = o.status === 'in-progress';
       const isOverdueConfirmed = isOrderOverdue(o) && o.status === 'upcoming';
       const isCompleted = trackingStage === 'payment_received' || o.status === 'completed';
       
-      // Include tracking started, status in-progress, OR overdue confirmed orders
-      return (trackingStarted || statusInProgress || isOverdueConfirmed) && !isCompleted;
+      // Include tracking started OR overdue confirmed orders, but exclude completed
+      return (trackingStarted || isOverdueConfirmed) && !isCompleted;
     });
     
     // Completed: Orders where payment received or status is completed
@@ -483,6 +483,12 @@ export default function Dashboard() {
     
     // Cancelled: Orders that are cancelled
     const cancelledOrders = ordersList.filter(o => o.status === 'cancelled');
+    
+    console.log('📊 Stats calculation:', {
+      total: ordersList.length,
+      completed: completedOrders.length,
+      completedOrders: completedOrders.map(o => ({ order_number: o.order_number, status: o.status, tracking_stage: o.tracking_stage }))
+    });
     
     setStats({
       total: ordersList.filter(o => o.company_id || o.send_to_all_companies).length,
