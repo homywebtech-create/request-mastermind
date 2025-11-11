@@ -202,7 +202,22 @@ export default function Orders() {
           table: 'orders'
         },
         () => {
-          fetchOrders();
+          setTimeout(() => {
+            fetchOrders();
+          }, 200);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customers'
+        },
+        () => {
+          setTimeout(() => {
+            fetchOrders();
+          }, 200);
         }
       )
       .subscribe();
@@ -538,7 +553,11 @@ export default function Orders() {
       });
 
       setShowForm(false);
-      fetchOrders();
+      
+      // Small delay to ensure database changes propagate before refetching
+      setTimeout(() => {
+        fetchOrders();
+      }, 300);
     } catch (error: any) {
       console.error('Error creating order:', error);
       toast({
