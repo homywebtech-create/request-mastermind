@@ -2228,31 +2228,31 @@ Thank you for contacting us! 🌟`;
                                 {order.tracking_stage && order.tracking_stage !== null && (
                                   <>
                                     <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
-                                      {language === 'ar' ? '──────────' : '──────────'}
+                                      {language === 'ar' ? 'إجراءات احتياطية' : 'Backup Actions'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
                                       onClick={() => openActionDialog(order.id, 'moving', 'tracking')}
-                                      className="text-muted-foreground"
+                                      className="text-blue-600 dark:text-blue-400"
                                     >
-                                      {language === 'ar' ? '↻ العودة لـ: التحرك' : '↻ Back to: Moving'}
+                                      {language === 'ar' ? '🚗 التحرك للعميل' : '🚗 Moving to Customer'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
                                       onClick={() => openActionDialog(order.id, 'arrived', 'tracking')}
-                                      className="text-muted-foreground"
+                                      className="text-green-600 dark:text-green-400"
                                     >
-                                      {language === 'ar' ? '↻ العودة لـ: الوصول' : '↻ Back to: Arrived'}
+                                      {language === 'ar' ? '📍 الوصول' : '📍 Arrived'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
                                       onClick={() => openActionDialog(order.id, 'working', 'tracking')}
-                                      className="text-muted-foreground"
+                                      className="text-orange-600 dark:text-orange-400"
                                     >
-                                      {language === 'ar' ? '↻ العودة لـ: العمل' : '↻ Back to: Working'}
+                                      {language === 'ar' ? '⚡ بدء العمل' : '⚡ Start Working'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
                                       onClick={() => openActionDialog(order.id, 'invoice_requested', 'tracking')}
-                                      className="text-muted-foreground"
+                                      className="text-purple-600 dark:text-purple-400"
                                     >
-                                      {language === 'ar' ? '↻ العودة لـ: الفاتورة' : '↻ Back to: Invoice'}
+                                      {language === 'ar' ? '💰 طلب الفاتورة' : '💰 Request Invoice'}
                                     </DropdownMenuItem>
                                   </>
                                 )}
