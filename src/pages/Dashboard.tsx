@@ -56,6 +56,7 @@ interface Order {
   cancelled_by_role?: string | null;
   cancellation_reason?: string | null;
   cancelled_at?: string | null;
+  cleaning_equipment_required?: boolean | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -324,6 +325,7 @@ export default function Dashboard() {
         order_number,
         customer_id,
         company_id,
+        specialist_id,
         service_type,
         status,
         tracking_stage,
@@ -344,6 +346,7 @@ export default function Dashboard() {
         cancelled_by_role,
         cancellation_reason,
         cancelled_at,
+        cleaning_equipment_required,
         customers (name, whatsapp_number, area, budget, budget_type),
         companies (name),
         order_specialists (
