@@ -1596,29 +1596,43 @@ Thank you for contacting us! 🌟`;
                               {order.service_type}
                             </Badge>
                             {/* Show cleaning equipment indicator for any cleaning service */}
-                            {(
-                              order.service_type.includes('نظافة') || 
-                              order.service_type.includes('تنظيف') || 
-                              order.service_type.toLowerCase().includes('clean')
-                            ) && (
-                              <Badge 
-                                variant={order.cleaning_equipment_required ? "default" : "secondary"} 
-                                className={`text-xs ${
-                                  order.cleaning_equipment_required 
-                                    ? 'bg-orange-500 text-white' 
-                                    : order.cleaning_equipment_required === false 
-                                    ? '' 
-                                    : 'bg-muted'
-                                }`}
-                              >
-                                {order.cleaning_equipment_required === true
-                                  ? (language === 'ar' ? '🧹 بمعدات' : '🧹 With Equipment')
-                                  : order.cleaning_equipment_required === false
-                                  ? (language === 'ar' ? 'بدون معدات' : 'No Equipment')
-                                  : (language === 'ar' ? 'غير محدد' : 'Not Specified')
-                                }
-                              </Badge>
-                            )}
+                            {(() => {
+                              const isCleaningService = order.service_type.includes('نظافة') || 
+                                order.service_type.includes('تنظيف') || 
+                                order.service_type.toLowerCase().includes('clean');
+                              
+                              if (isCleaningService) {
+                                console.log(`🔍 Order ${order.order_number}:`, {
+                                  service_type: order.service_type,
+                                  cleaning_equipment_required: order.cleaning_equipment_required,
+                                  type: typeof order.cleaning_equipment_required,
+                                  isTrue: order.cleaning_equipment_required === true,
+                                  isFalse: order.cleaning_equipment_required === false,
+                                  isNull: order.cleaning_equipment_required === null,
+                                  isUndefined: order.cleaning_equipment_required === undefined
+                                });
+                              }
+                              
+                              return isCleaningService ? (
+                                <Badge 
+                                  variant={order.cleaning_equipment_required ? "default" : "secondary"} 
+                                  className={`text-xs ${
+                                    order.cleaning_equipment_required 
+                                      ? 'bg-orange-500 text-white' 
+                                      : order.cleaning_equipment_required === false 
+                                      ? '' 
+                                      : 'bg-muted'
+                                  }`}
+                                >
+                                  {order.cleaning_equipment_required === true
+                                    ? (language === 'ar' ? '🧹 بمعدات' : '🧹 With Equipment')
+                                    : order.cleaning_equipment_required === false
+                                    ? (language === 'ar' ? 'بدون معدات' : 'No Equipment')
+                                    : (language === 'ar' ? 'غير محدد' : 'Not Specified')
+                                  }
+                                </Badge>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                       </TableCell>
