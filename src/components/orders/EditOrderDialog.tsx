@@ -172,6 +172,8 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
           }
         }
 
+        console.log('Loaded order.cleaning_equipment_required:', order.cleaning_equipment_required);
+        
         setOrderData({
           customerName: order.customers.name || '',
           whatsappNumber: fullNumber,
@@ -271,6 +273,9 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
       if (customerError) throw customerError;
 
       // Update order data
+      console.log('Saving cleaning_equipment_required:', orderData.cleaningEquipmentRequired);
+      console.log('Full order data:', orderData);
+      
       const { error: updateError } = await supabase
         .from('orders')
         .update({
@@ -281,6 +286,8 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
         .eq('id', orderId);
 
       if (updateError) throw updateError;
+      
+      console.log('Order updated successfully');
 
       // Force invalidate all queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['orders'] });
