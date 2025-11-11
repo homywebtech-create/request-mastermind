@@ -633,7 +633,7 @@ export default function SpecialistHome() {
 
   return (
     <BusyGuard specialistId={specialistId} allowWhenBusy={false}>
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 pb-24">
+      <div className="min-h-screen bg-background pb-24">
       {/* Header - Optimized for Mobile */}
       <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white shadow-lg">
         <div className="w-full px-3 py-3 sm:px-6 sm:py-4">
