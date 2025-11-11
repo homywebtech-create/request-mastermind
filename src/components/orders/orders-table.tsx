@@ -2108,65 +2108,68 @@ Thank you for contacting us! 🌟`;
                                   </>
                               )}
                               </Button>
-
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    disabled={Boolean(isOrderProcessing) || !order.customers?.preferred_language}
-                                    title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    {isPending && (
-                                      <>
-                                        <DropdownMenuItem onClick={() => openSendDialog(order)}>
-                                          <Building2 className="h-4 w-4 mr-2" />
-                                          {t.change}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleCopyOrderLink(order)}>
-                                          <Copy className="h-4 w-4 mr-2" />
-                                          {language === 'ar' ? 'نسخ الرابط' : 'Copy Link'}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => sendOrderLinkViaWhatsApp(order)}>
-                                          <Send className="h-4 w-4 mr-2" />
-                                          {language === 'ar' ? 'إرسال واتساب' : 'Send WhatsApp'}
-                                        </DropdownMenuItem>
-                                        
-                                        {/* Separator */}
-                                        <DropdownMenuItem className="opacity-50 cursor-not-allowed px-2" disabled>
-                                          <div className="w-full border-t border-border"></div>
-                                        </DropdownMenuItem>
-                                      </>
-                                    )}
-                                    
-                                    {/* Edit Order Details - Always show for new orders */}
-                                    <DropdownMenuItem 
-                                      onClick={() => {
-                                        setEditingOrderId(order.id);
-                                        setEditDialogOpen(true);
-                                      }}
-                                      className="focus:bg-blue-50 dark:focus:bg-blue-950/30"
-                                    >
-                                      <span className="h-4 w-4 mr-2">✏️</span>
-                                      <span className="font-medium">{language === 'ar' ? 'تعديل معلومات الطلب' : 'Edit Order Details'}</span>
-                                    </DropdownMenuItem>
-                                    
-                                    {/* Cancel Order - Always show for new orders */}
-                                    <DropdownMenuItem 
-                                      onClick={() => openActionDialog(order.id, 'cancel', 'cancel')}
-                                      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                    >
-                                      <XCircle className="h-4 w-4 mr-2" />
-                                      <span className="font-medium">{language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </>
+                          )}
+
+                          {/* Options menu - Show for new/pending orders regardless of manage permission */}
+                          {(filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView)) && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={Boolean(isOrderProcessing) || !order.customers?.preferred_language}
+                                  title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                {canManageOrders && isPending && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => openSendDialog(order)}>
+                                      <Building2 className="h-4 w-4 mr-2" />
+                                      {t.change}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleCopyOrderLink(order)}>
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      {language === 'ar' ? 'نسخ الرابط' : 'Copy Link'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => sendOrderLinkViaWhatsApp(order)}>
+                                      <Send className="h-4 w-4 mr-2" />
+                                      {language === 'ar' ? 'إرسال واتساب' : 'Send WhatsApp'}
+                                    </DropdownMenuItem>
+                                    
+                                    {/* Separator */}
+                                    <DropdownMenuItem className="opacity-50 cursor-not-allowed px-2" disabled>
+                                      <div className="w-full border-t border-border"></div>
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                
+                                {/* Edit Order Details - Always show for new orders */}
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setEditingOrderId(order.id);
+                                    setEditDialogOpen(true);
+                                  }}
+                                  className="focus:bg-blue-50 dark:focus:bg-blue-950/30"
+                                >
+                                  <span className="h-4 w-4 mr-2">✏️</span>
+                                  <span className="font-medium">{language === 'ar' ? 'تعديل معلومات الطلب' : 'Edit Order Details'}</span>
+                                </DropdownMenuItem>
+                                
+                                {/* Cancel Order - Always show for new orders */}
+                                <DropdownMenuItem 
+                                  onClick={() => openActionDialog(order.id, 'cancel', 'cancel')}
+                                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  <span className="font-medium">{language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                           
                           {/* Show reset button for overdue confirmed orders */}
