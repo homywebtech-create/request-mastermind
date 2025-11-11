@@ -273,21 +273,32 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
       if (customerError) throw customerError;
 
       // Update order data
-      console.log('Saving cleaning_equipment_required:', orderData.cleaningEquipmentRequired);
-      console.log('Full order data:', orderData);
+      console.log('💾 Saving order update:');
+      console.log('  - cleaning_equipment_required:', orderData.cleaningEquipmentRequired);
+      console.log('  - typeof:', typeof orderData.cleaningEquipmentRequired);
+      console.log('  - notes:', orderData.notes);
+      console.log('  - service_type:', serviceType);
       
-      const { error: updateError } = await supabase
+      const updatePayload = {
+        notes: orderData.notes || null,
+        cleaning_equipment_required: orderData.cleaningEquipmentRequired,
+        service_type: serviceType,
+      };
+      
+      console.log('📤 Update payload:', JSON.stringify(updatePayload, null, 2));
+      
+      const { data: updateResult, error: updateError } = await supabase
         .from('orders')
-        .update({
-          notes: orderData.notes || null,
-          cleaning_equipment_required: orderData.cleaningEquipmentRequired,
-          service_type: serviceType,
-        })
-        .eq('id', orderId);
+        .update(updatePayload)
+        .eq('id', orderId)
+        .select('id, cleaning_equipment_required, service_type');
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Update error:', updateError);
+        throw updateError;
+      }
       
-      console.log('Order updated successfully');
+      console.log('✅ Order updated successfully, result:', updateResult);
 
       // Force invalidate all queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -507,10 +518,15 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
                 <Label>{language === 'ar' ? 'معدات التنظيف' : 'Cleaning Equipment'}</Label>
                 <Select
                   value={orderData.cleaningEquipmentRequired === null ? 'null' : orderData.cleaningEquipmentRequired ? 'yes' : 'no'}
-                  onValueChange={(value) => setOrderData({ 
-                    ...orderData, 
-                    cleaningEquipmentRequired: value === 'null' ? null : value === 'yes' ? true : false 
-                  })}
+                  onValueChange={(value) => {
+                    console.log('🔧 Equipment select changed:', value);
+                    const newValue = value === 'null' ? null : value === 'yes' ? true : false;
+                    console.log('🔧 Converted to boolean:', newValue);
+                    setOrderData({ 
+                      ...orderData, 
+                      cleaningEquipmentRequired: newValue
+                    });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -521,6 +537,9 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
                     </SelectItem>
                     <SelectItem value="no">
                       ❌ {language === 'ar' ? 'بدون معدات' : 'Without Equipment'}
+                    </SelectItem>
+                    <SelectItem value="null">
+                      ❓ {language === 'ar' ? 'غير محدد' : 'Not Specified'}
                     </SelectItem>
                   </SelectContent>
                 </Select>
