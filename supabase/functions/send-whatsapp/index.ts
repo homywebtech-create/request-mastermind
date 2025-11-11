@@ -64,6 +64,24 @@ serve(async (req) => {
     console.log('🔑 Access Token exists:', !!WHATSAPP_ACCESS_TOKEN);
     console.log('🔑 Phone Number ID exists:', !!WHATSAPP_PHONE_NUMBER_ID);
     
+    // Debug token format (log length and first/last chars for debugging)
+    if (WHATSAPP_ACCESS_TOKEN) {
+      console.log('🔍 Token length:', WHATSAPP_ACCESS_TOKEN.length);
+      console.log('🔍 Token starts with:', WHATSAPP_ACCESS_TOKEN.substring(0, 10));
+      console.log('🔍 Token ends with:', WHATSAPP_ACCESS_TOKEN.substring(WHATSAPP_ACCESS_TOKEN.length - 10));
+      
+      // Check for common issues
+      if (WHATSAPP_ACCESS_TOKEN.includes('"') || WHATSAPP_ACCESS_TOKEN.includes("'")) {
+        console.error('⚠️ Token contains quotes - remove them!');
+      }
+      if (WHATSAPP_ACCESS_TOKEN.includes('\n') || WHATSAPP_ACCESS_TOKEN.includes('\r')) {
+        console.error('⚠️ Token contains newlines - remove them!');
+      }
+      if (!WHATSAPP_ACCESS_TOKEN.startsWith('EAAQ')) {
+        console.error('⚠️ Token should start with EAAQ for Meta permanent tokens');
+      }
+    }
+    
     if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
       console.error('❌ [Meta WhatsApp] Credentials not configured');
       return new Response(
