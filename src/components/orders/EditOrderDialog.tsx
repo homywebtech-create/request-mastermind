@@ -264,7 +264,7 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
           area: orderData.area,
           budget: orderData.budget || null,
           budget_type: orderData.budgetType || null,
-          preferred_language: orderData.preferredLanguage,
+          preferred_language: orderData.customerLanguage,
         })
         .eq('id', orderInfo.customer_id);
 
