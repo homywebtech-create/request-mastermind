@@ -2224,36 +2224,70 @@ Thank you for contacting us! 🌟`;
                                   </DropdownMenuItem>
                                 )}
                                 
-                                {/* Allow going back to previous stages in case of mistakes */}
+                                {/* Backup Actions - Show only current and next stages */}
                                 {order.tracking_stage && order.tracking_stage !== null && (
                                   <>
                                     <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
                                       {language === 'ar' ? 'إجراءات احتياطية' : 'Backup Actions'}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={() => openActionDialog(order.id, 'moving', 'tracking')}
-                                      className="text-blue-600 dark:text-blue-400"
-                                    >
-                                      {language === 'ar' ? '🚗 التحرك للعميل' : '🚗 Moving to Customer'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={() => openActionDialog(order.id, 'arrived', 'tracking')}
-                                      className="text-green-600 dark:text-green-400"
-                                    >
-                                      {language === 'ar' ? '📍 الوصول' : '📍 Arrived'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={() => openActionDialog(order.id, 'working', 'tracking')}
-                                      className="text-orange-600 dark:text-orange-400"
-                                    >
-                                      {language === 'ar' ? '⚡ بدء العمل' : '⚡ Start Working'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={() => openActionDialog(order.id, 'invoice_requested', 'tracking')}
-                                      className="text-purple-600 dark:text-purple-400"
-                                    >
-                                      {language === 'ar' ? '💰 طلب الفاتورة' : '💰 Request Invoice'}
-                                    </DropdownMenuItem>
+                                    
+                                    {/* Define stage order */}
+                                    {(() => {
+                                      const stageOrder = ['moving', 'arrived', 'working', 'invoice_requested', 'payment_received'];
+                                      const currentStageIndex = stageOrder.indexOf(order.tracking_stage);
+                                      const availableStages = currentStageIndex >= 0 
+                                        ? stageOrder.slice(currentStageIndex) 
+                                        : stageOrder;
+                                      
+                                      return (
+                                        <>
+                                          {availableStages.includes('moving') && (
+                                            <DropdownMenuItem 
+                                              onClick={() => openActionDialog(order.id, 'moving', 'tracking')}
+                                              className="text-blue-600 dark:text-blue-400"
+                                            >
+                                              {language === 'ar' ? '🚗 التحرك للعميل' : '🚗 Moving to Customer'}
+                                            </DropdownMenuItem>
+                                          )}
+                                          
+                                          {availableStages.includes('arrived') && (
+                                            <DropdownMenuItem 
+                                              onClick={() => openActionDialog(order.id, 'arrived', 'tracking')}
+                                              className="text-green-600 dark:text-green-400"
+                                            >
+                                              {language === 'ar' ? '📍 الوصول' : '📍 Arrived'}
+                                            </DropdownMenuItem>
+                                          )}
+                                          
+                                          {availableStages.includes('working') && (
+                                            <DropdownMenuItem 
+                                              onClick={() => openActionDialog(order.id, 'working', 'tracking')}
+                                              className="text-orange-600 dark:text-orange-400"
+                                            >
+                                              {language === 'ar' ? '⚡ بدء العمل' : '⚡ Start Working'}
+                                            </DropdownMenuItem>
+                                          )}
+                                          
+                                          {availableStages.includes('invoice_requested') && (
+                                            <DropdownMenuItem 
+                                              onClick={() => openActionDialog(order.id, 'invoice_requested', 'tracking')}
+                                              className="text-purple-600 dark:text-purple-400"
+                                            >
+                                              {language === 'ar' ? '💰 طلب الفاتورة' : '💰 Request Invoice'}
+                                            </DropdownMenuItem>
+                                          )}
+                                          
+                                          {availableStages.includes('payment_received') && (
+                                            <DropdownMenuItem 
+                                              onClick={() => openActionDialog(order.id, 'payment_received', 'tracking')}
+                                              className="text-green-700 dark:text-green-500"
+                                            >
+                                              {language === 'ar' ? '💵 استلام الدفع' : '💵 Payment Received'}
+                                            </DropdownMenuItem>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
                                   </>
                                 )}
                                 
