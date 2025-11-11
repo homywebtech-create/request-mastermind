@@ -282,6 +282,15 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
           });
           return false;
         }
+        // Validate preferred language
+        if (!formData.preferredLanguage) {
+          toast({
+            title: "بيانات ناقصة / Missing Data",
+            description: "يرجى اختيار لغة التواصل / Please select communication language",
+            variant: "destructive",
+          });
+          return false;
+        }
         return true;
 
       case 2:
