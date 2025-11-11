@@ -1595,8 +1595,12 @@ Thank you for contacting us! 🌟`;
                             <Badge variant="secondary" className="font-medium">
                               {order.service_type}
                             </Badge>
-                            {/* Show cleaning equipment indicator for general cleaning */}
-                            {order.cleaning_equipment_required !== null && (order.service_type.includes('نظافة عامة') || order.service_type.includes('General Cleaning')) && (
+                            {/* Show cleaning equipment indicator for any cleaning service */}
+                            {order.cleaning_equipment_required !== null && (
+                              order.service_type.includes('نظافة') || 
+                              order.service_type.includes('تنظيف') || 
+                              order.service_type.toLowerCase().includes('clean')
+                            ) && (
                               <Badge 
                                 variant={order.cleaning_equipment_required ? "default" : "outline"} 
                                 className={`text-xs ${order.cleaning_equipment_required ? 'bg-orange-500 text-white' : 'text-orange-700 border-orange-300'}`}

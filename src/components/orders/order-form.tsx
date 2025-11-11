@@ -350,8 +350,8 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
             return false;
           }
           
-          // Validate cleaning equipment for "نظافة عامة" service
-          if ((selectedService.name === 'نظافة عامة' || selectedService.name_en === 'General Cleaning') && formData.cleaningEquipmentRequired === null) {
+          // Validate cleaning equipment for any cleaning service
+          if ((selectedService.name.includes('نظافة') || selectedService.name.includes('تنظيف') || (selectedService.name_en && selectedService.name_en.toLowerCase().includes('clean'))) && formData.cleaningEquipmentRequired === null) {
             toast({
               title: "بيانات ناقصة / Missing Data",
               description: "يرجى تحديد ما إذا كانت الخدمة تتطلب معدات تنظيف / Please specify if cleaning equipment is required",
@@ -1036,8 +1036,12 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               );
             })()}
 
-            {/* Cleaning Equipment Field - Only show for "نظافة عامة" / "General Cleaning" service */}
-            {formData.serviceId && selectedService && (selectedService.name === 'نظافة عامة' || selectedService.name_en === 'General Cleaning') && (
+            {/* Cleaning Equipment Field - Show for any cleaning service */}
+            {formData.serviceId && selectedService && (
+              selectedService.name.includes('نظافة') || 
+              selectedService.name.includes('تنظيف') || 
+              (selectedService.name_en && (selectedService.name_en.toLowerCase().includes('clean')))
+            ) && (
               <div className="space-y-2 pt-4 border-t">
                 <Label htmlFor="cleaningEquipment">معدات التنظيف / Cleaning Equipment *</Label>
                 <Select 
