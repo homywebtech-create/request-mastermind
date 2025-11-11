@@ -124,7 +124,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       specialistIds: [],
       notes: '',
       preferredLanguage: 'ar',
-      cleaningEquipmentRequired: null,
+      cleaningEquipmentRequired: false,
     };
   };
   
@@ -493,7 +493,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       specialistIds: [],
       notes: '',
       preferredLanguage: 'ar',
-      cleaningEquipmentRequired: null,
+      cleaningEquipmentRequired: false,
     });
     setSelectedService(null);
     setCurrentStep(1);

@@ -1600,7 +1600,7 @@ Thank you for contacting us! 🌟`;
                               {order.service_type}
                             </Badge>
                             {/* Show cleaning equipment indicator for any cleaning service */}
-                            {order.cleaning_equipment_required !== null && (
+                            {(
                               order.service_type.includes('نظافة') || 
                               order.service_type.includes('تنظيف') || 
                               order.service_type.toLowerCase().includes('clean')
