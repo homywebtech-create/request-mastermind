@@ -282,32 +282,18 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
 
       if (updateError) throw updateError;
 
-      // Force complete refresh of ALL order queries (including paginated ones)
-      await queryClient.invalidateQueries({ 
-        queryKey: ['orders'],
-        exact: false, // This will invalidate all queries starting with ['orders']
-        refetchType: 'active' // Only refetch active queries
-      });
-      
-      await queryClient.invalidateQueries({ queryKey: ['order-stats'] });
-      
-      // Force immediate refetch of all active order queries
-      await queryClient.refetchQueries({ 
-        queryKey: ['orders'],
-        exact: false,
-        type: 'active'
-      });
-      
-      // Small delay to ensure queries complete
-      await new Promise(resolve => setTimeout(resolve, 300));
-
       toast({
         title: language === 'ar' ? 'تم التحديث' : 'Updated',
         description: language === 'ar' ? 'تم تحديث بيانات الطلب بنجاح' : 'Order data updated successfully',
       });
 
-      onSuccess();
       onOpenChange(false);
+      
+      // Wait longer to ensure database updates are committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force complete refresh
+      onSuccess();
     } catch (error) {
       console.error('Error updating order:', error);
       toast({
