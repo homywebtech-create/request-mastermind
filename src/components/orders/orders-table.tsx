@@ -2106,10 +2106,10 @@ Thank you for contacting us! 🌟`;
                                     <Send className="h-3 w-3" />
                                     {t.resend}
                                   </>
-                                )}
+                              )}
                               </Button>
 
-                              {isPending && (
+                              {(filter === 'new' || isPending) && (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
@@ -2122,41 +2122,48 @@ Thank you for contacting us! 🌟`;
                                       <MoreVertical className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => openSendDialog(order)}>
-                                      <Building2 className="h-4 w-4 mr-2" />
-                                      {t.change}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleCopyOrderLink(order)}>
-                                      <Copy className="h-4 w-4 mr-2" />
-                                      {language === 'ar' ? 'نسخ الرابط' : 'Copy Link'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => sendOrderLinkViaWhatsApp(order)}>
-                                      <Send className="h-4 w-4 mr-2" />
-                                      {language === 'ar' ? 'إرسال واتساب' : 'Send WhatsApp'}
-                                    </DropdownMenuItem>
+                                  <DropdownMenuContent align="end" className="w-56">
+                                    {isPending && (
+                                      <>
+                                        <DropdownMenuItem onClick={() => openSendDialog(order)}>
+                                          <Building2 className="h-4 w-4 mr-2" />
+                                          {t.change}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleCopyOrderLink(order)}>
+                                          <Copy className="h-4 w-4 mr-2" />
+                                          {language === 'ar' ? 'نسخ الرابط' : 'Copy Link'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => sendOrderLinkViaWhatsApp(order)}>
+                                          <Send className="h-4 w-4 mr-2" />
+                                          {language === 'ar' ? 'إرسال واتساب' : 'Send WhatsApp'}
+                                        </DropdownMenuItem>
+                                        
+                                        {/* Separator */}
+                                        <DropdownMenuItem className="opacity-50 cursor-not-allowed px-2" disabled>
+                                          <div className="w-full border-t border-border"></div>
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
                                     
-                                    {/* Separator */}
-                                    <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
-                                      {language === 'ar' ? '──────────' : '──────────'}
-                                    </DropdownMenuItem>
-                                    
-                                    {/* Edit Order Details */}
-                                    <DropdownMenuItem onClick={() => {
-                                      setEditingOrderId(order.id);
-                                      setEditDialogOpen(true);
-                                    }}>
+                                    {/* Edit Order Details - Always show for new orders */}
+                                    <DropdownMenuItem 
+                                      onClick={() => {
+                                        setEditingOrderId(order.id);
+                                        setEditDialogOpen(true);
+                                      }}
+                                      className="focus:bg-blue-50 dark:focus:bg-blue-950/30"
+                                    >
                                       <span className="h-4 w-4 mr-2">✏️</span>
-                                      {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
+                                      <span className="font-medium">{language === 'ar' ? 'تعديل معلومات الطلب' : 'Edit Order Details'}</span>
                                     </DropdownMenuItem>
                                     
-                                    {/* Cancel Order */}
+                                    {/* Cancel Order - Always show for new orders */}
                                     <DropdownMenuItem 
                                       onClick={() => openActionDialog(order.id, 'cancel', 'cancel')}
-                                      className="text-destructive"
+                                      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                                     >
                                       <XCircle className="h-4 w-4 mr-2" />
-                                      {language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+                                      <span className="font-medium">{language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}</span>
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
