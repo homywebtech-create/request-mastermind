@@ -1554,12 +1554,6 @@ Thank you for contacting us! 🌟`;
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{customerName}</span>
-                            {/* Language Missing Warning */}
-                            {!order.customers?.preferred_language && (
-                              <Badge variant="destructive" className="text-xs animate-pulse">
-                                {language === 'ar' ? '⚠️ لغة العميل غير محددة' : '⚠️ Language Missing'}
-                              </Badge>
-                            )}
                           </div>
                           {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1569,12 +1563,10 @@ Thank you for contacting us! 🌟`;
                           ) : (
                             <span className="text-xs text-muted-foreground italic">{t.hiddenUntilAccepted}</span>
                           )}
-                          {/* Display customer language if available */}
-                          {order.customers?.preferred_language && (
-                            <Badge variant="outline" className="text-xs">
-                              {order.customers.preferred_language === 'ar' ? '🇸🇦 عربي' : '🇬🇧 English'}
-                            </Badge>
-                          )}
+                          {/* Display customer language - default to Arabic if not specified */}
+                          <Badge variant="outline" className="text-xs">
+                            {(order.customers?.preferred_language === 'en') ? '🇬🇧 English' : '🇸🇦 عربي'}
+                          </Badge>
                         </div>
                       </TableCell>
 
@@ -1608,14 +1600,14 @@ Thank you for contacting us! 🌟`;
                               order.service_type.includes('نظافة') || 
                               order.service_type.includes('تنظيف') || 
                               order.service_type.toLowerCase().includes('clean')
-                            ) && (
+                            ) && order.cleaning_equipment_required !== null && order.cleaning_equipment_required !== undefined && (
                               <Badge 
-                                variant={order.cleaning_equipment_required ? "default" : "outline"} 
-                                className={`text-xs ${order.cleaning_equipment_required ? 'bg-orange-500 text-white' : 'text-orange-700 border-orange-300'}`}
+                                variant={order.cleaning_equipment_required ? "default" : "secondary"} 
+                                className={`text-xs ${order.cleaning_equipment_required ? 'bg-orange-500 text-white' : ''}`}
                               >
                                 {order.cleaning_equipment_required 
                                   ? (language === 'ar' ? '🧹 بمعدات' : '🧹 With Equipment')
-                                  : (language === 'ar' ? '❌ بدون معدات' : '❌ No Equipment')
+                                  : (language === 'ar' ? 'بدون معدات' : 'No Equipment')
                                 }
                               </Badge>
                             )}
