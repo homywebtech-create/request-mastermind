@@ -1618,7 +1618,7 @@ Thank you for contacting us! 🌟`;
                                   variant={order.cleaning_equipment_required ? "default" : "secondary"} 
                                   className={`text-xs ${
                                     order.cleaning_equipment_required 
-                                      ? 'bg-orange-500 text-white' 
+                                      ? 'bg-green-500 text-white' 
                                       : order.cleaning_equipment_required === false 
                                       ? '' 
                                       : 'bg-muted'
