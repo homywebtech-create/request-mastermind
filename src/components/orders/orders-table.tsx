@@ -2109,20 +2109,19 @@ Thank you for contacting us! 🌟`;
                               )}
                               </Button>
 
-                              {(filter === 'new' || isPending) && (
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      disabled={Boolean(isOrderProcessing) || !order.customers?.preferred_language}
-                                      title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
-                                      className="h-8 w-8 p-0"
-                                    >
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-56">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={Boolean(isOrderProcessing) || !order.customers?.preferred_language}
+                                    title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
                                     {isPending && (
                                       <>
                                         <DropdownMenuItem onClick={() => openSendDialog(order)}>
@@ -2165,9 +2164,8 @@ Thank you for contacting us! 🌟`;
                                       <XCircle className="h-4 w-4 mr-2" />
                                       <span className="font-medium">{language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}</span>
                                     </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </>
                           )}
                           
