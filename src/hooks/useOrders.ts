@@ -148,6 +148,13 @@ export const useOrders = ({ page = 1, pageSize = 50, enabled = true }: UseOrders
           queryClient.invalidateQueries({ queryKey: ['orders'] });
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'customers' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+        }
+      )
       .subscribe();
 
     return () => {

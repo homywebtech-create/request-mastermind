@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { countries } from "@/data/countries";
 import { qatarAreas } from "@/data/areas";
 import { Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface EditOrderDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ interface OrderData {
 
 export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, language }: EditOrderDialogProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [orderData, setOrderData] = useState<OrderData>({
@@ -189,6 +191,10 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
         .eq('id', orderId);
 
       if (updateError) throw updateError;
+
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['order-stats'] });
 
       toast({
         title: language === 'ar' ? 'تم التحديث' : 'Updated',
