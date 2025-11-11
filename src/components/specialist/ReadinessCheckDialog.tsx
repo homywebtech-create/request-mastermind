@@ -87,19 +87,40 @@ export function ReadinessCheckDialog() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Get specialist info
-        const { data: specialist } = await supabase
-          .from('specialists')
-          .select('id')
+        // Get user's phone from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone')
           .eq('user_id', user.id)
           .single();
 
+        if (!profile?.phone) return;
+
+        // Get specialist info by phone
+        const { data: specialist } = await supabase
+          .from('specialists')
+          .select('id')
+          .eq('phone', profile.phone)
+          .single();
+
         if (!specialist) return;
+
+        // Get orders assigned to this specialist that need readiness check
+        const { data: orderSpecialists } = await supabase
+          .from('order_specialists')
+          .select('order_id')
+          .eq('specialist_id', specialist.id)
+          .eq('is_accepted', true);
+
+        if (!orderSpecialists || orderSpecialists.length === 0) return;
+
+        const orderIds = orderSpecialists.map((os) => os.order_id);
 
         // Get orders that need readiness check
         const { data: ordersData, error } = await supabase
           .from('orders')
           .select('id, order_number, booking_date, booking_time, booking_date_type, specialist_readiness_status, readiness_penalty_percentage')
+          .in('id', orderIds)
           .eq('status', 'upcoming')
           .eq('specialist_readiness_status', 'pending')
           .not('readiness_check_sent_at', 'is', null);
@@ -109,26 +130,9 @@ export function ReadinessCheckDialog() {
           return;
         }
 
-        // Filter orders assigned to this specialist
-        const relevantOrders = ordersData?.filter(async (order) => {
-          const { data: orderSpec } = await supabase
-            .from('order_specialists')
-            .select('specialist_id')
-            .eq('order_id', order.id)
-            .eq('specialist_id', specialist.id)
-            .eq('is_accepted', true)
-            .single();
-          
-          return !!orderSpec;
-        });
-
-        if (relevantOrders && relevantOrders.length > 0) {
-          const filtered = await Promise.all(relevantOrders);
-          const finalOrders = ordersData?.filter((_, index) => filtered[index]) || [];
-          if (finalOrders.length > 0) {
-            setOrders(finalOrders as Order[]);
-            setOpen(true);
-          }
+        if (ordersData && ordersData.length > 0) {
+          setOrders(ordersData as Order[]);
+          setOpen(true);
         }
       } catch (error) {
         console.error('Error in fetchPendingOrders:', error);
