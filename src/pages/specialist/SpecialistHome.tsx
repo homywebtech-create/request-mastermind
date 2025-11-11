@@ -650,8 +650,11 @@ export default function SpecialistHome() {
             
             {/* Wallet Display and Settings Button */}
             <div className="flex items-center gap-2 shrink-0">
-              {/* Wallet Display */}
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/30">
+              {/* Wallet Display - Clickable */}
+              <button
+                onClick={() => navigate('/specialist/wallet')}
+                className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/30 hover:bg-white/30 transition-all active:scale-95"
+              >
                 <div className="flex items-center gap-1.5">
                   <Wallet className="h-4 w-4" />
                   <div className="text-right">
@@ -661,7 +664,7 @@ export default function SpecialistHome() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </button>
               
               {/* Settings Button */}
               <Button
