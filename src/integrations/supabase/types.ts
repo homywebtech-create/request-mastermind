@@ -443,6 +443,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          preferred_language: string | null
           whatsapp_number: string
         }
         Insert: {
@@ -453,6 +454,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          preferred_language?: string | null
           whatsapp_number: string
         }
         Update: {
@@ -463,6 +465,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          preferred_language?: string | null
           whatsapp_number?: string
         }
         Relationships: [

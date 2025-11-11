@@ -46,6 +46,7 @@ interface OrderFormData {
   companyId: string;
   specialistIds: string[];
   notes: string;
+  preferredLanguage: 'ar' | 'en';
 }
 
 interface SubmittedOrderData {
@@ -62,6 +63,7 @@ interface SubmittedOrderData {
   notes: string;
   servicePrice?: number | null;
   pricingType?: string | null;
+  preferredLanguage: 'ar' | 'en';
 }
 
 interface Company {
@@ -118,6 +120,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       companyId: '',
       specialistIds: [],
       notes: '',
+      preferredLanguage: 'ar',
     };
   };
   
@@ -432,6 +435,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       companyId: isCompanyView ? companyId : (formData.sendToAll ? undefined : formData.companyId),
       specialistIds: formData.specialistIds.length > 0 ? formData.specialistIds : undefined,
       notes: formData.notes,
+      preferredLanguage: formData.preferredLanguage,
     };
     
     onSubmit(submittedData);
@@ -453,6 +457,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       companyId: '',
       specialistIds: [],
       notes: '',
+      preferredLanguage: 'ar',
     });
     setSelectedService(null);
     setCurrentStep(1);
@@ -736,6 +741,35 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                     </Command>
                   </PopoverContent>
                 </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="preferredLanguage">لغة التواصل / Communication Language *</Label>
+                <Select 
+                  value={formData.preferredLanguage} 
+                  onValueChange={(value: 'ar' | 'en') => handleInputChange('preferredLanguage', value)}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="ar">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">🇸🇦 العربية</span>
+                        <span className="text-xs text-muted-foreground">Arabic</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="en">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">🇬🇧 English</span>
+                        <span className="text-xs text-muted-foreground">الإنجليزية</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  سيتم إرسال رسائل WhatsApp بهذه اللغة / WhatsApp messages will be sent in this language
+                </p>
               </div>
             </div>
             </div>

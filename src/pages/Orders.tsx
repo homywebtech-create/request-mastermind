@@ -30,6 +30,7 @@ interface OrderFormData {
   notes: string;
   servicePrice?: number | null;
   pricingType?: string | null;
+  preferredLanguage: 'ar' | 'en';
 }
 
 interface Order {
@@ -315,7 +316,8 @@ export default function Orders() {
           area: formData.area?.trim() || null,
           budget: formData.budget || null,
           budget_type: formData.budgetType || null,
-          company_id: formData.companyId || null
+          company_id: formData.companyId || null,
+          preferred_language: formData.preferredLanguage || 'ar'
         } as const;
         
         console.log('Creating new customer:', customerData);
@@ -339,6 +341,7 @@ export default function Orders() {
           area: formData.area?.trim() || null,
           budget: formData.budget || null,
           budget_type: formData.budgetType || null,
+          preferred_language: formData.preferredLanguage || 'ar'
         } as const;
         
         console.log('Updating existing customer:', customerId, updateData);
