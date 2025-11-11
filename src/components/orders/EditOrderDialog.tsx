@@ -12,6 +12,17 @@ import { qatarAreas } from "@/data/areas";
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
+interface Service {
+  id: string;
+  name: string;
+  name_en: string;
+  sub_services: Array<{
+    id: string;
+    name: string;
+    name_en: string;
+  }>;
+}
+
 interface EditOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,6 +43,9 @@ interface OrderData {
   preferredLanguage: 'ar' | 'en';
   cleaningEquipmentRequired: boolean | null;
   serviceType: string;
+  customerLanguage: 'ar' | 'en';
+  serviceId: string;
+  subServiceId: string;
 }
 
 export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, language }: EditOrderDialogProps) {
@@ -39,6 +53,7 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
   const [orderData, setOrderData] = useState<OrderData>({
     customerName: '',
     whatsappNumber: '',
@@ -51,7 +66,35 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
     preferredLanguage: 'ar',
     cleaningEquipmentRequired: null,
     serviceType: '',
+    customerLanguage: 'ar',
+    serviceId: '',
+    subServiceId: '',
   });
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      const { data: servicesData } = await supabase
+        .from('services')
+        .select(`
+          id,
+          name,
+          name_en,
+          sub_services (
+            id,
+            name,
+            name_en
+          )
+        `)
+        .eq('is_active', true)
+        .order('name');
+
+      if (servicesData) {
+        setServices(servicesData as any);
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   useEffect(() => {
     if (open && orderId) {
@@ -63,6 +106,21 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
     try {
       setLoading(true);
       
+      const { data: servicesData } = await supabase
+        .from('services')
+        .select(`
+          id,
+          name,
+          name_en,
+          sub_services (
+            id,
+            name,
+            name_en
+          )
+        `)
+        .eq('is_active', true)
+        .order('name');
+
       const { data: order, error } = await supabase
         .from('orders')
         .select(`
@@ -96,6 +154,24 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
           }
         }
 
+        // Parse service type to get serviceId and subServiceId
+        let serviceId = '';
+        let subServiceId = '';
+        
+        if (order.service_type) {
+          const parts = order.service_type.split(' - ');
+          if (parts.length === 2) {
+            const service = servicesData?.find(s => s.name === parts[0]);
+            if (service) {
+              serviceId = service.id;
+              const subService = service.sub_services?.find((ss: any) => ss.name === parts[1]);
+              if (subService) {
+                subServiceId = subService.id;
+              }
+            }
+          }
+        }
+
         setOrderData({
           customerName: order.customers.name || '',
           whatsappNumber: fullNumber,
@@ -108,6 +184,9 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
           preferredLanguage: (order.customers.preferred_language as 'ar' | 'en') || 'ar',
           cleaningEquipmentRequired: order.cleaning_equipment_required,
           serviceType: order.service_type || '',
+          customerLanguage: (order.customers.preferred_language as 'ar' | 'en') || 'ar',
+          serviceId,
+          subServiceId,
         });
       }
     } catch (error) {
@@ -158,6 +237,16 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
       const country = countries.find(c => c.code === orderData.countryCode);
       const fullWhatsappNumber = `${country?.dialCode}${orderData.phoneNumber}`;
 
+      // Build service type from service and sub-service
+      let serviceType = orderData.serviceType;
+      if (orderData.serviceId && orderData.subServiceId) {
+        const service = services.find(s => s.id === orderData.serviceId);
+        const subService = service?.sub_services.find(ss => ss.id === orderData.subServiceId);
+        if (service && subService) {
+          serviceType = `${service.name} - ${subService.name}`;
+        }
+      }
+
       // Update customer data
       const { data: orderInfo, error: orderError } = await supabase
         .from('orders')
@@ -187,6 +276,7 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
         .update({
           notes: orderData.notes || null,
           cleaning_equipment_required: orderData.cleaningEquipmentRequired,
+          service_type: serviceType,
         })
         .eq('id', orderId);
 
@@ -287,6 +377,50 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
               </div>
             </div>
 
+            {/* Service Type */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الخدمة الرئيسية' : 'Main Service'} *</Label>
+                <Select
+                  value={orderData.serviceId}
+                  onValueChange={(value) => setOrderData({ ...orderData, serviceId: value, subServiceId: '' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر الخدمة' : 'Select Service'} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50 max-h-[300px]">
+                    {services.map((service) => (
+                      <SelectItem key={service.id} value={service.id}>
+                        {service.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الخدمة الفرعية' : 'Sub Service'} *</Label>
+                <Select
+                  value={orderData.subServiceId}
+                  onValueChange={(value) => setOrderData({ ...orderData, subServiceId: value })}
+                  disabled={!orderData.serviceId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر الخدمة الفرعية' : 'Select Sub Service'} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50 max-h-[300px]">
+                    {services
+                      .find(s => s.id === orderData.serviceId)
+                      ?.sub_services?.map((subService) => (
+                        <SelectItem key={subService.id} value={subService.id}>
+                          {subService.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {/* Area */}
             <div className="space-y-2">
               <Label htmlFor="area">{language === 'ar' ? 'المنطقة' : 'Area'} *</Label>
@@ -339,12 +473,12 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
               </div>
             </div>
 
-            {/* Preferred Language */}
+            {/* Customer Preferred Language */}
             <div className="space-y-2">
-              <Label>{language === 'ar' ? 'لغة التواصل' : 'Communication Language'} *</Label>
+              <Label>{language === 'ar' ? 'لغة العميل المفضلة' : 'Customer Preferred Language'} *</Label>
               <Select
-                value={orderData.preferredLanguage}
-                onValueChange={(value: 'ar' | 'en') => setOrderData({ ...orderData, preferredLanguage: value })}
+                value={orderData.customerLanguage}
+                onValueChange={(value: 'ar' | 'en') => setOrderData({ ...orderData, customerLanguage: value, preferredLanguage: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
