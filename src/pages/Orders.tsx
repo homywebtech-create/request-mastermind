@@ -47,9 +47,11 @@ interface Order {
   created_at: string;
   updated_at: string;
   send_to_all_companies?: boolean;
+  cleaning_equipment_required?: boolean | null;
   customers: {
     name: string;
     whatsapp_number: string;
+    preferred_language?: string;
   };
   companies: {
     name: string;
