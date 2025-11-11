@@ -432,14 +432,17 @@ export default function Dashboard() {
     console.log('✅ Confirmed orders:', upcomingOrders.length);
     
     // In Progress: Orders where specialist has started tracking OR status is in-progress
+    // BUT exclude completed orders (payment_received or status=completed)
     const inProgressOrders = ordersList.filter(o => {
       const trackingStage = o.tracking_stage;
       const trackingStarted = trackingStage && 
              trackingStage !== null &&
              ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
       const statusInProgress = o.status === 'in-progress';
+      const isCompleted = trackingStage === 'payment_received' || o.status === 'completed';
       
-      return trackingStarted || statusInProgress;
+      // Only include if in progress AND NOT completed
+      return (trackingStarted || statusInProgress) && !isCompleted;
     });
     
     // Completed: Orders where payment received or status is completed
