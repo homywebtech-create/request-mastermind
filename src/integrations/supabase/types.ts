@@ -658,6 +658,8 @@ export type Database = {
           last_sent_at: string | null
           link_copied_at: string | null
           modified_by: string | null
+          movement_last_reminder_at: string | null
+          movement_reminder_count: number | null
           notes: string | null
           notified_expiry: boolean | null
           order_link: string | null
@@ -665,11 +667,15 @@ export type Database = {
           payment_not_received_reason: string | null
           payment_status: string | null
           readiness_check_sent_at: string | null
+          readiness_last_reminder_at: string | null
+          readiness_penalty_percentage: number | null
+          readiness_reminder_count: number | null
           selected_booking_type: string | null
           send_to_all_companies: boolean
           service_type: string
           specialist_id: string | null
           specialist_not_ready_reason: string | null
+          specialist_penalty_amount: number | null
           specialist_readiness_response_at: string | null
           specialist_readiness_status: string | null
           status: string
@@ -707,6 +713,8 @@ export type Database = {
           last_sent_at?: string | null
           link_copied_at?: string | null
           modified_by?: string | null
+          movement_last_reminder_at?: string | null
+          movement_reminder_count?: number | null
           notes?: string | null
           notified_expiry?: boolean | null
           order_link?: string | null
@@ -714,11 +722,15 @@ export type Database = {
           payment_not_received_reason?: string | null
           payment_status?: string | null
           readiness_check_sent_at?: string | null
+          readiness_last_reminder_at?: string | null
+          readiness_penalty_percentage?: number | null
+          readiness_reminder_count?: number | null
           selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type: string
           specialist_id?: string | null
           specialist_not_ready_reason?: string | null
+          specialist_penalty_amount?: number | null
           specialist_readiness_response_at?: string | null
           specialist_readiness_status?: string | null
           status?: string
@@ -756,6 +768,8 @@ export type Database = {
           last_sent_at?: string | null
           link_copied_at?: string | null
           modified_by?: string | null
+          movement_last_reminder_at?: string | null
+          movement_reminder_count?: number | null
           notes?: string | null
           notified_expiry?: boolean | null
           order_link?: string | null
@@ -763,11 +777,15 @@ export type Database = {
           payment_not_received_reason?: string | null
           payment_status?: string | null
           readiness_check_sent_at?: string | null
+          readiness_last_reminder_at?: string | null
+          readiness_penalty_percentage?: number | null
+          readiness_reminder_count?: number | null
           selected_booking_type?: string | null
           send_to_all_companies?: boolean
           service_type?: string
           specialist_id?: string | null
           specialist_not_ready_reason?: string | null
+          specialist_penalty_amount?: number | null
           specialist_readiness_response_at?: string | null
           specialist_readiness_status?: string | null
           status?: string

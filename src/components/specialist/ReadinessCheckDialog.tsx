@@ -22,10 +22,7 @@ interface Order {
   booking_time: string;
   booking_date_type: string;
   specialist_readiness_status: string | null;
-  customers: {
-    name: string;
-    area: string;
-  } | null;
+  readiness_penalty_percentage: number | null;
 }
 
 export function ReadinessCheckDialog() {
@@ -102,15 +99,7 @@ export function ReadinessCheckDialog() {
         // Get orders that need readiness check
         const { data: ordersData, error } = await supabase
           .from('orders')
-          .select(`
-            id,
-            order_number,
-            booking_date,
-            booking_time,
-            booking_date_type,
-            specialist_readiness_status,
-            customers(name, area)
-          `)
+          .select('id, order_number, booking_date, booking_time, booking_date_type, specialist_readiness_status, readiness_penalty_percentage')
           .eq('status', 'upcoming')
           .eq('specialist_readiness_status', 'pending')
           .not('readiness_check_sent_at', 'is', null);
@@ -294,22 +283,19 @@ export function ReadinessCheckDialog() {
               <span className="font-semibold">{t.orderNumber}:</span>{' '}
               <span className="text-primary">{currentOrder.order_number}</span>
             </div>
-            {currentOrder.customers && (
-              <>
-                <div>
-                  <span className="font-semibold">{t.customer}:</span>{' '}
-                  {currentOrder.customers.name}
-                </div>
-                <div>
-                  <span className="font-semibold">{t.area}:</span>{' '}
-                  {currentOrder.customers.area}
-                </div>
-              </>
-            )}
             <div>
               <span className="font-semibold">{t.bookingTime}:</span>{' '}
               {currentOrder.booking_date} - {formatBookingTime(currentOrder.booking_time)}
             </div>
+            {currentOrder.readiness_penalty_percentage && currentOrder.readiness_penalty_percentage > 0 && (
+              <div className="bg-destructive/10 p-2 rounded border border-destructive/20">
+                <span className="text-destructive font-semibold">
+                  {language === 'ar' ? '⚠️ في حال عدم الجاهزية سيتم خصم ' : '⚠️ Penalty if not ready: '}
+                  {currentOrder.readiness_penalty_percentage}%
+                  {language === 'ar' ? ' من محفظتك' : ' from your wallet'}
+                </span>
+              </div>
+            )}
           </div>
 
           {showReasonInput && (
