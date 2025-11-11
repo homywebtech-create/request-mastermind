@@ -221,11 +221,6 @@ export default function Dashboard() {
         (payload) => {
           console.log('New order detected:', payload);
           debouncedFetchOrders();
-          
-          toast({
-            title: "🔔 طلب جديد",
-            description: "تم إضافة طلب جديد للنظام",
-          });
         }
       )
       .on(
@@ -265,17 +260,6 @@ export default function Dashboard() {
         },
         (payload) => {
           console.log('Order specialist updated:', payload);
-          const newRecord = payload.new as any;
-          
-          // Check if quoted_price was added (new quote)
-          if (newRecord.quoted_price && soundEnabled) {
-            soundNotification.current.playNewQuoteSound();
-            toast({
-              title: "💰 عرض سعر جديد",
-              description: "تم استلام عرض سعر جديد من المحترف",
-            });
-          }
-          
           debouncedFetchOrders();
         }
       )
