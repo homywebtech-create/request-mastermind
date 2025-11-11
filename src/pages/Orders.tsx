@@ -126,6 +126,8 @@ export default function Orders() {
     try {
       setLoading(true);
       
+      console.log('🔄 Fetching orders from database...');
+      
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -177,9 +179,23 @@ export default function Orders() {
           )
         `)
         .order('created_at', { ascending: false });
+      
+      console.log('📊 Fetched orders count:', data?.length);
+      if (data && data.length > 0) {
+        console.log('🔍 Sample order data:', {
+          order_number: data[0].order_number,
+          service_type: data[0].service_type,
+          cleaning_equipment_required: data[0].cleaning_equipment_required,
+          has_field: 'cleaning_equipment_required' in data[0]
+        });
+      }
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching orders:', error);
+        throw error;
+      }
 
+      console.log('✅ Setting orders state with', data?.length, 'orders');
       setOrders((data || []) as Order[]);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
