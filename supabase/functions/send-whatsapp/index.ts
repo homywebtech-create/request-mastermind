@@ -131,6 +131,10 @@ serve(async (req) => {
         }
 
         try {
+          // Add timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+          
           const response = await fetch(metaUrl, {
             method: 'POST',
             headers: {
@@ -138,7 +142,10 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(messagePayload),
+            signal: controller.signal,
           });
+          
+          clearTimeout(timeoutId);
 
           const responseData = await response.json();
 
@@ -152,8 +159,12 @@ serve(async (req) => {
           if (specialists.length > 1) {
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
-        } catch (err) {
-          console.error(`❌ [Meta WhatsApp] Error for ${specialist.name}:`, err);
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            console.error(`⏱️ [Meta WhatsApp] Timeout for ${specialist.name}`);
+          } else {
+            console.error(`❌ [Meta WhatsApp] Error for ${specialist.name}:`, err);
+          }
         }
       }
 
@@ -180,6 +191,10 @@ serve(async (req) => {
       }
     };
 
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(metaUrl, {
       method: 'POST',
       headers: {
@@ -187,7 +202,10 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(messagePayload),
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     const responseData = await response.json();
     
@@ -217,6 +235,18 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('❌ [Meta WhatsApp] Unexpected error:', error);
+    
+    // Handle timeout specifically
+    if (error.name === 'AbortError') {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Request timeout - WhatsApp API took too long to respond',
+          details: 'Please check your WhatsApp Business API credentials and connection'
+        }),
+        { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
         error: error?.message || 'Unknown error',
