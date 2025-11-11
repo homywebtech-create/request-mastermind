@@ -66,6 +66,7 @@ interface Order {
     area?: string;
     budget?: string;
     budget_type?: string;
+    preferred_language?: string;
   } | null;
   companies: {
     name: string;
@@ -1544,6 +1545,12 @@ Thank you for contacting us! 🌟`;
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{customerName}</span>
+                            {/* Language Missing Warning */}
+                            {!order.customers?.preferred_language && (
+                              <Badge variant="destructive" className="text-xs animate-pulse">
+                                {language === 'ar' ? '⚠️ لغة العميل غير محددة' : '⚠️ Language Missing'}
+                              </Badge>
+                            )}
                           </div>
                           {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1552,6 +1559,12 @@ Thank you for contacting us! 🌟`;
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground italic">{t.hiddenUntilAccepted}</span>
+                          )}
+                          {/* Display customer language if available */}
+                          {order.customers?.preferred_language && (
+                            <Badge variant="outline" className="text-xs">
+                              {order.customers.preferred_language === 'ar' ? '🇸🇦 عربي' : '🇬🇧 English'}
+                            </Badge>
                           )}
                         </div>
                       </TableCell>
@@ -1850,6 +1863,8 @@ Thank you for contacting us! 🌟`;
                                             size="sm"
                                             variant="default"
                                             className="flex-1"
+                                            disabled={!order.customers?.preferred_language}
+                                            title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                             onClick={() => {
                               const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
                               window.location.href = url;
@@ -1861,6 +1876,8 @@ Thank you for contacting us! 🌟`;
                                           <Button
                                             size="sm"
                                             variant="outline"
+                                            disabled={!order.customers?.preferred_language}
+                                            title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                                             onClick={() => {
                                               const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
                                               navigator.clipboard.writeText(url);
@@ -1882,6 +1899,8 @@ Thank you for contacting us! 🌟`;
                                           size="sm"
                                           variant="outline"
                                           className="w-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/40 border-green-200 dark:border-green-800"
+                                          disabled={!order.customers?.preferred_language}
+                                          title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                                           onClick={async () => {
                                             try {
                                               console.log('📱 Sending WhatsApp carousel for order:', order.id);
@@ -2048,7 +2067,8 @@ Thank you for contacting us! 🌟`;
                                 size="sm"
                                 variant={isRecentlySent ? "destructive" : "default"}
                                 onClick={() => openResendDialog(order)}
-                                disabled={isRecentlySent || isOrderProcessing}
+                                disabled={isRecentlySent || isOrderProcessing || !order.customers?.preferred_language}
+                                title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                                 className="flex items-center gap-1"
                               >
                                  {isOrderProcessing ? (
@@ -2075,7 +2095,8 @@ Thank you for contacting us! 🌟`;
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      disabled={Boolean(isOrderProcessing)}
+                                      disabled={Boolean(isOrderProcessing) || !order.customers?.preferred_language}
+                                      title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                                       className="h-8 w-8 p-0"
                                     >
                                       <MoreVertical className="h-4 w-4" />
@@ -2106,7 +2127,8 @@ Thank you for contacting us! 🌟`;
                               size="sm"
                               variant="destructive"
                               onClick={() => openResendDialog(order)}
-                              disabled={isOrderProcessing}
+                              disabled={isOrderProcessing || !order.customers?.preferred_language}
+                              title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                               className="flex items-center gap-1 animate-pulse"
                             >
                               {isOrderProcessing ? (
@@ -2131,6 +2153,8 @@ Thank you for contacting us! 🌟`;
                                   size="sm"
                                   variant="outline"
                                   className="flex items-center gap-1"
+                                  disabled={!order.customers?.preferred_language}
+                                  title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                                 >
                                   <MoreVertical className="h-4 w-4" />
                                   {language === 'ar' ? 'إجراءات' : 'Actions'}
