@@ -1600,14 +1600,22 @@ Thank you for contacting us! 🌟`;
                               order.service_type.includes('نظافة') || 
                               order.service_type.includes('تنظيف') || 
                               order.service_type.toLowerCase().includes('clean')
-                            ) && order.cleaning_equipment_required !== null && order.cleaning_equipment_required !== undefined && (
+                            ) && (
                               <Badge 
                                 variant={order.cleaning_equipment_required ? "default" : "secondary"} 
-                                className={`text-xs ${order.cleaning_equipment_required ? 'bg-orange-500 text-white' : ''}`}
+                                className={`text-xs ${
+                                  order.cleaning_equipment_required 
+                                    ? 'bg-orange-500 text-white' 
+                                    : order.cleaning_equipment_required === false 
+                                    ? '' 
+                                    : 'bg-muted'
+                                }`}
                               >
-                                {order.cleaning_equipment_required 
+                                {order.cleaning_equipment_required === true
                                   ? (language === 'ar' ? '🧹 بمعدات' : '🧹 With Equipment')
-                                  : (language === 'ar' ? 'بدون معدات' : 'No Equipment')
+                                  : order.cleaning_equipment_required === false
+                                  ? (language === 'ar' ? 'بدون معدات' : 'No Equipment')
+                                  : (language === 'ar' ? 'غير محدد' : 'Not Specified')
                                 }
                               </Badge>
                             )}
