@@ -31,6 +31,7 @@ interface OrderFormData {
   servicePrice?: number | null;
   pricingType?: string | null;
   preferredLanguage: 'ar' | 'en';
+  cleaningEquipmentRequired: boolean | null;
 }
 
 interface Order {
@@ -142,12 +143,14 @@ export default function Orders() {
           send_to_all_companies,
           booking_type,
           hours_count,
+          cleaning_equipment_required,
           customers (
             name,
             whatsapp_number,
             area,
             budget,
-            budget_type
+            budget_type,
+            preferred_language
           ),
           companies (
             name
@@ -370,6 +373,7 @@ export default function Orders() {
           notes: formData.notes,
           status: 'pending',
           created_by: user?.id,
+          cleaning_equipment_required: formData.cleaningEquipmentRequired,
         }])
         .select('id, order_number')
         .single();

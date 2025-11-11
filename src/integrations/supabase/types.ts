@@ -637,6 +637,7 @@ export type Database = {
           cancelled_at: string | null
           cancelled_by: string | null
           cancelled_by_role: string | null
+          cleaning_equipment_required: boolean | null
           company_id: string | null
           created_at: string
           created_by: string | null
@@ -685,6 +686,7 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_by?: string | null
           cancelled_by_role?: string | null
+          cleaning_equipment_required?: boolean | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -733,6 +735,7 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_by?: string | null
           cancelled_by_role?: string | null
+          cleaning_equipment_required?: boolean | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null

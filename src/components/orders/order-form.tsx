@@ -47,6 +47,7 @@ interface OrderFormData {
   specialistIds: string[];
   notes: string;
   preferredLanguage: 'ar' | 'en';
+  cleaningEquipmentRequired: boolean | null;
 }
 
 interface SubmittedOrderData {
@@ -64,6 +65,7 @@ interface SubmittedOrderData {
   servicePrice?: number | null;
   pricingType?: string | null;
   preferredLanguage: 'ar' | 'en';
+  cleaningEquipmentRequired: boolean | null;
 }
 
 interface Company {
@@ -121,6 +123,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       specialistIds: [],
       notes: '',
       preferredLanguage: 'ar',
+      cleaningEquipmentRequired: null,
     };
   };
   
@@ -337,6 +340,16 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
             });
             return false;
           }
+          
+          // Validate cleaning equipment for "نظافة عامة" service
+          if ((selectedService.name === 'نظافة عامة' || selectedService.name_en === 'General Cleaning') && formData.cleaningEquipmentRequired === null) {
+            toast({
+              title: "بيانات ناقصة / Missing Data",
+              description: "يرجى تحديد ما إذا كانت الخدمة تتطلب معدات تنظيف / Please specify if cleaning equipment is required",
+              variant: "destructive",
+            });
+            return false;
+          }
         }
         
         return true;
@@ -436,6 +449,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       specialistIds: formData.specialistIds.length > 0 ? formData.specialistIds : undefined,
       notes: formData.notes,
       preferredLanguage: formData.preferredLanguage,
+      cleaningEquipmentRequired: formData.cleaningEquipmentRequired,
     };
     
     onSubmit(submittedData);
@@ -458,6 +472,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
       specialistIds: [],
       notes: '',
       preferredLanguage: 'ar',
+      cleaningEquipmentRequired: null,
     });
     setSelectedService(null);
     setCurrentStep(1);
@@ -564,23 +579,23 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
     }
   };
 
-  const handleInputChange = (field: keyof OrderFormData, value: string) => {
+  const handleInputChange = (field: keyof OrderFormData, value: string | boolean | null) => {
     setFormData(prev => {
       if (field === 'serviceId') {
-        return { ...prev, serviceId: value, subServiceId: '', companyId: '', specialistIds: [] };
+        return { ...prev, serviceId: value as string, subServiceId: '', companyId: '', specialistIds: [], cleaningEquipmentRequired: null };
       }
       if (field === 'subServiceId') {
-        return { ...prev, subServiceId: value, companyId: '', specialistIds: [] };
+        return { ...prev, subServiceId: value as string, companyId: '', specialistIds: [] };
       }
       if (field === 'companyId') {
-        return { ...prev, companyId: value, specialistIds: [] };
+        return { ...prev, companyId: value as string, specialistIds: [] };
       }
       // When phone number changes, check for existing customer
-      if (field === 'phoneNumber' && value.length >= 7) {
+      if (field === 'phoneNumber' && typeof value === 'string' && value.length >= 7) {
         checkExistingCustomer(value, prev.countryCode);
       }
       // When country code changes and phone is already entered, recheck
-      if (field === 'countryCode' && prev.phoneNumber.length >= 7) {
+      if (field === 'countryCode' && typeof value === 'string' && prev.phoneNumber.length >= 7) {
         setTimeout(() => checkExistingCustomer(prev.phoneNumber, value), 100);
       }
       return { ...prev, [field]: value };
@@ -1011,6 +1026,38 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                 </div>
               );
             })()}
+
+            {/* Cleaning Equipment Field - Only show for "نظافة عامة" / "General Cleaning" service */}
+            {formData.serviceId && selectedService && (selectedService.name === 'نظافة عامة' || selectedService.name_en === 'General Cleaning') && (
+              <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor="cleaningEquipment">معدات التنظيف / Cleaning Equipment *</Label>
+                <Select 
+                  value={formData.cleaningEquipmentRequired === null ? '' : formData.cleaningEquipmentRequired ? 'yes' : 'no'} 
+                  onValueChange={(value) => handleInputChange('cleaningEquipmentRequired', value === 'yes' ? true : value === 'no' ? false : null)}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="هل الخدمة تتطلب معدات؟ / Does service require equipment?" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="yes">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">✅ بمعدات التنظيف</span>
+                        <span className="text-xs text-muted-foreground">With Cleaning Equipment</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="no">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">❌ بدون معدات</span>
+                        <span className="text-xs text-muted-foreground">Without Equipment</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  ⚠️ سيتم تنبيه المحترفين إذا كانت الخدمة تتطلب معدات تنظيف / Specialists will be notified if equipment is required
+                </p>
+              </div>
+            )}
 
             {/* Customer Notes Field */}
             <div className="space-y-2 pt-4 border-t">

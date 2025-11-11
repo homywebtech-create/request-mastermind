@@ -60,6 +60,7 @@ interface Order {
   specialist_readiness_response_at?: string | null;
   specialist_not_ready_reason?: string | null;
   readiness_check_sent_at?: string | null;
+  cleaning_equipment_required?: boolean | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -1590,10 +1591,22 @@ Thank you for contacting us! 🌟`;
                           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
                             <Wrench className="h-4 w-4 text-primary" />
                           </div>
-                          <div>
+                          <div className="space-y-1">
                             <Badge variant="secondary" className="font-medium">
                               {order.service_type}
                             </Badge>
+                            {/* Show cleaning equipment indicator for general cleaning */}
+                            {order.cleaning_equipment_required !== null && (order.service_type.includes('نظافة عامة') || order.service_type.includes('General Cleaning')) && (
+                              <Badge 
+                                variant={order.cleaning_equipment_required ? "default" : "outline"} 
+                                className={`text-xs ${order.cleaning_equipment_required ? 'bg-orange-500 text-white' : 'text-orange-700 border-orange-300'}`}
+                              >
+                                {order.cleaning_equipment_required 
+                                  ? (language === 'ar' ? '🧹 بمعدات' : '🧹 With Equipment')
+                                  : (language === 'ar' ? '❌ بدون معدات' : '❌ No Equipment')
+                                }
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </TableCell>
