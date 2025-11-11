@@ -1,6 +1,27 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')?.trim();
+// Sanitize WhatsApp access token - remove common junk that gets copied accidentally
+const rawToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN')?.trim();
+let WHATSAPP_ACCESS_TOKEN = rawToken;
+
+if (rawToken) {
+  // Remove everything after the token (reactions, timestamps, etc.)
+  // WhatsApp tokens typically end with alphanumeric characters
+  const tokenMatch = rawToken.match(/^(EAAQ[A-Za-z0-9]+)/);
+  if (tokenMatch) {
+    WHATSAPP_ACCESS_TOKEN = tokenMatch[1];
+    if (WHATSAPP_ACCESS_TOKEN !== rawToken) {
+      console.log('🧹 Cleaned token - removed extra content');
+    }
+  }
+  
+  // Remove quotes if present
+  WHATSAPP_ACCESS_TOKEN = WHATSAPP_ACCESS_TOKEN.replace(/^["']|["']$/g, '');
+  
+  // Remove newlines and carriage returns
+  WHATSAPP_ACCESS_TOKEN = WHATSAPP_ACCESS_TOKEN.replace(/[\n\r]/g, '');
+}
+
 const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')?.trim();
 
 const corsHeaders = {
