@@ -171,28 +171,84 @@ export const useOrders = ({ page = 1, pageSize = 50, enabled = true }: UseOrders
   };
 };
 
+// Helper function to check if order is overdue
+const isOrderOverdue = (order: any) => {
+  if (!order.booking_date || order.status === 'completed' || order.status === 'cancelled') return false;
+  
+  const bookingDateTime = new Date(order.booking_date);
+  const now = new Date();
+  
+  // For specific time bookings, use the exact datetime
+  if (order.booking_date_type === 'specific') {
+    return now > bookingDateTime;
+  }
+  
+  // For date-only bookings with time
+  if (order.booking_time) {
+    if (order.booking_time === 'morning') {
+      bookingDateTime.setHours(8, 0, 0, 0);
+    } else if (order.booking_time === 'afternoon') {
+      bookingDateTime.setHours(14, 0, 0, 0);
+    } else if (order.booking_time === 'evening') {
+      bookingDateTime.setHours(18, 0, 0, 0);
+    } else {
+      const startTimeStr = order.booking_time.split('-')[0].trim();
+      const timeMatch = startTimeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      
+      if (timeMatch) {
+        let hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2]);
+        const period = timeMatch[3]?.toUpperCase();
+        
+        if (period === 'PM' && hours !== 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        
+        bookingDateTime.setHours(hours, minutes, 0, 0);
+      }
+    }
+    return now > bookingDateTime;
+  }
+  
+  return false;
+};
+
 // Hook for order stats only
 export const useOrderStats = () => {
   const fetchStats = async () => {
-    // Simple count queries - much faster than complex joins
-    const [pendingResult, awaitingResult, upcomingResult, inProgressResult, completedResult, cancelledResult, totalResult] = await Promise.all([
-      supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'in-progress'),
-      supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'upcoming'),
-      supabase.from('orders').select('*', { count: 'exact', head: true }).in('tracking_stage', ['moving', 'arrived', 'working', 'invoice_requested']),
-      supabase.from('orders').select('*', { count: 'exact', head: true }).or('tracking_stage.eq.payment_received,status.eq.completed'),
-      supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'cancelled'),
-      supabase.from('orders').select('*', { count: 'exact', head: true })
-    ]);
+    // Fetch all orders to properly count overdue ones
+    const { data: allOrders } = await supabase
+      .from('orders')
+      .select('id, status, tracking_stage, booking_date, booking_date_type, booking_time');
+
+    const orders = allOrders || [];
+    
+    // Calculate stats considering overdue orders
+    const pending = orders.filter(o => o.status === 'pending').length;
+    const awaitingResponse = orders.filter(o => o.status === 'in-progress').length;
+    const upcoming = orders.filter(o => o.status === 'upcoming').length;
+    
+    // In Progress: tracking started OR overdue confirmed orders
+    const inProgress = orders.filter(o => {
+      const trackingStarted = o.tracking_stage && ['moving', 'arrived', 'working', 'invoice_requested'].includes(o.tracking_stage);
+      const isOverdue = isOrderOverdue(o) && o.status === 'upcoming';
+      const isCompleted = o.tracking_stage === 'payment_received' || o.status === 'completed';
+      return (trackingStarted || isOverdue) && !isCompleted;
+    }).length;
+    
+    const completed = orders.filter(o => 
+      o.tracking_stage === 'payment_received' || o.status === 'completed'
+    ).length;
+    
+    const cancelled = orders.filter(o => o.status === 'cancelled').length;
 
     return {
-      total: totalResult.count || 0,
-      pending: pendingResult.count || 0,
-      awaitingResponse: awaitingResult.count || 0,
-      upcoming: upcomingResult.count || 0,
-      inProgress: inProgressResult.count || 0,
-      completed: completedResult.count || 0,
-      cancelled: cancelledResult.count || 0,
+      total: orders.length,
+      pending,
+      awaitingResponse,
+      upcoming,
+      inProgress,
+      completed,
+      cancelled,
     };
   };
 

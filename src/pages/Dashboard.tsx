@@ -383,6 +383,45 @@ export default function Dashboard() {
     setLoading(false);
   };
 
+  // Helper to check if order is overdue
+  const isOrderOverdue = (order: Order) => {
+    if (!order.booking_date || order.status === 'completed' || order.status === 'cancelled') return false;
+    
+    const bookingDateTime = new Date(order.booking_date);
+    const now = new Date();
+    
+    if (order.booking_date_type === 'specific') {
+      return now > bookingDateTime;
+    }
+    
+    if (order.booking_time) {
+      if (order.booking_time === 'morning') {
+        bookingDateTime.setHours(8, 0, 0, 0);
+      } else if (order.booking_time === 'afternoon') {
+        bookingDateTime.setHours(14, 0, 0, 0);
+      } else if (order.booking_time === 'evening') {
+        bookingDateTime.setHours(18, 0, 0, 0);
+      } else {
+        const startTimeStr = order.booking_time.split('-')[0].trim();
+        const timeMatch = startTimeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        
+        if (timeMatch) {
+          let hours = parseInt(timeMatch[1]);
+          const minutes = parseInt(timeMatch[2]);
+          const period = timeMatch[3]?.toUpperCase();
+          
+          if (period === 'PM' && hours !== 12) hours += 12;
+          if (period === 'AM' && hours === 12) hours = 0;
+          
+          bookingDateTime.setHours(hours, minutes, 0, 0);
+        }
+      }
+      return now > bookingDateTime;
+    }
+    
+    return false;
+  };
+
   const calculateStats = (ordersList: Order[]) => {
     // Pending: Orders with no quotes yet
     const pendingOrders = ordersList.filter(o => 
@@ -402,16 +441,13 @@ export default function Dashboard() {
       
       // استبعاد الطلبات المقبولة أو التي لديها specialist محدد أو status=upcoming
       if (hasAnyAccepted || hasSpecialistAssigned || isUpcoming) {
-        console.log(`❌ Order ${o.order_number} excluded from awaiting: accepted=${hasAnyAccepted}, has_specialist=${hasSpecialistAssigned}, upcoming=${isUpcoming}`);
         return false;
       }
       
       return hasQuotes && !hasAnyAccepted && notStartedTracking && notCompleted;
     });
     
-    console.log('✅ Awaiting Response orders:', awaitingOrders.length);
-    
-    // Upcoming/Confirmed: Orders with accepted quotes OR specialist_id OR status=upcoming (but tracking not started)
+    // Upcoming/Confirmed: Orders with accepted quotes but NOT overdue and tracking not started
     const upcomingOrders = ordersList.filter(o => {
       const hasAcceptedQuote = o.order_specialists?.some(os => os.is_accepted === true);
       const hasSpecialistAssigned = o.specialist_id != null;
@@ -419,30 +455,24 @@ export default function Dashboard() {
       const notStartedTracking = !o.tracking_stage || o.tracking_stage === null;
       const notCompleted = o.status !== 'completed';
       const notCancelled = o.status !== 'cancelled';
-      
-      // Debug logging
-      if ((hasAcceptedQuote || hasSpecialistAssigned || isUpcoming) && notStartedTracking && notCompleted && notCancelled) {
-        console.log(`✅ Order ${o.order_number} is confirmed: accepted=${hasAcceptedQuote}, has_specialist=${hasSpecialistAssigned}, upcoming=${isUpcoming}`);
-      }
+      const notOverdue = !isOrderOverdue(o);
       
       return (hasAcceptedQuote || hasSpecialistAssigned || isUpcoming) && 
-             notStartedTracking && notCompleted && notCancelled;
+             notStartedTracking && notCompleted && notCancelled && notOverdue;
     });
     
-    console.log('✅ Confirmed orders:', upcomingOrders.length);
-    
-    // In Progress: Orders where specialist has started tracking OR status is in-progress
-    // BUT exclude completed orders (payment_received or status=completed)
+    // In Progress: Orders where specialist has started tracking OR overdue confirmed orders
     const inProgressOrders = ordersList.filter(o => {
       const trackingStage = o.tracking_stage;
       const trackingStarted = trackingStage && 
              trackingStage !== null &&
              ['moving', 'arrived', 'working', 'invoice_requested'].includes(trackingStage);
       const statusInProgress = o.status === 'in-progress';
+      const isOverdueConfirmed = isOrderOverdue(o) && o.status === 'upcoming';
       const isCompleted = trackingStage === 'payment_received' || o.status === 'completed';
       
-      // Only include if in progress AND NOT completed
-      return (trackingStarted || statusInProgress) && !isCompleted;
+      // Include tracking started, status in-progress, OR overdue confirmed orders
+      return (trackingStarted || statusInProgress || isOverdueConfirmed) && !isCompleted;
     });
     
     // Completed: Orders where payment received or status is completed
