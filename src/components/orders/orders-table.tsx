@@ -137,9 +137,10 @@ interface OrdersTableProps {
   isCompanyView?: boolean;
   companyId?: string;
   isSnoozed?: (orderId: string) => boolean;
+  onRefreshOrders?: () => void;
 }
 
-export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false, companyId, isSnoozed }: OrdersTableProps) {
+export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFilterChange, isCompanyView = false, companyId, isSnoozed, onRefreshOrders }: OrdersTableProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -2694,7 +2695,11 @@ Thank you for contacting us! 🌟`;
         orderId={editingOrderId}
         onSuccess={() => {
           // Refresh orders list
-          window.location.reload();
+          if (onRefreshOrders) {
+            onRefreshOrders();
+          } else {
+            window.location.reload();
+          }
         }}
         language={language}
       />

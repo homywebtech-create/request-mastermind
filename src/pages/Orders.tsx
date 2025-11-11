@@ -674,6 +674,7 @@ export default function Orders() {
               onLinkCopied={handleLinkCopied}
               filter={filter}
               onFilterChange={setFilter}
+              onRefreshOrders={fetchOrders}
             />
           )}
         </div>
