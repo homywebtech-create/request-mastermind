@@ -179,7 +179,13 @@ export default function Orders() {
       if (error) throw error;
 
       console.log('🔍 Admin Orders - Sample:', data?.[0]);
-      console.log('📋 Order number check:', data?.[0]?.order_number);
+      console.log('📋 Order data check:', {
+        orderId: data?.[0]?.id,
+        orderNumber: data?.[0]?.order_number,
+        cleaningEquipment: data?.[0]?.cleaning_equipment_required,
+        customerLanguage: data?.[0]?.customers?.preferred_language,
+        serviceType: data?.[0]?.service_type
+      });
 
       setOrders((data || []) as Order[]);
     } catch (error: any) {
