@@ -28,6 +28,7 @@ import { SpecialistProfileDialog } from "@/components/specialists/SpecialistProf
 import { ReadinessStatusIndicator } from "./ReadinessStatusIndicator";
 import { TrackingTimeInfo } from "./TrackingTimeInfo";
 import { sendWhatsAppCarouselToCustomer, fetchQuotesForOrder } from "@/lib/whatsappCarousel";
+import { EditOrderDialog } from "./EditOrderDialog";
 
 interface Order {
   id: string;
@@ -252,6 +253,8 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
   
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [resendDialogOpen, setResendDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<string>('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
@@ -2132,6 +2135,29 @@ Thank you for contacting us! 🌟`;
                                       <Send className="h-4 w-4 mr-2" />
                                       {language === 'ar' ? 'إرسال واتساب' : 'Send WhatsApp'}
                                     </DropdownMenuItem>
+                                    
+                                    {/* Separator */}
+                                    <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
+                                      {language === 'ar' ? '──────────' : '──────────'}
+                                    </DropdownMenuItem>
+                                    
+                                    {/* Edit Order Details */}
+                                    <DropdownMenuItem onClick={() => {
+                                      setEditingOrderId(order.id);
+                                      setEditDialogOpen(true);
+                                    }}>
+                                      <span className="h-4 w-4 mr-2">✏️</span>
+                                      {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
+                                    </DropdownMenuItem>
+                                    
+                                    {/* Cancel Order */}
+                                    <DropdownMenuItem 
+                                      onClick={() => openActionDialog(order.id, 'cancel', 'cancel')}
+                                      className="text-destructive"
+                                    >
+                                      <XCircle className="h-4 w-4 mr-2" />
+                                      {language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+                                    </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               )}
@@ -2653,6 +2679,18 @@ Thank you for contacting us! 🌟`;
           hideIdCards={false}
         />
       )}
+      
+      {/* Edit Order Dialog */}
+      <EditOrderDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        orderId={editingOrderId}
+        onSuccess={() => {
+          // Refresh orders list
+          window.location.reload();
+        }}
+        language={language}
+      />
     </Card>
   );
 }
