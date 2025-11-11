@@ -109,7 +109,7 @@ export function ReadinessCheckDialog() {
             booking_time,
             booking_date_type,
             specialist_readiness_status,
-            customers!inner(name, area)
+            customers(name, area)
           `)
           .eq('status', 'upcoming')
           .eq('specialist_readiness_status', 'pending')
