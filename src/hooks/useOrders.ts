@@ -28,12 +28,14 @@ export interface Order {
   cancelled_by_role?: string | null;
   cancellation_reason?: string | null;
   cancelled_at?: string | null;
+  cleaning_equipment_required?: boolean | null;
   customers: {
     name: string;
     whatsapp_number: string;
     area?: string;
     budget?: string;
     budget_type?: string;
+    preferred_language?: string;
   };
   companies: {
     name: string;
@@ -95,7 +97,8 @@ export const useOrders = ({ page = 1, pageSize = 50, enabled = true }: UseOrders
         cancelled_by_role,
         cancellation_reason,
         cancelled_at,
-        customers!inner (name, whatsapp_number, area, budget, budget_type),
+        cleaning_equipment_required,
+        customers!inner (name, whatsapp_number, area, budget, budget_type, preferred_language),
         companies (name),
         order_specialists (
           id,
