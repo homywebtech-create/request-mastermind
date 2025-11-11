@@ -7,11 +7,19 @@ const corsHeaders = {
 
 interface Order {
   id: string;
+  order_number: string;
   booking_date: string;
   booking_time: string;
-  specialist_id: string;
   specialist_readiness_status: string | null;
   readiness_check_sent_at: string | null;
+  order_specialists?: Array<{
+    specialist_id: string;
+    is_accepted: boolean;
+    specialists?: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 // Helper to get hour from booking_time (morning, afternoon, evening)
@@ -46,12 +54,24 @@ Deno.serve(async (req) => {
     // Get all upcoming orders that need readiness check
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
-      .select('id, booking_date, booking_time, specialist_id, specialist_readiness_status, readiness_check_sent_at')
+      .select(`
+        id, 
+        booking_date, 
+        booking_time, 
+        order_number,
+        specialist_readiness_status, 
+        readiness_check_sent_at,
+        order_specialists!inner(
+          specialist_id,
+          is_accepted,
+          specialists(id, name)
+        )
+      `)
       .eq('status', 'upcoming')
-      .not('specialist_id', 'is', null)
       .not('booking_date', 'is', null)
       .not('booking_time', 'is', null)
-      .is('readiness_check_sent_at', null);
+      .is('readiness_check_sent_at', null)
+      .eq('order_specialists.is_accepted', true);
 
     if (ordersError) {
       console.error('Error fetching orders:', ordersError);
@@ -84,6 +104,16 @@ Deno.serve(async (req) => {
 
     for (const order of ordersToNotify) {
       try {
+        // Get all accepted specialists for this order
+        const acceptedSpecialists = order.order_specialists
+          ?.filter((os: any) => os.is_accepted)
+          .map((os: any) => os.specialist_id) || [];
+
+        if (acceptedSpecialists.length === 0) {
+          console.log(`No accepted specialists for order ${order.id}`);
+          continue;
+        }
+
         // Update order with readiness check sent timestamp
         const { error: updateError } = await supabase
           .from('orders')
@@ -99,17 +129,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Send push notification to specialist
+        // Send push notification to all accepted specialists
         const { data: notificationData, error: notificationError } = await supabase.functions.invoke(
           'send-push-notification',
           {
             body: {
-              specialistIds: [order.specialist_id],
+              specialistIds: acceptedSpecialists,
               title: 'تأكيد الجاهزية ⏰',
-              body: 'هل أنت جاهز للطلب القادم بعد ساعة؟ يرجى التأكيد الآن',
+              body: `هل أنت جاهزة للطلب ${order.order_number} القادم بعد ساعة؟ يرجى التأكيد الآن`,
               data: {
                 type: 'readiness_check',
                 orderId: order.id,
+                orderNumber: order.order_number,
                 requiresAction: 'true',
                 route: '/specialist/home'
               }
@@ -124,10 +155,11 @@ Deno.serve(async (req) => {
         results.push({
           orderId: order.id,
           success: true,
+          specialistCount: acceptedSpecialists.length,
           notificationSent: !notificationError
         });
 
-        console.log(`Readiness check sent for order ${order.id}`);
+        console.log(`Readiness check sent for order ${order.id} to ${acceptedSpecialists.length} specialist(s)`);
       } catch (error) {
         console.error(`Error processing order ${order.id}:`, error);
         results.push({ orderId: order.id, success: false, error: error.message });

@@ -68,7 +68,6 @@ export default function SpecialistHome() {
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [preferredLanguage, setPreferredLanguage] = useState('ar');
-  const [readinessCheckOrder, setReadinessCheckOrder] = useState<string | null>(null);
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const [translatedNotes, setTranslatedNotes] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -137,17 +136,6 @@ export default function SpecialistHome() {
           console.log('🔄 [Realtime] orders changed, refreshing data...');
           fetchOrders(specialistId);
           fetchNewOrdersCount(specialistId);
-          
-          // Check if this is a readiness check update
-          if (payload.new && typeof payload.new === 'object') {
-            const newOrder = payload.new as any;
-            if (newOrder.specialist_id === specialistId &&
-                newOrder.specialist_readiness_status === 'pending' && 
-                newOrder.readiness_check_sent_at &&
-                !newOrder.specialist_readiness_response_at) {
-              setReadinessCheckOrder(newOrder.id);
-            }
-          }
         }
       )
       .subscribe();
@@ -168,9 +156,6 @@ export default function SpecialistHome() {
         // Play urgent sound notification
         const soundNotif = getSoundNotification();
         soundNotif.playNewOrderSound();
-        
-        // Show readiness dialog
-        setReadinessCheckOrder(orderId);
         
         // Show toast
         toast({
@@ -1025,13 +1010,7 @@ export default function SpecialistHome() {
 
       <BottomNavigation newOrdersCount={newOrdersCount} specialistId={specialistId} />
       
-      {readinessCheckOrder && (
-        <ReadinessCheckDialog
-          orderId={readinessCheckOrder}
-          isOpen={!!readinessCheckOrder}
-          onClose={() => setReadinessCheckOrder(null)}
-        />
-      )}
+      <ReadinessCheckDialog />
       </div>
     </BusyGuard>
   );

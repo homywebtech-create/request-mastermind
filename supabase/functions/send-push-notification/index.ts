@@ -249,6 +249,10 @@ serve(async (req) => {
           // Test notifications → New orders page
           targetRoute = '/specialist-orders/new';
           console.log(`📍 [ROUTE] Test notification → ${targetRoute}`);
+        } else if (notificationType === 'readiness_check') {
+          // Readiness check → Home page where dialog will appear
+          targetRoute = '/specialist/home';
+          console.log(`📍 [ROUTE] Readiness check → ${targetRoute}`);
         } else {
           // Unknown type → default to offers
           console.log(`⚠️ [ROUTE] Unknown notification type: ${notificationType}, using default: ${targetRoute}`);

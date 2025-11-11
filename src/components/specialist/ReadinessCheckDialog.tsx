@@ -1,70 +1,211 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
-import { useTranslation } from '@/i18n';
+import { Clock, CheckCircle, XCircle } from 'lucide-react';
 
-interface ReadinessCheckDialogProps {
-  orderId: string;
-  isOpen: boolean;
-  onClose: () => void;
+interface Order {
+  id: string;
+  order_number: string;
+  booking_date: string;
+  booking_time: string;
+  booking_date_type: string;
+  specialist_readiness_status: string | null;
+  customers: {
+    name: string;
+    area: string;
+  } | null;
 }
 
-export function ReadinessCheckDialog({ orderId, isOpen, onClose }: ReadinessCheckDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function ReadinessCheckDialog() {
+  const [open, setOpen] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [currentOrderIndex, setCurrentOrderIndex] = useState(0);
   const [notReadyReason, setNotReadyReason] = useState('');
   const [showReasonInput, setShowReasonInput] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   const { language } = useLanguage();
-  const isAr = language === 'ar';
 
-  const handleResponse = async (isReady: boolean) => {
-    if (!isReady && !notReadyReason.trim() && !showReasonInput) {
-      setShowReasonInput(true);
-      return;
-    }
+  const texts = {
+    ar: {
+      title: '⏰ تأكيد الجاهزية',
+      description: 'لديك طلب قادم بعد ساعة. هل أنتِ جاهزة؟',
+      orderNumber: 'رقم الطلب',
+      customer: 'العميل',
+      area: 'المنطقة',
+      bookingTime: 'الموعد',
+      morning: 'صباحاً',
+      afternoon: 'ظهراً',
+      evening: 'مساءً',
+      ready: 'نعم، أنا جاهزة',
+      notReady: 'لا، لن أستطيع الذهاب',
+      reasonLabel: 'يرجى ذكر السبب',
+      reasonPlaceholder: 'اكتبي السبب...',
+      submit: 'إرسال',
+      cancel: 'إلغاء',
+      successReady: '✅ تم تأكيد الجاهزية بنجاح',
+      successNotReady: '❌ تم إبلاغ الإدارة بعدم القدرة على الحضور',
+      error: 'حدث خطأ أثناء حفظ الرد',
+    },
+    en: {
+      title: '⏰ Readiness Confirmation',
+      description: 'You have an order in one hour. Are you ready?',
+      orderNumber: 'Order Number',
+      customer: 'Customer',
+      area: 'Area',
+      bookingTime: 'Appointment',
+      morning: 'Morning',
+      afternoon: 'Afternoon',
+      evening: 'Evening',
+      ready: 'Yes, I am ready',
+      notReady: 'No, I cannot attend',
+      reasonLabel: 'Please state the reason',
+      reasonPlaceholder: 'Enter reason...',
+      submit: 'Submit',
+      cancel: 'Cancel',
+      successReady: '✅ Readiness confirmed successfully',
+      successNotReady: '❌ Management notified of inability to attend',
+      error: 'An error occurred while saving the response',
+    },
+  };
 
-    if (!isReady && !notReadyReason.trim()) {
-      toast({
-        title: isAr ? 'خطأ' : 'Error',
-        description: isAr ? 'يرجى توضيح السبب' : 'Please provide a reason',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const t = texts[language];
+
+  // Fetch orders that need readiness confirmation
+  useEffect(() => {
+    const fetchPendingOrders = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get specialist info
+        const { data: specialist } = await supabase
+          .from('specialists')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!specialist) return;
+
+        // Get orders that need readiness check
+        const { data: ordersData, error } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            order_number,
+            booking_date,
+            booking_time,
+            booking_date_type,
+            specialist_readiness_status,
+            customers!inner(name, area)
+          `)
+          .eq('status', 'upcoming')
+          .eq('specialist_readiness_status', 'pending')
+          .not('readiness_check_sent_at', 'is', null);
+
+        if (error) {
+          console.error('Error fetching orders:', error);
+          return;
+        }
+
+        // Filter orders assigned to this specialist
+        const relevantOrders = ordersData?.filter(async (order) => {
+          const { data: orderSpec } = await supabase
+            .from('order_specialists')
+            .select('specialist_id')
+            .eq('order_id', order.id)
+            .eq('specialist_id', specialist.id)
+            .eq('is_accepted', true)
+            .single();
+          
+          return !!orderSpec;
+        });
+
+        if (relevantOrders && relevantOrders.length > 0) {
+          const filtered = await Promise.all(relevantOrders);
+          const finalOrders = ordersData?.filter((_, index) => filtered[index]) || [];
+          if (finalOrders.length > 0) {
+            setOrders(finalOrders as Order[]);
+            setOpen(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchPendingOrders:', error);
+      }
+    };
+
+    fetchPendingOrders();
+
+    // Set up realtime subscription for new readiness checks
+    const channel = supabase
+      .channel('readiness-checks')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: 'specialist_readiness_status=eq.pending',
+        },
+        () => {
+          fetchPendingOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const currentOrder = orders[currentOrderIndex];
+
+  const formatBookingTime = (time: string) => {
+    if (time === 'morning') return t.morning;
+    if (time === 'afternoon') return t.afternoon;
+    if (time === 'evening') return t.evening;
+    return time;
+  };
+
+  const handleReady = async () => {
+    if (!currentOrder || isSubmitting) return;
 
     setIsSubmitting(true);
-
     try {
       const { error } = await supabase
         .from('orders')
         .update({
-          specialist_readiness_status: isReady ? 'ready' : 'not_ready',
+          specialist_readiness_status: 'ready',
           specialist_readiness_response_at: new Date().toISOString(),
-          specialist_not_ready_reason: isReady ? null : notReadyReason,
+          specialist_not_ready_reason: null,
         })
-        .eq('id', orderId);
+        .eq('id', currentOrder.id);
 
       if (error) throw error;
 
       toast({
-        title: isAr ? 'نجح' : 'Success',
-        description: isReady 
-          ? (isAr ? 'تم تأكيد جاهزيتك للطلب' : 'Your readiness has been confirmed')
-          : (isAr ? 'تم تسجيل ردك' : 'Your response has been recorded'),
+        title: t.successReady,
+        description: `${t.orderNumber}: ${currentOrder.order_number}`,
+        className: 'bg-green-50 border-green-500',
       });
 
-      onClose();
-      setNotReadyReason('');
-      setShowReasonInput(false);
+      moveToNextOrder();
     } catch (error) {
       console.error('Error updating readiness:', error);
       toast({
-        title: isAr ? 'خطأ' : 'Error',
-        description: isAr ? 'فشل في تحديث حالة الجاهزية' : 'Failed to update readiness status',
+        title: t.error,
         variant: 'destructive',
       });
     } finally {
@@ -72,78 +213,171 @@ export function ReadinessCheckDialog({ orderId, isOpen, onClose }: ReadinessChec
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            {isAr ? 'تأكيد الجاهزية' : 'Readiness Check'}
-          </DialogTitle>
-          <DialogDescription className="text-base">
-            {isAr ? 'لديك طلب قادم خلال ساعة. هل أنت جاهز؟' : 'You have an upcoming order in one hour. Are you ready?'}
-          </DialogDescription>
-        </DialogHeader>
+  const handleNotReady = async () => {
+    if (!showReasonInput) {
+      setShowReasonInput(true);
+      return;
+    }
 
-        <div className="space-y-4 py-4">
-          {!showReasonInput ? (
-            <div className="flex flex-col gap-3">
-              <Button
-                onClick={() => handleResponse(true)}
-                disabled={isSubmitting}
-                className="w-full h-12 text-lg"
-                variant="default"
-              >
-                ✓ {isAr ? 'نعم، أنا جاهز' : 'Yes, I\'m Ready'}
-              </Button>
-              <Button
-                onClick={() => handleResponse(false)}
-                disabled={isSubmitting}
-                className="w-full h-12 text-lg"
-                variant="destructive"
-              >
-                ✗ {isAr ? 'لا، لست جاهزاً' : 'No, I\'m Not Ready'}
-              </Button>
+    if (!currentOrder || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          specialist_readiness_status: 'not_ready',
+          specialist_readiness_response_at: new Date().toISOString(),
+          specialist_not_ready_reason: notReadyReason || null,
+        })
+        .eq('id', currentOrder.id);
+
+      if (error) throw error;
+
+      toast({
+        title: t.successNotReady,
+        description: `${t.orderNumber}: ${currentOrder.order_number}`,
+        variant: 'destructive',
+      });
+
+      moveToNextOrder();
+    } catch (error) {
+      console.error('Error updating readiness:', error);
+      toast({
+        title: t.error,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const moveToNextOrder = () => {
+    setShowReasonInput(false);
+    setNotReadyReason('');
+
+    if (currentOrderIndex < orders.length - 1) {
+      setCurrentOrderIndex(currentOrderIndex + 1);
+    } else {
+      setOpen(false);
+      setOrders([]);
+      setCurrentOrderIndex(0);
+    }
+  };
+
+  const handleClose = () => {
+    if (showReasonInput) {
+      setShowReasonInput(false);
+      return;
+    }
+    setOpen(false);
+  };
+
+  if (!currentOrder) return null;
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogContent className="max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-xl">
+            <Clock className="h-6 w-6 text-orange-500 animate-pulse" />
+            {t.title}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-base">
+            {t.description}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="space-y-3 py-4">
+          <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+            <div>
+              <span className="font-semibold">{t.orderNumber}:</span>{' '}
+              <span className="text-primary">{currentOrder.order_number}</span>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="reason" className="text-base font-semibold">
-                  {isAr ? 'سبب عدم الجاهزية' : 'Reason for Not Ready'}
-                </Label>
-                <Textarea
-                  id="reason"
-                  value={notReadyReason}
-                  onChange={(e) => setNotReadyReason(e.target.value)}
-                  placeholder={isAr ? 'يرجى توضيح سبب عدم الجاهزية...' : 'Please explain why you\'re not ready...'}
-                  className="mt-2 min-h-[100px]"
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    setShowReasonInput(false);
-                    setNotReadyReason('');
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={isSubmitting}
-                >
-                  {isAr ? 'إلغاء' : 'Cancel'}
-                </Button>
-                <Button
-                  onClick={() => handleResponse(false)}
-                  disabled={isSubmitting || !notReadyReason.trim()}
-                  className="flex-1"
-                  variant="destructive"
-                >
-                  {isAr ? 'إرسال' : 'Submit'}
-                </Button>
-              </div>
+            {currentOrder.customers && (
+              <>
+                <div>
+                  <span className="font-semibold">{t.customer}:</span>{' '}
+                  {currentOrder.customers.name}
+                </div>
+                <div>
+                  <span className="font-semibold">{t.area}:</span>{' '}
+                  {currentOrder.customers.area}
+                </div>
+              </>
+            )}
+            <div>
+              <span className="font-semibold">{t.bookingTime}:</span>{' '}
+              {currentOrder.booking_date} - {formatBookingTime(currentOrder.booking_time)}
+            </div>
+          </div>
+
+          {showReasonInput && (
+            <div className="space-y-2">
+              <Label htmlFor="reason">{t.reasonLabel}</Label>
+              <Textarea
+                id="reason"
+                value={notReadyReason}
+                onChange={(e) => setNotReadyReason(e.target.value)}
+                placeholder={t.reasonPlaceholder}
+                rows={3}
+                className="resize-none"
+              />
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
+          {!showReasonInput ? (
+            <>
+              <Button
+                onClick={handleReady}
+                disabled={isSubmitting}
+                className="w-full bg-green-600 hover:bg-green-700"
+                size="lg"
+              >
+                <CheckCircle className="h-5 w-5 mr-2" />
+                {t.ready}
+              </Button>
+              <Button
+                onClick={handleNotReady}
+                disabled={isSubmitting}
+                variant="destructive"
+                className="w-full"
+                size="lg"
+              >
+                <XCircle className="h-5 w-5 mr-2" />
+                {t.notReady}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={handleNotReady}
+                disabled={isSubmitting}
+                variant="destructive"
+                className="w-full"
+              >
+                {t.submit}
+              </Button>
+              <Button
+                onClick={handleClose}
+                disabled={isSubmitting}
+                variant="outline"
+                className="w-full"
+              >
+                {t.cancel}
+              </Button>
+            </>
+          )}
+
+          {orders.length > 1 && (
+            <div className="text-center text-sm text-muted-foreground mt-2">
+              {currentOrderIndex + 1} / {orders.length}
+            </div>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
