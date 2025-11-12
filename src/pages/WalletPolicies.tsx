@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +30,15 @@ export default function WalletPolicies() {
   const t = useTranslation(language).specialist;
   const queryClient = useQueryClient();
   const [editingPolicy, setEditingPolicy] = useState<WalletPolicy | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newPolicy, setNewPolicy] = useState({
+    policy_key: '',
+    policy_name_ar: '',
+    policy_name_en: '',
+    compensation_amount: 0,
+    description_ar: '',
+    description_en: '',
+  });
 
   const { data: policies, isLoading } = useQuery({
     queryKey: ["wallet-policies"],
@@ -40,6 +50,47 @@ export default function WalletPolicies() {
 
       if (error) throw error;
       return data as WalletPolicy[];
+    },
+  });
+
+  const createPolicyMutation = useMutation({
+    mutationFn: async (policy: typeof newPolicy) => {
+      const { error } = await supabase
+        .from("wallet_policies")
+        .insert({
+          policy_key: policy.policy_key,
+          policy_name_ar: policy.policy_name_ar,
+          policy_name_en: policy.policy_name_en,
+          compensation_amount: policy.compensation_amount,
+          description_ar: policy.description_ar,
+          description_en: policy.description_en,
+          is_active: true,
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wallet-policies"] });
+      toast({
+        title: language === "ar" ? "تم الإنشاء" : "Created",
+        description: language === "ar" ? "تم إنشاء القانون بنجاح" : "Policy created successfully",
+      });
+      setShowCreateDialog(false);
+      setNewPolicy({
+        policy_key: '',
+        policy_name_ar: '',
+        policy_name_en: '',
+        compensation_amount: 0,
+        description_ar: '',
+        description_en: '',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: language === "ar" ? "خطأ" : "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -90,14 +141,89 @@ export default function WalletPolicies() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">{t.walletPolicies}</h1>
-        <p className="text-muted-foreground mt-2">
-          {language === "ar"
-            ? "إدارة قوانين التعويضات والمحفظة"
-            : "Manage compensation and wallet policies"}
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">{t.walletPolicies}</h1>
+          <p className="text-muted-foreground mt-2">
+            {language === "ar"
+              ? "إدارة قوانين التعويضات والمحفظة"
+              : "Manage compensation and wallet policies"}
+          </p>
+        </div>
+        <Button onClick={() => setShowCreateDialog(true)}>
+          {language === "ar" ? "إضافة قانون جديد" : "Add New Policy"}
+        </Button>
       </div>
+
+      {/* Create Policy Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{language === "ar" ? "إضافة قانون جديد" : "Add New Policy"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{language === "ar" ? "مفتاح القانون" : "Policy Key"}</Label>
+              <Input
+                value={newPolicy.policy_key}
+                onChange={(e) => setNewPolicy({ ...newPolicy, policy_key: e.target.value })}
+                placeholder="customer_late_cancellation"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{language === "ar" ? "اسم القانون (عربي)" : "Policy Name (Arabic)"}</Label>
+                <Input
+                  value={newPolicy.policy_name_ar}
+                  onChange={(e) => setNewPolicy({ ...newPolicy, policy_name_ar: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>{language === "ar" ? "اسم القانون (إنجليزي)" : "Policy Name (English)"}</Label>
+                <Input
+                  value={newPolicy.policy_name_en}
+                  onChange={(e) => setNewPolicy({ ...newPolicy, policy_name_en: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>{t.compensationAmount}</Label>
+              <Input
+                type="number"
+                value={newPolicy.compensation_amount}
+                onChange={(e) => setNewPolicy({ ...newPolicy, compensation_amount: parseFloat(e.target.value) })}
+              />
+            </div>
+            <div>
+              <Label>{language === "ar" ? "الوصف (عربي)" : "Description (Arabic)"}</Label>
+              <Textarea
+                value={newPolicy.description_ar}
+                onChange={(e) => setNewPolicy({ ...newPolicy, description_ar: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label>{language === "ar" ? "الوصف (إنجليزي)" : "Description (English)"}</Label>
+              <Textarea
+                value={newPolicy.description_en}
+                onChange={(e) => setNewPolicy({ ...newPolicy, description_en: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <Button
+              onClick={() => createPolicyMutation.mutate(newPolicy)}
+              disabled={createPolicyMutation.isPending}
+              className="w-full"
+            >
+              {createPolicyMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                language === "ar" ? "حفظ" : "Save"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-4">
         {policies?.map((policy) => (
