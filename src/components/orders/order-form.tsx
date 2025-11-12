@@ -14,6 +14,8 @@ import { Plus, Phone, User, Users, Check, ChevronsUpDown, ArrowRight, ArrowLeft 
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useCustomerHistory } from "@/hooks/useCustomerHistory";
+import { CustomerHistoryCard } from "./CustomerHistoryCard";
 
 interface Service {
   id: string;
@@ -134,6 +136,13 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
   useEffect(() => {
     localStorage.setItem('orderFormData', JSON.stringify(formData));
   }, [formData]);
+
+  // Get customer history when phone number is entered
+  const selectedCountry = countries.find(c => c.code === formData.countryCode);
+  const fullWhatsappNumber = formData.phoneNumber && formData.phoneNumber.length >= 7 
+    ? `${selectedCountry?.dialCode}${formData.phoneNumber}` 
+    : '';
+  const { data: customerHistory, isLoading: isLoadingHistory } = useCustomerHistory(fullWhatsappNumber);
 
   const totalSteps = 4;
 
@@ -808,6 +817,25 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                 </p>
               </div>
             </div>
+
+            {/* Customer History Card */}
+            {customerHistory && customerHistory.customer && (
+              <div className="mt-6">
+                <CustomerHistoryCard 
+                  history={customerHistory} 
+                  language={formData.preferredLanguage}
+                />
+              </div>
+            )}
+            
+            {isLoadingHistory && formData.phoneNumber && formData.phoneNumber.length >= 7 && (
+              <div className="mt-6 p-4 border border-dashed border-primary/30 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span>{formData.preferredLanguage === 'ar' ? 'جاري تحميل سجل العميل...' : 'Loading customer history...'}</span>
+                </div>
+              </div>
+            )}
             </div>
           )}
 
