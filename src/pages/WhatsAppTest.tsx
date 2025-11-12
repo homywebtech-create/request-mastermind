@@ -53,7 +53,7 @@ export default function WhatsAppTest() {
           to: phoneNumber,
           useTemplate: true,
           templateName: 'hello_world',
-          templateLanguage: 'en',
+          templateLanguage: 'en_US',
         } : {
           to: phoneNumber,
           message: message,
