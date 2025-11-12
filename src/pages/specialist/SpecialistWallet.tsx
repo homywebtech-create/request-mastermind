@@ -4,9 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, Plus, ArrowDownCircle, Receipt, Calendar, Hash } from "lucide-react";
-import BottomNavigation from "@/components/specialist/BottomNavigation";
-import LanguageSelector from "@/components/specialist/LanguageSelector";
+import { Wallet, Plus, ArrowDownCircle, Receipt, Calendar, Hash, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancialNotificationsPanel } from "@/components/specialist/FinancialNotificationsPanel";
@@ -234,19 +232,21 @@ export default function SpecialistWallet() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
           <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/specialist/home')}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
             <h1 className="text-2xl font-bold">المحفظة</h1>
-            {specialistId && (
-              <LanguageSelector 
-                specialistId={specialistId} 
-                currentLanguage={preferredLanguage}
-                onLanguageChange={(lang) => setPreferredLanguage(lang)}
-              />
-            )}
+            <div className="w-10"></div>
           </div>
         </div>
       </div>
@@ -255,19 +255,19 @@ export default function SpecialistWallet() {
       <div className="max-w-screen-lg mx-auto p-4">
         <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white border-none shadow-xl mb-6 animate-fade-in">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm">
                   <Wallet className="h-8 w-8" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-sm opacity-90">رصيدك الحالي</p>
                   <p className="text-4xl font-bold">{balance.toFixed(2)} ريال</p>
                 </div>
               </div>
               <Button 
                 onClick={handleTopUp}
-                className="bg-white text-purple-600 hover:bg-white/90 font-semibold"
+                className="w-full bg-white text-purple-600 hover:bg-white/90 font-semibold py-6 text-lg"
               >
                 <Plus className="h-5 w-5 ml-2" />
                 شحن رصيد
@@ -424,8 +424,6 @@ export default function SpecialistWallet() {
           )}
         </DialogContent>
       </Dialog>
-
-      <BottomNavigation newOrdersCount={newOrdersCount} />
     </div>
   );
 }
