@@ -204,51 +204,34 @@ export function OnlineStatusToggle({ specialistId }: OnlineStatusToggleProps) {
 
   return (
     <>
-      <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
-        <div className="flex items-center gap-2">
-          <div className={`p-1.5 rounded-full ${
-            isOnline 
-              ? 'bg-green-500' 
-              : 'bg-gray-400'
-          }`}>
-            {isOnline ? (
-              <Wifi className="h-3.5 w-3.5 text-white" />
-            ) : (
-              <WifiOff className="h-3.5 w-3.5 text-white" />
-            )}
-          </div>
-          <div className="text-white">
-            <Badge 
-              variant={isOnline ? "default" : "secondary"}
-              className={`text-xs font-semibold ${
-                isOnline 
-                  ? 'bg-green-500 hover:bg-green-600' 
-                  : 'bg-gray-500'
-              }`}
-            >
-              {isOnline
-                ? language === "ar" ? "أونلاين" : "Online"
-                : language === "ar" ? "أوفلاين" : "Offline"}
-            </Badge>
-            {!isOnline && offlineUntil && (
-              <div className="text-[10px] opacity-90 mt-0.5 flex items-center gap-1">
-                <Clock className="h-2.5 w-2.5" />
-                {getTimeRemaining()}
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
         <Button
           onClick={handleToggle}
           disabled={loading}
-          variant={isOnline ? "destructive" : "default"}
-          size="sm"
-          className="h-8 min-w-[85px] text-xs"
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+            isOnline
+              ? 'bg-green-500 hover:bg-green-600 text-white'
+              : 'bg-red-500 hover:bg-red-600 text-white'
+          }`}
         >
-          {isOnline
-            ? language === "ar" ? "قو أوفلاين" : "Go Offline"
-            : language === "ar" ? "قو أونلاين" : "Go Online"}
+          {isOnline ? (
+            <Wifi className="h-4 w-4" />
+          ) : (
+            <WifiOff className="h-4 w-4" />
+          )}
+          <span>
+            {isOnline
+              ? language === "ar" ? "أونلاين" : "Online"
+              : language === "ar" ? "أوفلاين" : "Offline"}
+          </span>
         </Button>
+        
+        {!isOnline && offlineUntil && (
+          <div className="text-white text-[10px] opacity-90 flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {getTimeRemaining()}
+          </div>
+        )}
       </div>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
