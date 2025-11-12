@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 
@@ -22,6 +22,11 @@ interface WalletPolicy {
   description_ar: string;
   description_en: string;
   is_active: boolean;
+  policy_type: 'specialist' | 'customer' | 'shared';
+  implementation_status: 'pending' | 'in_development' | 'testing' | 'implemented' | 'verified';
+  tested_at: string | null;
+  tested_by: string | null;
+  test_notes: string | null;
 }
 
 export default function WalletPolicies() {
@@ -38,6 +43,8 @@ export default function WalletPolicies() {
     compensation_amount: 0,
     description_ar: '',
     description_en: '',
+    policy_type: 'specialist' as const,
+    implementation_status: 'pending' as const,
   });
 
   const { data: policies, isLoading } = useQuery({
@@ -64,6 +71,8 @@ export default function WalletPolicies() {
           compensation_amount: policy.compensation_amount,
           description_ar: policy.description_ar,
           description_en: policy.description_en,
+          policy_type: policy.policy_type,
+          implementation_status: policy.implementation_status,
           is_active: true,
         });
 
@@ -83,6 +92,8 @@ export default function WalletPolicies() {
         compensation_amount: 0,
         description_ar: '',
         description_en: '',
+        policy_type: 'specialist',
+        implementation_status: 'pending',
       });
     },
     onError: (error) => {
@@ -103,6 +114,8 @@ export default function WalletPolicies() {
           description_ar: policy.description_ar,
           description_en: policy.description_en,
           is_active: policy.is_active,
+          policy_type: policy.policy_type,
+          implementation_status: policy.implementation_status,
         })
         .eq("id", policy.id);
 
@@ -115,6 +128,38 @@ export default function WalletPolicies() {
         description: language === "ar" ? "تم تحديث القانون بنجاح" : "Policy updated successfully",
       });
       setEditingPolicy(null);
+    },
+    onError: (error) => {
+      toast({
+        title: language === "ar" ? "خطأ" : "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verifyPolicyMutation = useMutation({
+    mutationFn: async ({ policyId, notes }: { policyId: string; notes?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from("wallet_policies")
+        .update({
+          implementation_status: 'verified',
+          tested_at: new Date().toISOString(),
+          tested_by: user?.id,
+          test_notes: notes,
+        })
+        .eq("id", policyId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wallet-policies"] });
+      toast({
+        title: language === "ar" ? "تم التأكيد" : "Verified",
+        description: language === "ar" ? "تم تأكيد القانون بنجاح" : "Policy verified successfully",
+      });
     },
     onError: (error) => {
       toast({
@@ -210,6 +255,36 @@ export default function WalletPolicies() {
                 rows={3}
               />
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{language === "ar" ? "نوع القانون" : "Policy Type"}</Label>
+                <select
+                  value={newPolicy.policy_type}
+                  onChange={(e) => setNewPolicy({ ...newPolicy, policy_type: e.target.value as any })}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                >
+                  <option value="specialist">{language === "ar" ? "للمحترفين" : "For Specialists"}</option>
+                  <option value="customer">{language === "ar" ? "للعملاء" : "For Customers"}</option>
+                  <option value="shared">{language === "ar" ? "مشترك" : "Shared"}</option>
+                </select>
+              </div>
+              <div>
+                <Label>{language === "ar" ? "حالة التطبيق" : "Implementation Status"}</Label>
+                <select
+                  value={newPolicy.implementation_status}
+                  onChange={(e) => setNewPolicy({ ...newPolicy, implementation_status: e.target.value as any })}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                >
+                  <option value="pending">{language === "ar" ? "قيد الانتظار" : "Pending"}</option>
+                  <option value="in_development">{language === "ar" ? "قيد التطوير" : "In Development"}</option>
+                  <option value="testing">{language === "ar" ? "قيد الاختبار" : "Testing"}</option>
+                  <option value="implemented">{language === "ar" ? "تم التطبيق" : "Implemented"}</option>
+                  <option value="verified">{language === "ar" ? "تم التأكيد" : "Verified"}</option>
+                </select>
+              </div>
+            </div>
+            
             <Button
               onClick={() => createPolicyMutation.mutate(newPolicy)}
               disabled={createPolicyMutation.isPending}
@@ -310,6 +385,35 @@ export default function WalletPolicies() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>{language === "ar" ? "نوع القانون" : "Policy Type"}</Label>
+                      <select
+                        value={editingPolicy.policy_type}
+                        onChange={(e) => setEditingPolicy({ ...editingPolicy, policy_type: e.target.value as any })}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background mt-1"
+                      >
+                        <option value="specialist">{language === "ar" ? "للمحترفين" : "For Specialists"}</option>
+                        <option value="customer">{language === "ar" ? "للعملاء" : "For Customers"}</option>
+                        <option value="shared">{language === "ar" ? "مشترك" : "Shared"}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label>{language === "ar" ? "حالة التطبيق" : "Implementation Status"}</Label>
+                      <select
+                        value={editingPolicy.implementation_status}
+                        onChange={(e) => setEditingPolicy({ ...editingPolicy, implementation_status: e.target.value as any })}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background mt-1"
+                      >
+                        <option value="pending">{language === "ar" ? "قيد الانتظار" : "Pending"}</option>
+                        <option value="in_development">{language === "ar" ? "قيد التطوير" : "In Development"}</option>
+                        <option value="testing">{language === "ar" ? "قيد الاختبار" : "Testing"}</option>
+                        <option value="implemented">{language === "ar" ? "تم التطبيق" : "Implemented"}</option>
+                        <option value="verified">{language === "ar" ? "تم التأكيد" : "Verified"}</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <Button
                     onClick={handleSave}
                     disabled={updatePolicyMutation.isPending}
@@ -326,13 +430,48 @@ export default function WalletPolicies() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t.compensationAmount}:</span>
                     <span className="font-semibold">
                       {policy.compensation_amount} {language === "ar" ? "ريال" : "SAR"}
                     </span>
                   </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{language === "ar" ? "نوع القانون:" : "Policy Type:"}</span>
+                    <span className="font-medium">
+                      {policy.policy_type === 'specialist' 
+                        ? (language === "ar" ? "للمحترفين" : "For Specialists")
+                        : policy.policy_type === 'customer'
+                        ? (language === "ar" ? "للعملاء" : "For Customers")
+                        : (language === "ar" ? "مشترك" : "Shared")
+                      }
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{language === "ar" ? "حالة التطبيق:" : "Implementation:"}</span>
+                    <span className={`font-medium ${
+                      policy.implementation_status === 'verified' ? 'text-green-600' :
+                      policy.implementation_status === 'implemented' ? 'text-blue-600' :
+                      policy.implementation_status === 'testing' ? 'text-yellow-600' :
+                      policy.implementation_status === 'in_development' ? 'text-orange-600' :
+                      'text-gray-600'
+                    }`}>
+                      {policy.implementation_status === 'verified' 
+                        ? (language === "ar" ? "✓ تم التأكيد" : "✓ Verified")
+                        : policy.implementation_status === 'implemented'
+                        ? (language === "ar" ? "تم التطبيق" : "Implemented")
+                        : policy.implementation_status === 'testing'
+                        ? (language === "ar" ? "قيد الاختبار" : "Testing")
+                        : policy.implementation_status === 'in_development'
+                        ? (language === "ar" ? "قيد التطوير" : "In Development")
+                        : (language === "ar" ? "قيد الانتظار" : "Pending")
+                      }
+                    </span>
+                  </div>
+                  
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t.policyStatus}:</span>
                     <span className={policy.is_active ? "text-green-600" : "text-red-600"}>
@@ -342,6 +481,21 @@ export default function WalletPolicies() {
                       }
                     </span>
                   </div>
+                  
+                  {policy.implementation_status === 'implemented' && (
+                    <Button
+                      onClick={() => verifyPolicyMutation.mutate({ policyId: policy.id })}
+                      disabled={verifyPolicyMutation.isPending}
+                      className="w-full mt-2 bg-green-600 hover:bg-green-700"
+                      size="sm"
+                    >
+                      {verifyPolicyMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        language === "ar" ? "✓ تأكيد القانون" : "✓ Verify Policy"
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>

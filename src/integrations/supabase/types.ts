@@ -1403,10 +1403,15 @@ export type Database = {
           description_ar: string | null
           description_en: string | null
           id: string
+          implementation_status: string
           is_active: boolean
           policy_key: string
           policy_name_ar: string
           policy_name_en: string
+          policy_type: string
+          test_notes: string | null
+          tested_at: string | null
+          tested_by: string | null
           updated_at: string
         }
         Insert: {
@@ -1415,10 +1420,15 @@ export type Database = {
           description_ar?: string | null
           description_en?: string | null
           id?: string
+          implementation_status?: string
           is_active?: boolean
           policy_key: string
           policy_name_ar: string
           policy_name_en: string
+          policy_type?: string
+          test_notes?: string | null
+          tested_at?: string | null
+          tested_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -1427,10 +1437,15 @@ export type Database = {
           description_ar?: string | null
           description_en?: string | null
           id?: string
+          implementation_status?: string
           is_active?: boolean
           policy_key?: string
           policy_name_ar?: string
           policy_name_en?: string
+          policy_type?: string
+          test_notes?: string | null
+          tested_at?: string | null
+          tested_by?: string | null
           updated_at?: string
         }
         Relationships: []
