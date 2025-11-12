@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe, CheckCircle, XCircle, Clock, DollarSign, Package, BarChart3, Image as ImageIcon } from "lucide-react";
-import BottomNavigation from "@/components/specialist/BottomNavigation";
+import { LogOut, User, Phone, Building2, Briefcase, Star, FileText, MapPin, Languages, AlertCircle, Calendar, TestTube, Globe, CheckCircle, XCircle, Clock, DollarSign, Package, BarChart3, Image as ImageIcon, ArrowLeft } from "lucide-react";
 import BusyGuard from "@/components/specialist/BusyGuard";
 import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -339,22 +338,24 @@ export default function SpecialistProfile() {
 
   return (
     <BusyGuard specialistId={specialist?.id || ''} allowWhenBusy={false}>
-      <div className="min-h-screen bg-background pb-24">
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
           <div className="flex items-center justify-between">
-            <div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/specialist/home')}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
+            <div className="text-center flex-1">
               <h1 className="text-2xl font-bold mb-1">{isAr ? "الإعدادات" : "Settings"}</h1>
               <p className="text-sm opacity-90">{t.accountInfo}</p>
             </div>
-            {specialist && (
-              <LanguageSelector 
-                specialistId={specialist.id} 
-                currentLanguage={specialist.preferred_language}
-                onLanguageChange={(lang) => setSpecialist({ ...specialist, preferred_language: lang })}
-              />
-            )}
+            <div className="w-10"></div>
           </div>
         </div>
       </div>
@@ -436,6 +437,29 @@ export default function SpecialistProfile() {
                     <p className="text-xs text-muted-foreground">{t.sinceStart}</p>
                   </div>
                 </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Language Section */}
+          <AccordionItem value="language" className="border rounded-lg bg-white/90 backdrop-blur-sm border-white/30 animate-fade-in" style={{ animationDelay: '50ms' }}>
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Globe className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">{isAr ? "اللغة" : "Language"}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-4">
+              <div className="pt-2">
+                {specialist && (
+                  <LanguageSelector 
+                    specialistId={specialist.id} 
+                    currentLanguage={specialist.preferred_language}
+                    onLanguageChange={(lang) => setSpecialist({ ...specialist, preferred_language: lang })}
+                  />
+                )}
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -732,7 +756,7 @@ export default function SpecialistProfile() {
         </Accordion>
 
         {/* Logout Button */}
-        <div className="mt-6">
+        <div className="mt-6 mb-6">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 
@@ -761,8 +785,6 @@ export default function SpecialistProfile() {
           </AlertDialog>
         </div>
       </div>
-
-      <BottomNavigation newOrdersCount={newOrdersCount} specialistId={specialist?.id} />
       </div>
     </BusyGuard>
   );
