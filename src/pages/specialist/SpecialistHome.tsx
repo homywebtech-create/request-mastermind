@@ -109,6 +109,16 @@ export default function SpecialistHome() {
     fetchOrders(specialistId);
     fetchNewOrdersCount(specialistId);
 
+    // Debounced refresh function
+    let refreshTimer: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        fetchOrders(specialistId);
+        fetchNewOrdersCount(specialistId);
+      }, 1000); // Wait 1 second before refreshing
+    };
+
     const channel = supabase
       .channel('specialist-home-changes')
       .on(
@@ -119,32 +129,23 @@ export default function SpecialistHome() {
           table: 'order_specialists',
           filter: `specialist_id=eq.${specialistId}`
         },
-        () => {
-          console.log('🔄 [Realtime] order_specialists changed, refreshing data...');
-          fetchOrders(specialistId);
-          fetchNewOrdersCount(specialistId);
-        }
+        debouncedRefresh
       )
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
-          table: 'orders'
+          table: 'orders',
+          filter: `specialist_id=eq.${specialistId}`
         },
-        (payload) => {
-          console.log('🔄 [Realtime] orders changed, refreshing data...');
-          fetchOrders(specialistId);
-          fetchNewOrdersCount(specialistId);
-        }
+        debouncedRefresh
       )
       .subscribe();
 
     // Listen for navigation events from push notifications
     const handleNavigationEvent = () => {
-      console.log('📱 [Navigation Event] Detected, refreshing orders...');
-      fetchOrders(specialistId);
-      fetchNewOrdersCount(specialistId);
+      debouncedRefresh();
     };
 
     // Listen for readiness check notifications
@@ -263,14 +264,10 @@ export default function SpecialistHome() {
 
   const fetchOrders = async (specId: string) => {
     try {
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('🔍 [SpecialistHome] Fetching orders for specialist:', specId);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setIsLoading(true);
 
       // First, verify authentication
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('🔐 [FETCH] Current user:', user?.id);
 
       // Get all accepted orders for this specialist from order_specialists
       const { data: acceptedOrderSpecs, error: orderSpecsError } = await supabase
@@ -280,12 +277,10 @@ export default function SpecialistHome() {
         .eq('is_accepted', true);
 
       if (orderSpecsError) {
-        console.error('❌ Error fetching accepted order specialists:', orderSpecsError);
         throw orderSpecsError;
       }
 
       const acceptedOrderIds = acceptedOrderSpecs?.map(os => os.order_id) || [];
-      console.log('✅ Accepted order IDs:', acceptedOrderIds);
 
       // Get confirmed orders (show all confirmed orders regardless of date)
       let query = supabase
@@ -312,20 +307,11 @@ export default function SpecialistHome() {
 
       const { data: ordersData, error: ordersError } = await query;
 
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📊 [SpecialistHome] Orders query result:');
-      console.log('   Specialist ID:', specId);
-      console.log('   Count:', ordersData?.length || 0);
-      console.log('   Error:', ordersError);
-      console.log('   Orders:', JSON.stringify(ordersData, null, 2));
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
       if (ordersError) {
-        console.error('❌ [SpecialistHome] Error fetching orders:', ordersError);
+        console.error('Error fetching orders:', ordersError);
       }
 
       if (!ordersData || ordersData.length === 0) {
-        console.log('⚠️ [SpecialistHome] No orders found');
         setOrders([]);
         setIsLoading(false);
         return;
@@ -407,8 +393,8 @@ export default function SpecialistHome() {
           };
         })).then(translatedOrders => {
           setOrders(translatedOrders);
-        }).catch(error => {
-          console.error('Translation error (non-critical):', error);
+        }).catch(() => {
+          // Translation errors are non-critical
         });
       }
     } catch (error: any) {
@@ -418,6 +404,7 @@ export default function SpecialistHome() {
         description: "فشل تحميل الطلبات",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };

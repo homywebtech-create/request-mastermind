@@ -264,53 +264,15 @@ export default function SpecialistNewOrders() {
         ? 'تم إعادة إرسال طلب لك - راجعه الآن!'
         : 'لديك عرض عمل جديد - اضغط للمشاهدة';
       
-      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`🚨🚨🚨 [${type.toUpperCase()} NOTIFICATION] #${notificationId} 🚨🚨🚨`);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📱 العنوان:', title);
-      console.log('📝 الرسالة:', body);
-      console.log('⏰ الوقت:', new Date().toLocaleString('ar-EG'));
-      
       try {
         const platform = (window as any).Capacitor?.getPlatform();
-        console.log('🖥️ المنصة:', platform || 'web');
         
-        // 1. Play sound IMMEDIATELY - HIGHEST PRIORITY! (COMMENTED: Push notifications now handle this)
-        // console.log('\n🔊🔊🔊 [خطوة 1/4] تشغيل الصوت...');
-        // try {
-        //   // Ensure audio context is initialized
-        //   await soundNotification.current.initialize();
-        //   await soundNotification.current.playNewOrderSound();
-        //   console.log('✅✅✅ الصوت: تم التشغيل بنجاح!');
-        // } catch (soundError) {
-        //   console.error('❌❌❌ الصوت: فشل التشغيل:', soundError);
-        //   // Try backup sound method
-        //   try {
-        //     const audio = new Audio('/notification-sound.mp3');
-        //     await audio.play();
-        //     console.log('✅ الصوت الاحتياطي: تم التشغيل');
-        //   } catch (backupError) {
-        //     console.error('❌ الصوت الاحتياطي: فشل أيضاً:', backupError);
-        //   }
-        // }
-        
-        // 2. Vibrate device - STRONG vibration pattern
-        console.log('\n📳 [خطوة 2/4] اهتزاز الجهاز...');
+        // Vibrate device
         if (navigator.vibrate) {
-          try {
-            // Long vibration pattern: [vibrate, pause, vibrate, pause, vibrate]
-            const vibrationPattern = [800, 200, 800, 200, 800]; // Strong & noticeable
-            navigator.vibrate(vibrationPattern);
-            console.log('✅ الاهتزاز: تم بنجاح -', vibrationPattern.join(','));
-          } catch (vibError) {
-            console.error('❌ الاهتزاز: فشل:', vibError);
-          }
-        } else {
-          console.log('ℹ️ الاهتزاز: غير مدعوم على هذا الجهاز');
+          navigator.vibrate([800, 200, 800, 200, 800]);
         }
         
-        // 3. Show local notification with sound (mobile only)
-        console.log('\n📲 [خطوة 3/4] إشعار محلي...');
+        // Show local notification with sound (mobile only)
         if (platform && platform !== 'web') {
           try {
             await LocalNotifications.schedule({
@@ -332,38 +294,24 @@ export default function SpecialistNewOrders() {
                 }
               }]
             });
-            console.log('✅ الإشعار المحلي: تم الجدولة');
           } catch (localError) {
-            console.error('❌ الإشعار المحلي: فشل:', localError);
+            console.error('Notification error:', localError);
           }
-        } else {
-          console.log('ℹ️ الإشعار المحلي: تخطي (ويب)');
         }
         
-        // 4. Show in-app toast notification
-        console.log('\n📱 [خطوة 4/4] Toast داخل التطبيق...');
-        try {
-          toast({
-            title,
-            description: body,
-            duration: 8000,
-          });
-          sonnerToast.success(body, {
-            description: title,
-            duration: 8000,
-            position: "top-center",
-          });
-          console.log('✅ Toast: تم العرض');
-        } catch (toastError) {
-          console.error('❌ Toast: فشل:', toastError);
-        }
-        
-        console.log('\n✅✅✅ [اكتمل] تم تنفيذ جميع خطوات الإشعار!');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        // Show in-app toast notification
+        toast({
+          title,
+          description: body,
+          duration: 8000,
+        });
+        sonnerToast.success(body, {
+          description: title,
+          duration: 8000,
+          position: "top-center",
+        });
       } catch (error) {
-        console.error('\n❌❌❌ [خطأ حرج] فشل الإشعار:', error);
-        console.error('التفاصيل:', JSON.stringify(error, null, 2));
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        console.error('Notification failed:', error);
       }
     };
 
@@ -379,13 +327,6 @@ export default function SpecialistNewOrders() {
           filter: `specialist_id=eq.${specialistId}`
         },
         async (payload) => {
-          console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('🆕🆕🆕 طلب جديد وصل! NEW ORDER DETECTED!');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('Order Specialist ID:', (payload.new as any)?.id);
-          console.log('Order ID:', (payload.new as any)?.order_id);
-          console.log('Full Payload:', JSON.stringify(payload, null, 2));
-          
           // Add small delay to ensure data is available in database
           await new Promise(resolve => setTimeout(resolve, 500));
           
@@ -406,49 +347,27 @@ export default function SpecialistNewOrders() {
           table: 'orders'
         },
         async (payload) => {
-          console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('🔄🔄🔄 تحديث على جدول الطلبات ORDER UPDATE');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('Order ID:', (payload.new as any)?.id);
-          
           // Check if last_sent_at was updated (indicates resend)
           const oldLastSent = (payload.old as any)?.last_sent_at;
           const newLastSent = (payload.new as any)?.last_sent_at;
           
-          console.log('📅 Old last_sent_at:', oldLastSent);
-          console.log('📅 New last_sent_at:', newLastSent);
-          
           if (oldLastSent === newLastSent) {
-            console.log('ℹ️ last_sent_at لم يتغير - تجاهل');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            return;
+            return; // No resend detected
           }
           
           // Check if this order is assigned to current specialist
-          console.log('🔍 فحص تعيين الطلب للمحترف الحالي...');
-          const { data: assignment, error } = await supabase
+          const { data: assignment } = await supabase
             .from('order_specialists')
             .select('id, order_id')
             .eq('order_id', (payload.new as any)?.id)
             .eq('specialist_id', specialistId)
             .is('quoted_price', null)
             .is('rejected_at', null)
-            .single();
-          
-          if (error) {
-            console.log('ℹ️ لا يوجد تعيين:', error.message);
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            return;
-          }
+            .maybeSingle();
           
           if (!assignment) {
-            console.log('ℹ️ الطلب غير مخصص لهذا المحترف');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            return;
+            return; // Not assigned to this specialist
           }
-          
-          console.log('✅ تأكيد: الطلب مخصص لهذا المحترف');
-          console.log('🔁🔁🔁 إعادة إرسال مؤكدة! تشغيل الإشعار...');
           
           // Add small delay to ensure data is available in database
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -456,9 +375,6 @@ export default function SpecialistNewOrders() {
           await fetchOrders(specialistId);
           await fetchNewOrdersCount(specialistId);
           await triggerNotification('resend');
-          
-          console.log('✅✅✅ اكتمل معالج إعادة الإرسال بنجاح!');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         }
       )
       // Regular updates to order_specialists
@@ -470,19 +386,12 @@ export default function SpecialistNewOrders() {
           table: 'order_specialists',
           filter: `specialist_id=eq.${specialistId}`
         },
-        async (payload) => {
-          console.log('\n📝 تحديث على order_specialists');
-          console.log('Order Specialist ID:', (payload.new as any)?.id);
+        async () => {
           await fetchOrders(specialistId);
           await fetchNewOrdersCount(specialistId);
-          console.log('✅ تم تحديث القائمة\n');
         }
       )
-      .subscribe((status) => {
-        console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('🔌 [REALTIME] حالة اتصال القناة:', status);
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -654,7 +563,6 @@ export default function SpecialistNewOrders() {
         if (order.expires_at) {
           const expiresAt = new Date(order.expires_at).getTime();
           if (now > expiresAt) {
-            console.log(`⏰ Order ${order.id} expired - hiding from view`);
             return false; // Skip expired orders
           }
         }
