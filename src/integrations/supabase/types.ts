@@ -434,6 +434,96 @@ export type Database = {
           },
         ]
       }
+      customer_wallet_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          customer_id: string
+          description: string
+          id: string
+          order_id: string | null
+          payment_confirmation_id: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          customer_id: string
+          description: string
+          id?: string
+          order_id?: string | null
+          payment_confirmation_id?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          customer_id?: string
+          description?: string
+          id?: string
+          order_id?: string | null
+          payment_confirmation_id?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_wallet_transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_wallet_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_wallet_transactions_payment_confirmation_id_fkey"
+            columns: ["payment_confirmation_id"]
+            isOneToOne: false
+            referencedRelation: "payment_confirmations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          customer_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          customer_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          customer_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_wallets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           area: string | null
@@ -665,6 +755,8 @@ export type Database = {
           notified_expiry: boolean | null
           order_link: string | null
           order_number: string | null
+          payment_confirmation_id: string | null
+          payment_confirmed_at: string | null
           payment_not_received_reason: string | null
           payment_status: string | null
           readiness_check_sent_at: string | null
@@ -723,6 +815,8 @@ export type Database = {
           notified_expiry?: boolean | null
           order_link?: string | null
           order_number?: string | null
+          payment_confirmation_id?: string | null
+          payment_confirmed_at?: string | null
           payment_not_received_reason?: string | null
           payment_status?: string | null
           readiness_check_sent_at?: string | null
@@ -781,6 +875,8 @@ export type Database = {
           notified_expiry?: boolean | null
           order_link?: string | null
           order_number?: string | null
+          payment_confirmation_id?: string | null
+          payment_confirmed_at?: string | null
           payment_not_received_reason?: string | null
           payment_status?: string | null
           readiness_check_sent_at?: string | null
@@ -817,7 +913,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_payment_confirmation_id_fkey"
+            columns: ["payment_confirmation_id"]
+            isOneToOne: false
+            referencedRelation: "payment_confirmations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_confirmations: {
+        Row: {
+          amount_received: number
+          created_at: string
+          customer_confirmed_at: string | null
+          customer_id: string
+          difference_amount: number
+          difference_reason: string | null
+          id: string
+          invoice_amount: number
+          order_id: string
+          other_reason_details: string | null
+          specialist_id: string
+          status: string
+          updated_at: string
+          whatsapp_message_sent: boolean | null
+          whatsapp_message_sent_at: string | null
+        }
+        Insert: {
+          amount_received: number
+          created_at?: string
+          customer_confirmed_at?: string | null
+          customer_id: string
+          difference_amount?: number
+          difference_reason?: string | null
+          id?: string
+          invoice_amount: number
+          order_id: string
+          other_reason_details?: string | null
+          specialist_id: string
+          status?: string
+          updated_at?: string
+          whatsapp_message_sent?: boolean | null
+          whatsapp_message_sent_at?: string | null
+        }
+        Update: {
+          amount_received?: number
+          created_at?: string
+          customer_confirmed_at?: string | null
+          customer_id?: string
+          difference_amount?: number
+          difference_reason?: string | null
+          id?: string
+          invoice_amount?: number
+          order_id?: string
+          other_reason_details?: string | null
+          specialist_id?: string
+          status?: string
+          updated_at?: string
+          whatsapp_message_sent?: boolean | null
+          whatsapp_message_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_confirmations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_confirmations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_confirmations_specialist_id_fkey"
             columns: ["specialist_id"]
             isOneToOne: false
             referencedRelation: "specialists"
