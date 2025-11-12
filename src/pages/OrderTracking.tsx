@@ -5,7 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star, ChevronDown, ArrowLeft, MessageSquare } from "lucide-react";
+import { MapPin, Navigation, Share2, CheckCircle, Play, Pause, AlertTriangle, Phone, XCircle, FileText, Clock, ArrowRight, Star, ChevronDown, ArrowLeft, MessageSquare, AlertCircle } from "lucide-react";
+import { SlideToComplete } from "@/components/ui/slide-to-complete";
 import {
   Dialog,
   DialogContent,
@@ -98,6 +99,8 @@ export default function OrderTracking() {
   const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(false);
   const [showPaymentNotReceivedDialog, setShowPaymentNotReceivedDialog] = useState(false);
   const [paymentNotReceivedReason, setPaymentNotReceivedReason] = useState('');
+  const [showEarlyFinishReasonDialog, setShowEarlyFinishReasonDialog] = useState(false);
+  const [earlyFinishReason, setEarlyFinishReason] = useState('');
   const [otherPaymentReason, setOtherPaymentReason] = useState('');
   const [translatedNotes, setTranslatedNotes] = useState<string | null>(null);
   const [translatedBuildingInfo, setTranslatedBuildingInfo] = useState<string | null>(null);
@@ -865,8 +868,39 @@ export default function OrderTracking() {
 
   const confirmEarlyFinish = async () => {
     setShowEarlyFinishDialog(false);
-    // Request invoice directly without marking as completed first
+    
+    // Check if time has expired
+    const remainingTime = getRemainingTime();
+    const hasTimeRemaining = remainingTime > 0;
+    
+    // If time hasn't expired, show reason dialog
+    if (hasTimeRemaining) {
+      setShowEarlyFinishReasonDialog(true);
+    } else {
+      // Time expired, proceed normally
+      await handleRequestInvoice();
+    }
+  };
+
+  const handleEarlyFinishWithReason = async () => {
+    if (!earlyFinishReason) {
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "يرجى اختيار السبب" : "Please select a reason",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowEarlyFinishReasonDialog(false);
+    
+    // Proceed with finishing work
     await handleRequestInvoice();
+    
+    toast({
+      title: language === 'ar' ? "تم التسجيل" : "Recorded",
+      description: language === 'ar' ? "تم تسجيل سبب الإنهاء المبكر" : "Early finish reason recorded",
+    });
   };
 
   const handleRequestInvoice = async () => {
@@ -1738,22 +1772,80 @@ export default function OrderTracking() {
                   </Dialog>
                 )}
 
-                {/* Finish Work Button - Always enabled */}
-                <Button 
-                  onClick={() => {
+                {/* Finish Work Button - Slide to Complete */}
+                <SlideToComplete
+                  onComplete={() => {
                     stopTimeExpiredAlert();
                     setTimeExpired(false);
                     confirmEarlyFinish();
                   }}
-                  className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold shadow-lg"
-                >
-                  <CheckCircle className="ml-2 h-6 w-6" />
-                  {t.finishWorkNow}
-                </Button>
+                  text={t.finishWorkNow}
+                  className="w-full"
+                />
               </div>
             </div>
           </>
         )}
+
+        {/* Early Finish Reason Dialog */}
+        <Dialog open={showEarlyFinishReasonDialog} onOpenChange={setShowEarlyFinishReasonDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <AlertCircle className="h-5 w-5" />
+                {language === 'ar' ? 'الوقت لم ينتهي بعد' : 'Time Not Expired Yet'}
+              </DialogTitle>
+              <DialogDescription>
+                {language === 'ar' 
+                  ? 'لماذا تريد إنهاء العمل قبل الموعد المحدد؟' 
+                  : 'Why do you want to finish work before scheduled time?'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <RadioGroup value={earlyFinishReason} onValueChange={setEarlyFinishReason}>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="finished_early" id="finished_early" />
+                <Label htmlFor="finished_early" className="cursor-pointer">
+                  {language === 'ar' ? 'انتهيت من العمل قبل الموعد' : 'Finished work early'}
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="customer_stopped" id="customer_stopped" />
+                <Label htmlFor="customer_stopped" className="cursor-pointer">
+                  {language === 'ar' ? 'العميل لا يرغب في الاستمرار' : 'Customer does not want to continue'}
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="emergency" id="emergency" />
+                <Label htmlFor="emergency" className="cursor-pointer">
+                  {language === 'ar' ? 'ظرف طارئ' : 'Emergency'}
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="other" id="other_early" />
+                <Label htmlFor="other_early" className="cursor-pointer">
+                  {language === 'ar' ? 'سبب آخر' : 'Other reason'}
+                </Label>
+              </div>
+            </RadioGroup>
+            
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => setShowEarlyFinishReasonDialog(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button 
+                onClick={handleEarlyFinishWithReason}
+                className="flex-1"
+              >
+                {language === 'ar' ? 'تأكيد الإنهاء' : 'Confirm Finish'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Invoice Details Stage */}
         {stage === 'invoice_details' && (
