@@ -101,6 +101,7 @@ export default function OrderTracking() {
   const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(false);
   const [showPaymentNotReceivedDialog, setShowPaymentNotReceivedDialog] = useState(false);
   const [paymentNotReceivedReason, setPaymentNotReceivedReason] = useState('');
+  const [isInvoiceDetailsOpen, setIsInvoiceDetailsOpen] = useState(false);
   const [showEarlyFinishReasonDialog, setShowEarlyFinishReasonDialog] = useState(false);
   const [earlyFinishReason, setEarlyFinishReason] = useState('');
   const [otherPaymentReason, setOtherPaymentReason] = useState('');
@@ -2290,14 +2291,17 @@ export default function OrderTracking() {
                   </div>
 
                   {/* More Details Button */}
-                  <Collapsible>
+                  <Collapsible open={isInvoiceDetailsOpen} onOpenChange={setIsInvoiceDetailsOpen}>
                     <CollapsibleTrigger asChild>
-                      <Button variant="outline" className="w-full mb-3">
-                        <ChevronDown className="ml-2 h-4 w-4" />
+                      <Button 
+                        variant="outline" 
+                        className="w-full mb-3 transition-all duration-300 hover:bg-accent hover:scale-[1.02]"
+                      >
+                        <ChevronDown className={`ml-2 h-4 w-4 transition-transform duration-300 ${isInvoiceDetailsOpen ? 'rotate-180' : ''}`} />
                         {language === 'ar' ? 'تفاصيل أكثر' : 'More Details'}
                       </Button>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-3">
+                    <CollapsibleContent className="space-y-3 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                       {/* Order Information */}
                       <div className="space-y-2 pb-3 border-b border-slate-300 dark:border-slate-600">
                         <div className="flex justify-between items-center">
