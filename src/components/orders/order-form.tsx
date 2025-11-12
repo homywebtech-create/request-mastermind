@@ -642,17 +642,21 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" />
+    <Card className="border-2">
+      <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Plus className="h-6 w-6" />
           إنشاء طلب جديد / Create New Order
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         {renderStepIndicator()}
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Main Form - Left Side (or Right in RTL) */}
+          <div className="lg:col-span-7">
+            <form onSubmit={handleSubmit} className="space-y-6">
           {/* Step 1: Customer Information */}
           {currentStep === 1 && (
             <div className="space-y-4">
@@ -818,24 +822,6 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               </div>
             </div>
 
-            {/* Customer History Card */}
-            {customerHistory && customerHistory.customer && (
-              <div className="mt-6">
-                <CustomerHistoryCard 
-                  history={customerHistory} 
-                  language={formData.preferredLanguage}
-                />
-              </div>
-            )}
-            
-            {isLoadingHistory && formData.phoneNumber && formData.phoneNumber.length >= 7 && (
-              <div className="mt-6 p-4 border border-dashed border-primary/30 rounded-lg">
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  <span>{formData.preferredLanguage === 'ar' ? 'جاري تحميل سجل العميل...' : 'Loading customer history...'}</span>
-                </div>
-              </div>
-            )}
             </div>
           )}
 
@@ -1487,7 +1473,59 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               </Button>
             )}
           </div>
-        </form>
+            </form>
+          </div>
+
+          {/* Customer History Sidebar - Right Side (or Left in RTL) */}
+          <div className="lg:col-span-5">
+            <div className="sticky top-6">
+              {/* Customer History Card */}
+              {formData.phoneNumber && formData.phoneNumber.length >= 7 && (
+                <div className="space-y-4">
+                  {isLoadingHistory ? (
+                    <div className="p-6 border border-dashed border-primary/30 rounded-lg bg-muted/30">
+                      <div className="flex flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="font-medium">
+                          {formData.preferredLanguage === 'ar' ? 'جاري تحميل سجل العميل...' : 'Loading customer history...'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : customerHistory && customerHistory.customer ? (
+                    <CustomerHistoryCard 
+                      history={customerHistory} 
+                      language={formData.preferredLanguage}
+                    />
+                  ) : (
+                    <Card className="border-dashed border-muted-foreground/30">
+                      <CardContent className="p-6 text-center">
+                        <User className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                        <p className="text-sm text-muted-foreground">
+                          {formData.preferredLanguage === 'ar' 
+                            ? 'عميل جديد - لا يوجد سجل سابق' 
+                            : 'New Customer - No Previous History'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+              
+              {(!formData.phoneNumber || formData.phoneNumber.length < 7) && (
+                <Card className="border-dashed border-muted-foreground/30">
+                  <CardContent className="p-6 text-center">
+                    <Phone className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                    <p className="text-sm text-muted-foreground">
+                      {formData.preferredLanguage === 'ar' 
+                        ? 'أدخل رقم الهاتف لعرض سجل العميل' 
+                        : 'Enter phone number to view customer history'}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
