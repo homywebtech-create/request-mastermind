@@ -62,6 +62,8 @@ interface Order {
   specialist_not_ready_reason?: string | null;
   readiness_check_sent_at?: string | null;
   cleaning_equipment_required?: boolean | null;
+  waiting_started_at?: string | null;
+  waiting_ends_at?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -2078,6 +2080,28 @@ Thank you for contacting us! 🌟`;
                                 updatedAt={order.updated_at}
                                 hoursCount={order.hours_count}
                               />
+                              {/* Waiting Period Info */}
+                              {order.tracking_stage === 'waiting_for_customer' && order.waiting_started_at && order.waiting_ends_at && (
+                                <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950 border-amber-300 dark:border-amber-700">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {(() => {
+                                    const now = new Date();
+                                    const endsAt = new Date(order.waiting_ends_at);
+                                    const remainingMs = endsAt.getTime() - now.getTime();
+                                    const remainingMin = Math.max(0, Math.floor(remainingMs / 1000 / 60));
+                                    const remainingSec = Math.max(0, Math.floor((remainingMs / 1000) % 60));
+                                    
+                                    if (remainingMs <= 0) {
+                                      return language === 'ar' 
+                                        ? '⏰ انتهى وقت الانتظار' 
+                                        : '⏰ Waiting time expired';
+                                    }
+                                    return language === 'ar' 
+                                      ? `⏱️ متبقي: ${remainingMin}د ${remainingSec}ث` 
+                                      : `⏱️ Remaining: ${remainingMin}m ${remainingSec}s`;
+                                  })()}
+                                </Badge>
+                              )}
                             </>
                           )}
                           {isPending && (

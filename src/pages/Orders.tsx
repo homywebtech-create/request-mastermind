@@ -149,6 +149,8 @@ export default function Orders() {
           booking_type,
           hours_count,
           cleaning_equipment_required,
+          waiting_started_at,
+          waiting_ends_at,
           customers (
             name,
             whatsapp_number,

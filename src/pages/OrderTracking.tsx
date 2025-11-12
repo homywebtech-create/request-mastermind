@@ -30,6 +30,7 @@ import { translateOrderDetails } from "@/lib/translateHelper";
 import { TranslateButton } from "@/components/specialist/TranslateButton";
 import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 import { Capacitor } from '@capacitor/core';
+import { sendWhatsAppMessage } from "@/lib/whatsappHelper";
 
 type Stage = 'initial' | 'moving' | 'arrived' | 'waiting_for_customer' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
@@ -54,6 +55,7 @@ interface Order {
     area: string | null;
     budget: string | null;
     budget_type: string | null;
+    preferred_language?: string;
   } | null;
   company: {
     id: string;
@@ -864,6 +866,28 @@ export default function OrderTracking() {
     setStage('arrived');
     setArrivedStartTime(new Date());
     await updateOrderStage('arrived');
+
+    // Send professional WhatsApp message to customer about arrival
+    if (order?.customer?.whatsapp_number) {
+      try {
+        const customerLanguage = order.customer.preferred_language || 'ar';
+        const arrivalMessage = customerLanguage === 'en' 
+          ? `Hello,\n\nWe would like to inform you that the specialist has arrived at your location.\n\nPlease welcome them to begin the service.\n\nThank you for choosing our services! 🌟`
+          : `مرحباً،\n\nنود إعلامك بأن المحترف قد وصل إلى موقعك.\n\nنرجو منك استقباله لبدء تقديم الخدمة.\n\nشكراً لاختيارك خدماتنا! 🌟`;
+
+        await sendWhatsAppMessage({
+          to: order.customer.whatsapp_number,
+          message: arrivalMessage,
+          customerName: order.customer.name
+        });
+        
+        console.log('✅ Arrival notification sent to customer');
+      } catch (whatsappError) {
+        console.error('❌ Failed to send arrival WhatsApp message:', whatsappError);
+        // Don't block the flow if WhatsApp fails
+      }
+    }
+
     toast({
       title: "Confirmed",
       description: "Your arrival has been recorded",
@@ -881,36 +905,103 @@ export default function OrderTracking() {
   };
 
   const handleCustomerNotPresent = async () => {
-    // Start waiting stage
-    setStage('waiting_for_customer');
-    setWaitingTimer(15 * 60); // Reset to 15 minutes
-    setTimeExpired(false);
-    await updateOrderStage('waiting_for_customer');
-    
-    // Request notification permission if not granted
-    if ('Notification' in window && Notification.permission === 'default') {
-      await Notification.requestPermission();
+    try {
+      const now = new Date();
+      const waitingEnds = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes from now
+      
+      // Start waiting stage and save timestamps
+      setStage('waiting_for_customer');
+      setWaitingTimer(15 * 60); // Reset to 15 minutes
+      setTimeExpired(false);
+
+      // Update order with waiting timestamps
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          tracking_stage: 'waiting_for_customer',
+          waiting_started_at: now.toISOString(),
+          waiting_ends_at: waitingEnds.toISOString(),
+          updated_at: now.toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      
+      // Request notification permission if not granted
+      if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+
+      // Send professional WhatsApp message to customer about waiting period
+      if (order?.customer?.whatsapp_number) {
+        try {
+          const customerLanguage = order.customer.preferred_language || 'ar';
+          const waitingMessage = customerLanguage === 'en'
+            ? `Hello,\n\nThe specialist is currently waiting for you at your location.\n\nPlease welcome them within the next 15 minutes.\n\n⚠️ Important: If the specialist is not received within this time, a waiting fee will be charged and the booking will be automatically cancelled.\n\nWe appreciate your cooperation.`
+            : `مرحباً،\n\nالمحترف في انتظار استقبالك حالياً في موقعك.\n\nنرجو منك استقباله خلال الـ 15 دقيقة القادمة.\n\n⚠️ تنبيه مهم: في حالة عدم الاستقبال خلال هذه المدة، سيتم احتساب رسوم الانتظار وإلغاء الحجز تلقائياً.\n\nنقدر لك تعاونك.`;
+
+          await sendWhatsAppMessage({
+            to: order.customer.whatsapp_number,
+            message: waitingMessage,
+            customerName: order.customer.name
+          });
+          
+          console.log('✅ Waiting period notification sent to customer');
+        } catch (whatsappError) {
+          console.error('❌ Failed to send waiting WhatsApp message:', whatsappError);
+          // Don't block the flow if WhatsApp fails
+        }
+      }
+      
+      toast({
+        title: language === 'ar' ? "بدء الانتظار" : "Waiting Started",
+        description: language === 'ar' 
+          ? "بدأ عداد الانتظار 15 دقيقة"
+          : "15-minute waiting period started",
+      });
+    } catch (error: any) {
+      console.error('Error starting waiting period:', error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: language === 'ar' ? "بدء الانتظار" : "Waiting Started",
-      description: language === 'ar' 
-        ? "بدأ عداد الانتظار 15 دقيقة"
-        : "15-minute waiting period started",
-    });
   };
 
   const handleCancelWaiting = async () => {
-    // Customer arrived, cancel waiting and start work
-    stopTimeExpiredAlert();
-    setTimeExpired(false);
-    await handleStartWork();
-    toast({
-      title: language === 'ar' ? "حضر العميل" : "Customer Arrived",
-      description: language === 'ar' 
-        ? "تم بدء العمل"
-        : "Work has been started",
-    });
+    try {
+      // Customer arrived, cancel waiting and start work
+      stopTimeExpiredAlert();
+      setTimeExpired(false);
+
+      // Clear waiting timestamps when customer arrives
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          waiting_started_at: null,
+          waiting_ends_at: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      await handleStartWork();
+      toast({
+        title: language === 'ar' ? "حضر العميل" : "Customer Arrived",
+        description: language === 'ar' 
+          ? "تم بدء العمل"
+          : "Work has been started",
+      });
+    } catch (error: any) {
+      console.error('Error cancelling waiting:', error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleConfirmNoShow = async () => {

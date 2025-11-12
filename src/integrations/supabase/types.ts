@@ -682,6 +682,8 @@ export type Database = {
           status: string
           tracking_stage: string | null
           updated_at: string
+          waiting_ends_at: string | null
+          waiting_started_at: string | null
         }
         Insert: {
           booking_date?: string | null
@@ -738,6 +740,8 @@ export type Database = {
           status?: string
           tracking_stage?: string | null
           updated_at?: string
+          waiting_ends_at?: string | null
+          waiting_started_at?: string | null
         }
         Update: {
           booking_date?: string | null
@@ -794,6 +798,8 @@ export type Database = {
           status?: string
           tracking_stage?: string | null
           updated_at?: string
+          waiting_ends_at?: string | null
+          waiting_started_at?: string | null
         }
         Relationships: [
           {
