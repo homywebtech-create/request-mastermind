@@ -637,5 +637,6 @@ export const ar = {
     writeReason: "اكتب السبب",
     writePaymentReasonPlaceholder: "اكتب سبب عدم الدفع...",
     confirm: "تأكيد",
+    startWorkClock: "بدء ساعة العمل",
   },
 };

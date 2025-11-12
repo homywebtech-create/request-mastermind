@@ -1549,7 +1549,7 @@ export default function OrderTracking() {
                 size="lg"
               >
                 <Play className="h-5 w-5 ml-2" />
-                <span>بدء ساعة العمل</span>
+                <span>{t.startWorkClock}</span>
               </Button>
             </div>
           </div>

@@ -637,5 +637,6 @@ export const en = {
     writeReason: "Write the reason",
     writePaymentReasonPlaceholder: "Write the reason for non-payment...",
     confirm: "Confirm",
+    startWorkClock: "Start Work Clock",
   },
 };
