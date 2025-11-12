@@ -642,20 +642,20 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
   };
 
   return (
-    <Card className="border-2">
-      <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10">
-        <CardTitle className="flex items-center gap-2 text-xl">
+    <Card className="border-2 w-full">
+      <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10 p-6">
+        <CardTitle className="flex items-center gap-3 text-2xl font-bold">
           <Plus className="h-6 w-6" />
           إنشاء طلب جديد / Create New Order
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-8">
         {renderStepIndicator()}
         
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Form - Left Side (or Right in RTL) */}
-          <div className="lg:col-span-6">
+          <div className="lg:col-span-6 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
           {/* Step 1: Customer Information */}
           {currentStep === 1 && (
@@ -1478,7 +1478,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
 
           {/* Customer History Sidebar - Right Side (or Left in RTL) */}
           <div className="lg:col-span-6">
-            <div className="sticky top-6">
+            <div className="sticky top-8">
               {/* Customer History Card */}
               {formData.phoneNumber && formData.phoneNumber.length >= 7 && (
                 <div className="space-y-4">

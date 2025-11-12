@@ -824,7 +824,7 @@ export default function CompanyPortal() {
       </main>
 
       <Dialog open={showOrderForm} onOpenChange={setShowOrderForm}>
-        <DialogContent className="max-w-[98vw] w-[98vw] max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-[99vw] w-[99vw] max-h-[96vh] overflow-y-auto p-8">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               طلب جديد / New Order
