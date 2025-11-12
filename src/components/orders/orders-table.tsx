@@ -1603,18 +1603,6 @@ Thank you for contacting us! 🌟`;
                                 order.service_type.includes('تنظيف') || 
                                 order.service_type.toLowerCase().includes('clean');
                               
-                              if (isCleaningService) {
-                                console.log(`🔍 Order ${order.order_number}:`, {
-                                  service_type: order.service_type,
-                                  cleaning_equipment_required: order.cleaning_equipment_required,
-                                  type: typeof order.cleaning_equipment_required,
-                                  isTrue: order.cleaning_equipment_required === true,
-                                  isFalse: order.cleaning_equipment_required === false,
-                                  isNull: order.cleaning_equipment_required === null,
-                                  isUndefined: order.cleaning_equipment_required === undefined
-                                });
-                              }
-                              
                               return isCleaningService ? (
                                 <Badge 
                                   variant={order.cleaning_equipment_required ? "default" : "secondary"} 

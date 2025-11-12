@@ -172,7 +172,7 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
           }
         }
 
-        console.log('Loaded order.cleaning_equipment_required:', order.cleaning_equipment_required);
+        
         
         setOrderData({
           customerName: order.customers.name || '',
@@ -273,11 +273,6 @@ export function EditOrderDialog({ open, onOpenChange, orderId, onSuccess, langua
       if (customerError) throw customerError;
 
       // Update order data
-      console.log('💾 Saving order update:');
-      console.log('  - cleaning_equipment_required:', orderData.cleaningEquipmentRequired);
-      console.log('  - typeof:', typeof orderData.cleaningEquipmentRequired);
-      console.log('  - notes:', orderData.notes);
-      console.log('  - service_type:', serviceType);
       
       const updatePayload = {
         notes: orderData.notes || null,
