@@ -2278,58 +2278,9 @@ export default function OrderTracking() {
             <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
               <div className="w-full max-w-md space-y-4">
                 <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-5 rounded-xl space-y-3 shadow-lg border-2 border-slate-200 dark:border-slate-700">
-                  {/* Order Information */}
-                  <div className="space-y-2 pb-3 border-b border-slate-300 dark:border-slate-600">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">{t.orderNumber}</span>
-                      <span className="font-semibold text-base">{order.order_number}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">{t.bookingDate}</span>
-                      <span className="font-semibold text-sm">{order.booking_date ? new Date(order.booking_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US') : '-'}</span>
-                    </div>
-                    {arrivedStartTime && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">{t.arrivalTime}</span>
-                        <span className="font-semibold text-sm">{arrivedStartTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                    )}
-                    {workStartTime && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">{t.workStartTime}</span>
-                        <span className="font-semibold text-sm">{workStartTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                    )}
-                    {workEndTime && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">{t.workEndTime}</span>
-                        <span className="font-semibold text-sm">{workEndTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                    )}
-                  </div>
                   
-                  {/* Service Type */}
-                  <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
-                    <span className="text-sm text-muted-foreground">{t.serviceType}</span>
-                    <span className="font-bold text-base">{order.service_type}</span>
-                  </div>
-                  
-                  {/* Hours Summary */}
-                  <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
-                    <span className="text-sm text-muted-foreground">{t.numberOfHours}</span>
-                    <span className="font-bold text-lg text-primary">{order.hours_count} {t.hourLabel}</span>
-                  </div>
-                  
-                  {/* Discount if any */}
-                  {discount > 0 && (
-                    <div className="flex justify-between items-center text-green-600 dark:text-green-400 text-base bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                      <span className="font-medium">{t.discount}</span>
-                      <span className="font-bold text-lg">-{discount.toFixed(2)} ر.ق</span>
-                    </div>
-                  )}
-                  
-                  {/* Total Amount - Prominent */}
-                  <div className="border-t-2 border-slate-400 dark:border-slate-500 pt-4 mt-4">
+                  {/* Total Amount - Prominent (Always Visible) */}
+                  <div className="pb-4 mb-4 border-b-2 border-slate-400 dark:border-slate-500">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-xl">{t.totalAmount}</span>
                       <span className="font-black text-green-600 text-3xl">
@@ -2337,6 +2288,67 @@ export default function OrderTracking() {
                       </span>
                     </div>
                   </div>
+
+                  {/* More Details Button */}
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" className="w-full mb-3">
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                        {language === 'ar' ? 'تفاصيل أكثر' : 'More Details'}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-3">
+                      {/* Order Information */}
+                      <div className="space-y-2 pb-3 border-b border-slate-300 dark:border-slate-600">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">{t.orderNumber}</span>
+                          <span className="font-semibold text-base">{order.order_number}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">{t.bookingDate}</span>
+                          <span className="font-semibold text-sm">{order.booking_date ? new Date(order.booking_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US') : '-'}</span>
+                        </div>
+                        {arrivedStartTime && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">{t.arrivalTime}</span>
+                            <span className="font-semibold text-sm">{arrivedStartTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        )}
+                        {workStartTime && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">{t.workStartTime}</span>
+                            <span className="font-semibold text-sm">{workStartTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        )}
+                        {workEndTime && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">{t.workEndTime}</span>
+                            <span className="font-semibold text-sm">{workEndTime.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Service Type */}
+                      <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
+                        <span className="text-sm text-muted-foreground">{t.serviceType}</span>
+                        <span className="font-bold text-base">{order.service_type}</span>
+                      </div>
+                      
+                      {/* Hours Summary */}
+                      <div className="flex justify-between items-center pb-3 border-b border-slate-300 dark:border-slate-600">
+                        <span className="text-sm text-muted-foreground">{t.numberOfHours}</span>
+                        <span className="font-bold text-lg text-primary">{order.hours_count} {t.hourLabel}</span>
+                      </div>
+                      
+                      {/* Discount if any */}
+                      {discount > 0 && (
+                        <div className="flex justify-between items-center text-green-600 dark:text-green-400 text-base bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                          <span className="font-medium">{t.discount}</span>
+                          <span className="font-bold text-lg">-{discount.toFixed(2)} ر.ق</span>
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
                 
                 <p className="text-sm text-center text-muted-foreground bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
