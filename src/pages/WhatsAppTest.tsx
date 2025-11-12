@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export default function WhatsAppTest() {
   const [phoneNumber, setPhoneNumber] = useState("+974");
   const [message, setMessage] = useState("مرحباً! هذه رسالة اختبار من نظام النمليات للتنظيف.");
+  const [useTemplate, setUseTemplate] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
@@ -30,7 +31,7 @@ export default function WhatsAppTest() {
       return;
     }
 
-    if (!message.trim()) {
+    if (!useTemplate && !message.trim()) {
       toast({
         title: "خطأ",
         description: "يرجى إدخال نص الرسالة",
@@ -45,10 +46,15 @@ export default function WhatsAppTest() {
     try {
       console.log('📱 Sending WhatsApp test message...');
       console.log('📱 To:', phoneNumber);
-      console.log('📱 Message:', message);
+      console.log('📱 Use Template:', useTemplate);
 
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-        body: {
+        body: useTemplate ? {
+          to: phoneNumber,
+          useTemplate: true,
+          templateName: 'hello_world',
+          templateLanguage: 'en',
+        } : {
           to: phoneNumber,
           message: message,
         },
@@ -135,21 +141,37 @@ export default function WhatsAppTest() {
               </p>
             </div>
 
-            {/* Message */}
-            <div className="space-y-2">
-              <Label htmlFor="message">نص الرسالة</Label>
-              <Textarea
-                id="message"
-                placeholder="أدخل نص الرسالة..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={4}
-                className="resize-none"
+            {/* Template Toggle */}
+            <div className="flex items-center space-x-2 space-x-reverse p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <input
+                type="checkbox"
+                id="useTemplate"
+                checked={useTemplate}
+                onChange={(e) => setUseTemplate(e.target.checked)}
+                className="h-4 w-4"
               />
-              <p className="text-xs text-muted-foreground">
-                عدد الأحرف: {message.length}
-              </p>
+              <Label htmlFor="useTemplate" className="cursor-pointer">
+                استخدام قالب "hello_world" (معتمد مسبقاً من Meta)
+              </Label>
             </div>
+
+            {/* Message - only show if not using template */}
+            {!useTemplate && (
+              <div className="space-y-2">
+                <Label htmlFor="message">نص الرسالة</Label>
+                <Textarea
+                  id="message"
+                  placeholder="أدخل نص الرسالة..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  عدد الأحرف: {message.length}
+                </p>
+              </div>
+            )}
 
             {/* Send Button */}
             <Button

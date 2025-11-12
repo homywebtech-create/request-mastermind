@@ -40,13 +40,18 @@ interface SpecialistQuote {
 
 interface WhatsAppMessageRequest {
   to: string; // Phone number in format: +966xxxxxxxxx
-  message: string;
+  message?: string;
   customerName?: string;
   specialists?: SpecialistQuote[];
   orderDetails?: {
     serviceType: string;
     orderNumber: string;
   };
+  // Template message support
+  useTemplate?: boolean;
+  templateName?: string;
+  templateLanguage?: string;
+  templateParams?: string[];
 }
 
 serve(async (req) => {
@@ -61,7 +66,7 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('🚀 [Meta WhatsApp] Request body:', JSON.stringify(requestBody));
     
-    const { to, message, specialists, orderDetails }: WhatsAppMessageRequest = requestBody;
+    const { to, message, specialists, orderDetails, useTemplate, templateName, templateLanguage, templateParams }: WhatsAppMessageRequest = requestBody;
     
     // Check required fields
     if (!to) {
@@ -72,10 +77,10 @@ serve(async (req) => {
       );
     }
 
-    if (!message && (!specialists || specialists.length === 0)) {
-      console.error('❌ Missing required fields: message or specialists');
+    if (!message && (!specialists || specialists.length === 0) && !useTemplate) {
+      console.error('❌ Missing required fields: message, specialists, or template');
       return new Response(
-        JSON.stringify({ error: 'Either message or specialists list is required' }),
+        JSON.stringify({ error: 'Either message, specialists list, or template is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -126,6 +131,80 @@ serve(async (req) => {
 
     // Meta WhatsApp Business API endpoint
     const metaUrl = `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+
+    // If template message is requested
+    if (useTemplate && templateName) {
+      console.log(`📋 [Meta WhatsApp] Sending template: ${templateName} (${templateLanguage || 'en'})`);
+      
+      const templatePayload: any = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: toNumber,
+        type: "template",
+        template: {
+          name: templateName,
+          language: {
+            code: templateLanguage || "en"
+          }
+        }
+      };
+
+      // Add parameters if provided
+      if (templateParams && templateParams.length > 0) {
+        templatePayload.template.components = [
+          {
+            type: "body",
+            parameters: templateParams.map(param => ({
+              type: "text",
+              text: param
+            }))
+          }
+        ];
+      }
+
+      console.log('📤 [Meta WhatsApp] Template payload:', JSON.stringify(templatePayload, null, 2));
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(metaUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(templatePayload),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        console.error('❌ [Meta WhatsApp] Template API error:', JSON.stringify(responseData));
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to send template message', 
+            details: responseData,
+            status: response.status 
+          }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('✅ [Meta WhatsApp] Template sent!');
+      console.log('✅ Message ID:', responseData.messages?.[0]?.id);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          messageId: responseData.messages?.[0]?.id,
+          details: responseData
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // If specialists array is provided, send each as a separate message
     if (specialists && specialists.length > 0) {
