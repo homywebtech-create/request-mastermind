@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { OrderForm } from "@/components/orders/order-form";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Plus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -696,10 +697,14 @@ export default function Orders() {
           </div>
 
           {showForm && userHasPermission('create_order') && (
-            <OrderForm 
-              onSubmit={handleCreateOrder}
-              onCancel={() => setShowForm(false)}
-            />
+            <Dialog open={showForm} onOpenChange={setShowForm}>
+              <DialogContent className="max-w-[99vw] w-[99vw] max-h-[96vh] overflow-y-auto p-8">
+                <OrderForm 
+                  onSubmit={handleCreateOrder}
+                  onCancel={() => setShowForm(false)}
+                />
+              </DialogContent>
+            </Dialog>
           )}
 
           {loading ? (
