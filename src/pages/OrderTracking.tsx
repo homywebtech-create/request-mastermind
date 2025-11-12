@@ -892,15 +892,40 @@ export default function OrderTracking() {
       return;
     }
 
-    setShowEarlyFinishReasonDialog(false);
-    
-    // Proceed with finishing work
-    await handleRequestInvoice();
-    
-    toast({
-      title: language === 'ar' ? "تم التسجيل" : "Recorded",
-      description: language === 'ar' ? "تم تسجيل سبب الإنهاء المبكر" : "Early finish reason recorded",
-    });
+    // Save early finish reason to database
+    try {
+      const reasonText = earlyFinishReason === 'finished_early' 
+        ? (language === 'ar' ? 'انتهيت من العمل قبل الموعد' : 'Finished work early')
+        : earlyFinishReason === 'customer_stopped'
+        ? (language === 'ar' ? 'العميل لا يرغب في الاستمرار' : 'Customer does not want to continue')
+        : earlyFinishReason === 'emergency'
+        ? (language === 'ar' ? 'ظرف طارئ' : 'Emergency')
+        : (language === 'ar' ? 'سبب آخر' : 'Other reason');
+
+      await supabase
+        .from('orders')
+        .update({ 
+          early_finish_reason: reasonText
+        })
+        .eq('id', orderId);
+
+      setShowEarlyFinishReasonDialog(false);
+      
+      // Proceed with finishing work
+      await handleRequestInvoice();
+      
+      toast({
+        title: language === 'ar' ? "تم التسجيل" : "Recorded",
+        description: language === 'ar' ? "تم تسجيل سبب الإنهاء المبكر" : "Early finish reason recorded",
+      });
+    } catch (error) {
+      console.error('Error saving early finish reason:', error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "فشل في حفظ السبب" : "Failed to save reason",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRequestInvoice = async () => {

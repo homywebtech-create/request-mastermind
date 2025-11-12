@@ -648,6 +648,7 @@ export type Database = {
           customer_longitude: number | null
           customer_rating: number | null
           customer_review_notes: string | null
+          early_finish_reason: string | null
           expires_at: string | null
           final_amount: number | null
           gps_latitude: number | null
@@ -703,6 +704,7 @@ export type Database = {
           customer_longitude?: number | null
           customer_rating?: number | null
           customer_review_notes?: string | null
+          early_finish_reason?: string | null
           expires_at?: string | null
           final_amount?: number | null
           gps_latitude?: number | null
@@ -758,6 +760,7 @@ export type Database = {
           customer_longitude?: number | null
           customer_rating?: number | null
           customer_review_notes?: string | null
+          early_finish_reason?: string | null
           expires_at?: string | null
           final_amount?: number | null
           gps_latitude?: number | null
