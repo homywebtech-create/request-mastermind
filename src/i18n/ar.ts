@@ -651,15 +651,39 @@ export const ar = {
     confirmPaymentReceived: "تأكيد استلام الدفع",
     paymentNotReceived: "لم يتم الدفع",
     paymentNotReceivedReason: "سبب عدم الدفع",
+    paymentConfirmationTitle: "💰 تأكيد استلام الدفع",
+    paymentMatchQuestion: "هل المبلغ الذي دفعه العميل يطابق قيمة الفاتورة؟",
+    yesAmountMatches: "✅ نعم، المبلغ مطابق",
+    noDifferentAmount: "⚠️ لا، المبلغ مختلف",
+    enterReceivedAmount: "💵 إدخال المبلغ المستلم",
+    actualAmountReceived: "المبلغ المستلم فعلياً",
+    enterAmount: "أدخل المبلغ",
+    extraAmountReason: "هل المبلغ الزائد كان بسبب أحد الأسباب التالية؟",
+    tipFromCustomer: "💰 إكرامية من العميل",
+    saveInWallet: "💳 العميل يرغب في حفظها بمحفظته",
+    noChangeToReturn: "💵 لا أملك الباقي لإرجاعه",
+    otherReason: "📝 سبب آخر",
+    specifyReason: "اذكر السبب",
+    writeReasonHere: "اكتب السبب هنا...",
+    confirmingPayment: "جاري التأكيد...",
+    confirmPayment: "تأكيد الدفع",
+    processingPayment: "جاري تسجيل الدفع...",
+    paymentConfirmedSuccess: "✅ تم تأكيد الدفع",
+    paymentRecordedSuccess: "تم تسجيل الدفع بنجاح",
+    paymentConfirmationError: "❌ خطأ",
+    paymentConfirmationErrorDesc: "فشل تأكيد الدفع. حاول مرة أخرى",
+    enterValidAmount: "الرجاء إدخال مبلغ صحيح",
+    selectDifferenceReason: "الرجاء اختيار سبب الفارق",
+    writeReason: "الرجاء كتابة السبب",
     selectPaymentNotReceivedReason: "يرجى اختيار سبب عدم استلام الدفع",
     customerRefusedPayment: "العميل رفض الدفع",
     customerHasNoCash: "العميل ليس معه نقود",
     disputeOverAmount: "خلاف على المبلغ أو الخدمة",
     promisedToPayLater: "وعد بالدفع لاحقاً",
-    otherReason: "أخرى (حدد السبب)",
+    otherPaymentReason: "أخرى (حدد السبب)",
     finishWorkNow: "إنهاء العمل الآن",
     extendWorkTime: "تمديد وقت العمل",
-    writeReason: "اكتب السبب",
+    writePaymentReason: "اكتب السبب",
     writePaymentReasonPlaceholder: "اكتب سبب عدم الدفع...",
     confirm: "تأكيد",
     startWorkClock: "بدء ساعة العمل",

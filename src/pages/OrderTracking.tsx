@@ -31,6 +31,7 @@ import { TranslateButton } from "@/components/specialist/TranslateButton";
 import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 import { Capacitor } from '@capacitor/core';
 import { sendTemplateMessage } from "@/lib/whatsappTemplateHelper";
+import { PaymentConfirmationDialog } from "@/components/orders/PaymentConfirmationDialog";
 
 type Stage = 'initial' | 'moving' | 'arrived' | 'waiting_for_customer' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
@@ -45,6 +46,7 @@ interface Order {
   gps_longitude: number | null;
   building_info: string | null;
   company_id: string | null;
+  customer_id: string | null;
   hourly_rate: number | null;
   final_amount: number | null;
   payment_status: string | null;
@@ -109,6 +111,7 @@ export default function OrderTracking() {
   const [translatedBuildingInfo, setTranslatedBuildingInfo] = useState<string | null>(null);
   const [specialistId, setSpecialistId] = useState<string>('');
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
+  const [showPaymentConfirmDialog, setShowPaymentConfirmDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -492,6 +495,7 @@ export default function OrderTracking() {
           gps_longitude,
           building_info,
           company_id,
+          customer_id,
           customer:customers (
             name,
             whatsapp_number,
@@ -1283,19 +1287,17 @@ export default function OrderTracking() {
     // Don't navigate away - stay on page to show invoice
   };
 
-  const handlePaymentReceived = async () => {
-    // Update payment status
-    await supabase
-      .from('orders')
-      .update({ 
-        payment_status: 'received'
-      })
-      .eq('id', orderId);
-      
+  const handlePaymentReceived = () => {
+    // فتح دايلوج تأكيد الدفع بدلاً من التحديث المباشر
+    setShowPaymentConfirmDialog(true);
+  };
+
+  const handlePaymentConfirmed = async () => {
+    // بعد نجاح التأكيد، الانتقال لمرحلة التقييم
     setStage('customer_rating');
     toast({
-      title: "Payment Confirmed",
-      description: "Please rate the customer",
+      title: t.paymentConfirmedSuccess,
+      description: t.paymentRecordedSuccess,
     });
   };
 
@@ -2432,6 +2434,20 @@ export default function OrderTracking() {
               </Dialog>
             </div>
           </div>
+        )}
+
+        {/* Payment Confirmation Dialog */}
+        {order && (
+          <PaymentConfirmationDialog
+            open={showPaymentConfirmDialog}
+            onOpenChange={setShowPaymentConfirmDialog}
+            orderId={orderId!}
+            invoiceAmount={invoiceAmount}
+            customerId={order.customer_id || ''}
+            specialistId={specialistId}
+            currency="ر.ق"
+            onSuccess={handlePaymentConfirmed}
+          />
         )}
 
         {/* Customer Rating Stage */}
