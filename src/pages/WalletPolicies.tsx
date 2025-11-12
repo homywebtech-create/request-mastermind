@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, CheckCircle } from "lucide-react";
+import { Loader2, Save, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "@/i18n";
 
@@ -30,6 +31,7 @@ interface WalletPolicy {
 }
 
 export default function WalletPolicies() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { language } = useLanguage();
   const t = useTranslation(language).specialist;
@@ -186,18 +188,38 @@ export default function WalletPolicies() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{t.walletPolicies}</h1>
-          <p className="text-muted-foreground mt-2">
-            {language === "ar"
-              ? "إدارة قوانين التعويضات والمحفظة"
-              : "Manage compensation and wallet policies"}
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          {language === "ar" ? "إضافة قانون جديد" : "Add New Policy"}
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="mb-4"
+        >
+          {language === "ar" ? (
+            <>
+              <ArrowRight className="h-4 w-4 ml-2" />
+              رجوع
+            </>
+          ) : (
+            <>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </>
+          )}
         </Button>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">{t.walletPolicies}</h1>
+            <p className="text-muted-foreground mt-2">
+              {language === "ar"
+                ? "إدارة قوانين التعويضات والمحفظة"
+                : "Manage compensation and wallet policies"}
+            </p>
+          </div>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            {language === "ar" ? "إضافة قانون جديد" : "Add New Policy"}
+          </Button>
+        </div>
       </div>
 
       {/* Create Policy Dialog */}
