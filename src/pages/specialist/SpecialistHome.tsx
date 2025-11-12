@@ -662,26 +662,6 @@ export default function SpecialistHome() {
               </Button>
             </div>
           </div>
-
-          {/* Bottom Row: Refresh Button Only */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {/* Refresh Button */}
-            <Button
-              onClick={() => {
-                console.log('🔄 [MANUAL] Manual refresh triggered');
-                if (specialistId) {
-                  fetchOrders(specialistId);
-                  fetchNewOrdersCount(specialistId);
-                }
-              }}
-              variant="secondary"
-              size="sm"
-              className="text-xs sm:text-sm px-2 sm:px-3 py-1 h-8 shadow-md"
-            >
-              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline sm:inline">{isAr ? 'تحديث' : 'Refresh'}</span>
-            </Button>
-          </div>
         </div>
       </div>
 
