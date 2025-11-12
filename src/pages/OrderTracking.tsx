@@ -31,7 +31,7 @@ import { TranslateButton } from "@/components/specialist/TranslateButton";
 import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 import { Capacitor } from '@capacitor/core';
 
-type Stage = 'initial' | 'moving' | 'arrived' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
+type Stage = 'initial' | 'moving' | 'arrived' | 'waiting_for_customer' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
 interface Order {
   id: string;
@@ -72,6 +72,7 @@ export default function OrderTracking() {
   const [stage, setStage] = useState<Stage>('initial');
   const [movingTimer, setMovingTimer] = useState(60); // 60 seconds
   const [arrivedTimer, setArrivedTimer] = useState(60); // 60 seconds
+  const [waitingTimer, setWaitingTimer] = useState(15 * 60); // 15 minutes in seconds
   const [isLoading, setIsLoading] = useState(true);
   const [workingTime, setWorkingTime] = useState(0);
   const [totalWorkSeconds, setTotalWorkSeconds] = useState(0);
@@ -163,6 +164,8 @@ export default function OrderTracking() {
         } else if (currentOrder.tracking_stage === 'arrived') {
           setStage('arrived');
           setArrivedStartTime(new Date());
+        } else if (currentOrder.tracking_stage === 'waiting_for_customer') {
+          setStage('waiting_for_customer');
         } else if (currentOrder.tracking_stage === 'working') {
           setStage('working');
         } else {
@@ -301,6 +304,26 @@ export default function OrderTracking() {
     }
   }, [stage, arrivedTimer]);
 
+  // Timer for waiting_for_customer stage (15 minutes countdown)
+  useEffect(() => {
+    if (stage === 'waiting_for_customer' && waitingTimer > 0) {
+      const timer = setInterval(() => {
+        setWaitingTimer(prev => {
+          const newTime = prev - 1;
+          
+          // Play sound and show notification when timer expires
+          if (newTime === 0 && !timeExpired) {
+            setTimeExpired(true);
+            startWaitingAlert();
+          }
+          
+          return newTime;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [stage, waitingTimer, timeExpired]);
+
   // Auto-start work after 5 minutes if specialist didn't start
   useEffect(() => {
     if (stage === 'arrived' && arrivedStartTime) {
@@ -375,6 +398,48 @@ export default function OrderTracking() {
     toast({
       title: t.timeExpired,
       description: t.timeExpiredDescription,
+      duration: 10000,
+    });
+  };
+
+  const startWaitingAlert = () => {
+    // Stop any existing audio first
+    if (alertAudioRef.current) {
+      alertAudioRef.current.pause();
+      alertAudioRef.current.currentTime = 0;
+    }
+
+    // Play notification sound
+    const audio = new Audio('/notification-sound.mp3');
+    audio.loop = true;
+    alertAudioRef.current = audio;
+    audio.play().catch(err => console.error('Audio play error:', err));
+
+    // Vibrate (if supported)
+    if (navigator.vibrate) {
+      const vibratePattern = [500, 200, 500, 200, 500];
+      const interval = setInterval(() => {
+        navigator.vibrate(vibratePattern);
+      }, 2000);
+      setAlertInterval(interval);
+    }
+
+    // Show notification if page is not visible
+    if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification(language === 'ar' ? 'انتهى وقت الانتظار' : 'Waiting Time Expired', {
+        body: language === 'ar' 
+          ? 'انتهت مدة الانتظار 15 دقيقة. يمكنك الآن تأكيد عدم حضور العميل.'
+          : 'The 15-minute waiting period has ended. You can now confirm customer no-show.',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+      });
+    }
+
+    toast({
+      title: language === 'ar' ? "انتهى وقت الانتظار" : "Waiting Time Expired",
+      description: language === 'ar' 
+        ? "انتهت مدة الانتظار 15 دقيقة. يمكنك الآن تأكيد عدم حضور العميل."
+        : "The 15-minute waiting period has ended. You can now confirm customer no-show.",
       duration: 10000,
     });
   };
@@ -813,6 +878,119 @@ export default function OrderTracking() {
       title: "Work Started",
       description: "Timer has been started",
     });
+  };
+
+  const handleCustomerNotPresent = async () => {
+    // Start waiting stage
+    setStage('waiting_for_customer');
+    setWaitingTimer(15 * 60); // Reset to 15 minutes
+    setTimeExpired(false);
+    await updateOrderStage('waiting_for_customer');
+    
+    // Request notification permission if not granted
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+    
+    toast({
+      title: language === 'ar' ? "بدء الانتظار" : "Waiting Started",
+      description: language === 'ar' 
+        ? "بدأ عداد الانتظار 15 دقيقة"
+        : "15-minute waiting period started",
+    });
+  };
+
+  const handleCancelWaiting = async () => {
+    // Customer arrived, cancel waiting and start work
+    stopTimeExpiredAlert();
+    setTimeExpired(false);
+    await handleStartWork();
+    toast({
+      title: language === 'ar' ? "حضر العميل" : "Customer Arrived",
+      description: language === 'ar' 
+        ? "تم بدء العمل"
+        : "Work has been started",
+    });
+  };
+
+  const handleConfirmNoShow = async () => {
+    // Customer didn't show up, proceed with compensation
+    stopTimeExpiredAlert();
+    setTimeExpired(false);
+    
+    try {
+      // Fetch compensation amount from wallet policies
+      const { data: policyData } = await supabase
+        .from('wallet_policies')
+        .select('compensation_amount')
+        .eq('policy_key', 'customer_no_show')
+        .eq('is_active', true)
+        .single();
+
+      if (policyData && specialistId) {
+        // Add compensation to specialist's wallet
+        const { data: specialistData } = await supabase
+          .from('specialists')
+          .select('wallet_balance')
+          .eq('id', specialistId)
+          .single();
+
+        const currentBalance = specialistData?.wallet_balance || 0;
+        const compensationAmount = policyData.compensation_amount;
+        const newBalance = Number(currentBalance) + Number(compensationAmount);
+
+        // Update specialist wallet balance
+        await supabase
+          .from('specialists')
+          .update({ wallet_balance: newBalance })
+          .eq('id', specialistId);
+
+        // Record transaction
+        await supabase
+          .from('wallet_transactions')
+          .insert({
+            specialist_id: specialistId,
+            order_id: orderId,
+            transaction_type: 'compensation',
+            amount: compensationAmount,
+            balance_after: newBalance,
+            description: language === 'ar' 
+              ? 'تعويض عدم حضور العميل' 
+              : 'Customer no-show compensation'
+          });
+
+        // Mark order as cancelled with reason
+        await supabase
+          .from('orders')
+          .update({ 
+            status: 'cancelled',
+            tracking_stage: 'cancelled',
+            early_finish_reason: language === 'ar' ? 'عدم حضور العميل' : 'Customer no-show'
+          })
+          .eq('id', orderId);
+
+        toast({
+          title: language === 'ar' ? "تم إضافة التعويض" : "Compensation Added",
+          description: language === 'ar'
+            ? `تم إضافة ${compensationAmount} ريال إلى محفظتك`
+            : `${compensationAmount} SAR has been added to your wallet`,
+        });
+
+        // Navigate back to home
+        setTimeout(() => {
+          navigate('/specialist/home');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error processing compensation:', error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' 
+          ? "حدث خطأ أثناء معالجة التعويض"
+          : "Error processing compensation",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEmergency = () => {
@@ -1597,7 +1775,7 @@ export default function OrderTracking() {
             </Card>
 
             {/* Fixed Start Work Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50">
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50 space-y-2">
               <Button
                 onClick={handleStartWork}
                 disabled={arrivedTimer > 0}
@@ -1606,6 +1784,130 @@ export default function OrderTracking() {
               >
                 <Play className="h-5 w-5 ml-2" />
                 <span>{t.startWorkClock}</span>
+              </Button>
+              
+              {/* Customer Not Present Button */}
+              <Button
+                onClick={handleCustomerNotPresent}
+                disabled={arrivedTimer > 0}
+                variant="outline"
+                className="w-full h-12 text-base font-semibold border-2 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <AlertCircle className="h-5 w-5 ml-2" />
+                <span>{language === 'ar' ? 'العميل غير موجود - بدء الانتظار' : 'Customer Not Present - Start Waiting'}</span>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Waiting for Customer Stage */}
+        {stage === 'waiting_for_customer' && (
+          <div className="pb-24">
+            <Card className="overflow-hidden border-2 border-amber-400 dark:border-amber-600 shadow-2xl">
+              {/* Stage Header */}
+              <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 py-4 px-4">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm animate-pulse">
+                    <Clock className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white text-center">
+                    {language === 'ar' ? 'في انتظار العميل' : 'Waiting for Customer'}
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Timer Display */}
+                <div className="text-center space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'ar' ? 'الوقت المتبقي' : 'Time Remaining'}
+                  </p>
+                  <div className={`text-6xl font-bold tabular-nums ${
+                    waitingTimer <= 60 ? 'text-red-600 animate-pulse' : 
+                    waitingTimer <= 300 ? 'text-amber-600' : 'text-primary'
+                  }`}>
+                    {Math.floor(waitingTimer / 60).toString().padStart(2, '0')}:
+                    {(waitingTimer % 60).toString().padStart(2, '0')}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'ar' ? 'من 15:00 دقيقة' : 'of 15:00 minutes'}
+                  </p>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-muted rounded-full h-3">
+                  <div
+                    className={`h-3 rounded-full transition-all ${
+                      waitingTimer <= 60 ? 'bg-red-600' :
+                      waitingTimer <= 300 ? 'bg-amber-500' : 'bg-primary'
+                    }`}
+                    style={{ width: `${((15 * 60 - waitingTimer) / (15 * 60)) * 100}%` }}
+                  />
+                </div>
+
+                {/* Info Message */}
+                <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-700">
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
+                  <AlertDescription className="text-sm text-blue-900 dark:text-blue-100">
+                    {language === 'ar' 
+                      ? 'يتم احتساب مدة الانتظار وفقاً لسياسة عدم حضور العميل. بعد انتهاء 15 دقيقة، يمكنك تأكيد عدم الحضور واستلام التعويض.'
+                      : 'Waiting time is being counted according to customer no-show policy. After 15 minutes, you can confirm no-show and receive compensation.'}
+                  </AlertDescription>
+                </Alert>
+
+                {/* Time Expired Alert */}
+                {timeExpired && waitingTimer === 0 && (
+                  <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-900/50 border-2 border-green-400 p-5 animate-pulse">
+                    <div className="text-center space-y-3">
+                      <div className="text-5xl">✅</div>
+                      <h4 className="text-lg font-bold text-green-800 dark:text-green-200">
+                        {language === 'ar' ? 'انتهى وقت الانتظار' : 'Waiting Time Completed'}
+                      </h4>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        {language === 'ar' 
+                          ? 'يمكنك الآن تأكيد عدم حضور العميل واستلام التعويض'
+                          : 'You can now confirm customer no-show and receive compensation'}
+                      </p>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Contact Customer Option */}
+                <div className="flex justify-center">
+                  <Button 
+                    onClick={() => window.location.href = `tel:${order?.customer?.whatsapp_number || ''}`}
+                    size="lg"
+                    variant="outline"
+                    className="bg-green-50 hover:bg-green-100 border-green-300 text-green-700"
+                  >
+                    <Phone className="h-5 w-5 ml-2" />
+                    <span>{language === 'ar' ? 'الاتصال بالعميل' : 'Call Customer'}</span>
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Fixed Action Buttons */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50 space-y-2">
+              {/* Start Work Button - If customer arrived */}
+              <Button
+                onClick={handleCancelWaiting}
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg"
+                size="lg"
+              >
+                <CheckCircle className="h-5 w-5 ml-2" />
+                <span>{language === 'ar' ? 'حضر العميل - بدء العمل' : 'Customer Arrived - Start Work'}</span>
+              </Button>
+              
+              {/* Confirm No-Show Button - Only after 15 minutes */}
+              <Button
+                onClick={handleConfirmNoShow}
+                disabled={waitingTimer > 0}
+                variant="destructive"
+                className="w-full h-12 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <XCircle className="h-5 w-5 ml-2" />
+                <span>{language === 'ar' ? 'تأكيد عدم الحضور' : 'Confirm No-Show'}</span>
               </Button>
             </div>
           </div>
