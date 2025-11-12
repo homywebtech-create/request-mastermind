@@ -2456,21 +2456,24 @@ Thank you for contacting us! 🌟`;
 
             {selectedOrder && (
               <div className="space-y-3">
-                <Button
-                  onClick={() => handleSendToAll(selectedOrder.id)}
-                  variant="outline"
-                  className="w-full justify-start h-auto py-4"
-                >
-                  <div className="flex flex-col items-start gap-1 text-left">
-                    <div className="flex items-center gap-2 font-medium">
-                      <Users className="h-4 w-4" />
-                      {t.sendToAllCompanies}
+                {/* Hide "Send to All Companies" option for company users */}
+                {!isCompanyView && (
+                  <Button
+                    onClick={() => handleSendToAll(selectedOrder.id)}
+                    variant="outline"
+                    className="w-full justify-start h-auto py-4"
+                  >
+                    <div className="flex flex-col items-start gap-1 text-left">
+                      <div className="flex items-center gap-2 font-medium">
+                        <Users className="h-4 w-4" />
+                        {t.sendToAllCompanies}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {t.broadcastDesc}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {t.broadcastDesc}
-                    </span>
-                  </div>
-                </Button>
+                  </Button>
+                )}
                 
                 {/* Option to select specific company and specialist */}
                 <Button
@@ -2494,21 +2497,24 @@ Thank you for contacting us! 🌟`;
 
                 {selectedOrder.company_id && (
                   <>
-                    <Button
-                      onClick={() => handleResendToSameCompany(selectedOrder)}
-                      variant="outline"
-                      className="w-full justify-start h-auto py-4"
-                    >
-                      <div className="flex flex-col items-start gap-1 text-left">
-                        <div className="flex items-center gap-2 font-medium">
-                          <Building2 className="h-4 w-4" />
-                          {t.resendToSameCompany}
+                    {/* Hide "Resend to Same Company" option for company users */}
+                    {!isCompanyView && (
+                      <Button
+                        onClick={() => handleResendToSameCompany(selectedOrder)}
+                        variant="outline"
+                        className="w-full justify-start h-auto py-4"
+                      >
+                        <div className="flex flex-col items-start gap-1 text-left">
+                          <div className="flex items-center gap-2 font-medium">
+                            <Building2 className="h-4 w-4" />
+                            {t.resendToSameCompany}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {selectedOrder.companies?.name ? t.sendAgainToCompany.replace('{company}', selectedOrder.companies.name) : t.sendAgainToSameCompany}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {selectedOrder.companies?.name ? t.sendAgainToCompany.replace('{company}', selectedOrder.companies.name) : t.sendAgainToSameCompany}
-                        </span>
-                      </div>
-                    </Button>
+                      </Button>
+                    )}
 
                     <Button
                       onClick={() => handleResendToSameSpecialists(selectedOrder)}
