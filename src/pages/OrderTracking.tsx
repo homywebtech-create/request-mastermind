@@ -30,7 +30,7 @@ import { translateOrderDetails } from "@/lib/translateHelper";
 import { TranslateButton } from "@/components/specialist/TranslateButton";
 import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMessagesButton";
 import { Capacitor } from '@capacitor/core';
-import { sendWhatsAppMessage } from "@/lib/whatsappHelper";
+import { sendTemplateMessage } from "@/lib/whatsappTemplateHelper";
 
 type Stage = 'initial' | 'moving' | 'arrived' | 'waiting_for_customer' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
@@ -870,16 +870,17 @@ export default function OrderTracking() {
     // Send professional WhatsApp message to customer about arrival
     if (order?.customer?.whatsapp_number) {
       try {
-        const customerLanguage = order.customer.preferred_language || 'ar';
-        const arrivalMessage = customerLanguage === 'en' 
-          ? `Hello,\n\nWe would like to inform you that the specialist has arrived at your location.\n\nPlease welcome them to begin the service.\n\nThank you for choosing our services! 🌟`
-          : `مرحباً،\n\nنود إعلامك بأن المحترف قد وصل إلى موقعك.\n\nنرجو منك استقباله لبدء تقديم الخدمة.\n\nشكراً لاختيارك خدماتنا! 🌟`;
-
-        await sendWhatsAppMessage({
-          to: order.customer.whatsapp_number,
-          message: arrivalMessage,
-          customerName: order.customer.name
-        });
+        const customerLanguage = (order.customer.preferred_language || 'ar') as 'ar' | 'en';
+        
+        await sendTemplateMessage(
+          order.customer.whatsapp_number,
+          'specialist_arrived',
+          customerLanguage,
+          {
+            customer_name: order.customer.name,
+            specialist_name: 'المحترف' // You can get the actual specialist name if available
+          }
+        );
         
         console.log('✅ Arrival notification sent to customer');
       } catch (whatsappError) {
@@ -935,16 +936,17 @@ export default function OrderTracking() {
       // Send professional WhatsApp message to customer about waiting period
       if (order?.customer?.whatsapp_number) {
         try {
-          const customerLanguage = order.customer.preferred_language || 'ar';
-          const waitingMessage = customerLanguage === 'en'
-            ? `Hello,\n\nThe specialist is currently waiting for you at your location.\n\nPlease welcome them within the next 15 minutes.\n\n⚠️ Important: If the specialist is not received within this time, a waiting fee will be charged and the booking will be automatically cancelled.\n\nWe appreciate your cooperation.`
-            : `مرحباً،\n\nالمحترف في انتظار استقبالك حالياً في موقعك.\n\nنرجو منك استقباله خلال الـ 15 دقيقة القادمة.\n\n⚠️ تنبيه مهم: في حالة عدم الاستقبال خلال هذه المدة، سيتم احتساب رسوم الانتظار وإلغاء الحجز تلقائياً.\n\nنقدر لك تعاونك.`;
-
-          await sendWhatsAppMessage({
-            to: order.customer.whatsapp_number,
-            message: waitingMessage,
-            customerName: order.customer.name
-          });
+          const customerLanguage = (order.customer.preferred_language || 'ar') as 'ar' | 'en';
+          
+          await sendTemplateMessage(
+            order.customer.whatsapp_number,
+            'waiting_for_customer',
+            customerLanguage,
+            {
+              customer_name: order.customer.name,
+              specialist_name: 'المحترف' // You can get the actual specialist name if available
+            }
+          );
           
           console.log('✅ Waiting period notification sent to customer');
         } catch (whatsappError) {

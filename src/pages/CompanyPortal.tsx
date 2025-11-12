@@ -563,12 +563,27 @@ export default function CompanyPortal() {
 
       // Send WhatsApp notification to customer
       try {
-        const { sendWhatsAppMessage } = await import('@/lib/whatsappHelper');
-        await sendWhatsAppMessage({
-          to: orderData.whatsappNumber,
-          message: `تم إنشاء طلبك بنجاح\n\nرقم الطلب: ${order.order_number}\n\nيمكنك متابعة طلبك من خلال الرابط:\n${orderLink}`,
-          customerName: orderData.customerName
-        });
+        // Get customer language preference
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('preferred_language')
+          .eq('id', customerId)
+          .single();
+
+        const customerLanguage = (customerData?.preferred_language || 'ar') as 'ar' | 'en';
+        
+        const { sendTemplateMessage } = await import('@/lib/whatsappTemplateHelper');
+        await sendTemplateMessage(
+          orderData.whatsappNumber,
+          'order_created',
+          customerLanguage,
+          {
+            customer_name: orderData.customerName,
+            order_number: order.order_number || order.id,
+            service_type: orderData.serviceType,
+            booking_date: orderData.bookingDate || (language === 'ar' ? 'سيتم التحديد لاحقاً' : 'To be determined')
+          }
+        );
       } catch (whatsappError) {
         console.error('Failed to send WhatsApp notification:', whatsappError);
         // Don't fail the order creation if WhatsApp fails
