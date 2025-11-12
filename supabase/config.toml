@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.verify-whatsapp-config]
 verify_jwt = false
+
+[functions.confirm-tip-webhook]
+verify_jwt = false

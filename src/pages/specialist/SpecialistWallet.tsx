@@ -8,6 +8,8 @@ import { Wallet, Plus, ArrowDownCircle, Receipt, Calendar, Hash } from "lucide-r
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FinancialNotificationsPanel } from "@/components/specialist/FinancialNotificationsPanel";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -274,66 +276,88 @@ export default function SpecialistWallet() {
           </div>
         </Card>
 
-        {/* Transactions List */}
-        <div className="space-y-3">
-          <h2 className="text-white font-bold text-lg mb-4">آخر المعاملات</h2>
-          
-          {transactions.length === 0 ? (
-            <Card className="bg-white/90 backdrop-blur-sm p-8 text-center animate-fade-in">
-              <Wallet className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">لا توجد معاملات حتى الآن</p>
-            </Card>
-          ) : (
-            transactions.map((transaction, index) => (
-              <Card 
-                key={transaction.id}
-                className="bg-white/90 backdrop-blur-sm border-white/30 hover:shadow-lg transition-all cursor-pointer animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => handleViewInvoice(transaction)}
-              >
-                <div className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-muted rounded-full">
-                        {getTransactionIcon(transaction.transaction_type)}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {getTransactionLabel(transaction.transaction_type)}
-                        </p>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(transaction.created_at), 'dd/MM/yyyy HH:mm', { locale: ar })}
-                          </span>
-                          {transaction.orders?.order_number && (
+        {/* Tabs for Transactions and Financial Notifications */}
+        <Tabs defaultValue="transactions" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-white/20 backdrop-blur-sm">
+            <TabsTrigger value="transactions" className="text-white data-[state=active]:bg-white/30">
+              <Receipt className="h-4 w-4 ml-2" />
+              آخر المعاملات
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="text-white data-[state=active]:bg-white/30">
+              <Wallet className="h-4 w-4 ml-2" />
+              الإشعارات المالية
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Transactions Tab */}
+          <TabsContent value="transactions" className="space-y-3 mt-4">
+            {transactions.length === 0 ? (
+              <Card className="bg-white/90 backdrop-blur-sm p-8 text-center animate-fade-in">
+                <Wallet className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">لا توجد معاملات حتى الآن</p>
+              </Card>
+            ) : (
+              transactions.map((transaction, index) => (
+                <Card 
+                  key={transaction.id}
+                  className="bg-white/90 backdrop-blur-sm border-white/30 hover:shadow-lg transition-all cursor-pointer animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  onClick={() => handleViewInvoice(transaction)}
+                >
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-muted rounded-full">
+                          {getTransactionIcon(transaction.transaction_type)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {getTransactionLabel(transaction.transaction_type)}
+                          </p>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                             <span className="flex items-center gap-1">
-                              <Hash className="h-3 w-3" />
-                              {transaction.orders.order_number}
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(transaction.created_at), 'dd/MM/yyyy HH:mm', { locale: ar })}
                             </span>
-                          )}
+                            {transaction.orders?.order_number && (
+                              <span className="flex items-center gap-1">
+                                <Hash className="h-3 w-3" />
+                                {transaction.orders.order_number}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-left">
-                      <p className={`text-xl font-bold ${
-                        transaction.transaction_type === 'deduction' 
-                          ? 'text-red-500' 
-                          : 'text-green-500'
-                      }`}>
-                        {transaction.transaction_type === 'deduction' ? '-' : '+'}
-                        {Math.abs(transaction.amount).toFixed(2)} ريال
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        الرصيد: {transaction.balance_after.toFixed(2)} ريال
-                      </p>
+                      <div className="text-left">
+                        <p className={`text-xl font-bold ${
+                          transaction.transaction_type === 'deduction' 
+                            ? 'text-red-500' 
+                            : 'text-green-500'
+                        }`}>
+                          {transaction.transaction_type === 'deduction' ? '-' : '+'}
+                          {Math.abs(transaction.amount).toFixed(2)} ريال
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          الرصيد: {transaction.balance_after.toFixed(2)} ريال
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          {/* Financial Notifications Tab */}
+          <TabsContent value="notifications" className="mt-4">
+            {specialistId && (
+              <FinancialNotificationsPanel
+                specialistId={specialistId}
+                currency="ريال"
+              />
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Invoice Dialog */}

@@ -85,7 +85,7 @@ export function PaymentConfirmationDialog({
           invoice_amount: invoiceAmount,
           amount_received: amount,
           difference_amount: difference,
-          difference_cause: cause,
+          difference_reason: cause,
           notes: additionalNote || null,
         })
         .select()
