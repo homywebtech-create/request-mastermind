@@ -750,7 +750,7 @@ export default function Orders() {
       />
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="!max-w-[95vw] w-[95vw] max-h-[96vh] overflow-y-auto p-8">
+        <DialogContent className="max-w-[95vw] w-[95vw] max-h-[96vh] overflow-y-auto p-8">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               {language === 'ar' ? 'إنشاء طلب جديد' : 'Create New Order'}
