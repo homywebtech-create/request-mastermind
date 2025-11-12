@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OrdersTable } from "@/components/orders/orders-table";
 import { OrderForm } from "@/components/orders/order-form";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -696,16 +696,6 @@ export default function Orders() {
             </div>
           </div>
 
-          {showForm && userHasPermission('create_order') && (
-            <Dialog open={showForm} onOpenChange={setShowForm}>
-              <DialogContent className="max-w-[99vw] w-[99vw] max-h-[96vh] overflow-y-auto p-8">
-                <OrderForm 
-                  onSubmit={handleCreateOrder}
-                  onCancel={() => setShowForm(false)}
-                />
-              </DialogContent>
-            </Dialog>
-          )}
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -756,6 +746,20 @@ export default function Orders() {
           }
         }}
       />
+
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-[99vw] w-[99vw] max-h-[96vh] overflow-y-auto p-8">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              {language === 'ar' ? 'إنشاء طلب جديد' : 'Create New Order'}
+            </DialogTitle>
+          </DialogHeader>
+          <OrderForm 
+            onSubmit={handleCreateOrder}
+            onCancel={() => setShowForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
