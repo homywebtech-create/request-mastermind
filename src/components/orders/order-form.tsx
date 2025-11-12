@@ -659,10 +659,10 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
             <form onSubmit={handleSubmit} className="space-y-6">
           {/* Step 1: Customer Information */}
           {currentStep === 1 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">بيانات العميل / Customer Information</h3>
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold text-foreground mb-4 pb-3 border-b">بيانات العميل / Customer Information</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-6">
               {formData.phoneNumber && formData.phoneNumber.length >= 7 && (
                 <div className="space-y-2">
                   <Label htmlFor="customerName">
@@ -827,10 +827,10 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
 
           {/* Step 2: Service Information */}
           {currentStep === 2 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">بيانات الخدمة / Service Details</h3>
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold text-foreground mb-4 pb-3 border-b">بيانات الخدمة / Service Details</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="serviceId">الخدمة الرئيسية / Main Service *</Label>
                 <Select value={formData.serviceId} onValueChange={(value) => handleInputChange('serviceId', value)}>
@@ -1135,13 +1135,13 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
 
           {/* Step 3: Company/Specialist Selection */}
           {currentStep === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {isCompanyView ? (
                 // Company view - select specialists only
                 <>
-                  <h3 className="text-lg font-semibold text-foreground">اختيار المحترفين / Specialist Selection</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-4 pb-3 border-b">اختيار المحترفين / Specialist Selection</h3>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>إرسال الطلب إلى / Send Order To</Label>
                     <div className="flex items-center gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
@@ -1234,9 +1234,9 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
               ) : (
                 // Admin view - select company then specialists
                 <>
-                  <h3 className="text-lg font-semibold text-foreground">اختيار الشركة / Company Selection</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-4 pb-3 border-b">اختيار الشركة / Company Selection</h3>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>إرسال الطلب إلى / Send Order To</Label>
                   <div className="flex items-center gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -1366,14 +1366,14 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
 
           {/* Step 4: Confirmation Summary */}
           {currentStep === 4 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">تأكيد الطلب / Order Confirmation</h3>
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold text-foreground mb-4 pb-3 border-b">تأكيد الطلب / Order Confirmation</h3>
               
-              <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+              <div className="space-y-6 p-6 bg-muted/30 rounded-lg border-2 border-muted">
                 {/* Customer Info */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground">بيانات العميل / Customer Information</h4>
-                  <div className="space-y-1 text-sm">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-base text-muted-foreground">بيانات العميل / Customer Information</h4>
+                  <div className="space-y-2 text-base">
                     <p><span className="font-medium">الاسم / Name:</span> {formData.customerName}</p>
                     <p><span className="font-medium">الواتساب / WhatsApp:</span> {countries.find(c => c.code === formData.countryCode)?.dialCode}{formData.phoneNumber}</p>
                     <p><span className="font-medium">المنطقة / Area:</span> {formData.area}</p>
@@ -1381,9 +1381,9 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                 </div>
 
                 {/* Service Info */}
-                <div className="space-y-2 pt-3 border-t">
-                  <h4 className="font-semibold text-sm text-muted-foreground">معلومات الخدمة / Service Information</h4>
-                  <div className="space-y-1 text-sm">
+                <div className="space-y-3 pt-4 border-t-2">
+                  <h4 className="font-semibold text-base text-muted-foreground">معلومات الخدمة / Service Information</h4>
+                  <div className="space-y-2 text-base">
                     <p><span className="font-medium">الخدمة / Service:</span> {services.find(s => s.id === formData.serviceId)?.name}</p>
                     {formData.subServiceId && (
                       <p><span className="font-medium">الخدمة الفرعية / Sub-Service:</span> {selectedService?.sub_services.find(ss => ss.id === formData.subServiceId)?.name}</p>
@@ -1401,9 +1401,9 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                 </div>
 
                 {/* Company/Specialist Selection */}
-                <div className="space-y-2 pt-3 border-t">
-                  <h4 className="font-semibold text-sm text-muted-foreground">إرسال الطلب / Send Order To</h4>
-                  <div className="space-y-1 text-sm">
+                <div className="space-y-3 pt-4 border-t-2">
+                  <h4 className="font-semibold text-base text-muted-foreground">إرسال الطلب / Send Order To</h4>
+                  <div className="space-y-2 text-base">
                     {formData.sendToAll ? (
                       <p className="font-medium text-primary">✓ سيتم إرسال الطلب لجميع {isCompanyView ? 'المحترفين' : 'الشركات'} / Will be sent to all {isCompanyView ? 'specialists' : 'companies'}</p>
                     ) : (
@@ -1420,8 +1420,8 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
                 </div>
               </div>
 
-              <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                <p className="text-sm text-center">
+              <div className="p-6 bg-primary/10 rounded-lg border-2 border-primary/30">
+                <p className="text-base text-center font-medium">
                   ⚠️ تأكد من صحة البيانات قبل الإرسال / Please verify all information before submitting
                 </p>
               </div>
