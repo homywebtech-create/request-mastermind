@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Bell, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { firebaseNotifications } from '@/lib/firebaseNotifications';
 import { Capacitor } from '@capacitor/core';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useTranslation } from '@/i18n/index';
 
 interface NotificationStatusCheckerProps {
   specialistId: string;
@@ -14,6 +16,8 @@ export function NotificationStatusChecker({ specialistId }: NotificationStatusCh
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
+  const { language } = useLanguage();
+  const t = useTranslation(language);
 
   const checkTokenStatus = async () => {
     try {
@@ -101,10 +105,10 @@ export function NotificationStatusChecker({ specialistId }: NotificationStatusCh
       <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 mb-4">
         <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
         <AlertTitle className="text-green-900 dark:text-green-100">
-          الإشعارات مفعلة ✓
+          {language === 'ar' ? '✓ الإشعارات مفعلة' : '✓ Notifications Enabled'}
         </AlertTitle>
         <AlertDescription className="text-green-800 dark:text-green-200">
-          سوف تستقبل إشعارات العروض الجديدة
+          {t.specialist.notificationMessage}
         </AlertDescription>
       </Alert>
     );
@@ -115,18 +119,33 @@ export function NotificationStatusChecker({ specialistId }: NotificationStatusCh
     <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 mb-4">
       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
       <AlertTitle className="text-amber-900 dark:text-amber-100">
-        تنبيه: الإشعارات غير مفعلة
+        {language === 'ar' ? 'تنبيه: الإشعارات غير مفعلة' : 'Warning: Notifications Not Enabled'}
       </AlertTitle>
       <AlertDescription className="text-amber-800 dark:text-amber-200 space-y-2">
-        <p>لن تستقبل إشعارات العروض الجديدة. قد تفوتك فرص عمل!</p>
+        <p>{language === 'ar' 
+          ? 'لن تستقبل إشعارات العروض الجديدة. قد تفوتك فرص عمل!' 
+          : 'You will not receive notifications for new offers. You may miss work opportunities!'}
+        </p>
         
         <div className="space-y-1 text-sm mt-2">
-          <p className="font-semibold">الحلول:</p>
+          <p className="font-semibold">{language === 'ar' ? 'الحلول:' : 'Solutions:'}</p>
           <ol className="list-decimal list-inside space-y-1">
-            <li>تأكد من السماح بأذونات الإشعارات في إعدادات التطبيق</li>
-            <li>تأكد من عدم تفعيل وضع "عدم الإزعاج" في هاتفك</li>
-            <li>جرب الضغط على زر "إعادة المحاولة" أدناه</li>
-            <li>إذا استمرت المشكلة، قم بإغلاق التطبيق وفتحه مرة أخرى</li>
+            <li>{language === 'ar' 
+              ? 'تأكد من السماح بأذونات الإشعارات في إعدادات التطبيق' 
+              : 'Make sure notification permissions are enabled in app settings'}
+            </li>
+            <li>{language === 'ar' 
+              ? 'تأكد من عدم تفعيل وضع "عدم الإزعاج" في هاتفك' 
+              : 'Make sure "Do Not Disturb" mode is not enabled on your phone'}
+            </li>
+            <li>{language === 'ar' 
+              ? 'جرب الضغط على زر "إعادة المحاولة" أدناه' 
+              : 'Try pressing the "Retry" button below'}
+            </li>
+            <li>{language === 'ar' 
+              ? 'إذا استمرت المشكلة، قم بإغلاق التطبيق وفتحه مرة أخرى' 
+              : 'If the problem persists, close and reopen the app'}
+            </li>
           </ol>
         </div>
 
@@ -140,12 +159,12 @@ export function NotificationStatusChecker({ specialistId }: NotificationStatusCh
           {isRetrying ? (
             <>
               <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
-              جاري المحاولة...
+              {language === 'ar' ? 'جاري المحاولة...' : 'Retrying...'}
             </>
           ) : (
             <>
               <Bell className="ml-2 h-4 w-4" />
-              إعادة المحاولة
+              {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
             </>
           )}
         </Button>
