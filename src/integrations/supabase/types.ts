@@ -1510,6 +1510,51 @@ export type Database = {
           },
         ]
       }
+      whatsapp_message_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description_ar: string
+          description_en: string
+          id: string
+          is_active: boolean
+          message_key: string
+          name_ar: string
+          name_en: string
+          template_ar: string
+          template_en: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description_ar: string
+          description_en: string
+          id?: string
+          is_active?: boolean
+          message_key: string
+          name_ar: string
+          name_en: string
+          template_ar: string
+          template_en: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description_ar?: string
+          description_en?: string
+          id?: string
+          is_active?: boolean
+          message_key?: string
+          name_ar?: string
+          name_en?: string
+          template_ar?: string
+          template_en?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

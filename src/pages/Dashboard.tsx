@@ -985,6 +985,13 @@ export default function Dashboard() {
                       )}
                       
                       <DropdownMenuSeparator />
+
+                      {userHasPermission('view_dashboard') && (
+                        <DropdownMenuItem onClick={() => navigate('/whatsapp-messages')}>
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'قوالب رسائل واتساب' : 'WhatsApp Messages'}
+                        </DropdownMenuItem>
+                      )}
                       
                       {userHasPermission('view_dashboard') && (
                         <DropdownMenuItem onClick={() => navigate('/wallet-policies')}>
