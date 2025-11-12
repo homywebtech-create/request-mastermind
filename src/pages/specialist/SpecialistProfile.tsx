@@ -328,10 +328,10 @@ export default function SpecialistProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-          <p className="text-white font-medium">{t.loading}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-foreground font-medium">{t.loading}</p>
         </div>
       </div>
     );
@@ -339,7 +339,7 @@ export default function SpecialistProfile() {
 
   return (
     <BusyGuard specialistId={specialist?.id || ''} allowWhenBusy={false}>
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 pb-24">
+      <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white p-6 shadow-lg">
         <div className="max-w-screen-lg mx-auto">
