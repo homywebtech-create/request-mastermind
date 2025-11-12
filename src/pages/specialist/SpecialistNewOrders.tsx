@@ -853,10 +853,10 @@ export default function SpecialistNewOrders() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-          <p className="text-white font-medium">{t.specialist.loading}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-foreground font-medium">{t.specialist.loading}</p>
         </div>
       </div>
     );
@@ -864,9 +864,9 @@ export default function SpecialistNewOrders() {
 
   return (
     <BusyGuard specialistId={specialistId} allowWhenBusy={true}>
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 pb-24">
+      <div className="min-h-screen bg-background pb-24">
       {/* Fixed Header with Wallet and Settings */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white shadow-2xl">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground shadow-2xl">
         <div className="max-w-screen-lg mx-auto p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex-1">
