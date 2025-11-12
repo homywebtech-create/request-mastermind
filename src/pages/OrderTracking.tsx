@@ -78,6 +78,9 @@ export default function OrderTracking() {
   const [timeExpired, setTimeExpired] = useState(false);
   const [alertInterval, setAlertInterval] = useState<NodeJS.Timeout | null>(null);
   const alertAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [otherReason, setOtherReason] = useState('');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showEarlyFinishDialog, setShowEarlyFinishDialog] = useState(false);
   const [showExtendTimeDialog, setShowExtendTimeDialog] = useState(false);
   const [extensionHours, setExtensionHours] = useState(1);
@@ -810,6 +813,44 @@ export default function OrderTracking() {
       title: "Work Started",
       description: "Timer has been started",
     });
+  };
+
+  const handleEmergency = () => {
+    // Get company phone from order - in real app, this would come from order data
+    toast({
+      title: "Emergency Call",
+      description: "Calling company now",
+    });
+    // In real implementation, call the company
+  };
+
+  const handleCancelWork = async () => {
+    if (!cancelReason) {
+      toast({
+        title: "Error",
+        description: "Please select a cancellation reason",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (cancelReason === 'other' && !otherReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please write the reason",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Handle cancellation
+    await updateOrderStage('cancelled');
+    toast({
+      title: "Work Cancelled",
+      description: "Cancellation recorded successfully",
+    });
+    setShowCancelDialog(false);
+    navigate(-1);
   };
 
   const handleEarlyFinish = () => {
@@ -1546,7 +1587,97 @@ export default function OrderTracking() {
                 </Card>
               )}
 
-              {/* Action Buttons - Removed as per user request */}
+              {/* Emergency Actions - Collapsible Section */}
+              <div className="space-y-3">
+                <Collapsible className="w-full border-t pt-4 mt-4">
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="w-full text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <AlertTriangle className="ml-2 h-3 w-3" />
+                      {t.emergencyOnly}
+                      <ChevronDown className="mr-2 h-3 w-3" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-2 pt-3">
+                    <p className="text-xs text-center text-muted-foreground mb-3 px-4">
+                      {t.emergencyWarning}
+                    </p>
+                    
+                    <Button
+                      onClick={handleEmergency}
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 text-xs"
+                    >
+                      <AlertTriangle className="ml-2 h-3.5 w-3.5" />
+                      {t.emergencyContact}
+                    </Button>
+
+                    <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="w-full text-destructive/70 hover:text-destructive hover:bg-destructive/5 text-xs"
+                        >
+                          <XCircle className="ml-2 h-3.5 w-3.5" />
+                          {language === 'ar' ? 'إلغاء العمل' : 'Cancel Work'}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>{language === 'ar' ? 'سبب الإلغاء' : 'Cancellation Reason'}</DialogTitle>
+                          <DialogDescription>
+                            {language === 'ar' ? 'يرجى اختيار سبب إلغاء العمل' : 'Please select a reason for cancelling the work'}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <RadioGroupItem value="customer_requested" id="customer_requested" />
+                            <Label htmlFor="customer_requested">
+                              {language === 'ar' ? 'العميل طلب الإلغاء' : 'Customer Requested Cancellation'}
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <RadioGroupItem value="not_family" id="not_family" />
+                            <Label htmlFor="not_family">
+                              {language === 'ar' ? 'العميل ليس عائلة' : 'Customer is Not Family'}
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <RadioGroupItem value="other" id="other" />
+                            <Label htmlFor="other">
+                              {language === 'ar' ? 'أسباب أخرى' : 'Other Reasons'}
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                        
+                        {cancelReason === 'other' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="other_reason">
+                              {language === 'ar' ? 'اكتب السبب' : 'Write the Reason'}
+                            </Label>
+                            <Textarea
+                              id="other_reason"
+                              value={otherReason}
+                              onChange={(e) => setOtherReason(e.target.value)}
+                              placeholder={language === 'ar' ? 'اكتب سبب الإلغاء هنا...' : 'Write cancellation reason here...'}
+                              rows={4}
+                            />
+                          </div>
+                        )}
+                        
+                        <Button onClick={handleCancelWork} variant="destructive" className="w-full">
+                          {language === 'ar' ? 'تأكيد الإلغاء' : 'Confirm Cancellation'}
+                        </Button>
+                      </DialogContent>
+                    </Dialog>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
             </Card>
 
             {/* Fixed Finish Work Button */}
