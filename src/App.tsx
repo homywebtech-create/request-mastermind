@@ -44,6 +44,7 @@ import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
 import AppVersionManagement from "./pages/AppVersionManagement";
+import WalletPolicies from "./pages/WalletPolicies";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -292,6 +293,14 @@ function AppRouter() {
           element={
             <RoleProtectedRoute requiredPermission="view_dashboard">
               <AppVersionManagement />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/wallet-policies"
+          element={
+            <RoleProtectedRoute requiredPermission="view_dashboard">
+              <WalletPolicies />
             </RoleProtectedRoute>
           }
         />

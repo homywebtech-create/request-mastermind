@@ -883,9 +883,74 @@ export default function OrderTracking() {
       return;
     }
 
+    // Special handling for customer no-show
+    if (earlyFinishReason === 'customer_no_show') {
+      const elapsedMinutes = Math.floor(workingTime / 60);
+      if (elapsedMinutes < 15) {
+        toast({
+          title: language === 'ar' ? "انتبه" : "Notice",
+          description: t.minimumWaitTime,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fetch compensation amount from wallet policies
+      try {
+        const { data: policyData } = await supabase
+          .from('wallet_policies')
+          .select('compensation_amount')
+          .eq('policy_key', 'customer_no_show')
+          .eq('is_active', true)
+          .single();
+
+        if (policyData && specialistId) {
+          // Add compensation to specialist's wallet
+          const { data: specialistData } = await supabase
+            .from('specialists')
+            .select('wallet_balance')
+            .eq('id', specialistId)
+            .single();
+
+          const currentBalance = specialistData?.wallet_balance || 0;
+          const compensationAmount = policyData.compensation_amount;
+          const newBalance = Number(currentBalance) + Number(compensationAmount);
+
+          // Update specialist wallet balance
+          await supabase
+            .from('specialists')
+            .update({ wallet_balance: newBalance })
+            .eq('id', specialistId);
+
+          // Record transaction
+          await supabase
+            .from('wallet_transactions')
+            .insert({
+              specialist_id: specialistId,
+              order_id: orderId,
+              transaction_type: 'compensation',
+              amount: compensationAmount,
+              balance_after: newBalance,
+              description: language === 'ar' 
+                ? 'تعويض عدم حضور العميل' 
+                : 'Customer no-show compensation'
+            });
+
+          toast({
+            title: language === 'ar' ? "تم إضافة التعويض" : "Compensation Added",
+            description: t.compensationAdded,
+          });
+        }
+      } catch (error) {
+        console.error('Error processing compensation:', error);
+      }
+    }
+
     // Save early finish reason to database
     try {
-      const reasonText = earlyFinishReason === 'finished_early' 
+      const reasonText = earlyFinishReason === 'customer_no_show'
+        ? t.customerNoShow
+        : earlyFinishReason === 'finished_early' 
         ? (language === 'ar' ? 'انتهيت من العمل قبل الموعد' : 'Finished work early')
         : earlyFinishReason === 'customer_stopped'
         ? (language === 'ar' ? 'العميل لا يرغب في الاستمرار' : 'Customer does not want to continue')
@@ -1615,66 +1680,6 @@ export default function OrderTracking() {
                       <AlertTriangle className="ml-2 h-3.5 w-3.5" />
                       {t.emergencyContact}
                     </Button>
-
-                    <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="w-full text-destructive/70 hover:text-destructive hover:bg-destructive/5 text-xs"
-                        >
-                          <XCircle className="ml-2 h-3.5 w-3.5" />
-                          {language === 'ar' ? 'إلغاء العمل' : 'Cancel Work'}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>{language === 'ar' ? 'سبب الإلغاء' : 'Cancellation Reason'}</DialogTitle>
-                          <DialogDescription>
-                            {language === 'ar' ? 'يرجى اختيار سبب إلغاء العمل' : 'Please select a reason for cancelling the work'}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
-                          <div className="flex items-center space-x-2 space-x-reverse">
-                            <RadioGroupItem value="customer_requested" id="customer_requested" />
-                            <Label htmlFor="customer_requested">
-                              {language === 'ar' ? 'العميل طلب الإلغاء' : 'Customer Requested Cancellation'}
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2 space-x-reverse">
-                            <RadioGroupItem value="not_family" id="not_family" />
-                            <Label htmlFor="not_family">
-                              {language === 'ar' ? 'العميل ليس عائلة' : 'Customer is Not Family'}
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2 space-x-reverse">
-                            <RadioGroupItem value="other" id="other" />
-                            <Label htmlFor="other">
-                              {language === 'ar' ? 'أسباب أخرى' : 'Other Reasons'}
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                        
-                        {cancelReason === 'other' && (
-                          <div className="space-y-2">
-                            <Label htmlFor="other_reason">
-                              {language === 'ar' ? 'اكتب السبب' : 'Write the Reason'}
-                            </Label>
-                            <Textarea
-                              id="other_reason"
-                              value={otherReason}
-                              onChange={(e) => setOtherReason(e.target.value)}
-                              placeholder={language === 'ar' ? 'اكتب سبب الإلغاء هنا...' : 'Write cancellation reason here...'}
-                              rows={4}
-                            />
-                          </div>
-                        )}
-                        
-                        <Button onClick={handleCancelWork} variant="destructive" className="w-full">
-                          {language === 'ar' ? 'تأكيد الإلغاء' : 'Confirm Cancellation'}
-                        </Button>
-                      </DialogContent>
-                    </Dialog>
                   </CollapsibleContent>
                 </Collapsible>
               </div>
@@ -1804,6 +1809,12 @@ export default function OrderTracking() {
             </DialogHeader>
             
             <RadioGroup value={earlyFinishReason} onValueChange={setEarlyFinishReason}>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="customer_no_show" id="customer_no_show" />
+                <Label htmlFor="customer_no_show" className="cursor-pointer">
+                  {t.customerNoShow}
+                </Label>
+              </div>
               <div className="flex items-center space-x-2 space-x-reverse">
                 <RadioGroupItem value="finished_early" id="finished_early" />
                 <Label htmlFor="finished_early" className="cursor-pointer">

@@ -983,6 +983,15 @@ export default function Dashboard() {
                           {language === 'ar' ? 'التحقق من إعدادات واتساب' : 'Verify WhatsApp Config'}
                         </DropdownMenuItem>
                       )}
+                      
+                      <DropdownMenuSeparator />
+                      
+                      {userHasPermission('view_dashboard') && (
+                        <DropdownMenuItem onClick={() => navigate('/wallet-policies')}>
+                          <Briefcase className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'قوانين المحفظة' : 'Wallet Policies'}
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>

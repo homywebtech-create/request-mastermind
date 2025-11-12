@@ -419,6 +419,31 @@ export const en = {
     statistics: "Statistics",
     wallet: "Wallet",
     
+    // Slide to complete
+    slideToComplete: 'Slide to Complete',
+    slideToAccept: 'Slide to Accept',
+    releaseToComplete: 'Release to Complete',
+
+    // Early finish reasons
+    earlyFinishReason: 'Early Finish Reason',
+    customerNoShow: 'Waited 15 minutes, customer did not respond',
+    workCompleted: 'Work Completed',
+    customerRequested: 'Customer Requested',
+    emergencyStop: 'Emergency Stop',
+    otherReasonEarlyFinish: 'Other Reason',
+    minimumWaitTime: 'Must wait at least 15 minutes before finishing due to customer no-show',
+    compensationAdded: 'Compensation added to your wallet',
+    
+    // Wallet policies
+    walletPolicies: 'Wallet Policies',
+    policyName: 'Policy Name',
+    compensationAmount: 'Compensation Amount',
+    policyDescription: 'Policy Description',
+    policyStatus: 'Policy Status',
+    editPolicy: 'Edit Policy',
+    customerNoShowPolicy: 'Customer No-Show Compensation',
+    customerNoShowDescription: 'Compensation for specialist when customer does not respond after 15 minutes wait',
+    
     // Profile sections
     accountSettings: "Account & Settings",
     accountInfo: "Your personal account information",

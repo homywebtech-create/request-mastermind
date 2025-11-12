@@ -1396,6 +1396,45 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_policies: {
+        Row: {
+          compensation_amount: number
+          created_at: string
+          description_ar: string | null
+          description_en: string | null
+          id: string
+          is_active: boolean
+          policy_key: string
+          policy_name_ar: string
+          policy_name_en: string
+          updated_at: string
+        }
+        Insert: {
+          compensation_amount?: number
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string | null
+          id?: string
+          is_active?: boolean
+          policy_key: string
+          policy_name_ar: string
+          policy_name_en: string
+          updated_at?: string
+        }
+        Update: {
+          compensation_amount?: number
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string | null
+          id?: string
+          is_active?: boolean
+          policy_key?: string
+          policy_name_ar?: string
+          policy_name_en?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wallet_transactions: {
         Row: {
           amount: number

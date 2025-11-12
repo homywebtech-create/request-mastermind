@@ -419,6 +419,31 @@ export const ar = {
     statistics: "الإحصائيات",
     wallet: "المحفظة",
     
+    // Slide to complete
+    slideToComplete: 'اسحب لإنهاء',
+    slideToAccept: 'اسحب للقبول',
+    releaseToComplete: 'أفلت لإنهاء',
+
+    // Early finish reasons
+    earlyFinishReason: 'سبب الإنهاء المبكر',
+    customerNoShow: 'انتظرت العميل 15 دقيقة ولم يرد',
+    workCompleted: 'تم إنهاء العمل',
+    customerRequested: 'طلب العميل',
+    emergencyStop: 'إيقاف طارئ',
+    otherReasonEarlyFinish: 'سبب آخر',
+    minimumWaitTime: 'يجب الانتظار 15 دقيقة على الأقل قبل الإنهاء بسبب عدم حضور العميل',
+    compensationAdded: 'تم إضافة التعويض إلى محفظتك',
+    
+    // Wallet policies
+    walletPolicies: 'قوانين المحفظة',
+    policyName: 'اسم القانون',
+    compensationAmount: 'قيمة التعويض',
+    policyDescription: 'وصف القانون',
+    policyStatus: 'حالة القانون',
+    editPolicy: 'تعديل القانون',
+    customerNoShowPolicy: 'تعويض عدم حضور العميل',
+    customerNoShowDescription: 'التعويض الذي يحصل عليه المحترف عندما ينتظر العميل 15 دقيقة ولا يرد',
+    
     // Profile sections
     accountSettings: "الحساب والإعدادات",
     accountInfo: "معلومات حسابك الشخصي",
