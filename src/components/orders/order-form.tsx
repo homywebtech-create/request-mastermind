@@ -653,9 +653,9 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
         {renderStepIndicator()}
         
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Form - Left Side (or Right in RTL) */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-6">
             <form onSubmit={handleSubmit} className="space-y-6">
           {/* Step 1: Customer Information */}
           {currentStep === 1 && (
@@ -1477,7 +1477,7 @@ export function OrderForm({ onSubmit, onCancel, isCompanyView = false, companyId
           </div>
 
           {/* Customer History Sidebar - Right Side (or Left in RTL) */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-6">
             <div className="sticky top-6">
               {/* Customer History Card */}
               {formData.phoneNumber && formData.phoneNumber.length >= 7 && (

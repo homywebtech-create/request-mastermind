@@ -41,18 +41,18 @@ export function CustomerHistoryCard({ history, language = 'ar' }: CustomerHistor
   };
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-background to-muted/20">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
+    <Card className="border-primary/20 bg-gradient-to-br from-background to-muted/20 h-full">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg flex items-center gap-2 font-bold">
           <User className="h-4 w-4 text-primary" />
           {isArabic ? 'معلومات العميل السابقة' : 'Customer History'}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {/* Customer Basic Info */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">{history.customer.name}</span>
+            <span className="text-base font-bold">{history.customer.name}</span>
             <Badge variant="secondary" className="gap-1">
               <Globe className="h-3 w-3" />
               {history.customer.preferred_language === 'ar' ? 'عربي' : 'English'}
@@ -69,48 +69,48 @@ export function CustomerHistoryCard({ history, language = 'ar' }: CustomerHistor
         <Separator />
 
         {/* Statistics */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1 text-center">
-            <div className="flex items-center justify-center gap-1 text-primary">
-              <Package className="h-4 w-4" />
-              <span className="text-lg font-bold">{history.totalOrders}</span>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2 text-center p-3 bg-primary/5 rounded-lg">
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <Package className="h-5 w-5" />
+              <span className="text-2xl font-bold">{history.totalOrders}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-medium">
               {isArabic ? 'إجمالي الطلبات' : 'Total Orders'}
             </p>
           </div>
           
-          <div className="space-y-1 text-center">
-            <div className="flex items-center justify-center gap-1 text-green-600">
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="text-lg font-bold">{history.completedOrders}</span>
+          <div className="space-y-2 text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+            <div className="flex items-center justify-center gap-2 text-green-600">
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="text-2xl font-bold">{history.completedOrders}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-medium">
               {isArabic ? 'مكتملة' : 'Completed'}
             </p>
           </div>
           
-          <div className="space-y-1 text-center">
-            <div className="flex items-center justify-center gap-1">
+          <div className="space-y-2 text-center p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+            <div className="flex items-center justify-center gap-2">
               {history.averageRating ? (
                 <>
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-lg font-bold">
+                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-2xl font-bold">
                     {history.averageRating.toFixed(1)}
                   </span>
                 </>
               ) : (
-                <span className="text-lg font-bold text-muted-foreground">-</span>
+                <span className="text-2xl font-bold text-muted-foreground">-</span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-medium">
               {isArabic ? 'التقييم' : 'Rating'}
             </p>
           </div>
         </div>
 
         {history.cancelledOrders > 0 && (
-          <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded-md">
+          <div className="flex items-center gap-3 text-base text-destructive bg-destructive/10 p-3 rounded-lg font-medium">
             <XCircle className="h-4 w-4" />
             <span>
               {isArabic 
@@ -124,17 +124,17 @@ export function CustomerHistoryCard({ history, language = 'ar' }: CustomerHistor
         {history.recentLocations.length > 0 && (
           <>
             <Separator />
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
+            <div className="space-y-3">
+              <h4 className="text-base font-bold flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
                 {isArabic ? 'المواقع السابقة' : 'Previous Locations'}
               </h4>
-              <ScrollArea className="h-[100px]">
-                <div className="space-y-2">
+              <ScrollArea className="h-[140px]">
+                <div className="space-y-3">
                   {history.recentLocations.map((location, index) => (
                     <div 
                       key={index} 
-                      className="flex items-start justify-between gap-2 text-xs bg-muted/50 p-2 rounded"
+                      className="flex items-start justify-between gap-3 text-sm bg-muted/50 p-3 rounded-lg border border-muted"
                     >
                       <div className="flex-1">
                         {location.name && (
@@ -157,15 +157,15 @@ export function CustomerHistoryCard({ history, language = 'ar' }: CustomerHistor
         {history.specialistReviews.length > 0 && (
           <>
             <Separator />
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-primary" />
+            <div className="space-y-3">
+              <h4 className="text-base font-bold flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-primary" />
                 {isArabic ? 'التقييمات والتعليقات' : 'Reviews & Comments'}
               </h4>
-              <ScrollArea className="h-[120px]">
+              <ScrollArea className="h-[160px]">
                 <div className="space-y-3">
                   {history.specialistReviews.map((review, index) => (
-                    <div key={index} className="space-y-1 bg-muted/50 p-2 rounded">
+                    <div key={index} className="space-y-2 bg-muted/50 p-3 rounded-lg border border-muted">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1">
                           {review.rating && renderStars(review.rating)}
@@ -197,17 +197,17 @@ export function CustomerHistoryCard({ history, language = 'ar' }: CustomerHistor
         {history.recentOrders.length > 0 && (
           <>
             <Separator />
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Package className="h-4 w-4 text-primary" />
+            <div className="space-y-3">
+              <h4 className="text-base font-bold flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
                 {isArabic ? 'الطلبات الأخيرة' : 'Recent Orders'}
               </h4>
-              <ScrollArea className="h-[100px]">
-                <div className="space-y-2">
+              <ScrollArea className="h-[140px]">
+                <div className="space-y-3">
                   {history.recentOrders.slice(0, 5).map((order) => (
                     <div 
                       key={order.id} 
-                      className="flex items-center justify-between text-xs bg-muted/50 p-2 rounded"
+                      className="flex items-center justify-between text-sm bg-muted/50 p-3 rounded-lg border border-muted"
                     >
                       <div className="flex-1">
                         <p className="font-medium">{order.service_type}</p>
