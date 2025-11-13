@@ -25,6 +25,9 @@ export function useUserPermissions(userId: string | undefined, role: UserRole | 
       return;
     }
 
+    // Set loading to true when starting a new fetch
+    setLoading(true);
+
     // Prevent concurrent fetches
     if (isFetchingRef.current) {
       return;
