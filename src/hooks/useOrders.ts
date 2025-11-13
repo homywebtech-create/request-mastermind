@@ -227,12 +227,13 @@ export const useOrderStats = () => {
     const awaitingResponse = orders.filter(o => o.status === 'in-progress').length;
     const upcoming = orders.filter(o => o.status === 'upcoming').length;
     
-    // In Progress: tracking started OR overdue confirmed orders
+    // In Progress: tracking started OR overdue confirmed orders (excluding cancelled)
     const inProgress = orders.filter(o => {
       const trackingStarted = o.tracking_stage && ['moving', 'arrived', 'working', 'invoice_requested'].includes(o.tracking_stage);
       const isOverdue = isOrderOverdue(o) && o.status === 'upcoming';
       const isCompleted = o.tracking_stage === 'payment_received' || o.status === 'completed';
-      return (trackingStarted || isOverdue) && !isCompleted;
+      const isCancelled = o.status === 'cancelled';
+      return (trackingStarted || isOverdue) && !isCompleted && !isCancelled;
     }).length;
     
     const completed = orders.filter(o => 
