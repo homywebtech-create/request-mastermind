@@ -114,6 +114,7 @@ export default function OrderTracking() {
   const [specialistId, setSpecialistId] = useState<string>('');
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const [showPaymentConfirmDialog, setShowPaymentConfirmDialog] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -1223,18 +1224,37 @@ export default function OrderTracking() {
   };
 
   const confirmEarlyFinish = async () => {
-    setShowEarlyFinishDialog(false);
-    
-    // Check if time has expired
-    const remainingTime = getRemainingTime();
-    const hasTimeRemaining = remainingTime > 0;
-    
-    // If time hasn't expired, show reason dialog
-    if (hasTimeRemaining) {
-      setShowEarlyFinishReasonDialog(true);
-    } else {
-      // Time expired, proceed normally
-      await handleRequestInvoice();
+    // Prevent multiple simultaneous executions
+    if (isProcessing) {
+      console.log('Already processing, ignoring duplicate call');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setShowEarlyFinishDialog(false);
+      
+      // Check if time has expired
+      const remainingTime = getRemainingTime();
+      const hasTimeRemaining = remainingTime > 0;
+      
+      // If time hasn't expired, show reason dialog
+      if (hasTimeRemaining) {
+        setShowEarlyFinishReasonDialog(true);
+      } else {
+        // Time expired, proceed normally
+        await handleRequestInvoice();
+      }
+    } catch (error) {
+      console.error('Error in confirmEarlyFinish:', error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "حدث خطأ أثناء المعالجة" : "An error occurred during processing",
+        variant: "destructive",
+      });
+    } finally {
+      // Reset processing state after a brief delay to prevent rapid re-clicks
+      setTimeout(() => setIsProcessing(false), 1000);
     }
   };
 
@@ -2267,13 +2287,15 @@ export default function OrderTracking() {
 
                 {/* Finish Work Button - Slide to Complete */}
                 <SlideToComplete
-                  onComplete={() => {
+                  onComplete={async () => {
+                    if (isProcessing) return; // Prevent multiple calls
                     stopTimeExpiredAlert();
                     setTimeExpired(false);
-                    confirmEarlyFinish();
+                    await confirmEarlyFinish();
                   }}
                   text={t.finishWorkNow}
                   className="w-full"
+                  disabled={isProcessing}
                 />
               </div>
             </div>
