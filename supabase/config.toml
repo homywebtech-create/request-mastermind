@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.confirm-tip-webhook]
 verify_jwt = false
+
+[functions.fix-inconsistent-orders]
+verify_jwt = false
