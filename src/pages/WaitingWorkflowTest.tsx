@@ -46,8 +46,25 @@ export default function WaitingWorkflowTest() {
 
     setLoading(true);
     try {
-      const order = await fetchOrder(selectedOrderId);
-      setOrderBefore(order);
+      // البحث بواسطة order_number أو id
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedOrderId);
+      
+      let query = supabase
+        .from("orders")
+        .select("id, order_number, status, tracking_stage, waiting_started_at, waiting_ends_at");
+      
+      if (isUUID) {
+        query = query.eq("id", selectedOrderId);
+      } else {
+        query = query.eq("order_number", selectedOrderId);
+      }
+      
+      const { data, error } = await query.single();
+      
+      if (error) throw error;
+      if (!data) throw new Error("لم يتم العثور على الطلب");
+      
+      setOrderBefore(data as TestOrder);
       setOrderAfter(null);
       setStep("initial");
       
@@ -58,7 +75,7 @@ export default function WaitingWorkflowTest() {
     } catch (error: any) {
       toast({
         title: "خطأ",
-        description: error.message,
+        description: error.message || "فشل تحميل الطلب",
         variant: "destructive",
       });
     } finally {
@@ -236,7 +253,7 @@ export default function WaitingWorkflowTest() {
         <div className="flex gap-4">
           <input
             type="text"
-            placeholder="أدخل ID الطلب للاختبار"
+            placeholder="أدخل رقم الطلب (مثل: ORD-0043) أو UUID"
             value={selectedOrderId}
             onChange={(e) => setSelectedOrderId(e.target.value)}
             className="flex-1 px-4 py-2 border rounded-md"
