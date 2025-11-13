@@ -227,48 +227,46 @@ export default function CancellationSettings() {
                       
                       {/* Cancellation Percentage */}
                       <div>
-                        <Label
-                          htmlFor={`percentage-${subService.id}`}
-                          className="text-xs text-muted-foreground mb-1 block"
-                        >
-                          {language === 'ar' ? 'نسبة الخصم عند الإلغاء' : 'Cancellation Deduction'}
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id={`percentage-${subService.id}`}
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            value={settings[subService.id]?.percentage || 50}
-                            onChange={(e) => handlePercentageChange(subService.id, e.target.value)}
-                            className="pr-10"
-                          />
-                          <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <div className="flex items-center gap-2 mb-1">
+                          <Percent className="h-4 w-4 text-primary" />
+                          <Label
+                            htmlFor={`percentage-${subService.id}`}
+                            className="text-xs text-muted-foreground"
+                          >
+                            {language === 'ar' ? 'نسبة الخصم عند الإلغاء' : 'Cancellation Deduction'}
+                          </Label>
                         </div>
+                        <Input
+                          id={`percentage-${subService.id}`}
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={settings[subService.id]?.percentage || 50}
+                          onChange={(e) => handlePercentageChange(subService.id, e.target.value)}
+                        />
                       </div>
 
                       {/* Waiting Time */}
                       <div>
-                        <Label
-                          htmlFor={`waiting-${subService.id}`}
-                          className="text-xs text-muted-foreground mb-1 block"
-                        >
-                          {language === 'ar' ? 'وقت الانتظار (دقائق)' : 'Waiting Time (minutes)'}
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id={`waiting-${subService.id}`}
-                            type="number"
-                            min="1"
-                            max="60"
-                            step="1"
-                            value={settings[subService.id]?.waitingTime || 5}
-                            onChange={(e) => handleWaitingTimeChange(subService.id, e.target.value)}
-                            className="pr-10"
-                          />
-                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <div className="flex items-center gap-2 mb-1">
+                          <Clock className="h-4 w-4 text-primary" />
+                          <Label
+                            htmlFor={`waiting-${subService.id}`}
+                            className="text-xs text-muted-foreground"
+                          >
+                            {language === 'ar' ? 'وقت الانتظار (دقائق)' : 'Waiting Time (minutes)'}
+                          </Label>
                         </div>
+                        <Input
+                          id={`waiting-${subService.id}`}
+                          type="number"
+                          min="1"
+                          max="60"
+                          step="1"
+                          value={settings[subService.id]?.waitingTime || 5}
+                          onChange={(e) => handleWaitingTimeChange(subService.id, e.target.value)}
+                        />
                         <p className="text-xs text-muted-foreground mt-1">
                           {language === 'ar'
                             ? 'مدة انتظار وصول العميل قبل التعويض'
