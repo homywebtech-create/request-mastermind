@@ -37,14 +37,24 @@ android {
     
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // Only use signing config if keystore exists
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            // Debug builds don't need signing config
+            debuggable true
         }
     }
 }
 
 repositories {
+    google()
+    mavenCentral()
+    // flatDir is deprecated but still needed for some Capacitor plugins
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
