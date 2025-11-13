@@ -48,6 +48,7 @@ import CompanyStatistics from "./pages/company/CompanyStatistics";
 import AppVersionManagement from "./pages/AppVersionManagement";
 import WalletPolicies from "./pages/WalletPolicies";
 import CancellationSettings from "./pages/CancellationSettings";
+import OrdersDiagnostics from "./pages/OrdersDiagnostics";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -364,6 +365,13 @@ function AppRouter() {
         <Route path="/notification-diagnostics" element={
           <RoleProtectedRoute requiredPermission="view_dashboard">
             <NotificationDiagnostics />
+          </RoleProtectedRoute>
+        } />
+        
+        {/* Orders Diagnostics (admin only) */}
+        <Route path="/orders-diagnostics" element={
+          <RoleProtectedRoute requiredPermission="view_dashboard">
+            <OrdersDiagnostics />
           </RoleProtectedRoute>
         } />
         
