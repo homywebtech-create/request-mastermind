@@ -918,12 +918,33 @@ export default function OrderTracking() {
 
   const handleCustomerNotPresent = async () => {
     try {
+      // Extract sub-service name from service_type
+      const subServiceName = order?.service_type?.includes('-') 
+        ? order.service_type.split('-')[1]?.trim() 
+        : order?.service_type?.trim();
+
+      // Fetch waiting time for this sub-service
+      const { data: cancellationData } = await supabase
+        .from('cancellation_settings')
+        .select(`
+          waiting_time_minutes,
+          sub_services!inner (
+            name,
+            name_en
+          )
+        `)
+        .or(`sub_services.name.eq.${subServiceName},sub_services.name_en.eq.${subServiceName}`)
+        .single();
+
+      // Default to 5 minutes if no setting found
+      const waitingTimeMinutes = cancellationData?.waiting_time_minutes || 5;
+      
       const now = new Date();
-      const waitingEnds = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes from now
+      const waitingEnds = new Date(now.getTime() + waitingTimeMinutes * 60 * 1000);
       
       // Start waiting stage and save timestamps
       setStage('waiting_for_customer');
-      setWaitingTimer(15 * 60); // Reset to 15 minutes
+      setWaitingTimer(waitingTimeMinutes * 60); // Convert to seconds
       setTimeExpired(false);
 
       // Update order with waiting timestamps
@@ -1031,11 +1052,12 @@ export default function OrderTracking() {
         ? order.service_type.split('-')[1]?.trim() 
         : order?.service_type?.trim();
 
-      // Fetch cancellation percentage for this sub-service
+      // Fetch cancellation percentage and waiting time for this sub-service
       const { data: cancellationData, error: cancellationError } = await supabase
         .from('cancellation_settings')
         .select(`
           cancellation_percentage,
+          waiting_time_minutes,
           sub_services!inner (
             name,
             name_en
@@ -1044,8 +1066,9 @@ export default function OrderTracking() {
         .or(`sub_services.name.eq.${subServiceName},sub_services.name_en.eq.${subServiceName}`)
         .single();
 
-      // Default to 50% if no setting found
+      // Default to 50% and 5 minutes if no setting found
       const cancellationPercentage = cancellationData?.cancellation_percentage || 50;
+      const waitingTimeMinutes = cancellationData?.waiting_time_minutes || 5;
       
       // Calculate compensation amount based on invoice amount and percentage
       const compensationAmountValue = (invoiceAmount * cancellationPercentage) / 100;

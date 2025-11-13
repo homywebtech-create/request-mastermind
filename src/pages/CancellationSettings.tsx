@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save, Percent } from "lucide-react";
+import { ArrowLeft, Save, Percent, Clock } from "lucide-react";
 import { AppLoader } from "@/components/ui/app-loader";
 
 interface SubService {
@@ -28,6 +28,7 @@ interface CancellationSetting {
   id: string;
   sub_service_id: string;
   cancellation_percentage: number;
+  waiting_time_minutes: number;
 }
 
 export default function CancellationSettings() {
@@ -37,7 +38,7 @@ export default function CancellationSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
-  const [settings, setSettings] = useState<Record<string, number>>({});
+  const [settings, setSettings] = useState<Record<string, { percentage: number; waitingTime: number }>>({});
 
   useEffect(() => {
     fetchData();
@@ -74,16 +75,19 @@ export default function CancellationSettings() {
       if (settingsError) throw settingsError;
 
       // Map settings to sub-service IDs
-      const settingsMap: Record<string, number> = {};
+      const settingsMap: Record<string, { percentage: number; waitingTime: number }> = {};
       settingsData?.forEach((setting: CancellationSetting) => {
-        settingsMap[setting.sub_service_id] = Number(setting.cancellation_percentage);
+        settingsMap[setting.sub_service_id] = {
+          percentage: Number(setting.cancellation_percentage),
+          waitingTime: Number(setting.waiting_time_minutes || 5)
+        };
       });
 
-      // Add default 50% for sub-services without settings
+      // Add default values for sub-services without settings
       servicesData?.forEach(service => {
         service.sub_services?.forEach(subService => {
           if (!settingsMap[subService.id]) {
-            settingsMap[subService.id] = 50;
+            settingsMap[subService.id] = { percentage: 50, waitingTime: 5 };
           }
         });
       });
@@ -109,7 +113,23 @@ export default function CancellationSettings() {
     if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
       setSettings(prev => ({
         ...prev,
-        [subServiceId]: numValue
+        [subServiceId]: {
+          ...prev[subServiceId],
+          percentage: numValue
+        }
+      }));
+    }
+  };
+
+  const handleWaitingTimeChange = (subServiceId: string, value: string) => {
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 1 && numValue <= 60) {
+      setSettings(prev => ({
+        ...prev,
+        [subServiceId]: {
+          ...prev[subServiceId],
+          waitingTime: numValue
+        }
       }));
     }
   };
@@ -119,9 +139,10 @@ export default function CancellationSettings() {
       setIsSaving(true);
 
       // Update or insert settings for each sub-service
-      const updates = Object.entries(settings).map(([subServiceId, percentage]) => ({
+      const updates = Object.entries(settings).map(([subServiceId, setting]) => ({
         sub_service_id: subServiceId,
-        cancellation_percentage: percentage
+        cancellation_percentage: setting.percentage,
+        waiting_time_minutes: setting.waitingTime
       }));
 
       const { error } = await supabase
@@ -198,32 +219,62 @@ export default function CancellationSettings() {
                   {service.sub_services?.map(subService => (
                     <div
                       key={subService.id}
-                      className="p-4 border rounded-lg bg-card hover:border-primary/50 transition-colors"
+                      className="p-4 border rounded-lg bg-card hover:border-primary/50 transition-colors space-y-4"
                     >
-                      <Label
-                        htmlFor={`percentage-${subService.id}`}
-                        className="text-sm font-semibold mb-2 block"
-                      >
+                      <Label className="text-sm font-semibold block">
                         {language === 'ar' ? subService.name : subService.name_en}
                       </Label>
-                      <div className="relative">
-                        <Input
-                          id={`percentage-${subService.id}`}
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          value={settings[subService.id] || 50}
-                          onChange={(e) => handlePercentageChange(subService.id, e.target.value)}
-                          className="pr-10"
-                        />
-                        <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      
+                      {/* Cancellation Percentage */}
+                      <div>
+                        <Label
+                          htmlFor={`percentage-${subService.id}`}
+                          className="text-xs text-muted-foreground mb-1 block"
+                        >
+                          {language === 'ar' ? 'نسبة الخصم عند الإلغاء' : 'Cancellation Deduction'}
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id={`percentage-${subService.id}`}
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={settings[subService.id]?.percentage || 50}
+                            onChange={(e) => handlePercentageChange(subService.id, e.target.value)}
+                            className="pr-10"
+                          />
+                          <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {language === 'ar'
-                          ? 'النسبة المئوية المستقطعة عند الإلغاء'
-                          : 'Percentage deducted on cancellation'}
-                      </p>
+
+                      {/* Waiting Time */}
+                      <div>
+                        <Label
+                          htmlFor={`waiting-${subService.id}`}
+                          className="text-xs text-muted-foreground mb-1 block"
+                        >
+                          {language === 'ar' ? 'وقت الانتظار (دقائق)' : 'Waiting Time (minutes)'}
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id={`waiting-${subService.id}`}
+                            type="number"
+                            min="1"
+                            max="60"
+                            step="1"
+                            value={settings[subService.id]?.waitingTime || 5}
+                            onChange={(e) => handleWaitingTimeChange(subService.id, e.target.value)}
+                            className="pr-10"
+                          />
+                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {language === 'ar'
+                            ? 'مدة انتظار وصول العميل قبل التعويض'
+                            : 'Wait time for customer arrival before compensation'}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>

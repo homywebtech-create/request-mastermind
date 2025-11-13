@@ -87,6 +87,7 @@ export type Database = {
           id: string
           sub_service_id: string
           updated_at: string
+          waiting_time_minutes: number
         }
         Insert: {
           cancellation_percentage?: number
@@ -94,6 +95,7 @@ export type Database = {
           id?: string
           sub_service_id: string
           updated_at?: string
+          waiting_time_minutes?: number
         }
         Update: {
           cancellation_percentage?: number
@@ -101,6 +103,7 @@ export type Database = {
           id?: string
           sub_service_id?: string
           updated_at?: string
+          waiting_time_minutes?: number
         }
         Relationships: [
           {
