@@ -10,7 +10,7 @@ import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrderReadinessNotifications } from "@/hooks/useOrderReadinessNotifications";
 import { useOverdueConfirmedOrdersAlert } from "@/hooks/useOverdueConfirmedOrdersAlert";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone, MessageSquare, Shield, Percent } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone, MessageSquare, Shield, Percent, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -1014,6 +1014,15 @@ export default function Dashboard() {
                           {language === 'ar' ? 'قوالب رسائل واتساب' : 'WhatsApp Messages'}
                         </DropdownMenuItem>
                       )}
+                      
+                      {userHasPermission('view_dashboard') && (
+                        <DropdownMenuItem onClick={() => navigate('/whatsapp-carousel-test')}>
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'اختبار Carousel واتساب' : 'WhatsApp Carousel Test'}
+                        </DropdownMenuItem>
+                      )}
+                      
+                      <DropdownMenuSeparator />
                       
                       {userHasPermission('view_dashboard') && (
                         <DropdownMenuItem onClick={() => navigate('/wallet-policies')}>
