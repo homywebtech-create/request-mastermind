@@ -49,6 +49,7 @@ import AppVersionManagement from "./pages/AppVersionManagement";
 import WalletPolicies from "./pages/WalletPolicies";
 import CancellationSettings from "./pages/CancellationSettings";
 import OrdersDiagnostics from "./pages/OrdersDiagnostics";
+import WaitingWorkflowTest from "./pages/WaitingWorkflowTest";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -372,6 +373,13 @@ function AppRouter() {
         <Route path="/orders-diagnostics" element={
           <RoleProtectedRoute requiredPermission="view_dashboard">
             <OrdersDiagnostics />
+          </RoleProtectedRoute>
+        } />
+        
+        {/* Waiting Workflow Test (admin only) */}
+        <Route path="/waiting-workflow-test" element={
+          <RoleProtectedRoute requiredPermission="view_dashboard">
+            <WaitingWorkflowTest />
           </RoleProtectedRoute>
         } />
         
