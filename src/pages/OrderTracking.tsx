@@ -98,6 +98,8 @@ export default function OrderTracking() {
   const [discount, setDiscount] = useState(0);
   const [hourlyRate, setHourlyRate] = useState(0);
   const [originalHours, setOriginalHours] = useState(0);
+  const [showCompensationDialog, setShowCompensationDialog] = useState(false);
+  const [compensationAmount, setCompensationAmount] = useState(0);
   const [workStartTime, setWorkStartTime] = useState<Date | null>(null);
   const [workEndTime, setWorkEndTime] = useState<Date | null>(null);
   const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(false);
@@ -580,6 +582,10 @@ export default function OrderTracking() {
         description: "Failed to load order data",
         variant: "destructive",
       });
+      // Navigate back if there's an error loading order
+      setTimeout(() => {
+        navigate('/specialist/home');
+      }, 2000);
     } finally {
       setIsLoading(false);
     }
@@ -1017,48 +1023,70 @@ export default function OrderTracking() {
     setTimeExpired(false);
     
     try {
+      setIsLoading(true);
+      
       // Fetch compensation amount from wallet policies
-      const { data: policyData } = await supabase
+      const { data: policyData, error: policyError } = await supabase
         .from('wallet_policies')
         .select('compensation_amount')
         .eq('policy_key', 'customer_no_show')
         .eq('is_active', true)
         .single();
 
+      if (policyError) {
+        console.error('Policy error:', policyError);
+        throw new Error('Failed to fetch compensation policy');
+      }
+
       if (policyData && specialistId) {
         // Add compensation to specialist's wallet
-        const { data: specialistData } = await supabase
+        const { data: specialistData, error: specialistError } = await supabase
           .from('specialists')
           .select('wallet_balance')
           .eq('id', specialistId)
           .single();
 
+        if (specialistError) {
+          console.error('Specialist error:', specialistError);
+          throw new Error('Failed to fetch specialist data');
+        }
+
         const currentBalance = specialistData?.wallet_balance || 0;
-        const compensationAmount = policyData.compensation_amount;
-        const newBalance = Number(currentBalance) + Number(compensationAmount);
+        const compensationAmountValue = policyData.compensation_amount;
+        const newBalance = Number(currentBalance) + Number(compensationAmountValue);
 
         // Update specialist wallet balance
-        await supabase
+        const { error: updateError } = await supabase
           .from('specialists')
           .update({ wallet_balance: newBalance })
           .eq('id', specialistId);
 
+        if (updateError) {
+          console.error('Update error:', updateError);
+          throw new Error('Failed to update wallet balance');
+        }
+
         // Record transaction
-        await supabase
+        const { error: transactionError } = await supabase
           .from('wallet_transactions')
           .insert({
             specialist_id: specialistId,
             order_id: orderId,
             transaction_type: 'compensation',
-            amount: compensationAmount,
+            amount: compensationAmountValue,
             balance_after: newBalance,
             description: language === 'ar' 
               ? 'تعويض عدم حضور العميل' 
               : 'Customer no-show compensation'
           });
 
+        if (transactionError) {
+          console.error('Transaction error:', transactionError);
+          throw new Error('Failed to record transaction');
+        }
+
         // Mark order as cancelled with reason
-        await supabase
+        const { error: orderError } = await supabase
           .from('orders')
           .update({ 
             status: 'cancelled',
@@ -1067,20 +1095,29 @@ export default function OrderTracking() {
           })
           .eq('id', orderId);
 
-        toast({
-          title: language === 'ar' ? "تم إضافة التعويض" : "Compensation Added",
-          description: language === 'ar'
-            ? `تم إضافة ${compensationAmount} ريال إلى محفظتك`
-            : `${compensationAmount} SAR has been added to your wallet`,
-        });
+        if (orderError) {
+          console.error('Order error:', orderError);
+          throw new Error('Failed to update order');
+        }
 
-        // Navigate back to home
+        setIsLoading(false);
+        
+        // Show compensation dialog
+        setCompensationAmount(compensationAmountValue);
+        setShowCompensationDialog(true);
+
+        // Auto-close dialog after 7 seconds and navigate home
         setTimeout(() => {
+          setShowCompensationDialog(false);
           navigate('/specialist/home');
-        }, 2000);
+        }, 7000);
+      } else {
+        setIsLoading(false);
+        throw new Error('Missing policy data or specialist ID');
       }
     } catch (error) {
       console.error('Error processing compensation:', error);
+      setIsLoading(false);
       toast({
         title: language === 'ar' ? "خطأ" : "Error",
         description: language === 'ar' 
@@ -2545,6 +2582,61 @@ export default function OrderTracking() {
             </div>
           </Card>
         )}
+
+        {/* Compensation Dialog */}
+        <Dialog open={showCompensationDialog} onOpenChange={setShowCompensationDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 justify-center text-green-600">
+                <CheckCircle className="h-6 w-6" />
+                {language === 'ar' ? 'تم إضافة التعويض' : 'Compensation Added'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              {/* Success Icon */}
+              <div className="flex justify-center">
+                <div className="rounded-full bg-green-100 dark:bg-green-900/20 p-6">
+                  <div className="text-6xl">💰</div>
+                </div>
+              </div>
+
+              {/* Compensation Details */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 p-6 rounded-xl space-y-4 border-2 border-green-200 dark:border-green-800">
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'ar' ? 'تم الغاء الطلب بسبب:' : 'Order cancelled due to:'}
+                  </p>
+                  <p className="font-bold text-lg">
+                    {language === 'ar' ? 'عدم حضور العميل' : 'Customer No-Show'}
+                  </p>
+                </div>
+
+                <div className="border-t-2 border-green-300 dark:border-green-700 pt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">
+                      {language === 'ar' ? 'مبلغ التعويض:' : 'Compensation Amount:'}
+                    </span>
+                    <span className="text-3xl font-black text-green-600">
+                      {compensationAmount} <span className="text-lg">ر.ق</span>
+                    </span>
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground bg-white dark:bg-slate-900 p-2 rounded-lg">
+                    {language === 'ar' 
+                      ? 'تم إضافة المبلغ إلى محفظتك' 
+                      : 'Amount has been added to your wallet'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Auto-close notice */}
+              <p className="text-xs text-center text-muted-foreground animate-pulse">
+                {language === 'ar' 
+                  ? 'سيتم الإغلاق تلقائياً بعد 7 ثوان...' 
+                  : 'Auto-closing in 7 seconds...'}
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
 
       </div>
     </div>
