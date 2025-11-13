@@ -692,12 +692,30 @@ export default function OrderTracking() {
           ? 'cancelled' 
           : 'in-progress'; // Keep as in-progress for all other tracking stages
 
+      // Prepare update data
+      const updateData: any = {
+        tracking_stage: newStage,
+        status: statusUpdate
+      };
+
+      // CRITICAL: Clear waiting times when moving to 'working' stage
+      if (newStage === 'working') {
+        updateData.waiting_started_at = null;
+        updateData.waiting_ends_at = null;
+        console.log('🔧 Clearing waiting times when starting work');
+      }
+
+      // CRITICAL: Clear tracking_stage when cancelled
+      if (newStage === 'cancelled') {
+        updateData.tracking_stage = null;
+        updateData.waiting_started_at = null;
+        updateData.waiting_ends_at = null;
+        console.log('🔧 Clearing tracking and waiting times when cancelled');
+      }
+
       const { error } = await supabase
         .from('orders')
-        .update({ 
-          tracking_stage: newStage,
-          status: statusUpdate
-        })
+        .update(updateData)
         .eq('id', orderId);
 
       if (error) throw error;
