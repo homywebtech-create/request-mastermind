@@ -326,11 +326,9 @@ export default function SpecialistAuth() {
         // Continue anyway - non-critical
       }
 
-      // Centralized routing: pending route is handled by MobileLanding at "/" after login.
-
-      // Navigate to root; MobileLanding will route to deep link or default page.
-      console.log("✅ Login successful - navigating to root for centralized routing");
-      navigate("/", { replace: true });
+      // Navigate directly to specialist orders page
+      console.log("✅ Login successful - navigating to specialist orders");
+      navigate("/specialist-orders", { replace: true });
     } catch (error: any) {
       console.error('Error verifying code:', error);
       toast({

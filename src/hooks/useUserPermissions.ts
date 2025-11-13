@@ -14,6 +14,10 @@ export function useUserPermissions(userId: string | undefined, role: UserRole | 
   useEffect(() => {
     // Check if we already fetched for this user and role
     if (fetchedRef.current?.userId === userId && fetchedRef.current?.role === role) {
+      // Already fetched, ensure loading is false
+      if (loading) {
+        setLoading(false);
+      }
       return;
     }
 
