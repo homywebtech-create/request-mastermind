@@ -32,6 +32,7 @@ import { SpecialistMessagesButton } from "@/components/specialist/SpecialistMess
 import { Capacitor } from '@capacitor/core';
 import { sendTemplateMessage } from "@/lib/whatsappTemplateHelper";
 import { PaymentConfirmationDialog } from "@/components/orders/PaymentConfirmationDialog";
+import { InlineLoader } from "@/components/ui/app-loader";
 
 type Stage = 'initial' | 'moving' | 'arrived' | 'waiting_for_customer' | 'working' | 'completed' | 'cancelled' | 'invoice_requested' | 'invoice_details' | 'customer_rating' | 'payment_received';
 
@@ -1241,20 +1242,23 @@ export default function OrderTracking() {
       // If time hasn't expired, show reason dialog
       if (hasTimeRemaining) {
         setShowEarlyFinishReasonDialog(true);
+        // Reset processing state immediately for reason dialog
+        setIsProcessing(false);
       } else {
         // Time expired, proceed normally
         await handleRequestInvoice();
+        // Reset processing state immediately after success
+        setIsProcessing(false);
       }
     } catch (error) {
       console.error('Error in confirmEarlyFinish:', error);
+      // Reset processing state on error
+      setIsProcessing(false);
       toast({
         title: language === 'ar' ? "خطأ" : "Error",
         description: language === 'ar' ? "حدث خطأ أثناء المعالجة" : "An error occurred during processing",
         variant: "destructive",
       });
-    } finally {
-      // Reset processing state after a brief delay to prevent rapid re-clicks
-      setTimeout(() => setIsProcessing(false), 1000);
     }
   };
 
@@ -1370,30 +1374,47 @@ export default function OrderTracking() {
   };
 
   const handleRequestInvoice = async () => {
-    // Stop alert when requesting invoice
-    stopTimeExpiredAlert();
-    setTimeExpired(false);
-    setWorkEndTime(new Date());
-    
-    // Recalculate invoice amount based on actual hours
-    const actualAmount = hourlyRate * (order?.hours_count || 1);
-    const finalAmount = actualAmount - discount;
-    
-    await supabase
-      .from('orders')
-      .update({ 
-        final_amount: finalAmount
-      })
-      .eq('id', orderId);
-    
-    setInvoiceAmount(actualAmount);
-    await updateOrderStage('invoice_requested');
-    setStage('invoice_details');
-    toast({
-      title: "Invoice Ready",
-      description: "Please review the invoice details",
-    });
-    // Don't navigate away - stay on page to show invoice
+    try {
+      // Stop alert when requesting invoice
+      stopTimeExpiredAlert();
+      setTimeExpired(false);
+      setWorkEndTime(new Date());
+      
+      // Recalculate invoice amount based on actual hours
+      const actualAmount = hourlyRate * (order?.hours_count || 1);
+      const finalAmount = actualAmount - discount;
+      
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          final_amount: finalAmount
+        })
+        .eq('id', orderId);
+      
+      if (updateError) {
+        console.error('Error updating final amount:', updateError);
+        throw updateError;
+      }
+      
+      setInvoiceAmount(actualAmount);
+      await updateOrderStage('invoice_requested');
+      setStage('invoice_details');
+      
+      toast({
+        title: language === 'ar' ? "الفاتورة جاهزة" : "Invoice Ready",
+        description: language === 'ar' ? "يرجى مراجعة تفاصيل الفاتورة" : "Please review the invoice details",
+      });
+    } catch (error) {
+      console.error('Error in handleRequestInvoice:', error);
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "فشل في إنشاء الفاتورة" : "Failed to create invoice",
+        variant: "destructive",
+      });
+      // Reset processing state on error
+      setIsProcessing(false);
+      throw error; // Re-throw to be caught by confirmEarlyFinish
+    }
   };
 
   const handlePaymentReceived = () => {
@@ -2286,17 +2307,23 @@ export default function OrderTracking() {
                 )}
 
                 {/* Finish Work Button - Slide to Complete */}
-                <SlideToComplete
-                  onComplete={async () => {
-                    if (isProcessing) return; // Prevent multiple calls
-                    stopTimeExpiredAlert();
-                    setTimeExpired(false);
-                    await confirmEarlyFinish();
-                  }}
-                  text={t.finishWorkNow}
-                  className="w-full"
-                  disabled={isProcessing}
-                />
+                {isProcessing ? (
+                  <div className="w-full p-4 bg-muted rounded-lg">
+                    <InlineLoader size="md" message={language === 'ar' ? "جاري إنشاء الفاتورة..." : "Creating invoice..."} />
+                  </div>
+                ) : (
+                  <SlideToComplete
+                    onComplete={async () => {
+                      if (isProcessing) return; // Prevent multiple calls
+                      stopTimeExpiredAlert();
+                      setTimeExpired(false);
+                      await confirmEarlyFinish();
+                    }}
+                    text={t.finishWorkNow}
+                    className="w-full"
+                    disabled={isProcessing}
+                  />
+                )}
               </div>
             </div>
           </>
