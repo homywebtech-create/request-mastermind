@@ -7,9 +7,26 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Send, CheckCircle2, XCircle, AlertCircle, ShoppingCart } from "lucide-react";
+import { Loader2, Send, CheckCircle2, XCircle, AlertCircle, ShoppingCart, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
 import { fetchQuotesForOrder, sendWhatsAppCarouselToCustomer } from "@/lib/whatsappCarousel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+
+interface MockSpecialist {
+  id: string;
+  name: string;
+  company: string;
+  price: number;
+  imageUrl: string;
+}
+
+interface SendStatus {
+  index: number;
+  status: 'pending' | 'sending' | 'success' | 'error';
+  message?: string;
+  timestamp?: number;
+}
 
 export default function WhatsAppCarouselTest() {
   const [phoneNumber, setPhoneNumber] = useState("+966");
@@ -17,6 +34,22 @@ export default function WhatsAppCarouselTest() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Quick test mode
+  const [quickTestMode, setQuickTestMode] = useState(false);
+  const [specialistCount, setSpecialistCount] = useState<number>(2);
+  const [messageInterval, setMessageInterval] = useState<number>(1); // seconds
+  const [isSending, setIsSending] = useState(false);
+  const [sendStatuses, setSendStatuses] = useState<SendStatus[]>([]);
+  const [currentSendIndex, setCurrentSendIndex] = useState(0);
+  
+  // Mock specialists for quick testing
+  const mockSpecialists: MockSpecialist[] = [
+    { id: "1", name: "فاطمة أحمد", company: "شركة النظافة المتقدمة", price: 50, imageUrl: "https://i.pravatar.cc/150?img=1" },
+    { id: "2", name: "مريم محمد", company: "خدمات المنزل الذكي", price: 55, imageUrl: "https://i.pravatar.cc/150?img=5" },
+    { id: "3", name: "نورا عبدالله", company: "التنظيف الاحترافي", price: 48, imageUrl: "https://i.pravatar.cc/150?img=9" },
+    { id: "4", name: "سارة علي", company: "العناية المنزلية", price: 52, imageUrl: "https://i.pravatar.cc/150?img=10" },
+  ];
 
   // Fetch orders with quotes
   const { data: ordersWithQuotes, isLoading: loadingOrders } = useQuery({
@@ -59,6 +92,90 @@ export default function WhatsAppCarouselTest() {
       return Array.from(ordersMap.values()).filter(order => order.quotesCount >= 2);
     }
   });
+
+  const handleQuickTest = async () => {
+    if (!phoneNumber || phoneNumber.length < 10) {
+      toast.error("يرجى إدخال رقم هاتف صحيح");
+      return;
+    }
+
+    const selectedSpecialists = mockSpecialists.slice(0, specialistCount);
+    const totalMessages = selectedSpecialists.length;
+    
+    // Initialize send statuses
+    const initialStatuses: SendStatus[] = selectedSpecialists.map((_, index) => ({
+      index,
+      status: 'pending'
+    }));
+    setSendStatuses(initialStatuses);
+    setIsSending(true);
+    setCurrentSendIndex(0);
+
+    // Send messages with interval
+    for (let i = 0; i < totalMessages; i++) {
+      setCurrentSendIndex(i);
+      
+      // Update status to sending
+      setSendStatuses(prev => prev.map((s, idx) => 
+        idx === i ? { ...s, status: 'sending', timestamp: Date.now() } : s
+      ));
+
+      try {
+        const specialist = selectedSpecialists[i];
+        
+        // Prepare mock quote
+        const mockQuote = {
+          specialistId: specialist.id,
+          specialistName: specialist.name,
+          specialistNationality: "سعودية",
+          specialistImageUrl: specialist.imageUrl,
+          quotedPrice: specialist.price,
+          companyId: "mock-company-id",
+          companyName: specialist.company
+        };
+
+        console.log(`📤 Sending message ${i + 1}/${totalMessages} to ${phoneNumber}`);
+
+        // Send carousel with single specialist
+        await sendWhatsAppCarouselToCustomer({
+          customerPhone: phoneNumber,
+          customerName: "عميل تجريبي",
+          orderNumber: `TEST-${Date.now()}`,
+          serviceType: "خدمة تنظيف",
+          quotes: [mockQuote]
+        });
+
+        // Update status to success
+        setSendStatuses(prev => prev.map((s, idx) => 
+          idx === i ? { ...s, status: 'success', message: 'تم الإرسال بنجاح' } : s
+        ));
+
+        toast.success(`تم إرسال الرسالة ${i + 1}/${totalMessages}`);
+
+        // Wait for interval before next message (except last one)
+        if (i < totalMessages - 1) {
+          await new Promise(resolve => setTimeout(resolve, messageInterval * 1000));
+        }
+
+      } catch (err: any) {
+        console.error(`❌ Error sending message ${i + 1}:`, err);
+        
+        // Update status to error
+        setSendStatuses(prev => prev.map((s, idx) => 
+          idx === i ? { ...s, status: 'error', message: err.message || 'فشل الإرسال' } : s
+        ));
+
+        toast.error(`فشل إرسال الرسالة ${i + 1}`, {
+          description: err.message
+        });
+      }
+    }
+
+    setIsSending(false);
+    toast.success("اكتمل الاختبار!", {
+      description: `تم إرسال ${totalMessages} رسالة`
+    });
+  };
 
   const handleSendCarousel = async () => {
     setIsLoading(true);
@@ -174,74 +291,209 @@ export default function WhatsAppCarouselTest() {
           <CardHeader>
             <CardTitle>إرسال Carousel تجريبي</CardTitle>
             <CardDescription>
-              اختر طلب يحتوي على عروض وأدخل رقم الهاتف للاختبار
+              اختر طريقة الاختبار: سريع مع بيانات تجريبية أو من طلبات حقيقية
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Order Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="order-select">اختر الطلب</Label>
-              {loadingOrders ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>جاري تحميل الطلبات...</span>
+            <Tabs defaultValue="quick" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="quick">اختبار سريع</TabsTrigger>
+                <TabsTrigger value="real">طلبات حقيقية</TabsTrigger>
+              </TabsList>
+
+              {/* Quick Test Tab */}
+              <TabsContent value="quick" className="space-y-4 mt-4">
+                {/* Phone Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="quick-phone">رقم الهاتف (مع كود الدولة)</Label>
+                  <Input
+                    id="quick-phone"
+                    type="tel"
+                    placeholder="+966xxxxxxxxx"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    dir="ltr"
+                  />
                 </div>
-              ) : (
-                <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
-                  <SelectTrigger id="order-select">
-                    <SelectValue placeholder="اختر طلب يحتوي على عروض" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ordersWithQuotes?.map((order) => (
-                      <SelectItem key={order.id} value={order.id}>
-                        {order.order_number} - {order.service_type} ({order.quotesCount} عروض)
-                      </SelectItem>
+
+                {/* Specialist Count */}
+                <div className="space-y-2">
+                  <Label htmlFor="specialist-count">عدد المحترفات (2-4)</Label>
+                  <Select 
+                    value={specialistCount.toString()} 
+                    onValueChange={(v) => setSpecialistCount(parseInt(v))}
+                  >
+                    <SelectTrigger id="specialist-count">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2">2 محترفات</SelectItem>
+                      <SelectItem value="3">3 محترفات</SelectItem>
+                      <SelectItem value="4">4 محترفات</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Message Interval */}
+                <div className="space-y-2">
+                  <Label htmlFor="message-interval">الفترة الزمنية بين الرسائل (ثانية)</Label>
+                  <Select 
+                    value={messageInterval.toString()} 
+                    onValueChange={(v) => setMessageInterval(parseInt(v))}
+                  >
+                    <SelectTrigger id="message-interval">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">ثانية واحدة</SelectItem>
+                      <SelectItem value="2">ثانيتان</SelectItem>
+                      <SelectItem value="3">3 ثوانٍ</SelectItem>
+                      <SelectItem value="5">5 ثوانٍ</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    سيتم إرسال {specialistCount} رسائل متتالية بفاصل {messageInterval} {messageInterval === 1 ? 'ثانية' : 'ثوانٍ'}
+                  </p>
+                </div>
+
+                {/* Mock Specialists Preview */}
+                <div className="space-y-2">
+                  <Label>المحترفات التجريبية</Label>
+                  <div className="grid gap-2">
+                    {mockSpecialists.slice(0, specialistCount).map((specialist, idx) => (
+                      <div key={specialist.id} className="flex items-center gap-3 p-2 border rounded-lg">
+                        <img 
+                          src={specialist.imageUrl} 
+                          alt={specialist.name}
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{specialist.name}</p>
+                          <p className="text-xs text-muted-foreground">{specialist.company}</p>
+                        </div>
+                        <Badge variant="secondary">{specialist.price} ر.س</Badge>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {!loadingOrders && (!ordersWithQuotes || ordersWithQuotes.length === 0) && (
-                <p className="text-sm text-muted-foreground">
-                  لا توجد طلبات تحتوي على عروض متعددة
-                </p>
-              )}
-            </div>
+                  </div>
+                </div>
 
-            {/* Phone Number */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">رقم الهاتف (مع كود الدولة)</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+966xxxxxxxxx"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                dir="ltr"
-              />
-              <p className="text-xs text-muted-foreground">
-                مثال: +966501234567
-              </p>
-            </div>
+                {/* Send Status */}
+                {sendStatuses.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>حالة الإرسال</Label>
+                    <div className="space-y-2">
+                      {sendStatuses.map((status) => (
+                        <div key={status.index} className="flex items-center gap-2 p-2 border rounded">
+                          {status.status === 'pending' && <AlertCircle className="h-4 w-4 text-muted-foreground" />}
+                          {status.status === 'sending' && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+                          {status.status === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                          {status.status === 'error' && <XCircle className="h-4 w-4 text-destructive" />}
+                          
+                          <span className="text-sm flex-1">
+                            رسالة {status.index + 1}/{sendStatuses.length}
+                            {status.message && ` - ${status.message}`}
+                          </span>
+                          
+                          {status.timestamp && (
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(status.timestamp).toLocaleTimeString('ar-SA')}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {/* Send Button */}
-            <Button
-              onClick={handleSendCarousel}
-              disabled={isLoading || !selectedOrderId || !phoneNumber}
-              className="w-full"
-              size="lg"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                  جاري الإرسال...
-                </>
-              ) : (
-                <>
-                  <Send className="ml-2 h-4 w-4" />
-                  إرسال Carousel
-                </>
-              )}
-            </Button>
+                {/* Send Button */}
+                <Button
+                  onClick={handleQuickTest}
+                  disabled={isSending || !phoneNumber}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isSending ? (
+                    <>
+                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      جاري الإرسال ({currentSendIndex + 1}/{specialistCount})...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="ml-2 h-4 w-4" />
+                      بدء الاختبار السريع
+                    </>
+                  )}
+                </Button>
+              </TabsContent>
+
+              {/* Real Orders Tab */}
+              <TabsContent value="real" className="space-y-4 mt-4">
+                {/* Order Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="order-select">اختر الطلب</Label>
+                  {loadingOrders ? (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>جاري تحميل الطلبات...</span>
+                    </div>
+                  ) : (
+                    <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
+                      <SelectTrigger id="order-select">
+                        <SelectValue placeholder="اختر طلب يحتوي على عروض" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ordersWithQuotes?.map((order) => (
+                          <SelectItem key={order.id} value={order.id}>
+                            {order.order_number} - {order.service_type} ({order.quotesCount} عروض)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {!loadingOrders && (!ordersWithQuotes || ordersWithQuotes.length === 0) && (
+                    <p className="text-sm text-muted-foreground">
+                      لا توجد طلبات تحتوي على عروض متعددة
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="real-phone">رقم الهاتف (مع كود الدولة)</Label>
+                  <Input
+                    id="real-phone"
+                    type="tel"
+                    placeholder="+966xxxxxxxxx"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    مثال: +966501234567
+                  </p>
+                </div>
+
+                {/* Send Button */}
+                <Button
+                  onClick={handleSendCarousel}
+                  disabled={isLoading || !selectedOrderId || !phoneNumber}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      جاري الإرسال...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="ml-2 h-4 w-4" />
+                      إرسال Carousel
+                    </>
+                  )}
+                </Button>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
