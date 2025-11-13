@@ -374,6 +374,9 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     }
     
     if (filter === 'in-progress') {
+      // Exclude cancelled orders from in-progress
+      const notCancelled = order.status !== 'cancelled';
+      
       if (isCompanyView && companyId) {
         // For companies: show orders where company specialist was accepted AND tracking started
         const hasAcceptedSpecialist = order.order_specialists?.some(os => 
@@ -381,14 +384,14 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
         );
         const trackingStarted = order.tracking_stage && 
                ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
-        return hasAcceptedSpecialist && trackingStarted;
+        return hasAcceptedSpecialist && trackingStarted && notCancelled;
       } else {
-        // For admin: show orders with active tracking OR status in-progress
+        // For admin: show orders with active tracking OR status in-progress (but not cancelled)
         const trackingStarted = order.tracking_stage && 
                order.tracking_stage !== null &&
                ['moving', 'arrived', 'working', 'invoice_requested'].includes(order.tracking_stage);
         const statusInProgress = order.status === 'in-progress';
-        return trackingStarted || statusInProgress;
+        return (trackingStarted || statusInProgress) && notCancelled;
       }
     }
     
