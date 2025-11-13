@@ -1,6 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { sendWhatsAppMessage } from "./whatsappHelper";
-import { sendInteractiveWhatsAppMessage, formatSpecialistsAsButtons } from "./whatsappInteractiveHelper";
 
 interface SpecialistQuote {
   specialistId: string;
@@ -35,45 +33,46 @@ export const sendWhatsAppCarouselToCustomer = async ({
       throw new Error('No quotes available to send');
     }
 
-    // Prepare specialists as buttons (max 3)
-    const specialistButtons = formatSpecialistsAsButtons(
-      quotes.map(quote => ({
-        id: quote.specialistId,
-        name: quote.specialistName,
-        quoted_price: `${quote.quotedPrice} ر.س/ساعة`
-      }))
-    );
+    // Build header text
+    const headerText = `🎉 ${quotes.length} ${quotes.length === 1 ? 'عرض متاح' : 'عروض متاحة'}`;
 
-    // Build message body
-    let messageBody = `مرحباً ${customerName}! 👋\n\n`;
-    messageBody += `🎉 *تم استلام ${quotes.length} ${quotes.length === 1 ? 'عرض' : 'عروض'} لطلبك*\n\n`;
-    messageBody += `📋 رقم الطلب: *${orderNumber}*\n`;
-    messageBody += `🔧 الخدمة: ${serviceType}\n\n`;
-    messageBody += `━━━━━━━━━━━━━━━\n\n`;
-    
-    // Add specialist details
-    quotes.forEach((quote, index) => {
-      messageBody += `${index + 1}. 👤 *${quote.specialistName}*\n`;
-      messageBody += `   🌍 ${quote.specialistNationality}\n`;
-      messageBody += `   💰 ${quote.quotedPrice} ر.س/ساعة\n\n`;
-    });
-    
-    messageBody += `━━━━━━━━━━━━━━━\n\n`;
-    messageBody += `اختر المحترف المناسب بالضغط على أحد الأزرار أدناه 👇`;
+    // Build body text
+    let bodyText = `مرحباً ${customerName}! 👋\n\n`;
+    bodyText += `📋 رقم الطلب: *${orderNumber}*\n`;
+    bodyText += `🔧 الخدمة: ${serviceType}\n\n`;
+    bodyText += `تم استلام عروض من محترفين مؤهلين. اختر المحترف المناسب لك:`;
 
-    // Send WhatsApp interactive message with buttons
-    await sendInteractiveWhatsAppMessage({
-      to: customerPhone,
-      message: messageBody,
-      buttons: specialistButtons,
-      orderDetails: {
-        serviceType,
-        orderNumber
+    // Footer text
+    const footerText = `اضغط على أي محترف لعرض التفاصيل والحجز`;
+
+    // Prepare products for carousel
+    const products = quotes.map(quote => ({
+      specialistId: quote.specialistId,
+      specialistName: quote.specialistName,
+      specialistImageUrl: quote.specialistImageUrl,
+      companyName: quote.companyName,
+      quotedPrice: quote.quotedPrice,
+      productRetailerId: `specialist_${quote.specialistId}` // Product ID in Meta Catalog
+    }));
+
+    // Send WhatsApp carousel message
+    const { data, error } = await supabase.functions.invoke('send-whatsapp-carousel', {
+      body: {
+        to: customerPhone,
+        headerText,
+        bodyText,
+        footerText,
+        products
       }
     });
 
-    console.log('✅ WhatsApp carousel sent successfully');
-    return { success: true };
+    if (error) {
+      console.error('❌ Error sending WhatsApp carousel:', error);
+      throw error;
+    }
+
+    console.log('✅ WhatsApp carousel sent successfully:', data);
+    return { success: true, data };
   } catch (error) {
     console.error('❌ Failed to send WhatsApp carousel:', error);
     throw error;
