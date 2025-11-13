@@ -106,17 +106,39 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function MobileLanding() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    console.log('🏠 [MOBILE LANDING] State:', { user: user?.id, loading, hasRedirected });
+    
+    if (loading || hasRedirected) return;
+    
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (!hasRedirected) {
+        console.warn('⏱️ [MOBILE LANDING] Redirect timeout - forcing navigation');
+        setHasRedirected(true);
+        if (user) {
+          navigate('/specialist-orders', { replace: true });
+        } else {
+          navigate('/specialist-auth', { replace: true });
+        }
+      }
+    }, 3000); // 3 seconds max
     
     // Simple redirect to appropriate page
     if (user) {
+      console.log('✅ [MOBILE LANDING] User found, navigating to orders');
+      setHasRedirected(true);
       navigate('/specialist-orders', { replace: true });
     } else {
+      console.log('❌ [MOBILE LANDING] No user, navigating to auth');
+      setHasRedirected(true);
       navigate('/specialist-auth', { replace: true });
     }
-  }, [user, loading, navigate]);
+    
+    return () => clearTimeout(timeoutId);
+  }, [user, loading, navigate, hasRedirected]);
 
   if (loading) {
     return <AppLoader message="جاري التحميل..." />;

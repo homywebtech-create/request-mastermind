@@ -51,8 +51,20 @@ function initAuthOnce() {
   if (initialized) return;
   initialized = true;
 
+  console.log('🔐 [AUTH] Initializing authentication...');
+
+  // Add timeout for the entire init process
+  const initTimeout = setTimeout(() => {
+    console.warn('⏱️ [AUTH] Initialization timeout - forcing loading to false');
+    if (state.loading) {
+      state = { ...state, loading: false };
+      notify();
+    }
+  }, 8000); // 8 seconds max for entire init
+
   // 1) Subscribe FIRST to capture INITIAL_SESSION and future events (no async in callback)
   const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    console.log('🔄 [AUTH] Auth state change:', event, session?.user?.id);
     // Only synchronous state updates inside the callback
     state = { user: session?.user ?? null, session: session ?? null, loading: false };
     notify();
@@ -68,14 +80,37 @@ function initAuthOnce() {
 
   // 2) Try to restore from persistent storage, then fall back to current session
   (async () => {
-    const restored = await restoreFromPreferences();
-    if (!restored) {
-      const { data: { session } } = await supabase.auth.getSession();
-      state = { user: session?.user ?? null, session: session ?? null, loading: false };
-      notify();
-      if (session) {
-        Preferences.set({ key: SESSION_KEY, value: JSON.stringify(session) }).catch(() => {});
+    try {
+      console.log('📦 [AUTH] Attempting to restore session from preferences...');
+      const restored = await Promise.race([
+        restoreFromPreferences(),
+        new Promise((resolve) => setTimeout(() => resolve(false), 3000)) // 3s timeout for restore
+      ]);
+      
+      console.log('📦 [AUTH] Restore result:', restored);
+      
+      if (!restored) {
+        console.log('📡 [AUTH] Fetching current session...');
+        const { data: { session }, error } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Session timeout')), 3000))
+        ]) as any;
+        
+        console.log('📡 [AUTH] Session fetch result:', session?.user?.id, error);
+        
+        state = { user: session?.user ?? null, session: session ?? null, loading: false };
+        notify();
+        if (session) {
+          Preferences.set({ key: SESSION_KEY, value: JSON.stringify(session) }).catch(() => {});
+        }
       }
+    } catch (error) {
+      console.error('❌ [AUTH] Error during initialization:', error);
+      state = { user: null, session: null, loading: false };
+      notify();
+    } finally {
+      clearTimeout(initTimeout);
+      console.log('✅ [AUTH] Initialization complete');
     }
   })();
 }

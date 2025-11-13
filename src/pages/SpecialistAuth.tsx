@@ -44,35 +44,53 @@ export default function SpecialistAuth() {
   const { language } = useLanguage();
   const t = useTranslation(language);
 
-  // Check for existing session on mount
+  // Check for existing session on mount with timeout
   useEffect(() => {
     const checkExistingSession = async () => {
+      console.log('🔍 [SPECIALIST AUTH] Checking existing session...');
+      
+      // Add timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.warn('⏱️ [SPECIALIST AUTH] Session check timeout - stopping check');
+        setIsCheckingSession(false);
+      }, 5000); // 5 seconds max
+      
       try {
         // Use getUser() instead of getSession() - it's faster and cached
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        console.log('👤 [SPECIALIST AUTH] User data:', user, 'Error:', userError);
         
         if (user) {
-          console.log('✅ Existing session found, redirecting to dashboard');
+          console.log('✅ [SPECIALIST AUTH] Existing session found, checking profile...');
           
           // Quick check - just verify user has a profile
-          // The main app will handle detailed specialist verification
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('phone')
             .eq('user_id', user.id)
             .maybeSingle();
 
+          console.log('📋 [SPECIALIST AUTH] Profile data:', profile, 'Error:', profileError);
+
           if (profile?.phone) {
-            // Don't check specialist status here - let the app handle it
-            // This reduces initial load time
-            navigate('/', { replace: true });
+            console.log('✅ [SPECIALIST AUTH] Profile found, navigating to home...');
+            clearTimeout(timeoutId);
+            navigate('/specialist-orders', { replace: true });
             return;
+          } else {
+            console.log('❌ [SPECIALIST AUTH] No profile found, clearing session...');
+            await supabase.auth.signOut();
           }
+        } else {
+          console.log('ℹ️ [SPECIALIST AUTH] No existing session');
         }
       } catch (error) {
-        console.error('Error checking session:', error);
+        console.error('❌ [SPECIALIST AUTH] Error checking session:', error);
       } finally {
+        clearTimeout(timeoutId);
         setIsCheckingSession(false);
+        console.log('✅ [SPECIALIST AUTH] Session check complete');
       }
     };
 
