@@ -80,6 +80,38 @@ export type Database = {
         }
         Relationships: []
       }
+      cancellation_settings: {
+        Row: {
+          cancellation_percentage: number
+          created_at: string
+          id: string
+          sub_service_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancellation_percentage?: number
+          created_at?: string
+          id?: string
+          sub_service_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancellation_percentage?: number
+          created_at?: string
+          id?: string
+          sub_service_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cancellation_settings_sub_service_id_fkey"
+            columns: ["sub_service_id"]
+            isOneToOne: true
+            referencedRelation: "sub_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null

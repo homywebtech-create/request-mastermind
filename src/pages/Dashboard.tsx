@@ -10,7 +10,7 @@ import { useUserRole } from "@/contexts/UserRoleContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrderReadinessNotifications } from "@/hooks/useOrderReadinessNotifications";
 import { useOverdueConfirmedOrdersAlert } from "@/hooks/useOverdueConfirmedOrdersAlert";
-import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone, MessageSquare, Shield } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle, Users, Building2, LogOut, Settings, Volume2, FileText, AlertCircle, MoreVertical, FileUser, UserCog, FileCheck, Briefcase, Home, BarChart, XCircle, Smartphone, MessageSquare, Shield, Percent } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -968,6 +968,13 @@ export default function Dashboard() {
                         <DropdownMenuItem onClick={() => navigate('/services')}>
                           <Settings className="h-4 w-4 mr-2" />
                           {tDash.services}
+                        </DropdownMenuItem>
+                      )}
+
+                      {userHasPermission('view_services') && (
+                        <DropdownMenuItem onClick={() => navigate('/cancellation-settings')}>
+                          <Percent className="h-4 w-4 mr-2" />
+                          {language === 'ar' ? 'إعدادات الإلغاء' : 'Cancellation Settings'}
                         </DropdownMenuItem>
                       )}
 

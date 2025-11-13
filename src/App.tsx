@@ -46,6 +46,7 @@ import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
 import AppVersionManagement from "./pages/AppVersionManagement";
 import WalletPolicies from "./pages/WalletPolicies";
+import CancellationSettings from "./pages/CancellationSettings";
 import { firebaseNotifications } from "./lib/firebaseNotifications";
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -302,6 +303,14 @@ function AppRouter() {
           element={
             <RoleProtectedRoute requiredPermission="view_dashboard">
               <WalletPolicies />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/cancellation-settings"
+          element={
+            <RoleProtectedRoute requiredPermission="view_services">
+              <CancellationSettings />
             </RoleProtectedRoute>
           }
         />

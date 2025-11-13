@@ -1025,20 +1025,32 @@ export default function OrderTracking() {
     try {
       setIsLoading(true);
       
-      // Fetch compensation amount from wallet policies
-      const { data: policyData, error: policyError } = await supabase
-        .from('wallet_policies')
-        .select('compensation_amount')
-        .eq('policy_key', 'customer_no_show')
-        .eq('is_active', true)
+      // Extract sub-service name from service_type
+      // service_type format: "الخدمة - الخدمة الفرعية"
+      const subServiceName = order?.service_type?.includes('-') 
+        ? order.service_type.split('-')[1]?.trim() 
+        : order?.service_type?.trim();
+
+      // Fetch cancellation percentage for this sub-service
+      const { data: cancellationData, error: cancellationError } = await supabase
+        .from('cancellation_settings')
+        .select(`
+          cancellation_percentage,
+          sub_services!inner (
+            name,
+            name_en
+          )
+        `)
+        .or(`sub_services.name.eq.${subServiceName},sub_services.name_en.eq.${subServiceName}`)
         .single();
 
-      if (policyError) {
-        console.error('Policy error:', policyError);
-        throw new Error('Failed to fetch compensation policy');
-      }
+      // Default to 50% if no setting found
+      const cancellationPercentage = cancellationData?.cancellation_percentage || 50;
+      
+      // Calculate compensation amount based on invoice amount and percentage
+      const compensationAmountValue = (invoiceAmount * cancellationPercentage) / 100;
 
-      if (policyData && specialistId) {
+      if (specialistId && compensationAmountValue > 0) {
         // Add compensation to specialist's wallet
         const { data: specialistData, error: specialistError } = await supabase
           .from('specialists')
@@ -1052,7 +1064,6 @@ export default function OrderTracking() {
         }
 
         const currentBalance = specialistData?.wallet_balance || 0;
-        const compensationAmountValue = policyData.compensation_amount;
         const newBalance = Number(currentBalance) + Number(compensationAmountValue);
 
         // Update specialist wallet balance
@@ -1076,8 +1087,8 @@ export default function OrderTracking() {
             amount: compensationAmountValue,
             balance_after: newBalance,
             description: language === 'ar' 
-              ? 'تعويض عدم حضور العميل' 
-              : 'Customer no-show compensation'
+              ? `تعويض عدم حضور العميل (${cancellationPercentage}% من ${invoiceAmount} ر.ق)` 
+              : `Customer no-show compensation (${cancellationPercentage}% of ${invoiceAmount} QAR)`
           });
 
         if (transactionError) {
@@ -1113,7 +1124,7 @@ export default function OrderTracking() {
         }, 7000);
       } else {
         setIsLoading(false);
-        throw new Error('Missing policy data or specialist ID');
+        throw new Error('Missing specialist ID or invalid compensation amount');
       }
     } catch (error) {
       console.error('Error processing compensation:', error);
