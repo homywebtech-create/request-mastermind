@@ -123,26 +123,27 @@ export default function WhatsAppCarouselTest() {
       try {
         const specialist = selectedSpecialists[i];
         
-        // Prepare mock quote
-        const mockQuote = {
-          specialistId: specialist.id,
-          specialistName: specialist.name,
-          specialistNationality: "سعودية",
-          specialistImageUrl: specialist.imageUrl,
-          quotedPrice: specialist.price,
-          companyId: "mock-company-id",
-          companyName: specialist.company
-        };
-
         console.log(`📤 Sending message ${i + 1}/${totalMessages} to ${phoneNumber}`);
 
-        // Send carousel with single specialist
-        await sendWhatsAppCarouselToCustomer({
-          customerPhone: phoneNumber,
-          customerName: "عميل تجريبي",
-          orderNumber: `TEST-${Date.now()}`,
-          serviceType: "خدمة تنظيف",
-          quotes: [mockQuote]
+        // Build simple WhatsApp message (no carousel needed for testing)
+        let messageText = `مرحباً! 👋\n\n`;
+        messageText += `🎉 *عرض جديد من محترفة*\n\n`;
+        messageText += `━━━━━━━━━━━━━━━\n\n`;
+        messageText += `👤 *المحترفة:* ${specialist.name}\n`;
+        messageText += `🏢 *الشركة:* ${specialist.company}\n`;
+        messageText += `💰 *السعر:* ${specialist.price} ر.س/ساعة\n`;
+        messageText += `🌍 *الجنسية:* سعودية\n\n`;
+        messageText += `━━━━━━━━━━━━━━━\n\n`;
+        messageText += `📋 *تفاصيل الطلب:*\n`;
+        messageText += `رقم الطلب: TEST-${Date.now()}\n`;
+        messageText += `نوع الخدمة: خدمة تنظيف\n\n`;
+        messageText += `للحجز، يرجى الرد على هذه الرسالة.`;
+
+        // Use simple WhatsApp helper instead of carousel
+        const { sendWhatsAppMessage } = await import('@/lib/whatsappHelper');
+        await sendWhatsAppMessage({
+          to: phoneNumber,
+          message: messageText
         });
 
         // Update status to success
@@ -274,14 +275,14 @@ export default function WhatsAppCarouselTest() {
         {/* Setup Instructions */}
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>متطلبات الإعداد</AlertTitle>
+          <AlertTitle>أوضاع الاختبار</AlertTitle>
           <AlertDescription className="space-y-2">
-            <p>قبل استخدام هذه الصفحة، تأكد من:</p>
+            <p><strong>الاختبار السريع:</strong> لا يحتاج إعداد Meta Catalog، يرسل رسائل WhatsApp بسيطة</p>
+            <p><strong>الطلبات الحقيقية:</strong> يتطلب:</p>
             <ul className="list-disc list-inside space-y-1 mr-4">
               <li>إضافة <code className="bg-muted px-1 rounded">META_CATALOG_ID</code> في الإعدادات</li>
               <li>إضافة المحترفين كمنتجات في Meta Business Manager Catalog</li>
               <li>ربط الـ Catalog بحساب WhatsApp Business</li>
-              <li>التأكد من وجود عروض أسعار (quotes) للطلبات</li>
             </ul>
           </AlertDescription>
         </Alert>
