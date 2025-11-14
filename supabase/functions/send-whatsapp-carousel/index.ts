@@ -83,15 +83,23 @@ const handler = async (req: Request): Promise<Response> => {
       to: cleanPhone,
       type: "interactive",
       interactive: {
-        type: "catalog_message",
+        type: "product_list",
+        header: {
+          type: "text",
+          text: header_text || "Available Specialists"
+        },
         body: {
           text: body_text || "Swipe to view our professional specialists and book your service."
         },
+        footer: footer_text ? { text: footer_text } : undefined,
         action: {
-          name: "catalog_message",
-          parameters: {
-            thumbnail_product_retailer_id: limitedProductIds[0] || ""
-          }
+          catalog_id: META_CATALOG_ID,
+          sections: [
+            {
+              title: "Select a Specialist",
+              product_items: productSections
+            }
+          ]
         }
       }
     };
