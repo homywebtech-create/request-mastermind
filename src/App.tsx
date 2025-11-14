@@ -42,6 +42,7 @@ import WhatsAppConfigVerify from "./pages/WhatsAppConfigVerify";
 import WhatsAppSetupGuide from "./pages/WhatsAppSetupGuide";
 import WhatsAppMessages from "./pages/WhatsAppMessages";
 import WhatsAppCarouselTest from "./pages/WhatsAppCarouselTest";
+import WhatsAppCatalogSync from "./pages/WhatsAppCatalogSync";
 import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
@@ -415,6 +416,13 @@ function AppRouter() {
         <Route path="/whatsapp-setup-guide" element={
           <RoleProtectedRoute requiredPermission="view_dashboard">
             <WhatsAppSetupGuide />
+          </RoleProtectedRoute>
+        } />
+        
+        {/* WhatsApp Catalog Sync (admin only) */}
+        <Route path="/whatsapp-catalog-sync" element={
+          <RoleProtectedRoute requiredPermission="view_dashboard">
+            <WhatsAppCatalogSync />
           </RoleProtectedRoute>
         } />
         
