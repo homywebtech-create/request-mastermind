@@ -75,7 +75,8 @@ const handler = async (req: Request): Promise<Response> => {
       product_retailer_id: retailerId
     }));
 
-    // Construct the multi-product message payload
+    // Construct the multi-product carousel message payload
+    // Using product_list type for swipeable specialist cards
     const messagePayload = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -85,10 +86,10 @@ const handler = async (req: Request): Promise<Response> => {
         type: "product_list",
         header: {
           type: "text",
-          text: header_text
+          text: header_text || "Available Specialists"
         },
         body: {
-          text: body_text
+          text: body_text || "Swipe to view our professional specialists and book your service."
         },
         footer: footer_text ? {
           text: footer_text
@@ -97,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
           catalog_id: META_CATALOG_ID,
           sections: [
             {
-              title: "Available Professionals",
+              title: "Select a Specialist",
               product_items: productSections
             }
           ]
