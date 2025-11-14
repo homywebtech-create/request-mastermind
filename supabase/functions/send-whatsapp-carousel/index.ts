@@ -20,10 +20,10 @@ interface SpecialistProduct {
 
 interface CarouselRequest {
   to: string;
-  headerText: string;
-  bodyText: string;
-  footerText?: string;
-  products: SpecialistProduct[];
+  header_text: string;
+  body_text: string;
+  footer_text?: string;
+  product_retailer_ids: string[]; // Product IDs from Meta Catalog (specialist IDs)
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -33,15 +33,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, headerText, bodyText, footerText, products }: CarouselRequest = await req.json();
+    const { to, header_text, body_text, footer_text, product_retailer_ids }: CarouselRequest = await req.json();
 
     console.log("📱 Sending WhatsApp carousel to:", to);
-    console.log("🔢 Number of products:", products?.length);
+    console.log("🔢 Number of products:", product_retailer_ids?.length);
 
     // Validate input
-    if (!to || !bodyText || !products || products.length === 0) {
+    if (!to || !body_text || !product_retailer_ids || product_retailer_ids.length === 0) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: to, bodyText, and products" }),
+        JSON.stringify({ error: "Missing required fields: to, body_text, and product_retailer_ids" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -68,11 +68,11 @@ const handler = async (req: Request): Promise<Response> => {
     const cleanPhone = to.replace(/\+/g, "").replace(/\s/g, "");
 
     // Limit to 10 products (WhatsApp API limit)
-    const limitedProducts = products.slice(0, 10);
+    const limitedProductIds = product_retailer_ids.slice(0, 10);
 
     // Build product sections for multi-product message
-    const productSections = limitedProducts.map(product => ({
-      product_retailer_id: product.productRetailerId || product.specialistId
+    const productSections = limitedProductIds.map(retailerId => ({
+      product_retailer_id: retailerId
     }));
 
     // Construct the multi-product message payload
@@ -85,13 +85,13 @@ const handler = async (req: Request): Promise<Response> => {
         type: "product_list",
         header: {
           type: "text",
-          text: headerText
+          text: header_text
         },
         body: {
-          text: bodyText
+          text: body_text
         },
-        footer: footerText ? {
-          text: footerText
+        footer: footer_text ? {
+          text: footer_text
         } : undefined,
         action: {
           catalog_id: META_CATALOG_ID,

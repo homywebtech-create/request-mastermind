@@ -43,6 +43,7 @@ import WhatsAppSetupGuide from "./pages/WhatsAppSetupGuide";
 import WhatsAppMessages from "./pages/WhatsAppMessages";
 import WhatsAppCarouselTest from "./pages/WhatsAppCarouselTest";
 import WhatsAppCatalogSync from "./pages/WhatsAppCatalogSync";
+import WhatsAppCarouselSend from "./pages/WhatsAppCarouselSend";
 import CompanyTeamManagement from "./pages/company/CompanyTeamManagement";
 import AdminStatistics from "./pages/AdminStatistics";
 import CompanyStatistics from "./pages/company/CompanyStatistics";
@@ -437,6 +438,13 @@ function AppRouter() {
         <Route path="/whatsapp-carousel-test" element={
           <RoleProtectedRoute requiredPermission="view_dashboard">
             <WhatsAppCarouselTest />
+          </RoleProtectedRoute>
+        } />
+        
+        {/* WhatsApp Carousel Send (admin only) */}
+        <Route path="/whatsapp-carousel-send" element={
+          <RoleProtectedRoute requiredPermission="view_dashboard">
+            <WhatsAppCarouselSend />
           </RoleProtectedRoute>
         } />
         
