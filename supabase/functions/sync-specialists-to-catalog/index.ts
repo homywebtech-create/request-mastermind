@@ -128,7 +128,7 @@ serve(async (req) => {
           condition: 'new',
           price: 50, // Starting price in SAR
           currency: 'SAR',
-          url: `${Deno.env.get('VITE_SUPABASE_URL')}/booking?specialist=${specialist.id}`,
+          url: `https://c9213afe-1e65-4593-8c57-2cfda087384c.lovableproject.com/company-booking?specialist=${specialist.id}`,
           brand: 'Mobo',
           category: serviceName,
           image_url: specialist.image_url || 'https://via.placeholder.com/400x400.png?text=Specialist',
