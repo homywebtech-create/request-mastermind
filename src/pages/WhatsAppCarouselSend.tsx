@@ -12,9 +12,7 @@ import { Loader2, Send, Users } from "lucide-react";
 const WhatsAppCarouselSend = () => {
   const [sending, setSending] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [headerText, setHeaderText] = useState("Available Specialists");
-  const [bodyText, setBodyText] = useState("Swipe to view our professional specialists and book your service.");
-  const [footerText, setFooterText] = useState("Powered by Mobo");
+  const [templateName, setTemplateName] = useState("specialist_carousel");
   const [selectedSpecialists, setSelectedSpecialists] = useState<string[]>([]);
   const [specialists, setSpecialists] = useState<any[]>([]);
   const [loadingSpecialists, setLoadingSpecialists] = useState(false);
@@ -56,9 +54,7 @@ const WhatsAppCarouselSend = () => {
       const { data, error } = await supabase.functions.invoke('send-whatsapp-carousel', {
         body: {
           to: phoneNumber,
-          header_text: headerText,
-          body_text: bodyText,
-          footer_text: footerText,
+          template_name: templateName,
           product_retailer_ids: selectedSpecialists,
         }
       });
@@ -126,39 +122,21 @@ const WhatsAppCarouselSend = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="header">Header Text</Label>
+              <Label htmlFor="template">Template Name</Label>
               <Input
-                id="header"
-                value={headerText}
-                onChange={(e) => setHeaderText(e.target.value)}
-                placeholder="Available Specialists"
+                id="template"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="specialist_carousel"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="body">Body Text</Label>
-              <Textarea
-                id="body"
-                value={bodyText}
-                onChange={(e) => setBodyText(e.target.value)}
-                placeholder="Choose from our professional specialists:"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="footer">Footer Text</Label>
-              <Input
-                id="footer"
-                value={footerText}
-                onChange={(e) => setFooterText(e.target.value)}
-                placeholder="Tap to view details"
-              />
+              <p className="text-xs text-muted-foreground">
+                The name of your approved WhatsApp template
+              </p>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Select Specialists (Max 10)</Label>
+                <Label>Select Specialists (Max 30)</Label>
                 <Button
                   variant="outline"
                   size="sm"
