@@ -20,7 +20,8 @@ interface SpecialistProduct {
 
 interface CarouselRequest {
   to: string;
-  template_name: string; // Name of your approved template
+  templateName: string; // Name of your approved template
+  templateLanguage: string; // Template language code
   product_retailer_ids: string[]; // Product IDs from Meta Catalog (specialist IDs)
 }
 
@@ -31,16 +32,17 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, template_name, product_retailer_ids }: CarouselRequest = await req.json();
+    const { to, templateName, templateLanguage, product_retailer_ids }: CarouselRequest = await req.json();
 
     console.log("📱 Sending WhatsApp carousel to:", to);
-    console.log("📋 Template name:", template_name);
+    console.log("📋 Template name:", templateName);
+    console.log("🌐 Template language:", templateLanguage);
     console.log("🔢 Number of products:", product_retailer_ids?.length);
 
     // Validate input
-    if (!to || !template_name || !product_retailer_ids || product_retailer_ids.length === 0) {
+    if (!to || !templateName || !product_retailer_ids || product_retailer_ids.length === 0) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: to, template_name, and product_retailer_ids" }),
+        JSON.stringify({ error: "Missing required fields: to, templateName, and product_retailer_ids" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -76,9 +78,9 @@ const handler = async (req: Request): Promise<Response> => {
       to: cleanPhone,
       type: "template",
       template: {
-        name: template_name,
+        name: templateName,
         language: {
-          code: "en"
+          code: templateLanguage
         },
         components: [
           {
