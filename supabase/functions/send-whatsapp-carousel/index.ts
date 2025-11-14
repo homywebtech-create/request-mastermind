@@ -20,9 +20,7 @@ interface SpecialistProduct {
 
 interface CarouselRequest {
   to: string;
-  header_text: string;
-  body_text: string;
-  footer_text?: string;
+  template_name: string; // Name of your approved template
   product_retailer_ids: string[]; // Product IDs from Meta Catalog (specialist IDs)
 }
 
@@ -33,15 +31,16 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, header_text, body_text, footer_text, product_retailer_ids }: CarouselRequest = await req.json();
+    const { to, template_name, product_retailer_ids }: CarouselRequest = await req.json();
 
     console.log("📱 Sending WhatsApp carousel to:", to);
+    console.log("📋 Template name:", template_name);
     console.log("🔢 Number of products:", product_retailer_ids?.length);
 
     // Validate input
-    if (!to || !body_text || !product_retailer_ids || product_retailer_ids.length === 0) {
+    if (!to || !template_name || !product_retailer_ids || product_retailer_ids.length === 0) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: to, body_text, and product_retailer_ids" }),
+        JSON.stringify({ error: "Missing required fields: to, template_name, and product_retailer_ids" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -67,40 +66,38 @@ const handler = async (req: Request): Promise<Response> => {
     // Clean phone number (remove + and spaces)
     const cleanPhone = to.replace(/\+/g, "").replace(/\s/g, "");
 
-    // Limit to 10 products (WhatsApp API limit)
-    const limitedProductIds = product_retailer_ids.slice(0, 10);
+    // Limit to 30 products (WhatsApp template catalog limit)
+    const limitedProductIds = product_retailer_ids.slice(0, 30);
 
-    // Build product sections for multi-product message
-    const productSections = limitedProductIds.map(retailerId => ({
-      product_retailer_id: retailerId
-    }));
-
-    // Construct the multi-product carousel message payload
-    // Using product_list type for swipeable specialist cards
+    // Construct template message with catalog
     const messagePayload = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
       to: cleanPhone,
-      type: "interactive",
-      interactive: {
-        type: "product_list",
-        header: {
-          type: "text",
-          text: header_text || "Available Specialists"
+      type: "template",
+      template: {
+        name: template_name,
+        language: {
+          code: "en"
         },
-        body: {
-          text: body_text || "Swipe to view our professional specialists and book your service."
-        },
-        footer: footer_text ? { text: footer_text } : undefined,
-        action: {
-          catalog_id: META_CATALOG_ID,
-          sections: [
-            {
-              title: "Select a Specialist",
-              product_items: productSections
-            }
-          ]
-        }
+        components: [
+          {
+            type: "body"
+          },
+          {
+            type: "button",
+            sub_type: "catalog",
+            index: 0,
+            parameters: [
+              {
+                type: "action",
+                action: {
+                  thumbnail_product_retailer_id: limitedProductIds[0]
+                }
+              }
+            ]
+          }
+        ]
       }
     };
 
