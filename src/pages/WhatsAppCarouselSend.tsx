@@ -62,7 +62,13 @@ const WhatsAppCarouselSend = () => {
 
       if (error) {
         console.error('Send error:', error);
-        toast.error('Failed to send carousel message');
+        toast.error(`Failed to send carousel: ${error.message}`);
+        return;
+      }
+
+      if (data?.error) {
+        console.error('API error:', data);
+        toast.error(`WhatsApp API error: ${data.error}`);
         return;
       }
 
