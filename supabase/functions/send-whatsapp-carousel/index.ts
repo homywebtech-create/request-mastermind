@@ -71,7 +71,29 @@ const handler = async (req: Request): Promise<Response> => {
     // Limit to 30 products (WhatsApp template catalog limit)
     const limitedProductIds = product_retailer_ids.slice(0, 30);
 
-    // Construct template message with catalog
+    // Determine if template should show a single product (View item) or full catalog (View items)
+    const isSingle = limitedProductIds.length === 1;
+
+    const buttonComponent = {
+      type: "button",
+      sub_type: "catalog",
+      index: 0,
+      parameters: [
+        {
+          type: "action",
+          action: {
+            catalog_id: META_CATALOG_ID,
+            ...(isSingle
+              ? { product_retailer_id: limitedProductIds[0] } // "View item" button
+              : { thumbnail_product_retailer_id: limitedProductIds[0] }) // "View items" button with thumbnail
+          }
+        }
+      ]
+    } as const;
+
+    console.log(`🧭 Using ${isSingle ? 'single-product (View item)' : 'catalog (View items)'} button`);
+
+    // Construct template message with catalog/product button
     const messagePayload = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -83,22 +105,8 @@ const handler = async (req: Request): Promise<Response> => {
           code: templateLanguage
         },
         components: [
-          {
-            type: "body"
-          },
-          {
-            type: "button",
-            sub_type: "catalog",
-            index: 0,
-            parameters: [
-              {
-                type: "action",
-                action: {
-                  thumbnail_product_retailer_id: limitedProductIds[0]
-                }
-              }
-            ]
-          }
+          { type: "body" },
+          buttonComponent
         ]
       }
     };
@@ -122,10 +130,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!whatsappResponse.ok) {
       console.error("❌ WhatsApp API error:", responseData);
+      const apiMsg = responseData?.error?.message;
+      const apiDetails = responseData?.error?.error_data?.details;
       return new Response(
         JSON.stringify({ 
-          error: "Failed to send WhatsApp carousel",
-          details: responseData 
+          error: apiMsg || "Failed to send WhatsApp carousel",
+          details: responseData,
+          hint: apiDetails
         }),
         { status: whatsappResponse.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
