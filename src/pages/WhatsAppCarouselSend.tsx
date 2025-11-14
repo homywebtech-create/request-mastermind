@@ -54,7 +54,8 @@ const WhatsAppCarouselSend = () => {
       const { data, error } = await supabase.functions.invoke('send-whatsapp-carousel', {
         body: {
           to: phoneNumber,
-          template_name: templateName,
+          templateName: templateName,
+          templateLanguage: 'en',
           product_retailer_ids: selectedSpecialists,
         }
       });
