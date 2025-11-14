@@ -119,18 +119,18 @@ serve(async (req) => {
         const serviceName = services.join(', ');
 
         // Create product data for Meta Catalog
+        // Create product with specialist details for swipeable carousel
         const product: CatalogProduct = {
           retailer_id: specialist.id,
-          name: specialist.name || 'Specialist',
-          description: `${serviceName} - ${specialist.experience_years || 0} years experience. Rating: ${specialist.rating || 0}/5`,
+          name: specialist.name || 'Professional Specialist',
+          description: `${serviceName}\n⭐ Rating: ${specialist.rating || 5.0}/5\n📅 Experience: ${specialist.experience_years || 0} years\n🌍 Nationality: ${specialist.nationality || 'Professional'}\n\nTap "Book Now" to schedule your service with this specialist.`,
           availability: 'in stock',
           condition: 'new',
-          price: 50, // Default price in SAR, you can customize this
+          price: 50, // Starting price in SAR
           currency: 'SAR',
-          url: `https://your-domain.com/specialist/${specialist.id}`, // Update with your domain
-          brand: 'Your Company Name', // Update with your company name
+          url: `${Deno.env.get('VITE_SUPABASE_URL')}/booking?specialist=${specialist.id}`,
+          brand: companyName,
           category: serviceName,
-          // Meta requires image_url - use specialist image or placeholder
           image_url: specialist.image_url || 'https://via.placeholder.com/400x400.png?text=Specialist',
         };
 

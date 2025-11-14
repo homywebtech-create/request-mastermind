@@ -13,8 +13,8 @@ const WhatsAppCarouselSend = () => {
   const [sending, setSending] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [headerText, setHeaderText] = useState("Available Specialists");
-  const [bodyText, setBodyText] = useState("Choose from our professional specialists:");
-  const [footerText, setFooterText] = useState("Tap to view details");
+  const [bodyText, setBodyText] = useState("Swipe to view our professional specialists and book your service.");
+  const [footerText, setFooterText] = useState("Powered by Mobo");
   const [selectedSpecialists, setSelectedSpecialists] = useState<string[]>([]);
   const [specialists, setSpecialists] = useState<any[]>([]);
   const [loadingSpecialists, setLoadingSpecialists] = useState(false);
@@ -106,8 +106,7 @@ const WhatsAppCarouselSend = () => {
         <CardContent className="space-y-6">
           <Alert>
             <AlertDescription>
-              This will send a WhatsApp message with a scrollable carousel of specialist profiles.
-              Customers can tap on each specialist to view details.
+              Send a swipeable specialist carousel to customers. Each card shows specialist photo, info, rating, and a "Book Now" button.
             </AlertDescription>
           </Alert>
 
@@ -239,10 +238,11 @@ const WhatsAppCarouselSend = () => {
           <div className="text-sm text-muted-foreground space-y-2">
             <p><strong>How it works:</strong></p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>Customer receives a scrollable carousel of specialist profiles</li>
-              <li>Each card shows the specialist's photo, name, services, and rating</li>
-              <li>Customer can swipe through and tap to view more details</li>
-              <li>Perfect for showing multiple options to customers</li>
+              <li>Customer receives a swipeable carousel with specialist cards</li>
+              <li>Each card displays: photo, name, specialty, rating, experience, nationality</li>
+              <li>Customers swipe left/right to browse specialists</li>
+              <li>Each card has a "Book Now" button to schedule the service</li>
+              <li>Professional, interactive way to showcase your team</li>
             </ul>
           </div>
         </CardContent>
