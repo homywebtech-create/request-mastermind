@@ -90,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
         action: {
           name: "catalog_message",
           parameters: {
-            thumbnail_product_retailer_id: product_ids[0] || ""
+            thumbnail_product_retailer_id: limitedProductIds[0] || ""
           }
         }
       }
