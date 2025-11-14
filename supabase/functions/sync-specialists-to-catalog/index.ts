@@ -130,12 +130,9 @@ serve(async (req) => {
           url: `https://your-domain.com/specialist/${specialist.id}`, // Update with your domain
           brand: 'Your Company Name', // Update with your company name
           category: serviceName,
+          // Meta requires image_url - use specialist image or placeholder
+          image_url: specialist.image_url || 'https://via.placeholder.com/400x400.png?text=Specialist',
         };
-
-        // Add image if available
-        if (specialist.image_url) {
-          product.image_url = specialist.image_url;
-        }
 
         // Note: For item location, you'll need to add lat/long fields to specialists table
         // For now, we'll use a default location or skip it
