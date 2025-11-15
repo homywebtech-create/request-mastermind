@@ -18,12 +18,12 @@ interface Order {
 export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
   const { toast } = useToast();
   const soundNotification = useRef(getSoundNotification());
-  const alertIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastAlertTimeRef = useRef<number>(0);
   const hasShownToastRef = useRef(false);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const [snoozedOrders, setSnoozedOrders] = useState<Map<string, number>>(new Map());
   const [isMuted, setIsMuted] = useState(false);
+  const alertedOrdersRef = useRef<Set<string>>(new Set());
   
   // Mute handler function
   const toggleMute = useCallback(() => {
@@ -225,59 +225,30 @@ export function useOverdueConfirmedOrdersAlert(orders: Order[]) {
       
       // Play sound immediately if not played recently (within 15 seconds) and not muted
       if (!isMuted) {
-        const timeSinceLastAlert = Date.now() - lastAlertTimeRef.current;
-        console.log(`🔊 [AUDIO] Time since last alert: ${timeSinceLastAlert}ms`);
+        // Check if this order has been alerted before
+        const hasBeenAlerted = overdueOrderIds.some(id => alertedOrdersRef.current.has(id));
         
-        if (timeSinceLastAlert > 15000) {
-          console.log('🔊 [AUDIO] Playing overdue alert sound NOW...');
+        if (!hasBeenAlerted) {
+          console.log('🔊 [AUDIO] Playing single overdue alert sound for new overdue orders...');
           soundNotification.current.playNewOrderSound();
           lastAlertTimeRef.current = Date.now();
+          
+          // Mark these orders as alerted
+          overdueOrderIds.forEach(id => alertedOrdersRef.current.add(id));
+          console.log('✅ [AUDIO] Marked orders as alerted:', overdueOrderIds);
         } else {
-          console.log(`⏳ [AUDIO] Skipping sound - played ${timeSinceLastAlert}ms ago`);
-        }
-        
-        // Set up continuous alert if not already running
-        if (!alertIntervalRef.current) {
-          console.log('🔄 [ALERT] Setting up continuous alert interval (15s)...');
-          alertIntervalRef.current = setInterval(() => {
-            if (!isMuted) {
-              console.log('🔊 [AUDIO] Playing periodic overdue alert sound...');
-              soundNotification.current.playNewOrderSound();
-              lastAlertTimeRef.current = Date.now();
-            } else {
-              console.log('🔇 [AUDIO] Alert is muted, skipping sound');
-            }
-          }, 15000); // Play sound every 15 seconds
-        } else {
-          console.log('✓ [ALERT] Continuous alert already running');
+          console.log('⏭️ [AUDIO] Skipping sound - orders already alerted');
         }
       } else {
         console.log('🔇 [AUDIO] Alert is muted');
-        // Clear interval if muted
-        if (alertIntervalRef.current) {
-          console.log('🛑 [ALERT] Clearing alert interval - muted');
-          clearInterval(alertIntervalRef.current);
-          alertIntervalRef.current = null;
-        }
       }
     } else {
       console.log('✅ [CHECK] No overdue orders found');
-      // Clean up if no overdue orders
+      // Clean up if no overdue orders - clear alerted orders list
       hasShownToastRef.current = false;
-      if (alertIntervalRef.current) {
-        console.log('🛑 [ALERT] Clearing alert interval - no overdue orders');
-        clearInterval(alertIntervalRef.current);
-        alertIntervalRef.current = null;
-      }
+      alertedOrdersRef.current.clear();
+      console.log('🧹 [CLEANUP] Cleared alerted orders list');
     }
-
-    // Cleanup on unmount
-    return () => {
-      if (alertIntervalRef.current) {
-        clearInterval(alertIntervalRef.current);
-        alertIntervalRef.current = null;
-      }
-    };
   }, [orders, toast, snoozedOrders, isMuted]);
 
   return { 
