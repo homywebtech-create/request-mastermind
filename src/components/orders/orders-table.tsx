@@ -208,6 +208,21 @@ export function OrdersTable({ orders, onUpdateStatus, onLinkCopied, filter, onFi
     ? hasCompanyPermission('manage_orders')
     : hasPermission('manage_orders');
 
+  // Debug logging for readiness data
+  useEffect(() => {
+    if (filter === 'confirmed' || filter === 'upcoming' || filter === 'in-progress') {
+      console.log('📊 [OrdersTable] Orders with readiness data:', orders.map(order => ({
+        order_number: order.order_number,
+        booking_date: order.booking_date,
+        booking_time: order.booking_time,
+        readiness_check_sent_at: order.readiness_check_sent_at,
+        specialist_readiness_status: order.specialist_readiness_status,
+        readiness_notification_viewed_at: order.readiness_notification_viewed_at,
+        readiness_reminder_count: order.readiness_reminder_count,
+      })));
+    }
+  }, [orders, filter]);
+
   // Check if order is overdue
   const isOrderOverdue = (order: Order) => {
     if (!order.booking_date || order.status === 'completed' || order.status === 'cancelled') return false;
