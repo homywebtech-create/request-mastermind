@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { CheckCircle, XCircle, Clock, DollarSign, Package } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import LanguageSelector from "@/components/specialist/LanguageSelector";
+import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 
 interface Stats {
   totalOrders: number;
@@ -297,6 +298,7 @@ export default function SpecialistStats() {
       </div>
 
       <BottomNavigation newOrdersCount={stats.newOrders} />
+      <ReadinessCheckDialog />
     </div>
   );
 }

@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancialNotificationsPanel } from "@/components/specialist/FinancialNotificationsPanel";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
+import BottomNavigation from "@/components/specialist/BottomNavigation";
 
 interface Transaction {
   id: string;
@@ -424,6 +426,7 @@ export default function SpecialistWallet() {
           )}
         </DialogContent>
       </Dialog>
+      <ReadinessCheckDialog />
     </div>
   );
 }
