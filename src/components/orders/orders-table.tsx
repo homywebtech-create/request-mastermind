@@ -2391,8 +2391,8 @@ Thank you for contacting us! 🌟`;
                             </DropdownMenu>
                           )}
                           
-                          {/* Actions for confirmed orders - Reassign and Cancel */}
-                          {canManageOrders && filter === 'confirmed' && (
+                          {/* Actions for confirmed orders - Reassign and Cancel - ADMIN ONLY */}
+                          {!isCompanyView && canManageOrders && filter === 'confirmed' && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
@@ -2436,8 +2436,8 @@ Thank you for contacting us! 🌟`;
                             </DropdownMenu>
                           )}
                           
-                          {/* Actions for upcoming orders */}
-                          {canManageOrders && filter === 'upcoming' && (
+                          {/* Actions for upcoming orders - ADMIN ONLY */}
+                          {!isCompanyView && canManageOrders && filter === 'upcoming' && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
@@ -2481,8 +2481,8 @@ Thank you for contacting us! 🌟`;
                             </DropdownMenu>
                           )}
                           
-                          {/* Tracking stage actions for in-progress orders */}
-                          {canManageOrders && filter === 'in-progress' && (
+                          {/* Tracking stage actions for in-progress orders - ADMIN ONLY */}
+                          {!isCompanyView && canManageOrders && filter === 'in-progress' && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
