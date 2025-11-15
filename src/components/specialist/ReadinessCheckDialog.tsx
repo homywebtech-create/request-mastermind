@@ -361,6 +361,7 @@ export function ReadinessCheckDialog() {
       const { error } = await supabase
         .from('orders')
         .update({
+          specialist_id: null, // Remove specialist assignment
           specialist_readiness_status: 'not_ready',
           specialist_readiness_response_at: new Date().toISOString(),
           specialist_not_ready_reason: notReadyReason || null,
