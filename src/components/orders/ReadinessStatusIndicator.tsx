@@ -158,19 +158,19 @@ export function ReadinessStatusIndicator({
 
     if (specialistReadinessStatus === 'ready') {
       return language === 'ar' 
-        ? '🟡 المحترفة جاهزة وستذهب'
-        : '🟡 Specialist ready, will go';
+        ? '✅ جاهز - سيذهب'
+        : '✅ Ready - will go';
     }
 
     if (specialistReadinessStatus === 'not_ready') {
       return language === 'ar' 
-        ? '🔴 المحترفة لن تستطيع الذهاب'
-        : '🔴 Specialist cannot go';
+        ? '❌ غير جاهز - لن يذهب'
+        : '❌ Not ready - cannot go';
     }
 
     return language === 'ar' 
-      ? '🔵 تم إرسال التنبيه، بانتظار الرد'
-      : '🔵 Notification sent, awaiting response';
+      ? '⏳ بانتظار رد المحترف'
+      : '⏳ Awaiting specialist response';
   };
 
   return (
@@ -180,37 +180,49 @@ export function ReadinessStatusIndicator({
         <span className="text-sm font-medium">{getStatusText()}</span>
       </div>
 
+      {/* Show notification sent info */}
       {readinessCheckSentAt && (
-        <div className="text-xs opacity-80">
-          {language === 'ar' ? 'تم الإرسال: ' : 'Sent: '}
-          {new Date(readinessCheckSentAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+        <div className="space-y-1 text-xs">
+          <div className="flex items-center gap-1.5 opacity-80">
+            <Send className="h-3 w-3" />
+            <span>
+              {language === 'ar' ? 'إرسال التنبيه: ' : 'Notification sent: '}
+              {new Date(readinessCheckSentAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          </div>
         </div>
       )}
 
-      {specialistReadinessResponseAt && (
-        <div className="text-xs opacity-80">
-          {language === 'ar' ? 'الرد: ' : 'Response: '}
-          {new Date(specialistReadinessResponseAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+      {/* Show response time for ready/not_ready status */}
+      {specialistReadinessResponseAt && (specialistReadinessStatus === 'ready' || specialistReadinessStatus === 'not_ready') && (
+        <div className="flex items-center gap-1.5 text-xs opacity-80">
+          <CheckCircle className="h-3 w-3" />
+          <span>
+            {language === 'ar' ? 'وقت الرد: ' : 'Responded at: '}
+            {new Date(specialistReadinessResponseAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
         </div>
       )}
 
-      {specialistNotReadyReason && (
+      {/* Show not ready reason */}
+      {specialistNotReadyReason && specialistReadinessStatus === 'not_ready' && (
         <div className="text-xs bg-white/50 dark:bg-black/20 p-2 rounded border">
-          <strong>{language === 'ar' ? 'السبب: ' : 'Reason: '}</strong>
-          {specialistNotReadyReason}
+          <div className="font-medium mb-1">{language === 'ar' ? '📝 سبب عدم الجاهزية:' : '📝 Reason for unavailability:'}</div>
+          <div>{specialistNotReadyReason}</div>
         </div>
       )}
 
+      {/* Show reassign button for not ready specialists */}
       {specialistReadinessStatus === 'not_ready' && canManage && onReassign && (
         <Button 
           onClick={onReassign}
@@ -219,8 +231,22 @@ export function ReadinessStatusIndicator({
           className="w-full mt-2"
         >
           <Send className="h-3 w-3 mr-2" />
-          {language === 'ar' ? 'إعادة إرسال لمحترفات أخريات' : 'Reassign to Other Specialists'}
+          {language === 'ar' ? 'إعادة تعيين لمحترف آخر' : 'Reassign to Another Specialist'}
         </Button>
+      )}
+
+      {/* Show pending message with more details */}
+      {readinessCheckSentAt && specialistReadinessStatus === 'pending' && (
+        <div className="text-xs bg-blue-50 dark:bg-blue-950/30 p-2 rounded border border-blue-200 dark:border-blue-800">
+          <div className="font-medium text-blue-700 dark:text-blue-300">
+            {language === 'ar' ? '⏳ لم يرد المحترف بعد' : '⏳ Specialist hasn\'t responded yet'}
+          </div>
+          <div className="text-blue-600 dark:text-blue-400 mt-1">
+            {language === 'ar' 
+              ? 'سيتم إرسال تذكيرات تلقائية (حتى 3 مرات)' 
+              : 'Automatic reminders will be sent (up to 3 times)'}
+          </div>
+        </div>
       )}
 
       {!readinessCheckSentAt && isWithinOneHour && (
