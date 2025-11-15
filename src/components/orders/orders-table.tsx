@@ -2755,8 +2755,8 @@ Thank you for contacting us! 🌟`;
                   </>
                 )}
                 
-                {/* Reset Order Option - For overdue confirmed orders (Admin only) */}
-                {!isCompanyView && (filter === 'confirmed' && isOrderOverdue(selectedOrder)) && (
+                {/* Reset Order Option - For overdue confirmed orders - ADMIN ONLY */}
+                {!isCompanyView && filter === 'confirmed' && isOrderOverdue(selectedOrder) && (
                   <div className="pt-3 border-t">
                     <Button
                       onClick={() => handleResetAndResendOrder(selectedOrder.id)}
