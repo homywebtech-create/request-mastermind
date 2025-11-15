@@ -249,12 +249,12 @@ export function ReadinessCheckDialog() {
     // Fetch immediately on mount
     fetchPendingOrders();
     
-    // Re-fetch every 15 seconds to catch any missed notifications
-    const pollInterval = setInterval(fetchPendingOrders, 15000);
+    // Re-fetch every 3 seconds to catch any missed notifications - faster response
+    const pollInterval = setInterval(fetchPendingOrders, 3000);
 
-    // Set up realtime subscription for new readiness checks
-    const channel = supabase
-      .channel('readiness-checks-specialist')
+    // Set up realtime subscription for new readiness checks on orders table
+    const ordersChannel = supabase
+      .channel('readiness-checks-orders')
       .on(
         'postgres_changes',
         {
@@ -263,16 +263,36 @@ export function ReadinessCheckDialog() {
           table: 'orders',
         },
         (payload) => {
-          console.log('🔄 [ReadinessDialog] Realtime update received:', payload);
+          console.log('🔄 [ReadinessDialog] Orders realtime update received:', payload);
           // Check if readiness_check_sent_at was just updated
           if (payload.new.readiness_check_sent_at && payload.new.specialist_readiness_status === 'pending') {
-            console.log('⚡ [ReadinessDialog] New readiness check detected!');
+            console.log('⚡ [ReadinessDialog] New readiness check detected in orders!');
             fetchPendingOrders();
           }
         }
       )
       .subscribe((status) => {
-        console.log('📡 [ReadinessDialog] Subscription status:', status);
+        console.log('📡 [ReadinessDialog] Orders subscription status:', status);
+      });
+
+    // Also listen to order_specialists table for new assignments
+    const specialistsChannel = supabase
+      .channel('readiness-checks-specialists')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_specialists',
+        },
+        (payload) => {
+          console.log('🔄 [ReadinessDialog] Order_specialists update received:', payload);
+          console.log('⚡ [ReadinessDialog] New specialist assignment detected!');
+          fetchPendingOrders();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 [ReadinessDialog] Specialists subscription status:', status);
       });
 
     // Also listen for custom events from notification system
@@ -286,7 +306,8 @@ export function ReadinessCheckDialog() {
     return () => {
       console.log('🧹 [ReadinessDialog] Cleaning up subscriptions');
       clearInterval(pollInterval);
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(specialistsChannel);
       window.removeEventListener('readiness-check-received', handleReadinessNotification as EventListener);
     };
   }, []);
