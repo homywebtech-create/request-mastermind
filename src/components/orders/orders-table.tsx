@@ -2273,6 +2273,7 @@ Thank you for contacting us! 🌟`;
                             specialistNotReadyReason={order.specialist_not_ready_reason}
                             readinessReminderCount={order.readiness_reminder_count}
                             canManage={canManageOrders}
+                            isCompanyView={isCompanyView}
                             onReassign={() => openResendDialog(order)}
                           />
                         </TableCell>
