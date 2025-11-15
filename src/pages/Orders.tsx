@@ -136,11 +136,13 @@ export default function Orders() {
 
   const fetchOrders = async (skipLoading = false) => {
     try {
+      console.log('═══════════════════════════════════════');
+      console.log('🔄 [ORDERS PAGE] FETCHING ORDERS...');
+      console.log('═══════════════════════════════════════');
+      
       if (!skipLoading) {
         setLoading(true);
       }
-      
-      console.log('🔄 Fetching orders from database...');
       
       const { data, error } = await supabase
         .from('orders')
@@ -205,25 +207,36 @@ export default function Orders() {
         `)
         .order('created_at', { ascending: false });
       
-      console.log('📊 Fetched orders count:', data?.length);
+      console.log('═══════════════════════════════════════');
+      console.log('✅ [ORDERS PAGE] FETCHED:', data?.length, 'ORDERS');
+      console.log('═══════════════════════════════════════');
+      
       if (data && data.length > 0) {
-        console.log('🔍 Sample order data:', {
-          order_number: data[0].order_number,
-          service_type: data[0].service_type,
-          cleaning_equipment_required: data[0].cleaning_equipment_required,
-          has_field: 'cleaning_equipment_required' in data[0]
-        });
-        
-        // Log readiness status for debugging
+        // Log readiness status for ALL orders
         const ordersWithReadiness = data.filter(o => o.readiness_check_sent_at);
-        console.log('🔔 Orders with readiness notifications:', ordersWithReadiness.length);
+        console.log('🔔 [READINESS] Total orders with notifications:', ordersWithReadiness.length);
+        
+        // Find ORD-0051 specifically
+        const ord51 = data.find(o => o.order_number === 'ORD-0051');
+        if (ord51) {
+          console.log('═══════════════════════════════════════');
+          console.log('📋 [ORD-0051] FOUND IN DATABASE:');
+          console.log('readiness_check_sent_at:', ord51.readiness_check_sent_at);
+          console.log('readiness_notification_viewed_at:', ord51.readiness_notification_viewed_at);
+          console.log('specialist_readiness_status:', ord51.specialist_readiness_status);
+          console.log('readiness_reminder_count:', ord51.readiness_reminder_count);
+          console.log('═══════════════════════════════════════');
+        } else {
+          console.log('⚠️ [ORD-0051] NOT FOUND in fetched data');
+        }
+        
+        // Log first 3 orders with readiness
         ordersWithReadiness.slice(0, 3).forEach(order => {
-          console.log(`📋 Order ${order.order_number || order.id}:`, {
-            'إرسال التنبيه': order.readiness_check_sent_at,
-            'مشاهدة التنبيه': order.readiness_notification_viewed_at,
-            'حالة الجاهزية': order.specialist_readiness_status,
-            'عدد التذكيرات': order.readiness_reminder_count,
-            'آخر تذكير': order.readiness_last_reminder_at
+          console.log(`📋 [${order.order_number}]:`, {
+            sent: order.readiness_check_sent_at ? '✓' : '✗',
+            viewed: order.readiness_notification_viewed_at ? '✓' : '✗',
+            status: order.specialist_readiness_status || 'null',
+            reminders: order.readiness_reminder_count || 0
           });
         });
       }
