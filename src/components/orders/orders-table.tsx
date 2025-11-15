@@ -1198,6 +1198,7 @@ Thank you for contacting us! 🌟`;
           description: t.noActiveSpecialists,
           variant: 'destructive',
         });
+        setOrderProcessing(order.id, false);
         return;
       }
 
