@@ -90,8 +90,8 @@ export function useReadinessCheckMonitor() {
     // Check immediately on mount
     checkForPendingReadiness();
 
-    // Check every 30 seconds while app is active
-    const interval = setInterval(checkForPendingReadiness, 30000);
+    // Check every 5 seconds while app is active for faster response
+    const interval = setInterval(checkForPendingReadiness, 5000);
 
     // Also check when app comes to foreground
     const handleVisibilityChange = () => {
