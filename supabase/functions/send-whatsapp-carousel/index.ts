@@ -109,6 +109,15 @@ const handler = async (req: Request): Promise<Response> => {
           code: templateLanguage
         },
         components: [
+          {
+            type: "header",
+            parameters: [
+              {
+                type: "text",
+                text: limitedProductIds.length.toString()
+              }
+            ]
+          },
           { type: "body" },
           buttonComponent
         ]
