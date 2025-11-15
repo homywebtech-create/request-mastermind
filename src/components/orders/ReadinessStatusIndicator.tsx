@@ -32,6 +32,19 @@ export function ReadinessStatusIndicator({
   const { language } = useLanguage();
   const [currentTime, setCurrentTime] = useState(Date.now());
 
+  // Debug logging - Log all incoming props
+  useEffect(() => {
+    console.log('🔍 [ReadinessStatusIndicator] Props received:', {
+      bookingDate,
+      bookingTime,
+      readinessCheckSentAt,
+      specialistReadinessStatus,
+      readinessNotificationViewedAt,
+      specialistReadinessResponseAt,
+      readinessReminderCount,
+    });
+  }, [bookingDate, bookingTime, readinessCheckSentAt, specialistReadinessStatus, readinessNotificationViewedAt, specialistReadinessResponseAt, readinessReminderCount]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
@@ -147,17 +160,28 @@ export function ReadinessStatusIndicator({
 
   const getStatusText = () => {
     if (!bookingDateTime) {
+      console.log('⚠️ [ReadinessStatusIndicator] No booking datetime');
       return language === 'ar' ? 'لا يوجد موعد محدد' : 'No booking time set';
     }
 
+    console.log('🔍 [ReadinessStatusIndicator] Status logic:', {
+      specialistReadinessStatus,
+      readinessCheckSentAt: !!readinessCheckSentAt,
+      isPast,
+      bookingDateTime: bookingDateTime?.toISOString(),
+      currentTime: new Date().toISOString()
+    });
+
     // Priority 1: Show readiness status if available
     if (specialistReadinessStatus === 'ready') {
+      console.log('✅ [ReadinessStatusIndicator] Showing READY status');
       return language === 'ar' 
         ? '✅ المحترف جاهز - سيذهب للموعد'
         : '✅ Specialist ready - will go';
     }
 
     if (specialistReadinessStatus === 'not_ready') {
+      console.log('❌ [ReadinessStatusIndicator] Showing NOT READY status');
       return language === 'ar' 
         ? '❌ المحترف غير جاهز - لن يذهب'
         : '❌ Specialist not ready - cannot go';
@@ -166,10 +190,12 @@ export function ReadinessStatusIndicator({
     // Priority 2: Show pending status if check was sent (regardless of time)
     if (readinessCheckSentAt && specialistReadinessStatus === 'pending') {
       if (isPast) {
+        console.log('⏰ [ReadinessStatusIndicator] Showing TIME PASSED - NO RESPONSE');
         return language === 'ar' 
           ? '⏰ انتهى الموعد - لم يرد المحترف بعد'
           : '⏰ Time passed - specialist hasn\'t responded';
       }
+      console.log('⏳ [ReadinessStatusIndicator] Showing AWAITING RESPONSE');
       return language === 'ar' 
         ? '⏳ تم إرسال التنبيه - بانتظار رد المحترف'
         : '⏳ Notification sent - awaiting response';
@@ -177,17 +203,20 @@ export function ReadinessStatusIndicator({
 
     // Priority 3: Show time status when no notification sent
     if (isPast) {
+      console.log('⏰ [ReadinessStatusIndicator] Showing TIME PASSED - NO NOTIFICATION');
       return language === 'ar' 
         ? '⏰ انتهى الموعد - لم يتم إرسال تنبيه' 
         : '⏰ Time passed - no notification sent';
     }
 
     if (!readinessCheckSentAt) {
+      console.log('⏱️ [ReadinessStatusIndicator] Showing NO NOTIFICATION - TIME REMAINING');
       return language === 'ar' 
         ? `⏱️ لم يتم إرسال تنبيه - باقي ${formatTimeRemaining(timeUntilBooking!)}`
         : `⏱️ No notification sent - ${formatTimeRemaining(timeUntilBooking!)} remaining`;
     }
 
+    console.log('⏳ [ReadinessStatusIndicator] Showing DEFAULT - AWAITING RESPONSE');
     return language === 'ar' 
       ? '⏳ تم إرسال التنبيه - بانتظار الرد'
       : '⏳ Notification sent - awaiting response';
