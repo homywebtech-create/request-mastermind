@@ -29,6 +29,12 @@ export interface Order {
   cancellation_reason?: string | null;
   cancelled_at?: string | null;
   cleaning_equipment_required?: boolean | null;
+  readiness_check_sent_at?: string | null;
+  specialist_readiness_status?: string | null;
+  specialist_readiness_response_at?: string | null;
+  specialist_not_ready_reason?: string | null;
+  readiness_reminder_count?: number | null;
+  readiness_last_reminder_at?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -52,6 +58,11 @@ export interface Order {
       phone: string;
       nationality: string | null;
       image_url: string | null;
+      company_id?: string;
+      companies?: {
+        id: string;
+        name: string;
+      } | null;
     };
   }>;
 }
@@ -77,6 +88,7 @@ export const useOrders = ({ page = 1, pageSize = 50, enabled = true }: UseOrders
         order_number,
         customer_id,
         company_id,
+        specialist_id,
         service_type,
         status,
         tracking_stage,
@@ -98,6 +110,12 @@ export const useOrders = ({ page = 1, pageSize = 50, enabled = true }: UseOrders
         cancellation_reason,
         cancelled_at,
         cleaning_equipment_required,
+        readiness_check_sent_at,
+        specialist_readiness_status,
+        specialist_readiness_response_at,
+        specialist_not_ready_reason,
+        readiness_reminder_count,
+        readiness_last_reminder_at,
         customers!inner (name, whatsapp_number, area, budget, budget_type, preferred_language),
         companies (name),
         order_specialists (
@@ -105,7 +123,7 @@ export const useOrders = ({ page = 1, pageSize = 50, enabled = true }: UseOrders
           quoted_price,
           quoted_at,
           is_accepted,
-          specialists (id, name, phone, nationality, image_url)
+          specialists (id, name, phone, nationality, image_url, company_id, companies (id, name))
         )
       `)
       .order('created_at', { ascending: false })
