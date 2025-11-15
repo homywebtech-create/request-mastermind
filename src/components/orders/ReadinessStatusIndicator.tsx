@@ -11,6 +11,7 @@ interface ReadinessStatusIndicatorProps {
   specialistReadinessStatus?: string | null;
   specialistReadinessResponseAt?: string | null;
   specialistNotReadyReason?: string | null;
+  readinessReminderCount?: number | null;
   onReassign?: () => void;
   canManage?: boolean;
 }
@@ -22,6 +23,7 @@ export function ReadinessStatusIndicator({
   specialistReadinessStatus,
   specialistReadinessResponseAt,
   specialistNotReadyReason,
+  readinessReminderCount,
   onReassign,
   canManage = false,
 }: ReadinessStatusIndicatorProps) {
@@ -210,6 +212,11 @@ export function ReadinessStatusIndicator({
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
+                {readinessReminderCount && readinessReminderCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 font-bold">
+                    {language === 'ar' ? `${readinessReminderCount} مرة` : `${readinessReminderCount}x`}
+                  </span>
+                )}
               </>
             ) : (
               <span className="text-red-600 dark:text-red-400 font-medium">

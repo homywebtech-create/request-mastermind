@@ -46,6 +46,99 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Check if this is a manual trigger for a specific order
+    const requestBody = await req.json().catch(() => ({}));
+    const { orderId: manualOrderId, manualTrigger } = requestBody;
+
+    if (manualTrigger && manualOrderId) {
+      console.log(`Manual readiness check trigger for order ${manualOrderId}`);
+      
+      // Get the specific order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          id, 
+          booking_date, 
+          booking_time, 
+          order_number,
+          specialist_readiness_status, 
+          readiness_check_sent_at,
+          readiness_reminder_count,
+          order_specialists!inner(
+            specialist_id,
+            is_accepted,
+            specialists(id, name)
+          )
+        `)
+        .eq('id', manualOrderId)
+        .eq('order_specialists.is_accepted', true)
+        .single();
+
+      if (orderError || !order) {
+        console.error('Error fetching order:', orderError);
+        throw new Error('Order not found');
+      }
+
+      // Get accepted specialist
+      const acceptedSpecialists = order.order_specialists
+        ?.filter((os: any) => os.is_accepted)
+        .map((os: any) => os.specialist_id) || [];
+
+      if (acceptedSpecialists.length === 0) {
+        throw new Error('No accepted specialists for this order');
+      }
+
+      // Update order with new reminder
+      const currentCount = order.readiness_reminder_count || 0;
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          readiness_check_sent_at: new Date().toISOString(),
+          specialist_readiness_status: 'pending',
+          readiness_reminder_count: currentCount + 1,
+          readiness_last_reminder_at: new Date().toISOString(),
+        })
+        .eq('id', order.id);
+
+      if (updateError) {
+        console.error(`Error updating order ${order.id}:`, updateError);
+        throw updateError;
+      }
+
+      // Send push notification
+      try {
+        const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
+          body: {
+            specialistIds: acceptedSpecialists,
+            title: '⏰ تأكيد الجاهزية',
+            body: `هل أنت جاهز للطلب ${order.order_number}؟`,
+            data: {
+              orderId: order.id,
+              type: 'readiness_check',
+              orderNumber: order.order_number,
+            }
+          }
+        });
+
+        if (pushError) {
+          console.error('Error sending push notification:', pushError);
+        }
+      } catch (pushError) {
+        console.error('Exception sending push notification:', pushError);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Manual readiness check sent',
+          orderId: order.id,
+          reminderCount: currentCount + 1,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Original automatic checking logic
     console.log('Checking for orders requiring readiness check...');
 
     const now = new Date();
