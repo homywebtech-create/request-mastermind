@@ -31,6 +31,7 @@ export function ReadinessCheckDialog() {
   const [currentOrderIndex, setCurrentOrderIndex] = useState(0);
   const [notReadyReason, setNotReadyReason] = useState('');
   const [showReasonInput, setShowReasonInput] = useState(false);
+  const [showPenaltyWarning, setShowPenaltyWarning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { language } = useLanguage();
@@ -98,10 +99,16 @@ export function ReadinessCheckDialog() {
       reasonLabel: 'يرجى ذكر السبب',
       reasonPlaceholder: 'اكتبي السبب...',
       submit: 'إرسال',
+      penaltyWarningTitle: '⚠️ تحذير: غرامة الإلغاء',
+      penaltyWarningMessage: 'في حالة عدم الذهاب للطلب في هذا الوقت الحساس، سيتم فرض غرامة إلغاء عليك. هل أنتِ متأكدة من أنك لن تستطيعي الذهاب؟',
+      confirmNotReady: 'نعم، متأكدة - لن أستطيع الذهاب',
+      cancelNotReady: 'رجوع',
       cancel: 'إلغاء',
       successReady: '✅ تم تأكيد الجاهزية بنجاح',
       successNotReady: '❌ تم إبلاغ الإدارة بعدم القدرة على الحضور',
       error: 'حدث خطأ أثناء حفظ الرد',
+      errorTitle: '❌ خطأ',
+      errorReasonRequired: 'يرجى تقديم السبب',
     },
     en: {
       title: '⏰ Readiness Confirmation',
@@ -119,10 +126,16 @@ export function ReadinessCheckDialog() {
       reasonLabel: 'Please state the reason',
       reasonPlaceholder: 'Enter reason...',
       submit: 'Submit',
+      penaltyWarningTitle: '⚠️ Warning: Cancellation Penalty',
+      penaltyWarningMessage: 'If you don\'t attend this order at this critical time, a cancellation penalty will be applied to you. Are you sure you cannot go?',
+      confirmNotReady: 'Yes, I\'m sure - I cannot go',
+      cancelNotReady: 'Go back',
       cancel: 'Cancel',
       successReady: '✅ Readiness confirmed successfully',
       successNotReady: '❌ Management notified of inability to attend',
       error: 'An error occurred while saving the response',
+      errorTitle: '❌ Error',
+      errorReasonRequired: 'Please provide a reason',
     },
   };
 
@@ -317,12 +330,30 @@ export function ReadinessCheckDialog() {
     }
   };
 
-  const handleNotReady = async () => {
+  const handleNotReadyClick = () => {
+    // First show reason input
     if (!showReasonInput) {
       setShowReasonInput(true);
       return;
     }
 
+    // Validate reason
+    if (!notReadyReason.trim()) {
+      toast({
+        title: t.errorTitle,
+        description: t.errorReasonRequired,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Show penalty warning dialog
+    setShowPenaltyWarning(true);
+  };
+
+  const handleConfirmNotReady = async () => {
+    setShowPenaltyWarning(false);
+    
     if (!currentOrder || isSubmitting) return;
 
     setIsSubmitting(true);
@@ -380,105 +411,153 @@ export function ReadinessCheckDialog() {
   if (!currentOrder) return null;
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogContent className="max-w-md">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 text-xl">
-            <Clock className="h-6 w-6 text-orange-500 animate-pulse" />
-            {t.title}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-base font-medium">
-            {getTimeDescription()}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+    <>
+      {/* Main Readiness Dialog */}
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <Clock className="h-6 w-6 text-orange-500 animate-pulse" />
+              {t.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base font-medium">
+              {getTimeDescription()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
-        <div className="space-y-3 py-4">
-          <div className="bg-muted/50 p-3 rounded-lg space-y-2">
-            <div>
-              <span className="font-semibold">{t.orderNumber}:</span>{' '}
-              <span className="text-primary">{currentOrder.order_number}</span>
+          <div className="space-y-3 py-4">
+            <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+              <div>
+                <span className="font-semibold">{t.orderNumber}:</span>{' '}
+                <span className="text-primary">{currentOrder.order_number}</span>
+              </div>
+              <div>
+                <span className="font-semibold">{t.bookingTime}:</span>{' '}
+                {currentOrder.booking_date} - {formatBookingTime(currentOrder.booking_time)}
+              </div>
+              {currentOrder.readiness_penalty_percentage && currentOrder.readiness_penalty_percentage > 0 && (
+                <div className="bg-destructive/10 p-2 rounded border border-destructive/20">
+                  <span className="text-destructive font-semibold">
+                    {language === 'ar' ? '⚠️ في حال عدم الجاهزية سيتم خصم ' : '⚠️ Penalty if not ready: '}
+                    {currentOrder.readiness_penalty_percentage}%
+                    {language === 'ar' ? ' من محفظتك' : ' from your wallet'}
+                  </span>
+                </div>
+              )}
             </div>
-            <div>
-              <span className="font-semibold">{t.bookingTime}:</span>{' '}
-              {currentOrder.booking_date} - {formatBookingTime(currentOrder.booking_time)}
-            </div>
-            {currentOrder.readiness_penalty_percentage && currentOrder.readiness_penalty_percentage > 0 && (
-              <div className="bg-destructive/10 p-2 rounded border border-destructive/20">
-                <span className="text-destructive font-semibold">
-                  {language === 'ar' ? '⚠️ في حال عدم الجاهزية سيتم خصم ' : '⚠️ Penalty if not ready: '}
-                  {currentOrder.readiness_penalty_percentage}%
-                  {language === 'ar' ? ' من محفظتك' : ' from your wallet'}
-                </span>
+
+            {showReasonInput && (
+              <div className="space-y-2">
+                <Label htmlFor="reason">{t.reasonLabel}</Label>
+                <Textarea
+                  id="reason"
+                  value={notReadyReason}
+                  onChange={(e) => setNotReadyReason(e.target.value)}
+                  placeholder={t.reasonPlaceholder}
+                  rows={3}
+                  className="resize-none"
+                />
               </div>
             )}
           </div>
 
-          {showReasonInput && (
-            <div className="space-y-2">
-              <Label htmlFor="reason">{t.reasonLabel}</Label>
-              <Textarea
-                id="reason"
-                value={notReadyReason}
-                onChange={(e) => setNotReadyReason(e.target.value)}
-                placeholder={t.reasonPlaceholder}
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-          )}
-        </div>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
+            {!showReasonInput ? (
+              <>
+                <Button
+                  onClick={handleReady}
+                  disabled={isSubmitting}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  {t.ready}
+                </Button>
+                <Button
+                  onClick={handleNotReadyClick}
+                  disabled={isSubmitting}
+                  variant="destructive"
+                  className="w-full"
+                  size="lg"
+                >
+                  <XCircle className="h-5 w-5 mr-2" />
+                  {t.notReady}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={handleNotReadyClick}
+                  disabled={isSubmitting}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  {t.submit}
+                </Button>
+                <Button
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {t.cancel}
+                </Button>
+              </>
+            )}
 
-        <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
-          {!showReasonInput ? (
-            <>
-              <Button
-                onClick={handleReady}
-                disabled={isSubmitting}
-                className="w-full bg-green-600 hover:bg-green-700"
-                size="lg"
-              >
-                <CheckCircle className="h-5 w-5 mr-2" />
-                {t.ready}
-              </Button>
-              <Button
-                onClick={handleNotReady}
-                disabled={isSubmitting}
-                variant="destructive"
-                className="w-full"
-                size="lg"
-              >
-                <XCircle className="h-5 w-5 mr-2" />
-                {t.notReady}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                onClick={handleNotReady}
-                disabled={isSubmitting}
-                variant="destructive"
-                className="w-full"
-              >
-                {t.submit}
-              </Button>
-              <Button
-                onClick={handleClose}
-                disabled={isSubmitting}
-                variant="outline"
-                className="w-full"
-              >
-                {t.cancel}
-              </Button>
-            </>
-          )}
+            {orders.length > 1 && (
+              <div className="text-center text-sm text-muted-foreground mt-2">
+                {currentOrderIndex + 1} / {orders.length}
+              </div>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-          {orders.length > 1 && (
-            <div className="text-center text-sm text-muted-foreground mt-2">
-              {currentOrderIndex + 1} / {orders.length}
-            </div>
-          )}
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      {/* Penalty Warning Dialog */}
+      <AlertDialog open={showPenaltyWarning} onOpenChange={setShowPenaltyWarning}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl text-destructive">
+              <XCircle className="h-6 w-6 animate-pulse" />
+              {t.penaltyWarningTitle}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base font-medium pt-2">
+              {t.penaltyWarningMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="bg-destructive/10 p-4 rounded-lg border-2 border-destructive/30 my-4">
+            <p className="text-sm font-semibold text-destructive text-center">
+              {language === 'ar' 
+                ? '⚠️ سيتم خصم غرامة من محفظتك في حال الإلغاء' 
+                : '⚠️ A penalty will be deducted from your wallet if you cancel'}
+            </p>
+          </div>
+
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
+            <Button
+              onClick={handleConfirmNotReady}
+              disabled={isSubmitting}
+              variant="destructive"
+              className="w-full"
+              size="lg"
+            >
+              <XCircle className="h-5 w-5 mr-2" />
+              {t.confirmNotReady}
+            </Button>
+            <Button
+              onClick={() => setShowPenaltyWarning(false)}
+              disabled={isSubmitting}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              {t.cancelNotReady}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
