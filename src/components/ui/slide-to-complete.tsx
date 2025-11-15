@@ -12,8 +12,16 @@ interface SlideToCompleteProps {
 export function SlideToComplete({ onComplete, text, disabled = false, className }: SlideToCompleteProps) {
   const [slidePosition, setSlidePosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [showHint, setShowHint] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const COMPLETION_THRESHOLD = 0.85;
+
+  // Hide hint after first interaction
+  useEffect(() => {
+    if (isDragging) {
+      setShowHint(false);
+    }
+  }, [isDragging]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent | TouchEvent) => {
@@ -84,18 +92,30 @@ export function SlideToComplete({ onComplete, text, disabled = false, className 
         }}
       />
 
+      {/* Animated hint arrows - show when not dragging */}
+      {showHint && !isDragging && !disabled && (
+        <div className="absolute inset-0 flex items-center justify-start pr-20 pointer-events-none">
+          <div className="flex gap-2 animate-pulse">
+            <span className="text-white text-2xl font-bold animate-bounce" style={{ animationDelay: '0ms' }}>←</span>
+            <span className="text-white text-2xl font-bold animate-bounce" style={{ animationDelay: '150ms' }}>←</span>
+            <span className="text-white text-2xl font-bold animate-bounce" style={{ animationDelay: '300ms' }}>←</span>
+          </div>
+        </div>
+      )}
+
       {/* Text */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <span className="text-white text-lg font-bold opacity-80">
-          {slidePosition > 0.5 ? '←' : text}
+          {isDragging && slidePosition > 0.3 ? '←  ←  ←' : text}
         </span>
       </div>
 
-      {/* Sliding button */}
+      {/* Sliding button with pulsing animation */}
       <div
         className={cn(
           "absolute top-1 h-12 w-16 bg-white rounded-md shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow",
-          isDragging && "shadow-xl"
+          isDragging && "shadow-xl scale-105",
+          !isDragging && showHint && !disabled && "animate-pulse"
         )}
         style={{
           right: `${slidePosition * (containerRef.current?.offsetWidth || 400) - (containerRef.current?.offsetWidth || 400) + 68}px`,
@@ -104,8 +124,20 @@ export function SlideToComplete({ onComplete, text, disabled = false, className 
         onMouseDown={handleMouseDown}
         onTouchStart={handleMouseDown}
       >
-        <CheckCircle className="h-6 w-6 text-green-600" />
+        <CheckCircle className={cn(
+          "h-6 w-6 text-green-600 transition-transform",
+          isDragging && "scale-110"
+        )} />
       </div>
+
+      {/* Helper text below button */}
+      {showHint && !isDragging && !disabled && (
+        <div className="absolute -bottom-6 left-0 right-0 text-center">
+          <span className="text-xs text-muted-foreground animate-pulse">
+            ← اسحب من اليمين إلى اليسار
+          </span>
+        </div>
+      )}
     </div>
   );
 }
