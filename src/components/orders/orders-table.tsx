@@ -1968,13 +1968,22 @@ Thank you for contacting us! 🌟`;
                                           {/* Quick Accept Button - Only show if order has complete booking info */}
                                           {(() => {
                                             // Check if order has all required booking information
+                                            // Support both old (gps_) and new (customer_) location fields
+                                            const hasLocation = 
+                                              (order.customer_latitude && order.customer_longitude) ||
+                                              (order.gps_latitude && order.gps_longitude);
+                                            
+                                            const hasLocationDetails = 
+                                              order.customer_location_address || 
+                                              order.customer_location_name ||
+                                              order.building_info;
+                                            
                                             const hasCompleteBookingInfo = 
                                               order.booking_date && 
                                               order.booking_time && 
                                               (order.booking_type || order.selected_booking_type) &&
-                                              order.customer_latitude && 
-                                              order.customer_longitude &&
-                                              (order.customer_location_address || order.customer_location_name);
+                                              hasLocation &&
+                                              hasLocationDetails;
                                             
                                             if (!hasCompleteBookingInfo) return null;
                                             
