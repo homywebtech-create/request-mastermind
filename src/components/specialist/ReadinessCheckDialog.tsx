@@ -145,20 +145,23 @@ export function ReadinessCheckDialog() {
   useEffect(() => {
     const fetchPendingOrders = async () => {
       try {
-        console.log('🔍 [ReadinessDialog] Fetching pending readiness orders...');
+        console.log('🔍 [ReadinessDialog] Starting fetchPendingOrders...');
         
         const { data: { user } } = await supabase.auth.getUser();
+        console.log('👤 [ReadinessDialog] User:', user?.id);
         if (!user) {
           console.log('❌ [ReadinessDialog] No user found');
           return;
         }
 
         // Get user's phone from profile
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('phone')
           .eq('user_id', user.id)
           .single();
+
+        console.log('📋 [ReadinessDialog] Profile:', profile, 'Error:', profileError);
 
         if (!profile?.phone) {
           console.log('❌ [ReadinessDialog] No phone found in profile');
@@ -168,18 +171,20 @@ export function ReadinessCheckDialog() {
         console.log('📱 [ReadinessDialog] User phone:', profile.phone);
 
         // Get specialist info by phone
-        const { data: specialist } = await supabase
+        const { data: specialist, error: specialistError } = await supabase
           .from('specialists')
           .select('id')
           .eq('phone', profile.phone)
           .single();
 
+        console.log('🔍 [ReadinessDialog] Specialist lookup:', specialist, 'Error:', specialistError);
+
         if (!specialist) {
-          console.log('❌ [ReadinessDialog] No specialist found for phone');
+          console.log('❌ [ReadinessDialog] No specialist found for phone:', profile.phone);
           return;
         }
 
-        console.log('👤 [ReadinessDialog] Specialist ID:', specialist.id);
+        console.log('✅ [ReadinessDialog] Specialist ID:', specialist.id);
 
         // Get orders assigned to this specialist that need readiness check
         // Include both accepted orders (is_accepted = true) and resent orders (is_accepted = null)
@@ -215,8 +220,12 @@ export function ReadinessCheckDialog() {
 
         console.log('✅ [ReadinessDialog] Found orders needing readiness check:', ordersData?.length || 0);
 
+        console.log('📋 [ReadinessDialog] Orders data:', ordersData);
+        console.log('📊 [ReadinessDialog] Orders count:', ordersData?.length || 0);
+        
         if (ordersData && ordersData.length > 0) {
           console.log('🔔 [ReadinessDialog] Opening dialog with orders:', ordersData.map(o => o.order_number));
+          console.log('🎯 [ReadinessDialog] Setting open to TRUE');
           setOrders(ordersData as Order[]);
           setOpen(true);
         } else {
