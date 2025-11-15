@@ -1311,10 +1311,11 @@ Thank you for contacting us! 🌟`;
       if (updateError) throw updateError;
 
       toast({
-        title: language === 'ar' ? 'تم إرسال التنبيه' : 'Notification Sent',
+        title: language === 'ar' ? '✅ تم إرسال التنبيه' : '✅ Notification Sent',
         description: language === 'ar' 
-          ? `تم إرسال تنبيه الجاهزية للمحترف (المرة ${currentCount + 1})`
-          : `Readiness notification sent to specialist (time ${currentCount + 1})`,
+          ? `تم إرسال إشعار صوتي ورسالة الجاهزية للمحترف (المرة ${currentCount + 1})\n\n📱 ملاحظة: الرسالة ستظهر للمحترف عند فتح التطبيق وتسجيل الدخول`
+          : `Push notification and readiness message sent to specialist (time ${currentCount + 1})\n\n📱 Note: The message will appear when the specialist opens the app and logs in`,
+        duration: 6000,
       });
     } catch (error: any) {
       console.error('Error resending readiness check:', error);
