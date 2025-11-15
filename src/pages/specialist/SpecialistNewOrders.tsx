@@ -37,6 +37,8 @@ interface Order {
   notes: string | null;
   booking_type: string | null;
   hours_count: number | null;
+  booking_date: string | null;
+  booking_time: string | null;
   customer: {
     name: string;
     area: string | null;
@@ -545,6 +547,8 @@ export default function SpecialistNewOrders() {
           notes,
           booking_type,
           hours_count,
+          booking_date,
+          booking_time,
           customer:customers (
             name,
             area,
@@ -759,6 +763,31 @@ export default function SpecialistNewOrders() {
     }
   };
 
+  // Check if an offer is overdue based on booking date and time
+  const isOfferOverdue = (order: Order) => {
+    if (!order.booking_date) return false;
+    
+    const bookingDateTime = new Date(order.booking_date);
+    
+    // Parse booking time
+    if (order.booking_time) {
+      if (order.booking_time === 'morning') {
+        bookingDateTime.setHours(8, 0, 0, 0);
+      } else if (order.booking_time === 'afternoon') {
+        bookingDateTime.setHours(14, 0, 0, 0);
+      } else if (order.booking_time === 'evening') {
+        bookingDateTime.setHours(18, 0, 0, 0);
+      } else {
+        const [hours, minutes] = order.booking_time.split(':').map(Number);
+        bookingDateTime.setHours(hours, minutes, 0, 0);
+      }
+    } else {
+      bookingDateTime.setHours(8, 0, 0, 0);
+    }
+    
+    return new Date() > bookingDateTime;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -911,6 +940,23 @@ export default function SpecialistNewOrders() {
                       <span className="text-base font-bold text-primary">#{order.order_number || order.id.split('-')[0]}</span>
                     </div>
                   </div>
+
+                  {/* Overdue Warning for Offers */}
+                  {isOfferOverdue(order) && (
+                    <div className="bg-red-50 dark:bg-red-950/30 p-3 rounded-lg border-2 border-red-500 animate-pulse">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">!</div>
+                        <p className="font-bold text-red-700 dark:text-red-300 text-sm">
+                          {language === 'ar' ? "⚠️ عرض متأخر - قرر بسرعة!" : "⚠️ Overdue Offer - Decide Fast!"}
+                        </p>
+                      </div>
+                      <p className="text-xs text-red-600 dark:text-red-400">
+                        {language === 'ar' 
+                          ? "موعد الطلب قد مضى. قيّم إذا كان بإمكانك الوصول فوراً قبل تقديم العرض."
+                          : "The booking time has passed. Evaluate if you can arrive immediately before submitting your quote."}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Customer Info - Compact */}
                   <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">

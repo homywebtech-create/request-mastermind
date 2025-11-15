@@ -969,8 +969,25 @@ export default function SpecialistHome() {
                     </div>
                   )}
 
-                  {/* Action Button - Mobile Optimized */}
-                  {isTodayOrder && canMove && (
+                  {/* Overdue Warning - Always Visible for Overdue Orders */}
+                  {isOverdue && (
+                    <div className="bg-red-50 dark:bg-red-950/30 p-3 sm:p-4 rounded-lg border-2 border-red-500 animate-pulse">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">!</div>
+                        <p className="font-bold text-red-700 dark:text-red-300 text-sm sm:text-base">
+                          {isAr ? "⚠️ طلب متأخر - يجب الإسراع!" : "⚠️ Overdue - Act Fast!"}
+                        </p>
+                      </div>
+                      <p className="text-xs text-red-600 dark:text-red-400 mb-3">
+                        {isAr 
+                          ? "هذا الطلب متأخر عن موعده. يرجى تقييم إذا كان بإمكانك الوصول بسرعة والبدء في العمل فوراً."
+                          : "This order is overdue. Please evaluate if you can arrive quickly and start work immediately."}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Action Button - Always Visible */}
+                  {isTodayOrder && canMove ? (
                     <Button
                       onClick={() => navigate(`/order-tracking/${order.id}`)}
                       className="w-full h-12 sm:h-14 text-sm sm:text-base font-bold shadow-lg transition-all bg-green-600 hover:bg-green-700 animate-pulse"
@@ -980,7 +997,17 @@ export default function SpecialistHome() {
                         <span>{isAr ? "🚀 ابدأ التحرك الآن" : "🚀 Start Moving Now"}</span>
                       </div>
                     </Button>
-                  )}
+                  ) : isOverdue ? (
+                    <Button
+                      onClick={() => navigate(`/order-tracking/${order.id}`)}
+                      className="w-full h-12 sm:h-14 text-sm sm:text-base font-bold shadow-lg transition-all bg-red-600 hover:bg-red-700 animate-pulse"
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <Navigation className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span>{isAr ? "⚡ ابدأ فوراً - متأخر!" : "⚡ Start Now - Overdue!"}</span>
+                      </div>
+                    </Button>
+                  ) : null}
                 </div>
               </Card>
             );
