@@ -2047,56 +2047,16 @@ Thank you for contacting us! 🌟`;
                             );
                           })()
                         ) : (filter === 'confirmed' || filter === 'in-progress' || filter === 'completed') ? (
-                          // Show accepted specialist info for confirmed, in-progress, and completed orders
-                          (() => {
-                            const acceptedSpecialist = order.order_specialists?.find(os => os.is_accepted === true);
-                            if (acceptedSpecialist) {
-                              return (
-                                <div className="bg-muted/50 rounded-md p-3 border border-border">
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                      <Building2 className="h-4 w-4 text-primary" />
-                                      <span className="text-sm font-semibold text-primary">
-                                        {acceptedSpecialist.specialists?.companies?.name || 'Company'}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <User className="h-4 w-4 text-muted-foreground" />
-                                      <span className="text-sm font-medium">
-                                        {acceptedSpecialist.specialists?.name}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                      <Phone className="h-3 w-3" />
-                                      <span dir="ltr">{acceptedSpecialist.specialists?.phone}</span>
-                                    </div>
-                                    {acceptedSpecialist.quoted_price && (
-                                      <div className="space-y-1">
-                                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 text-sm">
-                                          {acceptedSpecialist.quoted_price}
-                                        </Badge>
-                                        {order.hours_count && (
-                                          <div className="text-xs text-muted-foreground">
-                                            {(() => {
-                                              const totalPrice = parseFloat(acceptedSpecialist.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '0');
-                                              const pricePerHour = totalPrice / order.hours_count;
-                                              const currency = acceptedSpecialist.quoted_price?.replace(/[\d.,]/g, '').trim() || '';
-                                              return `${pricePerHour.toFixed(2)} ${currency}/ساعة × ${order.hours_count} ساعات`;
-                                            })()}
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            }
-                            return order.notes ? (
-                              <p className="text-sm max-w-xs line-clamp-2">{order.notes}</p>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
-                            );
-                          })()
+                          // Show customer notes for confirmed, in-progress, and completed orders
+                          order.notes ? (
+                            <div className="text-sm max-w-xs line-clamp-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800/30">
+                              <span className="text-blue-900 dark:text-blue-100">{order.notes}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm italic">
+                              {language === 'ar' ? 'لا توجد ملاحظات' : 'No notes'}
+                            </span>
+                          )
                         ) : (
                           // Show customer notes only
                           order.notes ? (
@@ -2104,7 +2064,9 @@ Thank you for contacting us! 🌟`;
                               <span className="text-blue-900 dark:text-blue-100">{order.notes}</span>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
+                            <span className="text-muted-foreground text-sm italic">
+                              {language === 'ar' ? 'لا توجد ملاحظات' : 'No notes'}
+                            </span>
                           )
                         )}
                       </TableCell>
