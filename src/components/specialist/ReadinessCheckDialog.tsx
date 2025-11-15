@@ -240,23 +240,39 @@ export function ReadinessCheckDialog() {
 
     // Set up realtime subscription for new readiness checks
     const channel = supabase
-      .channel('readiness-checks')
+      .channel('readiness-checks-specialist')
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'orders',
-          filter: 'specialist_readiness_status=eq.pending',
         },
-        () => {
-          fetchPendingOrders();
+        (payload) => {
+          console.log('🔄 [ReadinessDialog] Realtime update received:', payload);
+          // Check if readiness_check_sent_at was just updated
+          if (payload.new.readiness_check_sent_at && payload.new.specialist_readiness_status === 'pending') {
+            console.log('⚡ [ReadinessDialog] New readiness check detected!');
+            fetchPendingOrders();
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 [ReadinessDialog] Subscription status:', status);
+      });
+
+    // Also listen for custom events from notification system
+    const handleReadinessNotification = (event: CustomEvent) => {
+      console.log('🔔 [ReadinessDialog] Custom event received:', event.detail);
+      fetchPendingOrders();
+    };
+
+    window.addEventListener('readiness-check-received', handleReadinessNotification as EventListener);
 
     return () => {
+      console.log('🧹 [ReadinessDialog] Cleaning up subscriptions');
       supabase.removeChannel(channel);
+      window.removeEventListener('readiness-check-received', handleReadinessNotification as EventListener);
     };
   }, []);
 
