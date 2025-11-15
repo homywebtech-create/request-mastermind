@@ -61,6 +61,8 @@ interface Order {
   specialist_readiness_response_at?: string | null;
   specialist_not_ready_reason?: string | null;
   readiness_check_sent_at?: string | null;
+  readiness_reminder_count?: number | null;
+  readiness_last_reminder_at?: string | null;
   cleaning_equipment_required?: boolean | null;
   waiting_started_at?: string | null;
   waiting_ends_at?: string | null;
@@ -1113,6 +1115,46 @@ Thank you for contacting us! 🌟`;
     setResendDialogOpen(true);
   };
 
+  const handleResendReadinessCheck = async (order: Order) => {
+    setOrderProcessing(order.id, true);
+    try {
+      // Call edge function to resend readiness check
+      const { data, error } = await supabase.functions.invoke('check-order-readiness', {
+        body: { orderId: order.id, manualTrigger: true }
+      });
+
+      if (error) throw error;
+
+      // Increment reminder count
+      const currentCount = order.readiness_reminder_count || 0;
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          readiness_reminder_count: currentCount + 1,
+          readiness_last_reminder_at: new Date().toISOString(),
+        })
+        .eq('id', order.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: language === 'ar' ? 'تم إرسال التنبيه' : 'Notification Sent',
+        description: language === 'ar' 
+          ? `تم إرسال تنبيه الجاهزية للمحترف (المرة ${currentCount + 1})`
+          : `Readiness notification sent to specialist (time ${currentCount + 1})`,
+      });
+    } catch (error: any) {
+      console.error('Error resending readiness check:', error);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message || (language === 'ar' ? 'فشل إرسال التنبيه' : 'Failed to send notification'),
+        variant: 'destructive',
+      });
+    } finally {
+      setOrderProcessing(order.id, false);
+    }
+  };
+
   const handleSendToCompany = async () => {
     if (!selectedOrder || !selectedCompanyId) return;
 
@@ -2050,6 +2092,7 @@ Thank you for contacting us! 🌟`;
                             specialistReadinessStatus={order.specialist_readiness_status}
                             specialistReadinessResponseAt={order.specialist_readiness_response_at}
                             specialistNotReadyReason={order.specialist_not_ready_reason}
+                            readinessReminderCount={order.readiness_reminder_count}
                             canManage={canManageOrders}
                             onReassign={() => openResendDialog(order)}
                           />
@@ -2243,6 +2286,59 @@ Thank you for contacting us! 🌟`;
                                   {language === 'ar' ? 'إعادة تعيين لمحترف آخر' : 'Reassign to Another Specialist'}
                                 </DropdownMenuItem>
                                 
+                                <DropdownMenuItem 
+                                  onClick={() => handleResendReadinessCheck(order)}
+                                  className="flex items-center gap-2 text-blue-600 dark:text-blue-400"
+                                >
+                                  <Send className="h-4 w-4" />
+                                  {language === 'ar' ? 'إعادة إرسال تنبيه الجاهزية' : 'Resend Readiness Notification'}
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
+                                  {language === 'ar' ? '──────────' : '──────────'}
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem 
+                                  onClick={() => openActionDialog(order.id, 'cancel', 'cancel')}
+                                  className="text-destructive flex items-center gap-2"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  {language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                          
+                          {/* Actions for upcoming orders */}
+                          {canManageOrders && filter === 'upcoming' && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex items-center gap-1"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                  {language === 'ar' ? 'إجراءات' : 'Actions'}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuItem 
+                                  onClick={() => openResendDialog(order)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Users className="h-4 w-4" />
+                                  {language === 'ar' ? 'إعادة تعيين لمحترف آخر' : 'Reassign to Another Specialist'}
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem 
+                                  onClick={() => handleResendReadinessCheck(order)}
+                                  className="flex items-center gap-2 text-blue-600 dark:text-blue-400"
+                                >
+                                  <Send className="h-4 w-4" />
+                                  {language === 'ar' ? 'إعادة إرسال تنبيه الجاهزية' : 'Resend Readiness Notification'}
+                                </DropdownMenuItem>
+                                
                                 <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
                                   {language === 'ar' ? '──────────' : '──────────'}
                                 </DropdownMenuItem>
@@ -2393,6 +2489,15 @@ Thank you for contacting us! 🌟`;
                                 <DropdownMenuItem className="opacity-50 cursor-not-allowed" disabled>
                                   {language === 'ar' ? '──────────' : '──────────'}
                                 </DropdownMenuItem>
+                                
+                                <DropdownMenuItem 
+                                  onClick={() => handleResendReadinessCheck(order)}
+                                  className="flex items-center gap-2 text-blue-600 dark:text-blue-400"
+                                >
+                                  <Send className="h-4 w-4" />
+                                  {language === 'ar' ? 'إعادة إرسال تنبيه الجاهزية' : 'Resend Readiness Notification'}
+                                </DropdownMenuItem>
+                                
                                 <DropdownMenuItem 
                                   onClick={() => openActionDialog(order.id, 'cancel', 'cancel')}
                                   className="text-destructive flex items-center gap-2"
