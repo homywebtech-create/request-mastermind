@@ -71,25 +71,16 @@ const handler = async (req: Request): Promise<Response> => {
     // Limit to 30 products (WhatsApp template catalog limit)
     const limitedProductIds = product_retailer_ids.slice(0, 30);
 
-    // Build button component with sections (required for MPM templates)
+    // Build button component for Catalogue message (shows entire catalog)
     const buttonComponent = {
       type: "button",
-      sub_type: "mpm",
+      sub_type: "catalog",
       index: "0",
       parameters: [
         {
           type: "action",
           action: {
-            catalog_id: META_CATALOG_ID,
             thumbnail_product_retailer_id: limitedProductIds[0], // First product as thumbnail
-            sections: [
-              {
-                title: "Available Specialists", // Section title (max 24 chars)
-                product_items: limitedProductIds.map((id) => ({
-                  product_retailer_id: id,
-                })),
-              },
-            ],
           },
         },
       ],
