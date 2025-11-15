@@ -668,7 +668,10 @@ Thank you for contacting us! 🌟`;
       if (specialistId) {
         const { error: orderError } = await supabase
           .from('orders')
-          .update({ specialist_id: specialistId })
+          .update({ 
+            specialist_id: specialistId,
+            status: 'upcoming' // ✅ Change status to confirmed/upcoming
+          })
           .eq('id', orderId);
         
         if (orderError) {
