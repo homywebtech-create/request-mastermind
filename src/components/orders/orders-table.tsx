@@ -49,10 +49,15 @@ interface Order {
   booking_date?: string | null;
   booking_date_type?: string | null;
   booking_time?: string | null;
+  selected_booking_type?: string | null;
   hours_count?: number | null;
   building_info?: string | null;
   gps_latitude?: number | null;
   gps_longitude?: number | null;
+  customer_latitude?: number | null;
+  customer_longitude?: number | null;
+  customer_location_address?: string | null;
+  customer_location_name?: string | null;
   cancelled_by?: string | null;
   cancelled_by_role?: string | null;
   cancellation_reason?: string | null;
@@ -1960,8 +1965,19 @@ Thank you for contacting us! 🌟`;
                                       {/* Only show these buttons to users with appropriate permissions */}
                                       {(canManageOrders || !isCompanyView) && (
                                         <>
-                                          {/* Quick Accept Button - Accept lowest quote from this company */}
+                                          {/* Quick Accept Button - Only show if order has complete booking info */}
                                           {(() => {
+                                            // Check if order has all required booking information
+                                            const hasCompleteBookingInfo = 
+                                              order.booking_date && 
+                                              order.booking_time && 
+                                              (order.booking_type || order.selected_booking_type) &&
+                                              order.customer_latitude && 
+                                              order.customer_longitude &&
+                                              (order.customer_location_address || order.customer_location_name);
+                                            
+                                            if (!hasCompleteBookingInfo) return null;
+                                            
                                             const lowestQuote = company.specialists.reduce((lowest, current) => {
                                               const lowestPrice = parseFloat(lowest.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '999999');
                                               const currentPrice = parseFloat(current.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '999999');
