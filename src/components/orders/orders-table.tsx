@@ -66,6 +66,7 @@ interface Order {
   cleaning_equipment_required?: boolean | null;
   waiting_started_at?: string | null;
   waiting_ends_at?: string | null;
+  is_urgent?: boolean; // طلب عاجل تم إعادة إرساله
   customers: {
     name: string;
     whatsapp_number: string;
@@ -988,7 +989,7 @@ Thank you for contacting us! 🌟`;
         throw deleteError;
       }
 
-      // Reset order to pending status
+      // Reset order to pending status and mark as urgent
       const { error: updateError } = await supabase
         .from('orders')
         .update({
@@ -1001,6 +1002,7 @@ Thank you for contacting us! 🌟`;
           specialist_not_ready_reason: null,
           readiness_check_sent_at: null,
           last_sent_at: null,
+          is_urgent: true, // تمييز الطلب كطلب عاجل
         })
         .eq('id', orderId);
 
@@ -1549,6 +1551,11 @@ Thank you for contacting us! 🌟`;
                           <Badge variant="secondary" className="font-mono">
                             {order.order_number || 'N/A'}
                           </Badge>
+                          {order.is_urgent && (
+                            <Badge className="text-xs bg-orange-600 text-white border-2 border-orange-800 animate-pulse">
+                              ⚡ {language === 'ar' ? 'عاجل' : 'Urgent'}
+                            </Badge>
+                          )}
                           {isOverdueConfirmed && (
                             <>
                               <Badge className="text-xs animate-pulse bg-red-600 text-white border-2 border-red-800 shadow-lg">

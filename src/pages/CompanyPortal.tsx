@@ -62,6 +62,7 @@ interface Order {
   specialist_not_ready_reason?: string | null;
   readiness_reminder_count?: number | null;
   readiness_last_reminder_at?: string | null;
+  is_urgent?: boolean; // طلب عاجل تم إعادة إرساله
   customers: {
     name: string;
     whatsapp_number: string;
@@ -288,6 +289,7 @@ export default function CompanyPortal() {
           specialist_not_ready_reason,
           readiness_reminder_count,
           readiness_last_reminder_at,
+          is_urgent,
           customers (name, whatsapp_number, area, budget, budget_type),
           companies (name),
           order_specialists (

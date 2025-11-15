@@ -781,6 +781,7 @@ export type Database = {
           hourly_rate: number | null
           hours_count: number | null
           id: string
+          is_urgent: boolean | null
           last_sent_at: string | null
           link_copied_at: string | null
           modified_by: string | null
@@ -841,6 +842,7 @@ export type Database = {
           hourly_rate?: number | null
           hours_count?: number | null
           id?: string
+          is_urgent?: boolean | null
           last_sent_at?: string | null
           link_copied_at?: string | null
           modified_by?: string | null
@@ -901,6 +903,7 @@ export type Database = {
           hourly_rate?: number | null
           hours_count?: number | null
           id?: string
+          is_urgent?: boolean | null
           last_sent_at?: string | null
           link_copied_at?: string | null
           modified_by?: string | null
