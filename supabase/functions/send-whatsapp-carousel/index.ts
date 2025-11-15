@@ -74,24 +74,25 @@ const handler = async (req: Request): Promise<Response> => {
     // Build button component with sections (required for MPM templates)
     const buttonComponent = {
       type: "button",
-      sub_type: "catalog",
-      index: 0,
+      sub_type: "mpm",
+      index: "0",
       parameters: [
         {
           type: "action",
           action: {
+            catalog_id: META_CATALOG_ID,
             thumbnail_product_retailer_id: limitedProductIds[0], // First product as thumbnail
             sections: [
               {
                 title: "Available Specialists", // Section title (max 24 chars)
-                product_items: limitedProductIds.map(id => ({
-                  product_retailer_id: id
-                }))
-              }
-            ]
-          }
-        }
-      ]
+                product_items: limitedProductIds.map((id) => ({
+                  product_retailer_id: id,
+                })),
+              },
+            ],
+          },
+        },
+      ],
     };
 
     console.log(`🧭 Sending ${limitedProductIds.length} products in MPM template`);
