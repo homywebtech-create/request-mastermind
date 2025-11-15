@@ -2151,36 +2151,6 @@ Thank you for contacting us! 🌟`;
                       
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {/* Show resend button for pending orders and orders without quotes */}
-                          {canManageOrders && (filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView)) && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant={isRecentlySent ? "destructive" : "default"}
-                                onClick={() => openResendDialog(order)}
-                                disabled={isRecentlySent || isOrderProcessing}
-                                className="flex items-center gap-1"
-                              >
-                                 {isOrderProcessing ? (
-                                  <>
-                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                    {t.sending}
-                                  </>
-                                ) : isRecentlySent ? (
-                                  <>
-                                    <Send className="h-3 w-3" />
-                                    {getRemainingTime(order)}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Send className="h-3 w-3" />
-                                    {t.resend}
-                                  </>
-                              )}
-                              </Button>
-                            </>
-                          )}
-
                           {/* Options menu - Show for new/pending orders regardless of manage permission */}
                           {(filter === 'new' || filter === 'pending' || (filter === 'awaiting-response' && !isCompanyView)) && (
                             <DropdownMenu>
