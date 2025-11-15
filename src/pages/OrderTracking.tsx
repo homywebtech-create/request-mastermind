@@ -489,62 +489,87 @@ export default function OrderTracking() {
 
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          order_number,
-          service_type,
-          notes,
-          booking_date,
-          hours_count,
-          gps_latitude,
-          gps_longitude,
-          building_info,
-          company_id,
-          customer_id,
-          customer:customers (
-            name,
-            whatsapp_number,
-            area,
-            budget,
-            budget_type
-          ),
-          company:companies (
-            id,
-            name,
-            logo_url
-          ),
-          order_specialists (
-            quoted_price,
-            is_accepted
-          )
-        `)
-        .eq('id', orderId)
-        .single();
+      console.log('📥 [FETCH] Starting order fetch...');
+      
+      // Add timeout wrapper for entire fetch operation (15 seconds max)
+      const fetchWithTimeout = Promise.race([
+        (async () => {
+          const { data, error } = await supabase
+            .from('orders')
+            .select(`
+              id,
+              order_number,
+              service_type,
+              notes,
+              booking_date,
+              hours_count,
+              gps_latitude,
+              gps_longitude,
+              building_info,
+              company_id,
+              customer_id,
+              customer:customers (
+                name,
+                whatsapp_number,
+                area,
+                budget,
+                budget_type
+              ),
+              company:companies (
+                id,
+                name,
+                logo_url
+              ),
+              order_specialists (
+                quoted_price,
+                is_accepted
+              )
+            `)
+            .eq('id', orderId)
+            .single();
 
-      if (error) throw error;
+          if (error) throw error;
+          
+          // Translate order data if not Arabic (with timeout)
+          let orderData = data as Order;
+          if (language !== 'ar' && orderData) {
+            try {
+              const translated = await Promise.race([
+                translateOrderDetails({
+                  serviceType: orderData.service_type,
+                  notes: orderData.notes || undefined,
+                  area: orderData.customer?.area || undefined,
+                }, language),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Translation timeout')), 5000)
+                )
+              ]) as typeof orderData;
+              
+              orderData = {
+                ...orderData,
+                service_type: translated.service_type || orderData.service_type,
+                notes: translated.notes || orderData.notes,
+                customer: orderData.customer ? {
+                  ...orderData.customer,
+                  area: (translated as any).area || orderData.customer.area,
+                } : null,
+              };
+            } catch (translationError) {
+              console.warn('⚠️ [FETCH] Translation timeout or error, using original data:', translationError);
+              // Continue with original data
+            }
+          }
+          
+          return orderData;
+        })(),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Fetch timeout - taking too long')), 15000)
+        )
+      ]);
       
-      // Translate order data if not Arabic
-      let orderData = data as Order;
-      if (language !== 'ar' && orderData) {
-        const translated = await translateOrderDetails({
-          serviceType: orderData.service_type,
-          notes: orderData.notes || undefined,
-          area: orderData.customer?.area || undefined,
-        }, language);
-        
-        orderData = {
-          ...orderData,
-          service_type: translated.serviceType || orderData.service_type,
-          notes: translated.notes || orderData.notes,
-          customer: orderData.customer ? {
-            ...orderData.customer,
-            area: translated.area || orderData.customer.area,
-          } : null,
-        };
-      }
+      const orderData = await fetchWithTimeout;
       
+      console.log('✅ [FETCH] Order fetched successfully');
       setOrder(orderData);
       
       // Calculate invoice amount from hourly_rate or quoted_price
@@ -580,18 +605,26 @@ export default function OrderTracking() {
       }
       
       setInvoiceAmount(calculatedAmount);
-    } catch (error) {
-      console.error('Error fetching order:', error);
+    } catch (error: any) {
+      console.error('❌ [FETCH] Error fetching order:', error);
+      
+      // Show more specific error message
+      const errorMessage = error?.message?.includes('timeout') 
+        ? (language === 'ar' ? 'انتهت مهلة تحميل البيانات' : 'Data loading timeout')
+        : (language === 'ar' ? 'فشل تحميل بيانات الطلب' : 'Failed to load order data');
+      
       toast({
         title: t.error,
-        description: "Failed to load order data",
+        description: errorMessage,
         variant: "destructive",
       });
+      
       // Navigate back if there's an error loading order
       setTimeout(() => {
         navigate('/specialist/home');
       }, 2000);
     } finally {
+      console.log('🏁 [FETCH] Setting isLoading to false');
       setIsLoading(false);
     }
   };
