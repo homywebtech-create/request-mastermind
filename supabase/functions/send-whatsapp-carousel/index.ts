@@ -71,24 +71,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Limit to 30 products (WhatsApp template catalog limit)
     const limitedProductIds = product_retailer_ids.slice(0, 30);
 
-    // Determine if template should show a single product (View item) or full catalog (View items)
-    const isSingle = limitedProductIds.length === 1;
+    // For catalog-button templates, no button parameters are required or allowed.
+    // The button is defined in the template itself. We therefore send only the body component.
 
-    const buttonComponent = {
-      type: "button",
-      sub_type: "catalog",
-      index: 0,
-      parameters: [
-        {
-          type: "action",
-          action: isSingle
-            ? { product_retailer_id: limitedProductIds[0] } // "View item" button
-            : { thumbnail_product_retailer_id: limitedProductIds[0] } // "View items" button with thumbnail
-        }
-      ]
-    } as const;
-
-    console.log(`🧭 Using ${isSingle ? 'single-product (View item)' : 'catalog (View items)'} button`);
 
     // Construct template message with catalog/product button
     const messagePayload = {
@@ -101,10 +86,9 @@ const handler = async (req: Request): Promise<Response> => {
         language: {
           code: templateLanguage
         },
-        components: [
-          { type: "body" },
-          buttonComponent
-        ]
+          components: [
+            { type: "body" }
+          ]
       }
     };
 
