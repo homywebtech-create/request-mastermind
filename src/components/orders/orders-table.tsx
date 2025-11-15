@@ -2218,29 +2218,6 @@ Thank you for contacting us! 🌟`;
                             </DropdownMenu>
                           )}
                           
-                          {/* Show reset button for overdue confirmed orders */}
-                          {canManageOrders && filter === 'confirmed' && isOverdue && !isCompanyView && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => openResendDialog(order)}
-                              disabled={isOrderProcessing}
-                              className="flex items-center gap-1 animate-pulse"
-                            >
-                              {isOrderProcessing ? (
-                                <>
-                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                  {language === 'ar' ? 'جاري...' : 'Processing...'}
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="h-3 w-3" />
-                                  {language === 'ar' ? 'إعادة إرسال' : 'Resend'}
-                                </>
-                              )}
-                            </Button>
-                          )}
-                          
                           {/* Actions for confirmed orders - Reassign and Cancel */}
                           {canManageOrders && filter === 'confirmed' && (
                             <DropdownMenu>
