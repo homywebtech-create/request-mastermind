@@ -10,6 +10,42 @@ const WhatsAppCatalogSync = () => {
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<any>(null);
 
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
+
+  const handleDiagnostic = async () => {
+    setDiagnosing(true);
+    setDiagnosticResult(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('diagnose-catalog-permissions', {
+        body: {}
+      });
+
+      if (error) {
+        console.error('Diagnostic error:', error);
+        toast.error('Failed to run diagnostics');
+        setDiagnosticResult({ error: error.message });
+        return;
+      }
+
+      console.log('Diagnostic result:', data);
+      setDiagnosticResult(data);
+
+      if (data.canAccess) {
+        toast.success('Catalog permissions verified!');
+      } else {
+        toast.error('Permission issues detected');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('An unexpected error occurred');
+      setDiagnosticResult({ error: error instanceof Error ? error.message : 'Unknown error' });
+    } finally {
+      setDiagnosing(false);
+    }
+  };
+
   const handleSync = async () => {
     setSyncing(true);
     setResult(null);
@@ -63,7 +99,65 @@ const WhatsAppCatalogSync = () => {
             </AlertDescription>
           </Alert>
 
+          <Alert variant="destructive">
+            <AlertDescription>
+              <strong>Permissions Error Detected</strong><br/>
+              Your access token needs <code>catalog_management</code> permission. Follow these steps:
+              <ol className="list-decimal list-inside mt-2 space-y-1">
+                <li>Go to <strong>Meta Business Settings</strong> → <strong>System Users</strong></li>
+                <li>Find your System User and click <strong>Assign Assets</strong></li>
+                <li>Under <strong>Catalogs</strong>, select catalog <code>1250616650448589</code></li>
+                <li>Enable <strong>Manage Catalog</strong> permission</li>
+                <li>Generate a new access token and update <code>WHATSAPP_ACCESS_TOKEN</code> secret</li>
+              </ol>
+            </AlertDescription>
+          </Alert>
+
           <div className="space-y-4">
+            <Button
+              onClick={handleDiagnostic}
+              disabled={diagnosing}
+              variant="outline"
+              className="w-full"
+            >
+              {diagnosing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Checking Permissions...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Verify Catalog Permissions
+                </>
+              )}
+            </Button>
+
+            {diagnosticResult && (
+              <Card className="border-2">
+                <CardContent className="pt-4">
+                  {diagnosticResult.error ? (
+                    <Alert variant="destructive">
+                      <AlertDescription>{diagnosticResult.error}</AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className={`flex items-center gap-2 ${diagnosticResult.canAccess ? 'text-green-600' : 'text-red-600'}`}>
+                        {diagnosticResult.canAccess ? (
+                          <CheckCircle2 className="h-5 w-5" />
+                        ) : (
+                          <XCircle className="h-5 w-5" />
+                        )}
+                        <span className="font-semibold">
+                          {diagnosticResult.canAccess ? 'Permissions OK' : 'Permission Denied'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{diagnosticResult.message}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
             <div className="flex flex-col gap-2">
               <h3 className="font-semibold">What gets synced:</h3>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
