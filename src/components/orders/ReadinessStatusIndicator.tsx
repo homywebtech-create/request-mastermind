@@ -198,9 +198,13 @@ export function ReadinessStatusIndicator({
           : '⏰ Time passed - specialist hasn\'t responded';
       }
       console.log('⏳ [ReadinessStatusIndicator] Showing AWAITING RESPONSE');
+      const viewedText = readinessNotificationViewedAt 
+        ? (language === 'ar' ? '📱 تم فتح التطبيق' : '📱 App opened')
+        : (language === 'ar' ? '⏸️ لم يفتح التطبيق بعد' : '⏸️ App not opened yet');
+      
       return language === 'ar' 
-        ? '⏳ تم إرسال التنبيه - بانتظار رد المحترف'
-        : '⏳ Notification sent - awaiting response';
+        ? `⏳ تم إرسال الإشعار - ${viewedText}`
+        : `⏳ Notification sent - ${viewedText}`;
     }
 
     // Priority 3: Show time status when no notification sent
@@ -219,9 +223,13 @@ export function ReadinessStatusIndicator({
     }
 
     console.log('⏳ [ReadinessStatusIndicator] Showing DEFAULT - AWAITING RESPONSE');
+    const viewedText = readinessNotificationViewedAt 
+      ? (language === 'ar' ? '📱 تم فتح التطبيق' : '📱 App opened')
+      : (language === 'ar' ? '⏸️ لم يفتح التطبيق بعد' : '⏸️ App not opened yet');
+    
     return language === 'ar' 
-      ? '⏳ تم إرسال التنبيه - بانتظار الرد'
-      : '⏳ Notification sent - awaiting response';
+      ? `⏳ تم إرسال الإشعار - ${viewedText}`
+      : `⏳ Notification sent - ${viewedText}`;
   };
 
   return (
