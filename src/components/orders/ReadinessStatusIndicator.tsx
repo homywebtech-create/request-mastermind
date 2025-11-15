@@ -8,6 +8,7 @@ interface ReadinessStatusIndicatorProps {
   bookingDate?: string | null;
   bookingTime?: string | null;
   readinessCheckSentAt?: string | null;
+  readinessNotificationViewedAt?: string | null;
   specialistReadinessStatus?: string | null;
   specialistReadinessResponseAt?: string | null;
   specialistNotReadyReason?: string | null;
@@ -20,6 +21,7 @@ export function ReadinessStatusIndicator({
   bookingDate,
   bookingTime,
   readinessCheckSentAt,
+  readinessNotificationViewedAt,
   specialistReadinessStatus,
   specialistReadinessResponseAt,
   specialistNotReadyReason,
@@ -251,6 +253,27 @@ export function ReadinessStatusIndicator({
             )}
           </span>
         </div>
+
+        {/* Show viewed status for pending notifications */}
+        {readinessCheckSentAt && specialistReadinessStatus === 'pending' && (
+          <div className="flex items-center gap-1.5 text-xs">
+            {readinessNotificationViewedAt ? (
+              <>
+                <CheckCircle className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                <span className="text-blue-700 dark:text-blue-400">
+                  {language === 'ar' ? '👁️ شاهد الإشعار ولم يرد' : '👁️ Viewed, no response yet'}
+                </span>
+              </>
+            ) : (
+              <>
+                <Clock className="h-3 w-3 text-gray-500" />
+                <span className="text-gray-600 dark:text-gray-400">
+                  {language === 'ar' ? '📱 لم يشاهد الإشعار بعد' : '📱 Notification not viewed yet'}
+                </span>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Show response time for ready/not_ready status */}

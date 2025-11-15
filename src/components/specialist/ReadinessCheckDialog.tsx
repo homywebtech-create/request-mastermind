@@ -35,6 +35,38 @@ export function ReadinessCheckDialog() {
   const { toast } = useToast();
   const { language } = useLanguage();
 
+  // Mark notification as viewed when dialog opens
+  useEffect(() => {
+    if (open && orders.length > 0) {
+      const currentOrder = orders[currentOrderIndex];
+      if (currentOrder) {
+        console.log('📋 ReadinessCheckDialog opened for order:', currentOrder.id);
+        
+        const markAsViewed = async () => {
+          try {
+            const { error } = await supabase
+              .from('orders')
+              .update({ 
+                readiness_notification_viewed_at: new Date().toISOString() 
+              })
+              .eq('id', currentOrder.id)
+              .is('readiness_notification_viewed_at', null); // Only update if not already set
+            
+            if (error) {
+              console.error('❌ Error marking notification as viewed:', error);
+            } else {
+              console.log('✅ Readiness notification marked as viewed');
+            }
+          } catch (err) {
+            console.error('❌ Exception marking notification as viewed:', err);
+          }
+        };
+        
+        markAsViewed();
+      }
+    }
+  }, [open, orders, currentOrderIndex]);
+
   const texts = {
     ar: {
       title: '⏰ تأكيد الجاهزية',

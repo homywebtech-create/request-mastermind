@@ -57,6 +57,7 @@ interface Order {
   specialist_not_ready_reason?: string | null;
   readiness_reminder_count?: number | null;
   readiness_last_reminder_at?: string | null;
+  readiness_notification_viewed_at?: string | null;
   is_urgent?: boolean; // طلب عاجل تم إعادة إرساله
   customers: {
     name: string;
@@ -171,6 +172,7 @@ export default function Orders() {
           specialist_not_ready_reason,
           readiness_reminder_count,
           readiness_last_reminder_at,
+          readiness_notification_viewed_at,
           customers (
             name,
             whatsapp_number,

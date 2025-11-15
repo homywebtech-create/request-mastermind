@@ -66,6 +66,7 @@ interface Order {
   specialist_readiness_response_at?: string | null;
   specialist_not_ready_reason?: string | null;
   readiness_check_sent_at?: string | null;
+  readiness_notification_viewed_at?: string | null;
   readiness_reminder_count?: number | null;
   readiness_last_reminder_at?: string | null;
   cleaning_equipment_required?: boolean | null;
@@ -2251,6 +2252,7 @@ Thank you for contacting us! 🌟`;
                             bookingDate={order.booking_date}
                             bookingTime={order.booking_time}
                             readinessCheckSentAt={order.readiness_check_sent_at}
+                            readinessNotificationViewedAt={order.readiness_notification_viewed_at}
                             specialistReadinessStatus={order.specialist_readiness_status}
                             specialistReadinessResponseAt={order.specialist_readiness_response_at}
                             specialistNotReadyReason={order.specialist_not_ready_reason}

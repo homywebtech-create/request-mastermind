@@ -797,6 +797,7 @@ export type Database = {
           payment_status: string | null
           readiness_check_sent_at: string | null
           readiness_last_reminder_at: string | null
+          readiness_notification_viewed_at: string | null
           readiness_penalty_percentage: number | null
           readiness_reminder_count: number | null
           selected_booking_type: string | null
@@ -858,6 +859,7 @@ export type Database = {
           payment_status?: string | null
           readiness_check_sent_at?: string | null
           readiness_last_reminder_at?: string | null
+          readiness_notification_viewed_at?: string | null
           readiness_penalty_percentage?: number | null
           readiness_reminder_count?: number | null
           selected_booking_type?: string | null
@@ -919,6 +921,7 @@ export type Database = {
           payment_status?: string | null
           readiness_check_sent_at?: string | null
           readiness_last_reminder_at?: string | null
+          readiness_notification_viewed_at?: string | null
           readiness_penalty_percentage?: number | null
           readiness_reminder_count?: number | null
           selected_booking_type?: string | null
