@@ -1297,11 +1297,14 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
-      // Increment reminder count
+      // Increment reminder count and reset status if needed
       const currentCount = order.readiness_reminder_count || 0;
+      const isConfirmedOrder = order.status === 'upcoming';
+      
       const { error: updateError } = await supabase
         .from('orders')
         .update({
+          status: isConfirmedOrder ? 'pending' : order.status,
           readiness_reminder_count: currentCount + 1,
           readiness_last_reminder_at: new Date().toISOString(),
         })
