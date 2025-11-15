@@ -286,8 +286,8 @@ export function ReadinessStatusIndicator({
           </span>
         </div>
 
-        {/* Show viewed status for pending notifications */}
-        {readinessCheckSentAt && specialistReadinessStatus === 'pending' && (
+        {/* Show viewed status for pending notifications - but only if specialist hasn't responded yet */}
+        {readinessCheckSentAt && specialistReadinessStatus === 'pending' && !specialistReadinessResponseAt && (
           <div className="flex items-center gap-1.5 text-xs">
             {readinessNotificationViewedAt ? (
               <>

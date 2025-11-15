@@ -56,20 +56,21 @@ Deno.serve(async (req) => {
       // Get the specific order
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .select(`
-          id, 
-          booking_date, 
-          booking_time, 
-          order_number,
-          specialist_readiness_status, 
-          readiness_check_sent_at,
-          readiness_reminder_count,
-          order_specialists!inner(
-            specialist_id,
-            is_accepted,
-            specialists(id, name)
-          )
-        `)
+      .select(`
+        id, 
+        booking_date, 
+        booking_time, 
+        order_number,
+        specialist_readiness_status, 
+        specialist_readiness_response_at,
+        readiness_check_sent_at,
+        readiness_reminder_count,
+        order_specialists!inner(
+          specialist_id,
+          is_accepted,
+          specialists(id, name)
+        )
+      `)
         .eq('id', manualOrderId)
         .eq('order_specialists.is_accepted', true)
         .single();
@@ -90,14 +91,22 @@ Deno.serve(async (req) => {
 
       // Update order with new reminder
       const currentCount = order.readiness_reminder_count || 0;
+      
+      // Only reset status to pending if specialist hasn't responded yet
+      const updateData: any = {
+        readiness_check_sent_at: new Date().toISOString(),
+        readiness_reminder_count: currentCount + 1,
+        readiness_last_reminder_at: new Date().toISOString(),
+      };
+      
+      // Only set to pending if there's no existing response
+      if (!order.specialist_readiness_response_at) {
+        updateData.specialist_readiness_status = 'pending';
+      }
+      
       const { error: updateError } = await supabase
         .from('orders')
-        .update({
-          readiness_check_sent_at: new Date().toISOString(),
-          specialist_readiness_status: 'pending',
-          readiness_reminder_count: currentCount + 1,
-          readiness_last_reminder_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', order.id);
 
       if (updateError) {
@@ -153,6 +162,7 @@ Deno.serve(async (req) => {
         booking_time, 
         order_number,
         specialist_readiness_status, 
+        specialist_readiness_response_at,
         readiness_check_sent_at,
         order_specialists!inner(
           specialist_id,
@@ -208,12 +218,18 @@ Deno.serve(async (req) => {
         }
 
         // Update order with readiness check sent timestamp
+        // Only set to pending if specialist hasn't responded yet
+        const updateData: any = {
+          readiness_check_sent_at: new Date().toISOString(),
+        };
+        
+        if (!order.specialist_readiness_response_at) {
+          updateData.specialist_readiness_status = 'pending';
+        }
+        
         const { error: updateError } = await supabase
           .from('orders')
-          .update({
-            readiness_check_sent_at: new Date().toISOString(),
-            specialist_readiness_status: 'pending'
-          })
+          .update(updateData)
           .eq('id', order.id);
 
         if (updateError) {
