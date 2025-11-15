@@ -183,11 +183,13 @@ export function ReadinessCheckDialog() {
 
         // Get orders assigned to this specialist that need readiness check
         // Include both accepted orders (is_accepted = true) and resent orders (is_accepted = null)
-        const { data: orderSpecialists } = await supabase
+        const { data: orderSpecialists, error: osError } = await supabase
           .from('order_specialists')
           .select('order_id')
-          .eq('specialist_id', specialist.id)
-          .or('is_accepted.eq.true,is_accepted.is.null');
+          .eq('specialist_id', specialist.id);
+        
+        console.log('📊 [ReadinessDialog] Raw order_specialists:', orderSpecialists);
+        console.log('❓ [ReadinessDialog] Order specialists error:', osError);
 
         if (!orderSpecialists || orderSpecialists.length === 0) {
           console.log('📭 [ReadinessDialog] No orders found for specialist (accepted or resent)');
