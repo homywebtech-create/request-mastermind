@@ -2379,6 +2379,14 @@ Thank you for contacting us! 🌟`;
                                       {language === 'ar' ? 'إرسال واتساب' : 'Send WhatsApp'}
                                     </DropdownMenuItem>
                                     
+                                    {/* Resend to same specialists - Show if order has company_id */}
+                                    {order.company_id && (
+                                      <DropdownMenuItem onClick={() => openResendDialog(order)}>
+                                        <Users className="h-4 w-4 mr-2" />
+                                        {language === 'ar' ? 'إعادة الإرسال' : 'Resend Order'}
+                                      </DropdownMenuItem>
+                                    )}
+                                    
                                     {/* Separator */}
                                     <DropdownMenuItem className="opacity-50 cursor-not-allowed px-2" disabled>
                                       <div className="w-full border-t border-border"></div>
