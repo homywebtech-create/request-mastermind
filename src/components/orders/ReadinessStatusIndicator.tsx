@@ -146,16 +146,7 @@ export function ReadinessStatusIndicator({
       return language === 'ar' ? 'لا يوجد موعد محدد' : 'No booking time set';
     }
 
-    if (isPast) {
-      return language === 'ar' ? '⏰ انتهى الموعد' : '⏰ Time passed';
-    }
-
-    if (!readinessCheckSentAt) {
-      return language === 'ar' 
-        ? `⏱️ باقي ${formatTimeRemaining(timeUntilBooking!)}`
-        : `⏱️ ${formatTimeRemaining(timeUntilBooking!)} remaining`;
-    }
-
+    // Priority 1: Show readiness status if available
     if (specialistReadinessStatus === 'ready') {
       return language === 'ar' 
         ? '✅ جاهز - سيذهب'
@@ -166,6 +157,24 @@ export function ReadinessStatusIndicator({
       return language === 'ar' 
         ? '❌ غير جاهز - لن يذهب'
         : '❌ Not ready - cannot go';
+    }
+
+    // Priority 2: Show pending status if check was sent
+    if (readinessCheckSentAt && specialistReadinessStatus === 'pending') {
+      return language === 'ar' 
+        ? '⏳ بانتظار رد المحترف'
+        : '⏳ Awaiting specialist response';
+    }
+
+    // Priority 3: Show time status
+    if (isPast) {
+      return language === 'ar' ? '⏰ انتهى الموعد' : '⏰ Time passed';
+    }
+
+    if (!readinessCheckSentAt) {
+      return language === 'ar' 
+        ? `⏱️ باقي ${formatTimeRemaining(timeUntilBooking!)}`
+        : `⏱️ ${formatTimeRemaining(timeUntilBooking!)} remaining`;
     }
 
     return language === 'ar' 
