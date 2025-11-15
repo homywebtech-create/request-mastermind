@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock, Volume2, VolumeX, MessageCircle, XCircle } from "lucide-react";
+import { Calendar, Phone, User, Wrench, Building2, ExternalLink, Send, Users, Copy, MoreVertical, Clock, Volume2, VolumeX, MessageCircle, XCircle, CheckCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { openWhatsApp as openWhatsAppHelper } from "@/lib/externalLinks";
 import { useToast } from "@/hooks/use-toast";
@@ -1960,9 +1960,30 @@ Thank you for contacting us! 🌟`;
                                       {/* Only show these buttons to users with appropriate permissions */}
                                       {(canManageOrders || !isCompanyView) && (
                                         <>
+                                          {/* Quick Accept Button - Accept lowest quote from this company */}
+                                          {(() => {
+                                            const lowestQuote = company.specialists.reduce((lowest, current) => {
+                                              const lowestPrice = parseFloat(lowest.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '999999');
+                                              const currentPrice = parseFloat(current.quoted_price?.match(/(\d+(\.\d+)?)/)?.[1] || '999999');
+                                              return currentPrice < lowestPrice ? current : lowest;
+                                            });
+                                            
+                                            return (
+                                              <Button
+                                                size="sm"
+                                                variant="default"
+                                                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                                onClick={() => handleAcceptQuote(lowestQuote.id, order.id)}
+                                              >
+                                                <CheckCircle className="h-3 w-3 mr-2" />
+                                                {language === 'ar' ? 'تأكيد الحجز' : 'Confirm Booking'}
+                                              </Button>
+                                            );
+                                          })()}
+                                          
                                           <Button
                                             size="sm"
-                                            variant="default"
+                                            variant="outline"
                                             className="flex-1"
                             onClick={() => {
                               const url = `${window.location.origin}/company-booking/${order.id}/${company.companyId}`;
@@ -1972,6 +1993,7 @@ Thank you for contacting us! 🌟`;
                                             <Building2 className="h-3 w-3 mr-2" />
                                             {t.enterCompanyPage}
                                           </Button>
+                                          
                                           <Button
                                             size="sm"
                                             variant="outline"
