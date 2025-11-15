@@ -45,29 +45,39 @@ export function ReadinessCheckDialog() {
         const markAsViewed = async () => {
           try {
             console.log('🔄 [ReadinessDialog] Attempting to mark notification as viewed...');
+            console.log('🔍 [ReadinessDialog] Order ID:', currentOrder.id);
             
+            // ALWAYS update, remove the null check condition
             const { data, error } = await supabase
               .from('orders')
               .update({ 
                 readiness_notification_viewed_at: new Date().toISOString() 
               })
               .eq('id', currentOrder.id)
-              .is('readiness_notification_viewed_at', null) // Only update if not already set
               .select('id, order_number, readiness_notification_viewed_at');
             
             if (error) {
               console.error('❌ [ReadinessDialog] Error marking notification as viewed:', error);
+              console.error('Error details:', JSON.stringify(error));
             } else {
-              console.log('✅ [ReadinessDialog] Notification marked as viewed successfully');
+              console.log('✅ [ReadinessDialog] Notification marked as viewed successfully!');
               console.log('📊 [ReadinessDialog] Updated order data:', data);
+              if (data && data.length > 0) {
+                console.log('✓ viewed_at:', data[0].readiness_notification_viewed_at);
+              }
             }
           } catch (err) {
             console.error('❌ [ReadinessDialog] Exception marking notification as viewed:', err);
           }
         };
         
+        // Execute immediately
         markAsViewed();
+      } else {
+        console.log('⚠️ [ReadinessDialog] No current order found');
       }
+    } else {
+      console.log('ℹ️ [ReadinessDialog] Dialog not open or no orders. open:', open, 'orders:', orders.length);
     }
   }, [open, orders, currentOrderIndex]);
 
