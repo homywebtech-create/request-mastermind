@@ -71,24 +71,47 @@ const handler = async (req: Request): Promise<Response> => {
     // Limit to 30 products (WhatsApp template catalog limit)
     const limitedProductIds = product_retailer_ids.slice(0, 30);
 
-    // Build button component for Catalogue message (shows entire catalog)
-    const buttonComponent = {
-      type: "button",
-      sub_type: "catalog",
-      index: "0",
-      parameters: [
-        {
-          type: "action",
-          action: {
-            thumbnail_product_retailer_id: limitedProductIds[0], // First product as thumbnail
-          },
-        },
-      ],
-    };
+    // Build button component dynamically
+    // If 2+ products, use Multi-product message (MPM). Otherwise fallback to Catalogue message
+    const isMPM = limitedProductIds.length >= 2;
 
-    console.log(`🧭 Sending ${limitedProductIds.length} products in MPM template`);
+    const buttonComponent = isMPM
+      ? {
+          type: "button",
+          sub_type: "mpm",
+          index: "0",
+          parameters: [
+            {
+              type: "action",
+              action: {
+                thumbnail_product_retailer_id: limitedProductIds[0],
+                sections: [
+                  {
+                    title: "Available Specialists",
+                    product_items: limitedProductIds.map((id) => ({
+                      product_retailer_id: id,
+                    })),
+                  },
+                ],
+              },
+            },
+          ],
+        }
+      : {
+          type: "button",
+          sub_type: "catalog",
+          index: "0",
+          parameters: [
+            {
+              type: "action",
+              action: {
+                thumbnail_product_retailer_id: limitedProductIds[0],
+              },
+            },
+          ],
+        };
 
-
+    console.log(`🧭 Using ${isMPM ? "MPM" : "Catalog"} template format with ${limitedProductIds.length} product(s)`);
     // Construct template message with catalog/product button
     const messagePayload = {
       messaging_product: "whatsapp",
