@@ -71,8 +71,30 @@ const handler = async (req: Request): Promise<Response> => {
     // Limit to 30 products (WhatsApp template catalog limit)
     const limitedProductIds = product_retailer_ids.slice(0, 30);
 
-    // For catalog-button templates, no button parameters are required or allowed.
-    // The button is defined in the template itself. We therefore send only the body component.
+    // Build button component with sections (required for MPM templates)
+    const buttonComponent = {
+      type: "button",
+      sub_type: "catalog",
+      index: 0,
+      parameters: [
+        {
+          type: "action",
+          action: {
+            thumbnail_product_retailer_id: limitedProductIds[0], // First product as thumbnail
+            sections: [
+              {
+                title: "Available Specialists", // Section title (max 24 chars)
+                product_items: limitedProductIds.map(id => ({
+                  product_retailer_id: id
+                }))
+              }
+            ]
+          }
+        }
+      ]
+    };
+
+    console.log(`🧭 Sending ${limitedProductIds.length} products in MPM template`);
 
 
     // Construct template message with catalog/product button
@@ -86,9 +108,10 @@ const handler = async (req: Request): Promise<Response> => {
         language: {
           code: templateLanguage
         },
-          components: [
-            { type: "body" }
-          ]
+        components: [
+          { type: "body" },
+          buttonComponent
+        ]
       }
     };
 
