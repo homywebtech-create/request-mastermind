@@ -149,37 +149,41 @@ export function ReadinessStatusIndicator({
     // Priority 1: Show readiness status if available
     if (specialistReadinessStatus === 'ready') {
       return language === 'ar' 
-        ? '✅ جاهز - سيذهب'
-        : '✅ Ready - will go';
+        ? '✅ المحترف جاهز - سيذهب للموعد'
+        : '✅ Specialist ready - will go';
     }
 
     if (specialistReadinessStatus === 'not_ready') {
       return language === 'ar' 
-        ? '❌ غير جاهز - لن يذهب'
-        : '❌ Not ready - cannot go';
+        ? '❌ المحترف غير جاهز - لن يذهب'
+        : '❌ Specialist not ready - cannot go';
     }
 
     // Priority 2: Show pending status if check was sent
     if (readinessCheckSentAt && specialistReadinessStatus === 'pending') {
       return language === 'ar' 
-        ? '⏳ بانتظار رد المحترف'
-        : '⏳ Awaiting specialist response';
+        ? '⏳ تم إرسال التنبيه - بانتظار رد المحترف'
+        : '⏳ Notification sent - awaiting response';
     }
 
     // Priority 3: Show time status
     if (isPast) {
-      return language === 'ar' ? '⏰ انتهى الموعد' : '⏰ Time passed';
+      const notSentMsg = language === 'ar' 
+        ? '⏰ انتهى الموعد - لم يتم إرسال تنبيه' 
+        : '⏰ Time passed - no notification sent';
+      
+      return readinessCheckSentAt ? (language === 'ar' ? '⏰ انتهى الموعد' : '⏰ Time passed') : notSentMsg;
     }
 
     if (!readinessCheckSentAt) {
       return language === 'ar' 
-        ? `⏱️ باقي ${formatTimeRemaining(timeUntilBooking!)}`
-        : `⏱️ ${formatTimeRemaining(timeUntilBooking!)} remaining`;
+        ? `⏱️ لم يتم إرسال تنبيه - باقي ${formatTimeRemaining(timeUntilBooking!)}`
+        : `⏱️ No notification sent - ${formatTimeRemaining(timeUntilBooking!)} remaining`;
     }
 
     return language === 'ar' 
-      ? '⏳ بانتظار رد المحترف'
-      : '⏳ Awaiting specialist response';
+      ? '⏳ تم إرسال التنبيه - بانتظار الرد'
+      : '⏳ Notification sent - awaiting response';
   };
 
   return (
@@ -189,23 +193,58 @@ export function ReadinessStatusIndicator({
         <span className="text-sm font-medium">{getStatusText()}</span>
       </div>
 
-      {/* Show notification sent info */}
-      {readinessCheckSentAt && (
-        <div className="space-y-1 text-xs">
-          <div className="flex items-center gap-1.5 opacity-80">
-            <Send className="h-3 w-3" />
-            <span>
-              {language === 'ar' ? 'إرسال التنبيه: ' : 'Notification sent: '}
-              {new Date(readinessCheckSentAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          </div>
+      {/* Always show notification status */}
+      <div className="space-y-1 text-xs border-t border-current/20 pt-2">
+        <div className="flex items-center gap-1.5 opacity-80">
+          <Send className="h-3 w-3" />
+          <span className="font-semibold">
+            {language === 'ar' ? 'إرسال التنبيه: ' : 'Notification: '}
+          </span>
+          <span>
+            {readinessCheckSentAt ? (
+              <>
+                {language === 'ar' ? 'تم ✓ ' : 'Sent ✓ '}
+                {new Date(readinessCheckSentAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </>
+            ) : (
+              <span className="text-red-600 dark:text-red-400 font-medium">
+                {language === 'ar' ? '✗ لم يتم' : '✗ Not sent'}
+              </span>
+            )}
+          </span>
         </div>
-      )}
+        
+        <div className="flex items-center gap-1.5 opacity-80">
+          <AlertCircle className="h-3 w-3" />
+          <span className="font-semibold">
+            {language === 'ar' ? 'رد المحترف: ' : 'Response: '}
+          </span>
+          <span>
+            {specialistReadinessStatus === 'ready' ? (
+              <span className="text-green-700 dark:text-green-400 font-medium">
+                {language === 'ar' ? '✓ جاهز' : '✓ Ready'}
+              </span>
+            ) : specialistReadinessStatus === 'not_ready' ? (
+              <span className="text-red-700 dark:text-red-400 font-medium">
+                {language === 'ar' ? '✗ غير جاهز' : '✗ Not ready'}
+              </span>
+            ) : specialistReadinessStatus === 'pending' && readinessCheckSentAt ? (
+              <span className="text-orange-600 dark:text-orange-400">
+                {language === 'ar' ? '⏳ لم يرد بعد' : '⏳ No response yet'}
+              </span>
+            ) : (
+              <span className="opacity-60">
+                {language === 'ar' ? '- لم يتم الإرسال' : '- Not sent'}
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
 
       {/* Show response time for ready/not_ready status */}
       {specialistReadinessResponseAt && (specialistReadinessStatus === 'ready' || specialistReadinessStatus === 'not_ready') && (
