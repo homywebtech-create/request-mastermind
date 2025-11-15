@@ -9,6 +9,11 @@ export function useReadinessCheckMonitor() {
   useEffect(() => {
     console.log('🌐 [ReadinessMonitor] Initializing global readiness check monitor');
     
+    // SHOW ALERT to confirm monitor is running
+    setTimeout(() => {
+      console.log('✅ [ReadinessMonitor] Monitor is ACTIVE and checking every 5 seconds');
+    }, 1000);
+    
     const checkForPendingReadiness = async () => {
       try {
         console.log('🔍 [ReadinessMonitor] Checking for pending readiness notifications...');

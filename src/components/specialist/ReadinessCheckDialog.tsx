@@ -228,6 +228,10 @@ export function ReadinessCheckDialog() {
 
         if (ordersData && ordersData.length > 0) {
           console.log('🔔 [ReadinessDialog] Opening dialog with orders:', ordersData.map(o => o.order_number));
+          
+          // SHOW VISIBLE ALERT to confirm code is running on specialist's device
+          alert(`🔔 تنبيه جاهزية!\nعدد الطلبات: ${ordersData.length}\nرقم الطلب: ${ordersData[0].order_number}`);
+          
           console.log('🚀 [ReadinessDialog] CALLING setOrders and setOpen(true)');
           
           // CRITICAL FIX: Update viewed_at for all pending orders immediately
@@ -248,6 +252,7 @@ export function ReadinessCheckDialog() {
           }
           
           setOrders(ordersData as Order[]);
+          setCurrentOrderIndex(0);
           setOpen(true);
           console.log('✅ [ReadinessDialog] State updated - dialog should open now!');
           
@@ -524,13 +529,17 @@ export function ReadinessCheckDialog() {
     setOpen(false);
   };
 
+  console.log('🎨 [ReadinessDialog] RENDER - open:', open, 'orders:', orders.length, 'currentOrder:', currentOrder?.order_number);
+  
+  // Safe guard: Don't render dialog content without currentOrder
   if (!currentOrder) {
-    console.log('⚠️ [ReadinessDialog] Rendering NULL - no currentOrder');
-    return null;
+    console.log('⚠️ [ReadinessDialog] No currentOrder - rendering empty AlertDialog');
+    return <AlertDialog open={false} />;
   }
   
-  console.log('✅ [ReadinessDialog] Rendering dialog - open:', open, 'order:', currentOrder.order_number);
-
+  console.log('✅ [ReadinessDialog] Rendering full dialog with order:', currentOrder.order_number);
+  
+  // Always render the dialog structure
   return (
     <>
       {/* Main Readiness Dialog */}
