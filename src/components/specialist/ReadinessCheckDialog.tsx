@@ -200,12 +200,13 @@ export function ReadinessCheckDialog() {
         console.log('📋 [ReadinessDialog] Checking orders:', orderIds);
 
         // Get orders that need readiness check
+        // Check for specialist_readiness_status being 'pending' OR null
         const { data: ordersData, error } = await supabase
           .from('orders')
           .select('id, order_number, booking_date, booking_time, booking_date_type, specialist_readiness_status, readiness_penalty_percentage')
           .in('id', orderIds)
           .eq('status', 'upcoming')
-          .eq('specialist_readiness_status', 'pending')
+          .is('specialist_readiness_status', null)
           .not('readiness_check_sent_at', 'is', null);
 
         if (error) {

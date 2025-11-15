@@ -158,14 +158,8 @@ export default function SpecialistHome() {
         const soundNotif = getSoundNotification();
         soundNotif.playNewOrderSound();
         
-        // Show toast
-        toast({
-          title: isAr ? "⏰ تأكيد الجاهزية" : "⏰ Readiness Check",
-          description: isAr 
-            ? "هل أنت جاهز للطلب القادم؟ يرجى التأكيد" 
-            : "Are you ready for the upcoming order? Please confirm",
-          duration: 10000,
-        });
+        // Don't show toast - the ReadinessCheckDialog will handle it
+        // The dialog will open automatically for orders needing readiness confirmation
         
         // Refresh orders
         fetchOrders(specialistId);
