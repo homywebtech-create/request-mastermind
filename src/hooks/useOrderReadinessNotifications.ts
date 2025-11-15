@@ -1,13 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
-import { getSoundNotification } from '@/lib/soundNotification';
 
 export function useOrderReadinessNotifications() {
   const { toast } = useToast();
   const { language } = useLanguage();
-  const soundNotification = useRef(getSoundNotification());
 
   useEffect(() => {
     console.log('🔔 Setting up order readiness notifications...');
@@ -30,9 +28,7 @@ export function useOrderReadinessNotifications() {
           if (!oldOrder.readiness_check_sent_at && newOrder.readiness_check_sent_at) {
             console.log('🔔 Readiness check sent for order:', newOrder.order_number);
             
-            // Play sound notification
-            soundNotification.current.playNewOrderSound();
-            
+            // Show toast notification (no sound for admin panel)
             toast({
               title: language === 'ar' ? '🔔 تم إرسال تنبيه الجاهزية' : '🔔 Readiness Alert Sent',
               description: language === 'ar' 
@@ -55,9 +51,7 @@ export function useOrderReadinessNotifications() {
           ) {
             console.log('🟡 Specialist ready for order:', newOrder.order_number);
             
-            // Play sound notification
-            soundNotification.current.playNewQuoteSound();
-            
+            // Show toast notification (no sound for admin panel)
             toast({
               title: language === 'ar' ? '🟡 المحترفة جاهزة!' : '🟡 Specialist Ready!',
               description: language === 'ar' 
@@ -80,10 +74,8 @@ export function useOrderReadinessNotifications() {
           ) {
             console.log('🔴 Specialist not ready for order:', newOrder.order_number);
             
-            // Play alert sound
-            soundNotification.current.playNewOrderSound();
-            
-            const reason = newOrder.specialist_not_ready_reason 
+            // Show toast notification (no sound for admin panel)
+            const reason = newOrder.specialist_not_ready_reason
               ? (language === 'ar' ? `\nالسبب: ${newOrder.specialist_not_ready_reason}` : `\nReason: ${newOrder.specialist_not_ready_reason}`)
               : '';
               

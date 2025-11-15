@@ -38,7 +38,8 @@ export function ReadinessCheckDialog() {
   const texts = {
     ar: {
       title: '⏰ تأكيد الجاهزية',
-      description: 'لديك طلب قادم بعد ساعة. هل أنتِ جاهزة؟',
+      descriptionOverdue: '⚠️ الطلب متأخر! يجب الإسراع في التحرك',
+      descriptionUpcoming: 'لديك طلب قادم. هل أنتِ جاهزة؟',
       orderNumber: 'رقم الطلب',
       customer: 'العميل',
       area: 'المنطقة',
@@ -58,7 +59,8 @@ export function ReadinessCheckDialog() {
     },
     en: {
       title: '⏰ Readiness Confirmation',
-      description: 'You have an order in one hour. Are you ready?',
+      descriptionOverdue: '⚠️ Order is overdue! You must hurry',
+      descriptionUpcoming: 'You have an upcoming order. Are you ready?',
       orderNumber: 'Order Number',
       customer: 'Customer',
       area: 'Area',
@@ -172,6 +174,45 @@ export function ReadinessCheckDialog() {
     return time;
   };
 
+  const getTimeDescription = () => {
+    if (!currentOrder) return '';
+    
+    const now = new Date();
+    const bookingDateTime = new Date(currentOrder.booking_date);
+    
+    // Parse booking time if it's a specific time
+    if (currentOrder.booking_time && !['morning', 'afternoon', 'evening'].includes(currentOrder.booking_time)) {
+      const [timeRange] = currentOrder.booking_time.split('-');
+      if (timeRange) {
+        const [hours, minutes] = timeRange.trim().split(':');
+        if (hours && minutes) {
+          bookingDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+      }
+    }
+    
+    const diffMs = bookingDateTime.getTime() - now.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMinutes / 60);
+    
+    // If order is overdue or very soon
+    if (diffMinutes <= 0) {
+      return language === 'ar' ? t.descriptionOverdue : t.descriptionOverdue;
+    } else if (diffMinutes < 60) {
+      return language === 'ar' 
+        ? `⚠️ لديك طلب بعد ${diffMinutes} دقيقة. هل أنتِ جاهزة؟`
+        : `⚠️ You have an order in ${diffMinutes} minutes. Are you ready?`;
+    } else if (diffHours < 2) {
+      return language === 'ar'
+        ? `لديك طلب بعد حوالي ساعة. هل أنتِ جاهزة؟`
+        : `You have an order in about 1 hour. Are you ready?`;
+    } else {
+      return language === 'ar'
+        ? `لديك طلب بعد ${diffHours} ساعات. هل أنتِ جاهزة؟`
+        : `You have an order in ${diffHours} hours. Are you ready?`;
+    }
+  };
+
   const handleReady = async () => {
     if (!currentOrder || isSubmitting) return;
 
@@ -276,8 +317,8 @@ export function ReadinessCheckDialog() {
             <Clock className="h-6 w-6 text-orange-500 animate-pulse" />
             {t.title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-base">
-            {t.description}
+          <AlertDialogDescription className="text-base font-medium">
+            {getTimeDescription()}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
