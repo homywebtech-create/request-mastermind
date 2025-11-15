@@ -70,6 +70,19 @@ export function useReadinessCheckMonitor() {
         if (ordersData && ordersData.length > 0) {
           console.log('🔔 [ReadinessMonitor] Found pending readiness checks:', ordersData.length);
           
+          // CRITICAL FIX: Update viewed_at for all pending orders to mark specialist as "opened app"
+          for (const order of ordersData) {
+            if (!order.readiness_notification_viewed_at) {
+              console.log('📱 [ReadinessMonitor] Marking order as viewed:', order.order_number);
+              await supabase
+                .from('orders')
+                .update({ 
+                  readiness_notification_viewed_at: new Date().toISOString() 
+                })
+                .eq('id', order.id);
+            }
+          }
+          
           // Dispatch event to trigger dialog
           window.dispatchEvent(new CustomEvent('readiness-check-received', {
             detail: {

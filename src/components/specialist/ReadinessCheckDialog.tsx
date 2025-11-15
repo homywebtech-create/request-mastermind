@@ -225,6 +225,24 @@ export function ReadinessCheckDialog() {
         
         if (ordersData && ordersData.length > 0) {
           console.log('🔔 [ReadinessDialog] Opening dialog with orders:', ordersData.map(o => o.order_number));
+          
+          // CRITICAL FIX: Update viewed_at for all pending orders immediately
+          for (const order of ordersData) {
+            console.log('📱 [ReadinessDialog] Marking order as viewed:', order.order_number);
+            const { error: updateError } = await supabase
+              .from('orders')
+              .update({ 
+                readiness_notification_viewed_at: new Date().toISOString() 
+              })
+              .eq('id', order.id);
+            
+            if (updateError) {
+              console.error('❌ [ReadinessDialog] Error updating viewed_at:', updateError);
+            } else {
+              console.log('✅ [ReadinessDialog] Updated viewed_at for:', order.order_number);
+            }
+          }
+          
           console.log('🎯 [ReadinessDialog] Setting open to TRUE');
           setOrders(ordersData as Order[]);
           setOpen(true);
