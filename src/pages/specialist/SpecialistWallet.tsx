@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import { useReadinessCheckMonitor } from "@/hooks/useReadinessCheckMonitor";
 
 interface Transaction {
   id: string;
@@ -38,6 +39,9 @@ export default function SpecialistWallet() {
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Monitor for pending readiness checks
+  useReadinessCheckMonitor();
 
   useEffect(() => {
     checkAuth();

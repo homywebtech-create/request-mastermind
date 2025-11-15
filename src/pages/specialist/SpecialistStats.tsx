@@ -7,6 +7,7 @@ import { CheckCircle, XCircle, Clock, DollarSign, Package } from "lucide-react";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
 import LanguageSelector from "@/components/specialist/LanguageSelector";
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
+import { useReadinessCheckMonitor } from "@/hooks/useReadinessCheckMonitor";
 
 interface Stats {
   totalOrders: number;
@@ -32,6 +33,9 @@ export default function SpecialistStats() {
   const [preferredLanguage, setPreferredLanguage] = useState('ar');
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Monitor for pending readiness checks
+  useReadinessCheckMonitor();
 
   useEffect(() => {
     checkAuth();

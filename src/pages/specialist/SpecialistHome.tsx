@@ -26,6 +26,7 @@ import { useTranslation } from "@/i18n";
 import { getSoundNotification } from "@/lib/soundNotification";
 import { useSpecialistCompanyCountry } from "@/hooks/useCompanyCountry";
 import { TranslateButton } from "@/components/specialist/TranslateButton";
+import { useReadinessCheckMonitor } from "@/hooks/useReadinessCheckMonitor";
 
 interface Order {
   id: string;
@@ -76,6 +77,9 @@ export default function SpecialistHome() {
   const t = useTranslation(language);
   const isAr = language === 'ar';
   const { currencySymbol, currency, isLoading: currencyLoading } = useSpecialistCompanyCountry(specialistId);
+  
+  // Monitor for pending readiness checks
+  useReadinessCheckMonitor();
   
   useEffect(() => {
     initializeLanguage();

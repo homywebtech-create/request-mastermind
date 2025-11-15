@@ -32,6 +32,7 @@ import { en } from "@/i18n/en";
 import { APP_VERSION } from "@/lib/appVersion";
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 import BottomNavigation from "@/components/specialist/BottomNavigation";
+import { useReadinessCheckMonitor } from "@/hooks/useReadinessCheckMonitor";
 
 interface Profile {
   full_name: string;
@@ -92,6 +93,9 @@ export default function SpecialistProfile() {
   const { language, initializeLanguage } = useLanguage();
   const isAr = language === 'ar';
   const t = isAr ? ar.specialist : en.specialist;
+
+  // Monitor for pending readiness checks
+  useReadinessCheckMonitor();
 
   useEffect(() => {
     initializeLanguage();

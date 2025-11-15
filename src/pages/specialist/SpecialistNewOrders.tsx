@@ -28,6 +28,7 @@ import { NotificationStatusChecker } from "@/components/specialist/NotificationS
 import { OnlineStatusToggle } from "@/components/specialist/OnlineStatusToggle";
 import { TranslateButton } from "@/components/specialist/TranslateButton";
 import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
+import { useReadinessCheckMonitor } from "@/hooks/useReadinessCheckMonitor";
 
 interface Order {
   id: string;
@@ -78,6 +79,9 @@ export default function SpecialistNewOrders() {
   const { language, setLanguage, initializeLanguage } = useLanguage();
   const t = useTranslation(language);
   const { currencySymbol, isLoading: currencyLoading } = useSpecialistCompanyCountry(specialistId);
+
+  // Monitor for pending readiness checks
+  useReadinessCheckMonitor();
 
   useEffect(() => {
     let audioInitialized = false;
