@@ -163,20 +163,23 @@ export function ReadinessStatusIndicator({
         : '❌ Specialist not ready - cannot go';
     }
 
-    // Priority 2: Show pending status if check was sent
+    // Priority 2: Show pending status if check was sent (regardless of time)
     if (readinessCheckSentAt && specialistReadinessStatus === 'pending') {
+      if (isPast) {
+        return language === 'ar' 
+          ? '⏰ انتهى الموعد - لم يرد المحترف بعد'
+          : '⏰ Time passed - specialist hasn\'t responded';
+      }
       return language === 'ar' 
         ? '⏳ تم إرسال التنبيه - بانتظار رد المحترف'
         : '⏳ Notification sent - awaiting response';
     }
 
-    // Priority 3: Show time status
+    // Priority 3: Show time status when no notification sent
     if (isPast) {
-      const notSentMsg = language === 'ar' 
+      return language === 'ar' 
         ? '⏰ انتهى الموعد - لم يتم إرسال تنبيه' 
         : '⏰ Time passed - no notification sent';
-      
-      return readinessCheckSentAt ? (language === 'ar' ? '⏰ انتهى الموعد' : '⏰ Time passed') : notSentMsg;
     }
 
     if (!readinessCheckSentAt) {
