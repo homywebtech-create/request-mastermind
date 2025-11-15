@@ -1468,25 +1468,23 @@ Thank you for contacting us! 🌟`;
               <TableRow>
                 <TableHead className="text-left">{t.orderNumber}</TableHead>
                 <TableHead className="text-left">{t.customer}</TableHead>
-                <TableHead className="text-left">{t.area}</TableHead>
-                <TableHead className="text-left">{t.customerBudget}</TableHead>
                 <TableHead className="text-left">{t.service}</TableHead>
                 <TableHead className="text-left">{language === 'ar' ? 'الشركة والمحترف' : 'Company & Specialist'}</TableHead>
                 <TableHead className="text-left">{language === 'ar' ? 'تفاصيل الحجز' : 'Booking Details'}</TableHead>
                 <TableHead className="text-left">
-                  {filter === 'awaiting-response' ? t.companyQuotes : (filter === 'cancelled' ? (language === 'ar' ? 'تفاصيل الإلغاء' : 'Cancellation Details') : (language === 'ar' ? 'ملاحظات العميل' : 'Customer Notes'))}
+                  {filter === 'awaiting-response' ? t.companyQuotes : (filter === 'cancelled' ? (language === 'ar' ? 'تفاصيل الإلغاء' : 'Cancellation Details') : (language === 'ar' ? 'ملاحظات' : 'Notes'))}
                 </TableHead>
                 {(filter === 'confirmed' || filter === 'upcoming' || filter === 'in-progress') && (
-                  <TableHead className="text-left">{language === 'ar' ? 'حالة الجاهزية / الوقت المتبقي' : 'Readiness / Time Remaining'}</TableHead>
+                  <TableHead className="text-left">{language === 'ar' ? 'حالة الجاهزية' : 'Readiness Status'}</TableHead>
                 )}
-                <TableHead className="text-left">{t.dateAndStatus}</TableHead>
+                <TableHead className="text-left">{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
                 <TableHead className="text-left">{t.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     {t.noOrders}
                   </TableCell>
                 </TableRow>
@@ -1610,36 +1608,26 @@ Thank you for contacting us! 🌟`;
                             <span className="font-medium">{customerName}</span>
                           </div>
                           {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-3 w-3" />
-                              <span dir="ltr">{customerPhone}</span>
-                            </div>
+                            <>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="h-3 w-3" />
+                                <span dir="ltr">{customerPhone}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Building2 className="h-3 w-3" />
+                                <span>{customerArea}</span>
+                              </div>
+                            </>
                           ) : (
                             <span className="text-xs text-muted-foreground italic">{t.hiddenUntilAccepted}</span>
                           )}
-                          {/* Display customer language - default to Arabic if not specified */}
-                          <Badge variant="outline" className="text-xs">
+                          {/* Display customer language */}
+                          <Badge variant="outline" className="text-xs w-fit">
                             {(order.customers?.preferred_language === 'en') ? '🇬🇧 English' : '🇸🇦 عربي'}
                           </Badge>
                         </div>
                       </TableCell>
 
-                      <TableCell>
-                        {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
-                          <span className="text-sm">{customerArea}</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
-                          <span className="text-sm">{customerBudget}</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      
                       <TableCell>
                         <div className="flex items-center gap-2 min-w-[120px]">
                           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -1649,6 +1637,14 @@ Thank you for contacting us! 🌟`;
                             <Badge variant="secondary" className="font-medium">
                               {order.service_type}
                             </Badge>
+                            {/* Show budget if available */}
+                            {!isCompanyView || (filter !== 'new' && filter !== 'pending') ? (
+                              customerBudget && customerBudget !== '-' && (
+                                <div className="text-xs text-muted-foreground">
+                                  {language === 'ar' ? 'الميزانية:' : 'Budget:'} {customerBudget}
+                                </div>
+                              )
+                            ) : null}
                             {/* Show cleaning equipment indicator for any cleaning service */}
                             {(() => {
                               const isCleaningService = order.service_type.includes('نظافة') || 
@@ -2107,11 +2103,7 @@ Thank you for contacting us! 🌟`;
                       )}
                       
                       <TableCell>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(order.created_at)}
-                          </div>
+                        <div className="space-y-1.5">
                           <StatusBadge status={order.status} />
                           {order.tracking_stage && (
                             <>
@@ -2142,7 +2134,7 @@ Thank you for contacting us! 🌟`;
                                       : `⏱️ Remaining: ${remainingMin}m ${remainingSec}s`;
                                   })()}
                                 </Badge>
-                              )}
+                                )}
                             </>
                           )}
                           {isPending && (
@@ -2153,6 +2145,11 @@ Thank you for contacting us! 🌟`;
                               }
                             </div>
                           )}
+                          {/* تاريخ الإنشاء - بشكل صغير جداً */}
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60 mt-1">
+                            <Calendar className="h-2.5 w-2.5" />
+                            {formatDate(order.created_at)}
+                          </div>
                         </div>
                       </TableCell>
                       
