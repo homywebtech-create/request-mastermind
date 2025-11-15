@@ -56,21 +56,7 @@ Deno.serve(async (req) => {
       // Get the specific order
       const { data: order, error: orderError } = await supabase
         .from('orders')
-      .select(`
-        id, 
-        booking_date, 
-        booking_time, 
-        order_number,
-        specialist_readiness_status, 
-        specialist_readiness_response_at,
-        readiness_check_sent_at,
-        readiness_reminder_count,
-        order_specialists!inner(
-          specialist_id,
-          is_accepted,
-          specialists(id, name)
-        )
-      `)
+        .select('id, booking_date, booking_time, order_number, specialist_readiness_status, specialist_readiness_response_at, readiness_check_sent_at, readiness_reminder_count')
         .eq('id', manualOrderId)
         .single();
 
@@ -79,14 +65,28 @@ Deno.serve(async (req) => {
         throw new Error('Order not found');
       }
 
+      // Get order specialists separately
+      const { data: orderSpecialists, error: osError } = await supabase
+        .from('order_specialists')
+        .select('specialist_id, is_accepted')
+        .eq('order_id', manualOrderId);
+
+      if (osError) {
+        console.error('Error fetching order specialists:', osError);
+        throw new Error('Failed to fetch order specialists');
+      }
+
       // Get specialists (either accepted or resent with NULL status)
-      const targetSpecialists = order.order_specialists
+      const targetSpecialists = orderSpecialists
         ?.filter((os: any) => os.is_accepted === true || os.is_accepted === null)
         .map((os: any) => os.specialist_id) || [];
 
       if (targetSpecialists.length === 0) {
+        console.error('No specialists found. Order specialists:', orderSpecialists);
         throw new Error('No specialists found for this order');
       }
+      
+      console.log(`Found ${targetSpecialists.length} target specialists for order ${order.order_number}`);
 
       // Update order with new reminder
       const currentCount = order.readiness_reminder_count || 0;
