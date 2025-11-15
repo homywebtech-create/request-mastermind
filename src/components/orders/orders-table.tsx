@@ -915,13 +915,20 @@ Thank you for contacting us! 🌟`;
         if (insertError) throw insertError;
       }
 
-      // Update order timestamp and flags
+      // Reset order to pending if it was confirmed (upcoming)
+      const isConfirmedOrder = order.status === 'upcoming';
       const { error } = await supabase
         .from('orders')
         .update({
+          status: isConfirmedOrder ? 'pending' : order.status,
           send_to_all_companies: false,
           company_id: order.company_id,
           specialist_id: null,
+          is_urgent: isConfirmedOrder ? true : order.is_urgent,
+          specialist_readiness_status: isConfirmedOrder ? null : order.specialist_readiness_status,
+          specialist_readiness_response_at: isConfirmedOrder ? null : order.specialist_readiness_response_at,
+          specialist_not_ready_reason: isConfirmedOrder ? null : order.specialist_not_ready_reason,
+          readiness_check_sent_at: isConfirmedOrder ? null : order.readiness_check_sent_at,
           last_sent_at: new Date().toISOString(),
         })
         .eq('id', order.id);
@@ -1057,10 +1064,18 @@ Thank you for contacting us! 🌟`;
         return;
       }
 
-      // Update timestamp to trigger notifications
+      // Reset order to pending if it was confirmed (upcoming)
+      const isConfirmedOrder = order.status === 'upcoming';
       const { error } = await supabase
         .from('orders')
         .update({
+          status: isConfirmedOrder ? 'pending' : order.status,
+          specialist_id: isConfirmedOrder ? null : order.specialist_id,
+          is_urgent: isConfirmedOrder ? true : order.is_urgent,
+          specialist_readiness_status: isConfirmedOrder ? null : order.specialist_readiness_status,
+          specialist_readiness_response_at: isConfirmedOrder ? null : order.specialist_readiness_response_at,
+          specialist_not_ready_reason: isConfirmedOrder ? null : order.specialist_not_ready_reason,
+          readiness_check_sent_at: isConfirmedOrder ? null : order.readiness_check_sent_at,
           last_sent_at: new Date().toISOString(),
         })
         .eq('id', order.id);
@@ -1162,13 +1177,22 @@ Thank you for contacting us! 🌟`;
 
     setOrderProcessing(selectedOrder.id, true);
     try {
+      // Reset order to pending if it was confirmed (upcoming)
+      const isConfirmedOrder = selectedOrder.status === 'upcoming';
+      
       // Update order with company assignment and timestamp
       const { data: updatedOrder, error: orderError } = await supabase
         .from('orders')
         .update({
+          status: isConfirmedOrder ? 'pending' : selectedOrder.status,
           send_to_all_companies: false,
           company_id: selectedCompanyId,
           specialist_id: null,
+          is_urgent: isConfirmedOrder ? true : selectedOrder.is_urgent,
+          specialist_readiness_status: isConfirmedOrder ? null : selectedOrder.specialist_readiness_status,
+          specialist_readiness_response_at: isConfirmedOrder ? null : selectedOrder.specialist_readiness_response_at,
+          specialist_not_ready_reason: isConfirmedOrder ? null : selectedOrder.specialist_not_ready_reason,
+          readiness_check_sent_at: isConfirmedOrder ? null : selectedOrder.readiness_check_sent_at,
           last_sent_at: new Date().toISOString(),
         })
         .eq('id', selectedOrder.id)
