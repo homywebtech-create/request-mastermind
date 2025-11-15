@@ -35,6 +35,15 @@ export function ReadinessCheckDialog() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { language } = useLanguage();
+  
+  // Debug logging for dialog state
+  useEffect(() => {
+    console.log('🎭 [ReadinessDialog] DIALOG STATE CHANGED:');
+    console.log('  - open:', open);
+    console.log('  - orders count:', orders.length);
+    console.log('  - currentOrderIndex:', currentOrderIndex);
+    console.log('  - currentOrder:', currentOrder?.order_number);
+  }, [open, orders, currentOrderIndex]);
 
   // Mark notification as viewed when dialog opens
   useEffect(() => {
@@ -146,6 +155,7 @@ export function ReadinessCheckDialog() {
     const fetchPendingOrders = async () => {
       try {
         console.log('🔍 [ReadinessDialog] Starting fetchPendingOrders...');
+        console.log('🕐 [ReadinessDialog] Current time:', new Date().toISOString());
         
         const { data: { user } } = await supabase.auth.getUser();
         console.log('👤 [ReadinessDialog] User:', user?.id);
@@ -159,7 +169,7 @@ export function ReadinessCheckDialog() {
           .from('profiles')
           .select('phone')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         console.log('📋 [ReadinessDialog] Profile:', profile, 'Error:', profileError);
 
@@ -187,7 +197,6 @@ export function ReadinessCheckDialog() {
         console.log('✅ [ReadinessDialog] Specialist ID:', specialist.id);
 
         // Get orders assigned to this specialist that need readiness check
-        // Include both accepted orders (is_accepted = true) and resent orders (is_accepted = null)
         const { data: orderSpecialists, error: osError } = await supabase
           .from('order_specialists')
           .select('order_id')
@@ -197,7 +206,7 @@ export function ReadinessCheckDialog() {
         console.log('❓ [ReadinessDialog] Order specialists error:', osError);
 
         if (!orderSpecialists || orderSpecialists.length === 0) {
-          console.log('📭 [ReadinessDialog] No orders found for specialist (accepted or resent)');
+          console.log('📭 [ReadinessDialog] No orders found for specialist');
           return;
         }
 
@@ -207,24 +216,19 @@ export function ReadinessCheckDialog() {
         // Get orders that need readiness check
         const { data: ordersData, error } = await supabase
           .from('orders')
-          .select('id, order_number, booking_date, booking_time, booking_date_type, specialist_readiness_status, readiness_penalty_percentage')
+          .select('id, order_number, booking_date, booking_time, booking_date_type, specialist_readiness_status, readiness_penalty_percentage, readiness_check_sent_at')
           .in('id', orderIds)
           .eq('status', 'upcoming')
           .eq('specialist_readiness_status', 'pending')
           .not('readiness_check_sent_at', 'is', null);
 
-        if (error) {
-          console.error('❌ [ReadinessDialog] Error fetching orders:', error);
-          return;
-        }
-
+        console.log('❓ [ReadinessDialog] Orders query error:', error);
         console.log('✅ [ReadinessDialog] Found orders needing readiness check:', ordersData?.length || 0);
+        console.log('📋 [ReadinessDialog] Orders data FULL:', JSON.stringify(ordersData, null, 2));
 
-        console.log('📋 [ReadinessDialog] Orders data:', ordersData);
-        console.log('📊 [ReadinessDialog] Orders count:', ordersData?.length || 0);
-        
         if (ordersData && ordersData.length > 0) {
           console.log('🔔 [ReadinessDialog] Opening dialog with orders:', ordersData.map(o => o.order_number));
+          console.log('🚀 [ReadinessDialog] CALLING setOrders and setOpen(true)');
           
           // CRITICAL FIX: Update viewed_at for all pending orders immediately
           for (const order of ordersData) {
@@ -243,9 +247,9 @@ export function ReadinessCheckDialog() {
             }
           }
           
-          console.log('🎯 [ReadinessDialog] Setting open to TRUE');
           setOrders(ordersData as Order[]);
           setOpen(true);
+          console.log('✅ [ReadinessDialog] State updated - dialog should open now!');
           
           // Play urgent sound for attention
           try {
@@ -520,7 +524,12 @@ export function ReadinessCheckDialog() {
     setOpen(false);
   };
 
-  if (!currentOrder) return null;
+  if (!currentOrder) {
+    console.log('⚠️ [ReadinessDialog] Rendering NULL - no currentOrder');
+    return null;
+  }
+  
+  console.log('✅ [ReadinessDialog] Rendering dialog - open:', open, 'order:', currentOrder.order_number);
 
   return (
     <>
