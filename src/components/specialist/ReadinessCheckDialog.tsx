@@ -40,25 +40,29 @@ export function ReadinessCheckDialog() {
     if (open && orders.length > 0) {
       const currentOrder = orders[currentOrderIndex];
       if (currentOrder) {
-        console.log('📋 ReadinessCheckDialog opened for order:', currentOrder.id);
+        console.log('👁️ [ReadinessDialog] Dialog opened for order:', currentOrder.id, currentOrder.order_number);
         
         const markAsViewed = async () => {
           try {
-            const { error } = await supabase
+            console.log('🔄 [ReadinessDialog] Attempting to mark notification as viewed...');
+            
+            const { data, error } = await supabase
               .from('orders')
               .update({ 
                 readiness_notification_viewed_at: new Date().toISOString() 
               })
               .eq('id', currentOrder.id)
-              .is('readiness_notification_viewed_at', null); // Only update if not already set
+              .is('readiness_notification_viewed_at', null) // Only update if not already set
+              .select('id, order_number, readiness_notification_viewed_at');
             
             if (error) {
-              console.error('❌ Error marking notification as viewed:', error);
+              console.error('❌ [ReadinessDialog] Error marking notification as viewed:', error);
             } else {
-              console.log('✅ Readiness notification marked as viewed');
+              console.log('✅ [ReadinessDialog] Notification marked as viewed successfully');
+              console.log('📊 [ReadinessDialog] Updated order data:', data);
             }
           } catch (err) {
-            console.error('❌ Exception marking notification as viewed:', err);
+            console.error('❌ [ReadinessDialog] Exception marking notification as viewed:', err);
           }
         };
         
@@ -118,8 +122,13 @@ export function ReadinessCheckDialog() {
   useEffect(() => {
     const fetchPendingOrders = async () => {
       try {
+        console.log('🔍 [ReadinessDialog] Fetching pending readiness orders...');
+        
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          console.log('❌ [ReadinessDialog] No user found');
+          return;
+        }
 
         // Get user's phone from profile
         const { data: profile } = await supabase
@@ -128,7 +137,12 @@ export function ReadinessCheckDialog() {
           .eq('user_id', user.id)
           .single();
 
-        if (!profile?.phone) return;
+        if (!profile?.phone) {
+          console.log('❌ [ReadinessDialog] No phone found in profile');
+          return;
+        }
+
+        console.log('📱 [ReadinessDialog] User phone:', profile.phone);
 
         // Get specialist info by phone
         const { data: specialist } = await supabase
@@ -137,7 +151,12 @@ export function ReadinessCheckDialog() {
           .eq('phone', profile.phone)
           .single();
 
-        if (!specialist) return;
+        if (!specialist) {
+          console.log('❌ [ReadinessDialog] No specialist found for phone');
+          return;
+        }
+
+        console.log('👤 [ReadinessDialog] Specialist ID:', specialist.id);
 
         // Get orders assigned to this specialist that need readiness check
         const { data: orderSpecialists } = await supabase
@@ -146,9 +165,13 @@ export function ReadinessCheckDialog() {
           .eq('specialist_id', specialist.id)
           .eq('is_accepted', true);
 
-        if (!orderSpecialists || orderSpecialists.length === 0) return;
+        if (!orderSpecialists || orderSpecialists.length === 0) {
+          console.log('📭 [ReadinessDialog] No accepted orders for specialist');
+          return;
+        }
 
         const orderIds = orderSpecialists.map((os) => os.order_id);
+        console.log('📋 [ReadinessDialog] Checking orders:', orderIds);
 
         // Get orders that need readiness check
         const { data: ordersData, error } = await supabase
@@ -160,16 +183,21 @@ export function ReadinessCheckDialog() {
           .not('readiness_check_sent_at', 'is', null);
 
         if (error) {
-          console.error('Error fetching orders:', error);
+          console.error('❌ [ReadinessDialog] Error fetching orders:', error);
           return;
         }
 
+        console.log('✅ [ReadinessDialog] Found orders needing readiness check:', ordersData?.length || 0);
+
         if (ordersData && ordersData.length > 0) {
+          console.log('🔔 [ReadinessDialog] Opening dialog with orders:', ordersData.map(o => o.order_number));
           setOrders(ordersData as Order[]);
           setOpen(true);
+        } else {
+          console.log('✓ [ReadinessDialog] No orders need readiness check at this time');
         }
       } catch (error) {
-        console.error('Error in fetchPendingOrders:', error);
+        console.error('❌ [ReadinessDialog] Exception in fetchPendingOrders:', error);
       }
     };
 
