@@ -57,6 +57,13 @@ interface Order {
   cancellation_reason?: string | null;
   cancelled_at?: string | null;
   cleaning_equipment_required?: boolean | null;
+  readiness_check_sent_at?: string | null;
+  specialist_readiness_status?: string | null;
+  specialist_readiness_response_at?: string | null;
+  specialist_not_ready_reason?: string | null;
+  readiness_reminder_count?: number | null;
+  readiness_last_reminder_at?: string | null;
+  readiness_notification_viewed_at?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -331,6 +338,13 @@ export default function Dashboard() {
         cancellation_reason,
         cancelled_at,
         cleaning_equipment_required,
+        readiness_check_sent_at,
+        specialist_readiness_status,
+        specialist_readiness_response_at,
+        specialist_not_ready_reason,
+        readiness_reminder_count,
+        readiness_last_reminder_at,
+        readiness_notification_viewed_at,
         customers (name, whatsapp_number, area, budget, budget_type),
         companies (name),
         order_specialists (
