@@ -2229,8 +2229,6 @@ Thank you for contacting us! 🌟`;
                                   size="sm"
                                   variant="outline"
                                   className="flex items-center gap-1"
-                                  disabled={!order.customers?.preferred_language}
-                                  title={!order.customers?.preferred_language ? (language === 'ar' ? 'يجب تحديد لغة العميل أولاً' : 'Customer language must be set first') : ''}
                                 >
                                   <MoreVertical className="h-4 w-4" />
                                   {language === 'ar' ? 'إجراءات' : 'Actions'}
