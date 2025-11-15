@@ -254,10 +254,31 @@ export default function SpecialistHome() {
           }
         } else {
           console.error('❌ [SPECIALIST] No specialist found for phone:', profile.phone);
+          setIsLoading(false);
+          toast({
+            title: isAr ? "خطأ" : "Error",
+            description: isAr 
+              ? 'لم يتم العثور على حساب محترف. يرجى التواصل مع الإدارة.'
+              : 'Specialist account not found. Please contact administration.',
+            variant: "destructive",
+          });
+          navigate('/specialist-auth');
         }
+      } else {
+        console.error('❌ [PROFILE] No profile found for user:', user?.id);
+        setIsLoading(false);
+        toast({
+          title: isAr ? "خطأ" : "Error",
+          description: isAr 
+            ? 'لم يتم العثور على حساب. يرجى التواصل مع الإدارة.'
+            : 'Profile not found. Please contact administration.',
+          variant: "destructive",
+        });
+        navigate('/specialist-auth');
       }
     } catch (error) {
       console.error('❌ [AUTH] Auth check error:', error);
+      setIsLoading(false);
       navigate('/specialist-auth');
     }
   };
