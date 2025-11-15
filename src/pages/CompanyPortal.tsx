@@ -56,6 +56,12 @@ interface Order {
   cancelled_at?: string | null;
   specialist_id?: string | null;
   cleaning_equipment_required?: boolean | null;
+  readiness_check_sent_at?: string | null;
+  specialist_readiness_status?: string | null;
+  specialist_readiness_response_at?: string | null;
+  specialist_not_ready_reason?: string | null;
+  readiness_reminder_count?: number | null;
+  readiness_last_reminder_at?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -276,6 +282,12 @@ export default function CompanyPortal() {
           cancellation_reason,
           cancelled_at,
           cleaning_equipment_required,
+          readiness_check_sent_at,
+          specialist_readiness_status,
+          specialist_readiness_response_at,
+          specialist_not_ready_reason,
+          readiness_reminder_count,
+          readiness_last_reminder_at,
           customers (name, whatsapp_number, area, budget, budget_type),
           companies (name),
           order_specialists (
