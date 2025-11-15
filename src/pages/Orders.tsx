@@ -49,6 +49,14 @@ interface Order {
   updated_at: string;
   send_to_all_companies?: boolean;
   cleaning_equipment_required?: boolean | null;
+  booking_date?: string | null;
+  booking_time?: string | null;
+  readiness_check_sent_at?: string | null;
+  specialist_readiness_status?: string | null;
+  specialist_readiness_response_at?: string | null;
+  specialist_not_ready_reason?: string | null;
+  readiness_reminder_count?: number | null;
+  readiness_last_reminder_at?: string | null;
   customers: {
     name: string;
     whatsapp_number: string;
@@ -147,10 +155,18 @@ export default function Orders() {
           last_sent_at,
           send_to_all_companies,
           booking_type,
+          booking_date,
+          booking_time,
           hours_count,
           cleaning_equipment_required,
           waiting_started_at,
           waiting_ends_at,
+          readiness_check_sent_at,
+          specialist_readiness_status,
+          specialist_readiness_response_at,
+          specialist_not_ready_reason,
+          readiness_reminder_count,
+          readiness_last_reminder_at,
           customers (
             name,
             whatsapp_number,
