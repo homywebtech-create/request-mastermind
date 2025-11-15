@@ -27,6 +27,7 @@ import { firebaseNotifications } from "@/lib/firebaseNotifications";
 import { NotificationStatusChecker } from "@/components/specialist/NotificationStatusChecker";
 import { OnlineStatusToggle } from "@/components/specialist/OnlineStatusToggle";
 import { TranslateButton } from "@/components/specialist/TranslateButton";
+import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
 
 interface Order {
   id: string;
@@ -1188,6 +1189,7 @@ export default function SpecialistNewOrders() {
       </div>
 
       <BottomNavigation newOrdersCount={newOrdersCount} specialistId={specialistId} />
+      <ReadinessCheckDialog />
       </div>
     </BusyGuard>
   );

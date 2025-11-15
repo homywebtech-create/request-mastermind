@@ -30,6 +30,8 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { ar } from "@/i18n/ar";
 import { en } from "@/i18n/en";
 import { APP_VERSION } from "@/lib/appVersion";
+import { ReadinessCheckDialog } from "@/components/specialist/ReadinessCheckDialog";
+import BottomNavigation from "@/components/specialist/BottomNavigation";
 
 interface Profile {
   full_name: string;
@@ -785,6 +787,7 @@ export default function SpecialistProfile() {
           </AlertDialog>
         </div>
       </div>
+      <ReadinessCheckDialog />
       </div>
     </BusyGuard>
   );
