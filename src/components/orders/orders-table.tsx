@@ -763,7 +763,8 @@ Thank you for contacting us! 🌟`;
 
   const fetchSpecialists = async (companyId: string) => {
     try {
-      const { data, error } = await supabase
+      // First, get all active specialists from the company
+      const { data: allSpecialists, error } = await supabase
         .from("specialists")
         .select("id, name, specialty, phone, image_url")
         .eq("company_id", companyId)
@@ -772,7 +773,46 @@ Thank you for contacting us! 🌟`;
         .order("name");
 
       if (error) throw error;
-      setSpecialists(data || []);
+
+      // If no booking date/time, show all specialists
+      if (!selectedOrder?.booking_date || !selectedOrder?.booking_time) {
+        setSpecialists(allSpecialists || []);
+        return;
+      }
+
+      // Check availability for each specialist based on booking date and time
+      const bookingDateTime = `${selectedOrder.booking_date}T${selectedOrder.booking_time}:00`;
+      const startTime = new Date(bookingDateTime).toISOString();
+      
+      // Calculate end time based on hours_count (default 2 hours if not specified)
+      const durationHours = selectedOrder.hours_count || 2;
+      const endTime = new Date(new Date(startTime).getTime() + durationHours * 60 * 60 * 1000).toISOString();
+
+      // Check availability for each specialist
+      const availabilityChecks = await Promise.all(
+        (allSpecialists || []).map(async (specialist) => {
+          const { data: isAvailable, error: checkError } = await supabase
+            .rpc('is_specialist_available', {
+              _specialist_id: specialist.id,
+              _start_time: startTime,
+              _end_time: endTime
+            });
+
+          if (checkError) {
+            console.error('Error checking availability for specialist:', specialist.id, checkError);
+            return { ...specialist, isAvailable: false };
+          }
+
+          return { ...specialist, isAvailable: isAvailable === true };
+        })
+      );
+
+      // Filter to show only available specialists
+      const availableSpecialists = availabilityChecks.filter(s => s.isAvailable);
+      
+      console.log(`✅ Found ${availableSpecialists.length} available specialists out of ${allSpecialists?.length || 0} for booking at ${bookingDateTime}`);
+      
+      setSpecialists(availableSpecialists);
     } catch (error) {
       console.error("Error fetching specialists:", error);
       setSpecialists([]);
@@ -788,9 +828,69 @@ Thank you for contacting us! 🌟`;
     }
   }, [selectedCompanyId]);
 
+  // Helper function to check specialist availability for a specific order
+  const checkSpecialistsAvailability = async (
+    specialistIds: string[], 
+    order: Order
+  ): Promise<string[]> => {
+    // If no booking date/time, return all specialists
+    if (!order.booking_date || !order.booking_time) {
+      return specialistIds;
+    }
+
+    try {
+      const bookingDateTime = `${order.booking_date}T${order.booking_time}:00`;
+      const startTime = new Date(bookingDateTime).toISOString();
+      
+      // Calculate end time based on hours_count (default 2 hours if not specified)
+      const durationHours = order.hours_count || 2;
+      const endTime = new Date(new Date(startTime).getTime() + durationHours * 60 * 60 * 1000).toISOString();
+
+      // Check availability for each specialist
+      const availabilityChecks = await Promise.all(
+        specialistIds.map(async (specialistId) => {
+          const { data: isAvailable, error } = await supabase
+            .rpc('is_specialist_available', {
+              _specialist_id: specialistId,
+              _start_time: startTime,
+              _end_time: endTime
+            });
+
+          if (error) {
+            console.error('Error checking availability for specialist:', specialistId, error);
+            return { specialistId, isAvailable: false };
+          }
+
+          return { specialistId, isAvailable: isAvailable === true };
+        })
+      );
+
+      // Return only available specialist IDs
+      const availableIds = availabilityChecks
+        .filter(check => check.isAvailable)
+        .map(check => check.specialistId);
+      
+      console.log(`✅ Availability check: ${availableIds.length}/${specialistIds.length} specialists available for ${bookingDateTime}`);
+      
+      return availableIds;
+    } catch (error) {
+      console.error('Error in availability check:', error);
+      return []; // Return empty array on error to prevent sending to unavailable specialists
+    }
+  };
+
   const handleSendToAll = async (orderId: string) => {
     setOrderProcessing(orderId, true);
     try {
+      // Get current order details for availability check
+      const { data: orderData, error: orderQueryError } = await supabase
+        .from('orders')
+        .select('booking_date, booking_time, hours_count')
+        .eq('id', orderId)
+        .single();
+      
+      if (orderQueryError) throw orderQueryError;
+
       // 1) Read existing assignments
       const { data: existing, error: existingError } = await supabase
         .from('order_specialists')
@@ -809,25 +909,34 @@ Thank you for contacting us! 🌟`;
 
       if (specialistsError) throw specialistsError;
 
-      // 3) Insert only missing specialists in batches for performance
-      const missing = (allSpecialists || []).filter((s) => !existingSet.has(s.id));
-      if (missing.length > 0) {
+      // 3) Filter specialists by availability based on booking date/time
+      const allSpecialistIds = (allSpecialists || []).map(s => s.id);
+      const availableSpecialistIds = await checkSpecialistsAvailability(
+        allSpecialistIds, 
+        orderData as Order
+      );
+      
+      console.log(`📅 Availability filter: ${availableSpecialistIds.length}/${allSpecialistIds.length} specialists available`);
+
+      // 4) Insert only available and missing specialists in batches for performance
+      const missingAvailable = availableSpecialistIds.filter((id) => !existingSet.has(id));
+      if (missingAvailable.length > 0) {
         const batchSize = 100;
         const batches = [];
-        for (let i = 0; i < missing.length; i += batchSize) {
-          batches.push(missing.slice(i, i + batchSize));
+        for (let i = 0; i < missingAvailable.length; i += batchSize) {
+          batches.push(missingAvailable.slice(i, i + batchSize));
         }
         
         await Promise.all(
           batches.map(batch => 
             supabase
               .from('order_specialists')
-              .insert(batch.map(s => ({ order_id: orderId, specialist_id: s.id })))
+              .insert(batch.map(id => ({ order_id: orderId, specialist_id: id })))
           )
         );
       }
 
-      // 4) Update order broadcast flags and timestamp
+      // 5) Update order broadcast flags and timestamp
       const { error } = await supabase
         .from('orders')
         .update({
@@ -840,14 +949,13 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
-      // Send Firebase push notifications to all specialists
+      // Send Firebase push notifications to available specialists only
       try {
         console.log('📤 [FCM] إرسال إشعارات Firebase...');
-        const specialistIds = (allSpecialists || []).map(s => s.id);
         
         const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
           body: {
-            specialistIds,
+            specialistIds: availableSpecialistIds,
             title: '🔔 عرض عمل جديد',
             body: 'لديك عرض عمل جديد - افتح التطبيق الآن',
             data: { orderId, type: 'new_order' }
@@ -868,7 +976,7 @@ Thank you for contacting us! 🌟`;
 
       toast({
         title: t.sendSuccessful,
-        description: t.sentToSpecialists.replace('{count}', (allSpecialists?.length || 0).toString()),
+        description: t.sentToSpecialists.replace('{count}', availableSpecialistIds.length.toString()),
       });
 
       setResendDialogOpen(false);
@@ -913,10 +1021,16 @@ Thank you for contacting us! 🌟`;
         .is('current_order_id', null); // Only available specialists
       if (specialistsError) throw specialistsError;
 
-      // Insert only missing
-      const missing = (companySpecialists || []).filter((s) => !existingSet.has(s.id));
-      if (missing.length > 0) {
-        const toInsert = missing.map((s) => ({ order_id: order.id, specialist_id: s.id }));
+      // Filter by availability based on booking date/time
+      const allSpecialistIds = (companySpecialists || []).map(s => s.id);
+      const availableSpecialistIds = await checkSpecialistsAvailability(allSpecialistIds, order);
+      
+      console.log(`📅 Company ${order.company_id} availability: ${availableSpecialistIds.length}/${allSpecialistIds.length} available`);
+
+      // Insert only missing and available specialists
+      const missingAvailable = availableSpecialistIds.filter((id) => !existingSet.has(id));
+      if (missingAvailable.length > 0) {
+        const toInsert = missingAvailable.map((id) => ({ order_id: order.id, specialist_id: id }));
         const { error: insertError } = await supabase
           .from('order_specialists')
           .insert(toInsert);
@@ -943,14 +1057,13 @@ Thank you for contacting us! 🌟`;
 
       if (error) throw error;
 
-      // Send Firebase push notifications to company specialists
+      // Send Firebase push notifications to available specialists only
       try {
         console.log('📤 [FCM] إرسال إشعارات Firebase لنفس الشركة...');
-        const specialistIds = (companySpecialists || []).map(s => s.id);
         
         const { data: fcmResult, error: fcmError } = await supabase.functions.invoke('send-push-notification', {
           body: {
-            specialistIds,
+            specialistIds: availableSpecialistIds,
             title: '🔁 إعادة إرسال طلب',
             body: 'تم إعادة إرسال طلب لك - راجعه الآن',
             data: { orderId: order.id, type: 'resend_order' }
@@ -971,7 +1084,7 @@ Thank you for contacting us! 🌟`;
 
       toast({
         title: t.sendSuccessful,
-        description: t.sentToSpecialists.replace('{count}', (companySpecialists?.length || 0).toString()),
+        description: t.sentToSpecialists.replace('{count}', availableSpecialistIds.length.toString()),
       });
 
       setResendDialogOpen(false);
@@ -1217,7 +1330,8 @@ Thank you for contacting us! 🌟`;
 
       let finalSpecialistIds: string[] = [];
 
-      // If specific specialists are selected, add only them
+      // If specific specialists are selected, they're already filtered by availability
+      // (from the fetchSpecialists function which applies availability check)
       if (selectedSpecialistIds.length > 0) {
         const orderSpecialists = selectedSpecialistIds.map(specialistId => ({
           order_id: updatedOrder.id,
@@ -1232,7 +1346,7 @@ Thank you for contacting us! 🌟`;
         
         finalSpecialistIds = selectedSpecialistIds;
       } else {
-        // If no specific specialists selected, add all active specialists from company (excluding busy ones)
+        // If no specific specialists selected, get all active specialists from company
         const { data: companySpecialists, error: specialistsError } = await supabase
           .from('specialists')
           .select('id')
@@ -1243,18 +1357,26 @@ Thank you for contacting us! 🌟`;
         if (specialistsError) throw specialistsError;
 
         if (companySpecialists && companySpecialists.length > 0) {
-          const orderSpecialists = companySpecialists.map(specialist => ({
-            order_id: updatedOrder.id,
-            specialist_id: specialist.id,
-          }));
-
-          const { error: insertError } = await supabase
-            .from('order_specialists')
-            .insert(orderSpecialists);
-
-          if (insertError) throw insertError;
+          // Filter by availability based on booking date/time
+          const allSpecialistIds = companySpecialists.map(s => s.id);
+          const availableSpecialistIds = await checkSpecialistsAvailability(allSpecialistIds, selectedOrder);
           
-          finalSpecialistIds = companySpecialists.map(s => s.id);
+          console.log(`📅 Company ${selectedCompanyId} availability: ${availableSpecialistIds.length}/${allSpecialistIds.length} available`);
+
+          if (availableSpecialistIds.length > 0) {
+            const orderSpecialists = availableSpecialistIds.map(id => ({
+              order_id: updatedOrder.id,
+              specialist_id: id,
+            }));
+
+            const { error: insertError } = await supabase
+              .from('order_specialists')
+              .insert(orderSpecialists);
+
+            if (insertError) throw insertError;
+            
+            finalSpecialistIds = availableSpecialistIds;
+          }
         }
       }
 
