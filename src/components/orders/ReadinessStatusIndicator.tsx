@@ -286,24 +286,25 @@ export function ReadinessStatusIndicator({
           </span>
         </div>
 
-        {/* Show viewed status for pending notifications - but only if specialist hasn't responded yet */}
-        {readinessCheckSentAt && specialistReadinessStatus === 'pending' && !specialistReadinessResponseAt && (
+        {/* Show viewed status - consider "viewed" if specialist responded OR explicitly viewed */}
+        {readinessCheckSentAt && (
           <div className="flex items-center gap-1.5 text-xs">
-            {readinessNotificationViewedAt ? (
+            {/* If specialist responded, they definitely viewed it */}
+            {specialistReadinessResponseAt || readinessNotificationViewedAt ? (
               <>
-                <CheckCircle className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                <span className="text-blue-700 dark:text-blue-400">
-                  {language === 'ar' ? '👁️ شاهد الإشعار ولم يرد' : '👁️ Viewed, no response yet'}
+                <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+                <span className="text-green-700 dark:text-green-400">
+                  {language === 'ar' ? '✓ شاهد الإشعار' : '✓ Notification viewed'}
                 </span>
               </>
-            ) : (
+            ) : specialistReadinessStatus === 'pending' ? (
               <>
                 <Clock className="h-3 w-3 text-gray-500" />
                 <span className="text-gray-600 dark:text-gray-400">
                   {language === 'ar' ? '📱 لم يشاهد الإشعار بعد' : '📱 Notification not viewed yet'}
                 </span>
               </>
-            )}
+            ) : null}
           </div>
         )}
       </div>
