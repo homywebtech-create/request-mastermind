@@ -57,6 +57,7 @@ interface Order {
   specialist_not_ready_reason?: string | null;
   readiness_reminder_count?: number | null;
   readiness_last_reminder_at?: string | null;
+  is_urgent?: boolean; // طلب عاجل تم إعادة إرساله
   customers: {
     name: string;
     whatsapp_number: string;
