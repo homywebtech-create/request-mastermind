@@ -2696,25 +2696,27 @@ Thank you for contacting us! 🌟`;
                   </Button>
                 )}
                 
-                {/* Option to select specific company and specialist */}
-                <Button
-                  onClick={() => {
-                    setResendDialogOpen(false);
-                    openSendDialog(selectedOrder);
-                  }}
-                  variant="outline"
-                  className="w-full justify-start h-auto py-4"
-                >
-                  <div className="flex flex-col items-start gap-1 text-left">
-                    <div className="flex items-center gap-2 font-medium">
-                      <Building2 className="h-4 w-4" />
-                      {language === 'ar' ? 'تحديد شركة ومحترف' : 'Select Company & Specialist'}
+                {/* Option to select specific company and specialist - ADMIN ONLY */}
+                {!isCompanyView && (
+                  <Button
+                    onClick={() => {
+                      setResendDialogOpen(false);
+                      openSendDialog(selectedOrder);
+                    }}
+                    variant="outline"
+                    className="w-full justify-start h-auto py-4"
+                  >
+                    <div className="flex flex-col items-start gap-1 text-left">
+                      <div className="flex items-center gap-2 font-medium">
+                        <Building2 className="h-4 w-4" />
+                        {language === 'ar' ? 'تحديد شركة ومحترف' : 'Select Company & Specialist'}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {language === 'ar' ? 'اختر شركة محددة ومحترفين معينين' : 'Choose specific company and specialists'}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {language === 'ar' ? 'اختر شركة محددة ومحترفين معينين' : 'Choose specific company and specialists'}
-                    </span>
-                  </div>
-                </Button>
+                  </Button>
+                )}
 
                 {selectedOrder.company_id && (
                   <>
