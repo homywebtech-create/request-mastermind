@@ -358,10 +358,39 @@ export function ReadinessCheckDialog() {
 
     setIsSubmitting(true);
     try {
+      // First, get the current specialist_id before removing it
+      const { data: orderData, error: fetchError } = await supabase
+        .from('orders')
+        .select('specialist_id')
+        .eq('id', currentOrder.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      
+      const currentSpecialistId = orderData?.specialist_id;
+
+      // Update order_specialists table to record the rejection
+      if (currentSpecialistId) {
+        const { error: rejectionError } = await supabase
+          .from('order_specialists')
+          .update({
+            is_accepted: false,
+            rejected_at: new Date().toISOString(),
+            rejection_reason: notReadyReason || 'Specialist not ready',
+          })
+          .eq('order_id', currentOrder.id)
+          .eq('specialist_id', currentSpecialistId);
+
+        if (rejectionError) {
+          console.error('Error recording rejection:', rejectionError);
+        }
+      }
+
+      // Now update the order to remove specialist and mark as not ready
       const { error } = await supabase
         .from('orders')
         .update({
-          specialist_id: null, // Remove specialist assignment
+          specialist_id: null, // Remove specialist assignment so order disappears from their view
           specialist_readiness_status: 'not_ready',
           specialist_readiness_response_at: new Date().toISOString(),
           specialist_not_ready_reason: notReadyReason || null,
