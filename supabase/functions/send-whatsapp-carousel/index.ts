@@ -81,12 +81,9 @@ const handler = async (req: Request): Promise<Response> => {
       parameters: [
         {
           type: "action",
-          action: {
-            catalog_id: META_CATALOG_ID,
-            ...(isSingle
-              ? { product_retailer_id: limitedProductIds[0] } // "View item" button
-              : { thumbnail_product_retailer_id: limitedProductIds[0] }) // "View items" button with thumbnail
-          }
+          action: isSingle
+            ? { product_retailer_id: limitedProductIds[0] } // "View item" button
+            : { thumbnail_product_retailer_id: limitedProductIds[0] } // "View items" button with thumbnail
         }
       ]
     } as const;
