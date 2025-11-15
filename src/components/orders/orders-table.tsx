@@ -1967,7 +1967,7 @@ Thank you for contacting us! 🌟`;
                                         <>
                                           {/* Quick Accept Button - Only show if order has complete booking info */}
                                           {(() => {
-                                            // Check if order has all required booking information
+                                            // Check if order has essential booking information
                                             // Support both old (gps_) and new (customer_) location fields
                                             const hasLocation = 
                                               (order.customer_latitude && order.customer_longitude) ||
@@ -1978,10 +1978,11 @@ Thank you for contacting us! 🌟`;
                                               order.customer_location_name ||
                                               order.building_info;
                                             
+                                            // For overdue orders, only require date, time, and location
+                                            // booking_type is optional for old orders
                                             const hasCompleteBookingInfo = 
                                               order.booking_date && 
                                               order.booking_time && 
-                                              (order.booking_type || order.selected_booking_type) &&
                                               hasLocation &&
                                               hasLocationDetails;
                                             
