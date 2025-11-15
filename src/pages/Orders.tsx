@@ -114,7 +114,8 @@ export default function Orders() {
     if (user) {
       fetchUserProfile();
       fetchOrders();
-      setupRealtimeSubscription();
+      const cleanup = setupRealtimeSubscription();
+      return cleanup; // Proper cleanup on unmount
     }
   }, [user, authLoading]);
 
@@ -132,9 +133,11 @@ export default function Orders() {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (skipLoading = false) => {
     try {
-      setLoading(true);
+      if (!skipLoading) {
+        setLoading(true);
+      }
       
       console.log('🔄 Fetching orders from database...');
       
@@ -230,6 +233,8 @@ export default function Orders() {
   };
 
   const setupRealtimeSubscription = () => {
+    console.log('🔔 Setting up realtime subscription for orders...');
+    
     const channel = supabase
       .channel('orders-changes')
       .on(
@@ -239,10 +244,23 @@ export default function Orders() {
           schema: 'public',
           table: 'orders'
         },
-        () => {
-          setTimeout(() => {
-            fetchOrders();
-          }, 200);
+        (payload) => {
+          console.log('📨 Orders table change detected:', payload);
+          console.log('🔄 Immediately refetching orders...');
+          // Skip loading spinner for realtime updates to avoid UI flicker
+          fetchOrders(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_specialists'
+        },
+        (payload) => {
+          console.log('📨 Order specialists table change detected:', payload);
+          fetchOrders(true);
         }
       )
       .on(
@@ -252,15 +270,20 @@ export default function Orders() {
           schema: 'public',
           table: 'customers'
         },
-        () => {
-          setTimeout(() => {
-            fetchOrders();
-          }, 200);
+        (payload) => {
+          console.log('📨 Customers table change detected:', payload);
+          fetchOrders(true);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Realtime subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to realtime updates');
+        }
+      });
 
     return () => {
+      console.log('🔇 Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   };
