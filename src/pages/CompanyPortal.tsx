@@ -57,6 +57,7 @@ interface Order {
   specialist_id?: string | null;
   cleaning_equipment_required?: boolean | null;
   readiness_check_sent_at?: string | null;
+  readiness_notification_viewed_at?: string | null;
   specialist_readiness_status?: string | null;
   specialist_readiness_response_at?: string | null;
   specialist_not_ready_reason?: string | null;
@@ -284,6 +285,7 @@ export default function CompanyPortal() {
           cancelled_at,
           cleaning_equipment_required,
           readiness_check_sent_at,
+          readiness_notification_viewed_at,
           specialist_readiness_status,
           specialist_readiness_response_at,
           specialist_not_ready_reason,
@@ -317,6 +319,20 @@ export default function CompanyPortal() {
       if (error) throw error;
 
       // عرض جميع الطلبات (مثل لوحة الأدمن)
+      console.log('✅ [CompanyPortal] Fetched orders:', (data || []).length);
+      
+      // Log readiness info for debugging
+      const ordersWithReadiness = (data || []).filter(o => o.readiness_check_sent_at);
+      console.log('🔔 [CompanyPortal] Orders with readiness:', ordersWithReadiness.length);
+      if (ordersWithReadiness.length > 0) {
+        console.log('📋 [CompanyPortal] First order readiness:', {
+          order_number: ordersWithReadiness[0].order_number,
+          readiness_check_sent_at: ordersWithReadiness[0].readiness_check_sent_at,
+          readiness_notification_viewed_at: ordersWithReadiness[0].readiness_notification_viewed_at,
+          specialist_readiness_status: ordersWithReadiness[0].specialist_readiness_status
+        });
+      }
+      
       setOrders((data as Order[]) || []);
       calculateStats((data as Order[]) || []);
     } catch (error: any) {

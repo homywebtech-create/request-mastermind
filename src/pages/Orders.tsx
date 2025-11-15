@@ -213,6 +213,19 @@ export default function Orders() {
           cleaning_equipment_required: data[0].cleaning_equipment_required,
           has_field: 'cleaning_equipment_required' in data[0]
         });
+        
+        // Log readiness status for debugging
+        const ordersWithReadiness = data.filter(o => o.readiness_check_sent_at);
+        console.log('🔔 Orders with readiness notifications:', ordersWithReadiness.length);
+        ordersWithReadiness.slice(0, 3).forEach(order => {
+          console.log(`📋 Order ${order.order_number || order.id}:`, {
+            'إرسال التنبيه': order.readiness_check_sent_at,
+            'مشاهدة التنبيه': order.readiness_notification_viewed_at,
+            'حالة الجاهزية': order.specialist_readiness_status,
+            'عدد التذكيرات': order.readiness_reminder_count,
+            'آخر تذكير': order.readiness_last_reminder_at
+          });
+        });
       }
 
       if (error) {
@@ -247,7 +260,17 @@ export default function Orders() {
           table: 'orders'
         },
         (payload) => {
-          console.log('📨 Orders table change detected:', payload);
+          console.log('📨 Orders table change detected:', payload.eventType);
+          if (payload.new && typeof payload.new === 'object') {
+            const newData = payload.new as any;
+            console.log('🆕 Updated order data:', {
+              order_id: newData.id,
+              order_number: newData.order_number,
+              readiness_check_sent_at: newData.readiness_check_sent_at,
+              readiness_notification_viewed_at: newData.readiness_notification_viewed_at,
+              specialist_readiness_status: newData.specialist_readiness_status
+            });
+          }
           console.log('🔄 Immediately refetching orders...');
           // Skip loading spinner for realtime updates to avoid UI flicker
           fetchOrders(true);
