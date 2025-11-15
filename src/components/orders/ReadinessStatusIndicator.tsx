@@ -15,6 +15,7 @@ interface ReadinessStatusIndicatorProps {
   readinessReminderCount?: number | null;
   onReassign?: () => void;
   canManage?: boolean;
+  isCompanyView?: boolean;
 }
 
 export function ReadinessStatusIndicator({
@@ -28,6 +29,7 @@ export function ReadinessStatusIndicator({
   readinessReminderCount,
   onReassign,
   canManage = false,
+  isCompanyView = false,
 }: ReadinessStatusIndicatorProps) {
   const { language } = useLanguage();
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -333,8 +335,8 @@ export function ReadinessStatusIndicator({
         </div>
       )}
 
-      {/* Show reassign button for not ready specialists */}
-      {specialistReadinessStatus === 'not_ready' && canManage && onReassign && (
+      {/* Show reassign button for not ready specialists - ADMIN ONLY */}
+      {specialistReadinessStatus === 'not_ready' && !isCompanyView && canManage && onReassign && (
         <Button 
           onClick={onReassign}
           size="sm"
