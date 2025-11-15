@@ -36,10 +36,10 @@ serve(async (req) => {
       );
     }
 
-    // Get user profile to check company
+    // Get user profile to check company and specialist
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('company_id')
+      .select('company_id, phone')
       .eq('user_id', user.id)
       .single();
 
@@ -49,6 +49,14 @@ serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Get specialist info if user is a specialist
+    const { data: specialist } = await supabaseClient
+      .from('specialists')
+      .select('id, phone')
+      .eq('phone', profile.phone)
+      .eq('company_id', profile.company_id)
+      .single();
 
     const url = new URL(req.url);
     const path = url.pathname.split('/mobile-api')[1];
@@ -106,8 +114,23 @@ serve(async (req) => {
         );
       }
 
+      // SECURITY: Filter out orders where specialist is not ready
+      // If specialist has rejected the order (specialist_readiness_status = 'not_ready'),
+      // remove it from their view to prevent manipulation
+      let filteredOrders = orders;
+      if (specialist && status === 'upcoming') {
+        filteredOrders = orders?.filter(order => {
+          // For upcoming orders, check if THIS specialist has rejected readiness
+          if (order.specialist_id === specialist.id && order.specialist_readiness_status === 'not_ready') {
+            console.log(`🚫 [SECURITY] Hiding order ${order.order_number || order.id} from specialist ${specialist.id} - specialist rejected readiness`);
+            return false; // Hide this order from specialist's view
+          }
+          return true;
+        }) || [];
+      }
+
       return new Response(
-        JSON.stringify({ orders }),
+        JSON.stringify({ orders: filteredOrders }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -127,7 +150,7 @@ serve(async (req) => {
       // Verify order belongs to specialist's company OR is sent to all companies
       const { data: order } = await supabaseClient
         .from('orders')
-        .select('company_id, send_to_all_companies')
+        .select('company_id, send_to_all_companies, specialist_id, specialist_readiness_status')
         .eq('id', orderId)
         .single();
 
@@ -135,6 +158,15 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ error: 'Order not found or access denied' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // SECURITY: Prevent specialist from updating order if they rejected readiness
+      if (specialist && order.specialist_id === specialist.id && order.specialist_readiness_status === 'not_ready') {
+        console.error(`🚫 [SECURITY] Specialist ${specialist.id} attempted to update rejected order ${orderId}`);
+        return new Response(
+          JSON.stringify({ error: 'Access denied: You have rejected this order. Please contact admin to reassign.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
