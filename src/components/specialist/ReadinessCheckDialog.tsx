@@ -175,7 +175,7 @@ export function ReadinessCheckDialog() {
           .from('specialists')
           .select('id')
           .eq('phone', profile.phone)
-          .single();
+          .maybeSingle();
 
         console.log('🔍 [ReadinessDialog] Specialist lookup:', specialist, 'Error:', specialistError);
 
@@ -228,6 +228,16 @@ export function ReadinessCheckDialog() {
           console.log('🎯 [ReadinessDialog] Setting open to TRUE');
           setOrders(ordersData as Order[]);
           setOpen(true);
+          
+          // Play urgent sound for attention
+          try {
+            const { getSoundNotification } = await import('@/lib/soundNotification');
+            const soundNotif = getSoundNotification();
+            soundNotif.playNewOrderSound();
+            console.log('🔊 [ReadinessDialog] Played alert sound');
+          } catch (e) {
+            console.log('⚠️ [ReadinessDialog] Could not play sound:', e);
+          }
         } else {
           console.log('✓ [ReadinessDialog] No orders need readiness check at this time');
         }
@@ -236,7 +246,11 @@ export function ReadinessCheckDialog() {
       }
     };
 
+    // Fetch immediately on mount
     fetchPendingOrders();
+    
+    // Re-fetch every 15 seconds to catch any missed notifications
+    const pollInterval = setInterval(fetchPendingOrders, 15000);
 
     // Set up realtime subscription for new readiness checks
     const channel = supabase
@@ -271,6 +285,7 @@ export function ReadinessCheckDialog() {
 
     return () => {
       console.log('🧹 [ReadinessDialog] Cleaning up subscriptions');
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
       window.removeEventListener('readiness-check-received', handleReadinessNotification as EventListener);
     };
