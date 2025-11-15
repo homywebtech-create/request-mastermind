@@ -1201,6 +1201,23 @@ Thank you for contacting us! 🌟`;
         return;
       }
 
+      // Reset order_specialists records to allow specialists to see the order again
+      const { error: resetError } = await supabase
+        .from('order_specialists')
+        .update({
+          is_accepted: null,
+          rejected_at: null,
+          rejection_reason: null,
+          quoted_price: null,
+          quoted_at: null,
+          quote_notes: null,
+        })
+        .eq('order_id', order.id);
+
+      if (resetError) {
+        console.error('⚠️ Error resetting order_specialists:', resetError);
+      }
+
       // Reset order to pending if it was confirmed (upcoming)
       const isConfirmedOrder = order.status === 'upcoming';
       const { error } = await supabase
