@@ -336,16 +336,19 @@ export default function OrderTracking() {
 
   // Auto-start work after 5 minutes if specialist didn't start
   useEffect(() => {
-    if (stage === 'arrived' && arrivedStartTime) {
+    if (stage === 'arrived' && arrivedStartTime && !isProcessing) {
       const checkAutoStart = setInterval(() => {
         const now = new Date();
         const minutesPassed = (now.getTime() - arrivedStartTime.getTime()) / 1000 / 60;
         
-        if (minutesPassed >= 5) {
+        if (minutesPassed >= 5 && !isProcessing) {
+          console.log('⏰ Auto-starting work after 5 minutes');
           handleStartWork();
           toast({
-            title: "Auto-Started",
-            description: "Work timer has been automatically started",
+            title: language === 'ar' ? "بدء تلقائي" : "Auto-Started",
+            description: language === 'ar' 
+              ? "تم بدء مؤقت العمل تلقائياً" 
+              : "Work timer has been automatically started",
           });
           clearInterval(checkAutoStart);
         }
@@ -353,7 +356,7 @@ export default function OrderTracking() {
 
       return () => clearInterval(checkAutoStart);
     }
-  }, [stage, arrivedStartTime]);
+  }, [stage, arrivedStartTime, isProcessing, language]);
 
   // Timer for working stage (countdown from totalWorkSeconds to 0)
   useEffect(() => {
@@ -927,34 +930,84 @@ export default function OrderTracking() {
   };
 
   const handleStartWork = async () => {
-    setWorkStartTime(new Date());
-    setStage('working');
-    await updateOrderStage('working');
-    toast({
-      title: "Work Started",
-      description: "Timer has been started",
-    });
+    // Prevent multiple simultaneous calls
+    if (isProcessing) {
+      console.log('⚠️ Already processing, ignoring duplicate call');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      console.log('🚀 Starting work...');
+      
+      setWorkStartTime(new Date());
+      setStage('working');
+      
+      // Update order stage with timeout
+      await Promise.race([
+        updateOrderStage('working'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Update timeout')), 10000)
+        )
+      ]);
+      
+      console.log('✅ Work started successfully');
+      toast({
+        title: language === 'ar' ? "بدء العمل" : "Work Started",
+        description: language === 'ar' ? "تم بدء المؤقت" : "Timer has been started",
+      });
+    } catch (error: any) {
+      console.error('❌ Error starting work:', error);
+      
+      // Rollback stage if update failed
+      setStage('arrived');
+      setWorkStartTime(null);
+      
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' 
+          ? "فشل بدء العمل. حاول مرة أخرى" 
+          : "Failed to start work. Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleCustomerNotPresent = async () => {
+    // Prevent multiple simultaneous calls
+    if (isProcessing) {
+      console.log('⚠️ Already processing, ignoring duplicate call');
+      return;
+    }
+
     try {
+      setIsProcessing(true);
+      console.log('⏳ Starting waiting period...');
+
       // Extract sub-service name from service_type
       const subServiceName = order?.service_type?.includes('-') 
         ? order.service_type.split('-')[1]?.trim() 
         : order?.service_type?.trim();
 
-      // Fetch waiting time for this sub-service
-      const { data: cancellationData } = await supabase
-        .from('cancellation_settings')
-        .select(`
-          waiting_time_minutes,
-          sub_services!inner (
-            name,
-            name_en
-          )
-        `)
-        .or(`sub_services.name.eq.${subServiceName},sub_services.name_en.eq.${subServiceName}`)
-        .single();
+      // Fetch waiting time for this sub-service with timeout
+      const { data: cancellationData } = await Promise.race([
+        supabase
+          .from('cancellation_settings')
+          .select(`
+            waiting_time_minutes,
+            sub_services!inner (
+              name,
+              name_en
+            )
+          `)
+          .or(`sub_services.name.eq.${subServiceName},sub_services.name_en.eq.${subServiceName}`)
+          .single(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Settings fetch timeout')), 5000)
+        )
+      ]) as any;
 
       // Default to 5 minutes if no setting found
       const waitingTimeMinutes = cancellationData?.waiting_time_minutes || 5;
@@ -967,18 +1020,25 @@ export default function OrderTracking() {
       setWaitingTimer(waitingTimeMinutes * 60); // Convert to seconds
       setTimeExpired(false);
 
-      // Update order with waiting timestamps
-      const { error } = await supabase
-        .from('orders')
-        .update({ 
-          tracking_stage: 'waiting_for_customer',
-          waiting_started_at: now.toISOString(),
-          waiting_ends_at: waitingEnds.toISOString(),
-          updated_at: now.toISOString()
-        })
-        .eq('id', orderId);
+      // Update order with waiting timestamps with timeout
+      const { error } = await Promise.race([
+        supabase
+          .from('orders')
+          .update({ 
+            tracking_stage: 'waiting_for_customer',
+            waiting_started_at: now.toISOString(),
+            waiting_ends_at: waitingEnds.toISOString(),
+            updated_at: now.toISOString()
+          })
+          .eq('id', orderId),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database update timeout')), 10000)
+        )
+      ]) as any;
 
       if (error) throw error;
+      
+      console.log('✅ Waiting period started successfully');
       
       // Request notification permission if not granted
       if ('Notification' in window && Notification.permission === 'default') {
@@ -986,40 +1046,54 @@ export default function OrderTracking() {
       }
 
       // Send professional WhatsApp message to customer about waiting period
+      // Use fire-and-forget with timeout to prevent blocking
       if (order?.customer?.whatsapp_number) {
-        try {
-          const customerLanguage = (order.customer.preferred_language || 'ar') as 'ar' | 'en';
-          
-          await sendTemplateMessage(
+        const customerLanguage = (order.customer.preferred_language || 'ar') as 'ar' | 'en';
+        
+        // Don't await this - let it run in background with timeout
+        Promise.race([
+          sendTemplateMessage(
             order.customer.whatsapp_number,
             'waiting_for_customer',
             customerLanguage,
             {
               customer_name: order.customer.name,
-              specialist_name: 'المحترف' // You can get the actual specialist name if available
+              specialist_name: 'المحترف'
             }
-          );
-          
-          console.log('✅ Waiting period notification sent to customer');
-        } catch (whatsappError) {
-          console.error('❌ Failed to send waiting WhatsApp message:', whatsappError);
-          // Don't block the flow if WhatsApp fails
-        }
+          ),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('WhatsApp timeout')), 15000)
+          )
+        ])
+          .then(() => console.log('✅ Waiting period notification sent to customer'))
+          .catch((whatsappError) => {
+            console.error('❌ Failed to send waiting WhatsApp message:', whatsappError);
+            // Don't block the flow if WhatsApp fails
+          });
       }
       
       toast({
         title: language === 'ar' ? "بدء الانتظار" : "Waiting Started",
         description: language === 'ar' 
-          ? "بدأ عداد الانتظار 15 دقيقة"
-          : "15-minute waiting period started",
+          ? `بدأ عداد الانتظار ${waitingTimeMinutes} دقيقة`
+          : `${waitingTimeMinutes}-minute waiting period started`,
       });
     } catch (error: any) {
-      console.error('Error starting waiting period:', error);
+      console.error('❌ Error starting waiting period:', error);
+      
+      // Rollback stage if update failed
+      setStage('arrived');
+      setTimeExpired(false);
+      
       toast({
         title: language === 'ar' ? "خطأ" : "Error",
-        description: error.message,
+        description: language === 'ar'
+          ? "فشل بدء الانتظار. حاول مرة أخرى"
+          : "Failed to start waiting. Please try again",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -2004,23 +2078,41 @@ export default function OrderTracking() {
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50 space-y-2">
               <Button
                 onClick={handleStartWork}
-                disabled={arrivedTimer > 0}
+                disabled={arrivedTimer > 0 || isProcessing}
                 className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 size="lg"
               >
-                <Play className="h-5 w-5 ml-2" />
-                <span>{t.startWorkClock}</span>
+                {isProcessing ? (
+                  <>
+                    <InlineLoader size="sm" />
+                    <span className="mr-2">{language === 'ar' ? 'جاري المعالجة...' : 'Processing...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-5 w-5 ml-2" />
+                    <span>{t.startWorkClock}</span>
+                  </>
+                )}
               </Button>
               
               {/* Customer Not Present Button */}
               <Button
                 onClick={handleCustomerNotPresent}
-                disabled={arrivedTimer > 0}
+                disabled={arrivedTimer > 0 || isProcessing}
                 variant="outline"
                 className="w-full h-12 text-base font-semibold border-2 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <AlertCircle className="h-5 w-5 ml-2" />
-                <span>{language === 'ar' ? 'العميل غير موجود - بدء الانتظار' : 'Customer Not Present - Start Waiting'}</span>
+                {isProcessing ? (
+                  <>
+                    <InlineLoader size="sm" />
+                    <span className="mr-2">{language === 'ar' ? 'جاري المعالجة...' : 'Processing...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-5 w-5 ml-2" />
+                    <span>{language === 'ar' ? 'العميل غير موجود - بدء الانتظار' : 'Customer Not Present - Start Waiting'}</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>
