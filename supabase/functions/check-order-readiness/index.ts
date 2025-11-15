@@ -72,7 +72,6 @@ Deno.serve(async (req) => {
         )
       `)
         .eq('id', manualOrderId)
-        .eq('order_specialists.is_accepted', true)
         .single();
 
       if (orderError || !order) {
@@ -80,13 +79,13 @@ Deno.serve(async (req) => {
         throw new Error('Order not found');
       }
 
-      // Get accepted specialist
-      const acceptedSpecialists = order.order_specialists
-        ?.filter((os: any) => os.is_accepted)
+      // Get specialists (either accepted or resent with NULL status)
+      const targetSpecialists = order.order_specialists
+        ?.filter((os: any) => os.is_accepted === true || os.is_accepted === null)
         .map((os: any) => os.specialist_id) || [];
 
-      if (acceptedSpecialists.length === 0) {
-        throw new Error('No accepted specialists for this order');
+      if (targetSpecialists.length === 0) {
+        throw new Error('No specialists found for this order');
       }
 
       // Update order with new reminder
@@ -118,7 +117,7 @@ Deno.serve(async (req) => {
       try {
         const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
           body: {
-            specialistIds: acceptedSpecialists,
+            specialistIds: targetSpecialists,
             title: '⏰ تأكيد الجاهزية',
             body: `هل أنت جاهز للطلب ${order.order_number}؟`,
             data: {
